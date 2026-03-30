@@ -3,5 +3,6 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://djvicofficial.com',
+  site: 'https://vrentertainment67-coder.github.io',
+  base: '/personal_site',
 });
