@@ -1,12 +1,13 @@
 ---
 const year = new Date().getFullYear();
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <footer>
   <div class="footer-inner">
 
     <div class="footer-brand">
-      <a href="/" class="footer-logo">
+      <a href={`${base}/`} class="footer-logo">
         <img
           src="https://hosting.renderforestsites.com/19480377/1066059/media/3736bbd07ba4e127a0457c37c00889dc.png"
           alt="DJ VIC"
@@ -16,12 +17,12 @@ const year = new Date().getFullYear();
     </div>
 
     <nav class="footer-nav" aria-label="Site links">
-      <a href="/weddings/">Weddings</a>
-      <a href="/corporate/">Corporate</a>
-      <a href="/thevicfix/">The VIC Fix</a>
-      <a href="/remixes/">Remixes</a>
-      <a href="/photos/">Photos</a>
-      <a href="/#contact">Contact</a>
+      <a href={`${base}/weddings/`}>Weddings</a>
+      <a href={`${base}/corporate/`}>Corporate</a>
+      <a href={`${base}/thevicfix/`}>The VIC Fix</a>
+      <a href={`${base}/remixes/`}>Remixes</a>
+      <a href={`${base}/photos/`}>Photos</a>
+      <a href={`${base}/#contact`}>Contact</a>
       <a href="https://linktr.ee/djvicofficial" target="_blank" rel="noopener noreferrer">Press Kit</a>
     </nav>
 
