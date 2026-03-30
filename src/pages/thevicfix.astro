@@ -1,0 +1,855 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const episodes = [
+  {
+    id: "51Y-9dtuWYM",
+    title: "Assad Namazi — 30 Years as a DJ",
+    subtitle: "What Nobody Tells You",
+    desc: "Three decades behind the decks. Assad Namazi breaks down what it actually takes to survive and thrive in the DJ game — the real story, unfiltered.",
+    label: "S2 · E8 · Latest",
+  },
+  {
+    id: "ou0y1tXqAqQ",
+    title: "The Bartender Who Never Forgets Your Drink",
+    subtitle: "Avalon Byford",
+    desc: "Avalon Byford on the art of hospitality, reading a room from behind the bar, and why the best nights are built on more than just music.",
+    label: "S2 · E7",
+  },
+  {
+    id: "j0_FbFQtdE0",
+    title: "DJ Joy — Programming the Night",
+    subtitle: "The craft of the set",
+    desc: "DJ Joy on how great nights are architected — the psychology of programming, energy management, and what it means to truly own a room.",
+    label: "S2 · E6",
+  },
+];
+
+const platforms = [
+  { name: "YouTube", url: "https://www.youtube.com/@thedjvicofficial", icon: "▶" },
+  { name: "Instagram", url: "https://www.instagram.com/thevicfix", icon: "◈" },
+];
+---
+
+<Layout
+  title="The VIC Fix — Podcast by DJ VIC"
+  description="The VIC Fix: Real Stories. Real Culture. Real Nightlife. A long-form podcast by DJ VIC documenting India's nightlife culture through unfiltered conversations with DJs, artists, founders, and creative leaders."
+>
+  <Nav />
+
+  <main>
+
+    <!-- ══════════════════════════════════════════
+         1. HERO
+    ══════════════════════════════════════════ -->
+    <section id="podcast-hero" class="hero-bg">
+      <div class="hero-eyebrow">
+        <span class="hero-badge">Season 2 — Now Live</span>
+      </div>
+      <h1>The VIC Fix</h1>
+      <p class="tagline">Real Stories. Real Culture. Real Nightlife.</p>
+      <p>
+        A long-form podcast documenting India's nightlife culture — unfiltered
+        conversations with DJs, artists, founders, and creative leaders.
+      </p>
+      <div class="hero-actions">
+        <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--gold">
+          Watch on YouTube &rarr;
+        </a>
+        <a href="https://www.instagram.com/thevicfix" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--outline">
+          @thevicfix
+        </a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         2. ABOUT THE SHOW
+    ══════════════════════════════════════════ -->
+    <section id="podcast-about">
+      <div class="section-label">About the Show</div>
+      <h2>Beyond the Music</h2>
+      <p class="section-sub">
+        Hosted by DJ VIC — nearly two decades in nightlife across 18 countries — The VIC
+        Fix goes beyond the music to document the people, places, and moments that shaped
+        India's after-dark culture. DJs, bartenders, venue founders, promoters, artists:
+        the ones who built the scene, told in their own words.
+      </p>
+      <div class="about-stats">
+        <div class="stat-item">
+          <span class="stat-num">2</span>
+          <span class="stat-label">Seasons</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">38<span class="stat-plus">+</span></span>
+          <span class="stat-label">Episodes</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">19<span class="stat-plus">+</span></span>
+          <span class="stat-label">Years in Nightlife</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         3. LATEST EPISODES
+    ══════════════════════════════════════════ -->
+    <section id="podcast-episodes" class="section-alt">
+      <div class="section-label">Season 2</div>
+      <h2>Latest Episodes</h2>
+      <p class="section-sub">
+        New episodes dropping on YouTube &amp; Instagram — don't miss one.
+      </p>
+      <div class="episodes-grid">
+        {episodes.map((ep) => (
+          <a
+            href={`https://www.youtube.com/watch?v=${ep.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="episode-card"
+          >
+            <div class="episode-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${ep.id}/maxresdefault.jpg`}
+                alt={ep.title}
+                onerror={`this.src='https://img.youtube.com/vi/${ep.id}/hqdefault.jpg'`}
+                loading="lazy"
+              />
+              <div class="episode-play">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span class="episode-badge">{ep.label}</span>
+            </div>
+            <div class="episode-body">
+              <h3 class="episode-title">{ep.title}</h3>
+              <p class="episode-subtitle">{ep.subtitle}</p>
+              <p class="episode-desc">{ep.desc}</p>
+              <span class="episode-watch">Watch on YouTube &rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div class="episodes-cta">
+        <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--gold">
+          View All Episodes on YouTube &rarr;
+        </a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         4. LISTEN ON
+    ══════════════════════════════════════════ -->
+    <section id="podcast-platforms">
+      <div class="section-label">Where to Watch</div>
+      <h2>Find the VIC Fix</h2>
+      <p class="section-sub">Watch full episodes on YouTube, and catch clips and behind-the-scenes on Instagram.</p>
+      <div class="platform-grid">
+        <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="platform-card">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+            <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+          </svg>
+          <span class="platform-name">YouTube</span>
+          <span class="platform-handle">@thedjvicofficial</span>
+        </a>
+        <a href="https://www.instagram.com/thevicfix" target="_blank" rel="noopener noreferrer" class="platform-card">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+          <span class="platform-name">Instagram</span>
+          <span class="platform-handle">@thevicfix</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         5. TESTIMONIAL
+    ══════════════════════════════════════════ -->
+    <section id="podcast-testimonials" class="section-alt">
+      <div class="section-label">What People Are Saying</div>
+      <h2>The Response</h2>
+      <div class="testimonial-grid">
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">Thanks bro for bringing these podcast sessions. This is exactly the kind of content the nightlife scene here needed.</p>
+          <footer class="t-footer">
+            <strong class="t-name">Asad</strong>
+            <span class="t-role">Viewer</span>
+          </footer>
+        </blockquote>
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">Real, unfiltered, no fluff. The VIC Fix captures the actual story of Bangalore nightlife — something no one else has documented like this.</p>
+          <footer class="t-footer">
+            <strong class="t-name">Community Response</strong>
+            <span class="t-role">Viewers &amp; Listeners</span>
+          </footer>
+        </blockquote>
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">The natural flow and unbiased storytelling is what sets this apart. It covers venues, artists, and the evolution of the industry honestly.</p>
+          <footer class="t-footer">
+            <strong class="t-name">Listener Review</strong>
+            <span class="t-role">Season 1</span>
+          </footer>
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         6. BE A GUEST FORM
+    ══════════════════════════════════════════ -->
+    <section id="podcast-collab">
+      <div class="guest-layout">
+
+        <!-- Left: context -->
+        <div class="guest-left">
+          <div class="section-label">Be a Guest</div>
+          <h2>Want to Be on The VIC Fix?</h2>
+          <p class="guest-intro">
+            If you're a DJ, artist, venue founder, bartender, promoter, or anyone who
+            has shaped India's nightlife culture — this show is for you.
+          </p>
+          <ul class="guest-criteria">
+            <li>You've got a story worth telling</li>
+            <li>You're connected to music, nightlife, or culture</li>
+            <li>You're based in India or have an India connection</li>
+            <li>You can commit to a long-form conversation</li>
+          </ul>
+          <p class="guest-note">
+            All submissions are reviewed personally. If there's a fit, you'll hear back
+            within a week.
+          </p>
+        </div>
+
+        <!-- Right: form -->
+        <div class="guest-right">
+          <form
+            class="guest-form"
+            action="https://formspree.io/f/YOUR_FORM_ID"
+            method="POST"
+          >
+            <div class="form-row">
+              <div class="form-group">
+                <label for="guest-name">Full Name <span class="required">*</span></label>
+                <input type="text" id="guest-name" name="name" placeholder="Your name" required />
+              </div>
+              <div class="form-group">
+                <label for="guest-email">Email <span class="required">*</span></label>
+                <input type="email" id="guest-email" name="email" placeholder="your@email.com" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="guest-phone">Phone / WhatsApp</label>
+                <input type="tel" id="guest-phone" name="phone" placeholder="+91 98765 43210" />
+              </div>
+              <div class="form-group">
+                <label for="guest-instagram">Instagram Handle</label>
+                <input type="text" id="guest-instagram" name="instagram" placeholder="@yourhandle" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="guest-role">What do you do? <span class="required">*</span></label>
+              <select id="guest-role" name="role" required>
+                <option value="" disabled selected>Select your background</option>
+                <option value="DJ">DJ / Producer</option>
+                <option value="Artist">Artist / Musician</option>
+                <option value="Venue">Venue Owner / Operator</option>
+                <option value="Promoter">Promoter / Event Organiser</option>
+                <option value="Bartender">Bartender / Mixologist</option>
+                <option value="Brand">Brand / Creative Director</option>
+                <option value="Other">Other (tell us below)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="guest-story">Your Story <span class="required">*</span></label>
+              <textarea
+                id="guest-story"
+                name="story"
+                rows="5"
+                placeholder="Tell us who you are, what you've been part of, and why your story belongs on The VIC Fix..."
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" class="form-submit">
+              Send My Story &rarr;
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ─── Hero ─────────────────────────────────────── */
+  #podcast-hero {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.3) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%),
+      url('https://hosting.renderforestsites.com/19480377/1066059/media/e94568f5bfc73623b03fccac9a9c7a5d.jpg');
+    background-position: center center;
+  }
+
+  .hero-eyebrow {
+    margin-bottom: 1rem;
+  }
+
+  .hero-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.3rem 0.85rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  /* ─── CTA Buttons ──────────────────────────────── */
+  .cta-btn {
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px;
+  }
+  .cta-btn--gold {
+    background: var(--gold);
+    color: #000;
+    border: 1px solid var(--gold);
+  }
+  .cta-btn--gold:hover {
+    background: var(--gold-light);
+    color: #000;
+    transform: translateY(-1px);
+  }
+  .cta-btn--outline {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+  }
+  .cta-btn--outline:hover {
+    background: rgba(201,168,76,0.1);
+    transform: translateY(-1px);
+  }
+
+  /* ─── Section shared ──────────────────────────── */
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  h2 { color: var(--white); }
+
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 680px;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-alt {
+    background: rgba(0,0,0,0.25);
+  }
+
+  /* ─── About stats ─────────────────────────────── */
+  .about-stats {
+    display: flex;
+    gap: 0;
+    margin-top: 2.5rem;
+    border: 1px solid rgba(201,168,76,0.12);
+    width: fit-content;
+  }
+
+  .stat-item {
+    padding: 1.75rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    border-right: 1px solid rgba(201,168,76,0.12);
+    background: #0d0d0d;
+  }
+
+  .stat-item:last-child {
+    border-right: none;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-plus {
+    font-size: 0.6em;
+    vertical-align: super;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* ─── Episodes grid ───────────────────────────── */
+  .episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .episode-card {
+    display: flex;
+    flex-direction: column;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    color: var(--white);
+    transition: border-color 0.25s, background 0.25s;
+    overflow: hidden;
+  }
+
+  .episode-card:hover {
+    border-color: rgba(201,168,76,0.35);
+    background: #161616;
+  }
+
+  .episode-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #0d0d0d;
+  }
+
+  .episode-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .episode-card:hover .episode-thumb img {
+    transform: scale(1.04);
+  }
+
+  .episode-play {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.25s;
+  }
+
+  .episode-play svg {
+    width: 44px;
+    height: 44px;
+    background: var(--gold);
+    color: #000;
+    border-radius: 50%;
+    padding: 10px;
+    padding-left: 13px;
+    transition: transform 0.2s;
+  }
+
+  .episode-card:hover .episode-play {
+    background: rgba(0,0,0,0.2);
+  }
+
+  .episode-card:hover .episode-play svg {
+    transform: scale(1.1);
+  }
+
+  .episode-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.25rem 0.6rem;
+  }
+
+  .episode-body {
+    padding: 1.25rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+  }
+
+  .episode-title {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .episode-subtitle {
+    font-size: 0.75rem;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  .episode-desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    margin: 0.25rem 0 0.75rem;
+    flex: 1;
+  }
+
+  .episode-watch {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 2px;
+    align-self: flex-start;
+    transition: color 0.2s;
+  }
+
+  .episode-card:hover .episode-watch {
+    color: var(--gold-light, #e0c060);
+  }
+
+  .episodes-cta {
+    margin-top: 2rem;
+  }
+
+  /* ─── Platform cards ──────────────────────────── */
+  .platform-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 600px;
+    margin-top: 2rem;
+  }
+
+  .platform-card {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 2rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: var(--white);
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .platform-card:hover {
+    border-color: rgba(201,168,76,0.4);
+    background: #161616;
+    color: var(--white);
+  }
+
+  .platform-card svg {
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+  }
+
+  .platform-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    color: var(--white);
+  }
+
+  .platform-handle {
+    font-size: 0.72rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── Testimonials ────────────────────────────── */
+  .testimonial-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
+
+  .testimonial-card {
+    position: relative;
+    background: #111;
+    border-radius: 10px;
+    border-left: 2px solid var(--gold);
+    padding: 1.75rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 0 1 calc(33.333% - 1rem);
+    min-width: 260px;
+  }
+
+  .t-quote {
+    font-family: Georgia, serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--gold);
+    opacity: 0.35;
+    display: block;
+    margin-bottom: -0.5rem;
+  }
+
+  .t-body {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--white);
+    flex: 1;
+    max-width: none;
+  }
+
+  .t-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .t-name {
+    color: var(--white);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .t-role {
+    color: var(--gold);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Be a Guest form ────────────────────────── */
+  #podcast-collab {
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .guest-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  .guest-left h2 {
+    margin-bottom: 1rem;
+  }
+
+  .guest-intro {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+  }
+
+  .guest-criteria {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .guest-criteria li {
+    font-size: 0.84rem;
+    color: rgba(255,255,255,0.6);
+    padding-left: 1.25rem;
+    position: relative;
+  }
+
+  .guest-criteria li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+  }
+
+  .guest-note {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ─── Form ────────────────────────────────────── */
+  .guest-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-group label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .required {
+    color: var(--gold);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 2px;
+  }
+
+  .form-group input::placeholder,
+  .form-group textarea::placeholder {
+    color: rgba(255,255,255,0.2);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--gold);
+  }
+
+  .form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    cursor: pointer;
+  }
+
+  .form-group select option {
+    background: #1a1a1a;
+    color: var(--white);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 130px;
+    line-height: 1.6;
+  }
+
+  .form-submit {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 1rem 2rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+    align-self: flex-start;
+    margin-top: 0.25rem;
+  }
+
+  .form-submit:hover {
+    background: var(--gold-light, #e0c060);
+    transform: translateY(-1px);
+  }
+
+  /* ─── Responsive ──────────────────────────────── */
+  @media (max-width: 900px) {
+    .episodes-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .guest-layout {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .about-stats {
+      flex-direction: column;
+      width: 100%;
+    }
+    .stat-item {
+      border-right: none;
+      border-bottom: 1px solid rgba(201,168,76,0.12);
+    }
+    .episodes-grid {
+      grid-template-columns: 1fr;
+    }
+    .platform-grid {
+      grid-template-columns: 1fr;
+      max-width: 100%;
+    }
+    .testimonial-card {
+      flex: 0 1 100%;
+    }
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    .form-submit {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

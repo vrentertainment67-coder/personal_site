@@ -1,0 +1,542 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
+
+const services = [
+  {
+    name: "Weddings",
+    href: "/weddings/",
+    desc: "From sangeet nights to the last dance — curated music for every moment of your celebration.",
+    bg: `${BASE}fc1c338a80d635c2429d234301f2ba98.jpg`,
+  },
+  {
+    name: "Corporate Events",
+    href: "/corporate/",
+    desc: "Conferences, product launches, annual days and brand activations — delivered with precision and energy.",
+    bg: `${BASE}c26853944612fd45df1fe9d9f6d3417f.jpg`,
+  },
+  {
+    name: "Club & Nightlife",
+    href: "/#contact",
+    desc: "Resident sets, guest slots, and headline club nights — open-format music built for the floor.",
+    bg: `${BASE}38757946d4f77aa7f52552c06f54812b.jpg`,
+  },
+  {
+    name: "Private Events",
+    href: "/#contact",
+    desc: "Birthdays, anniversaries, and intimate gatherings — personalised sets tailored to your vibe.",
+    bg: `https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80`,
+  },
+  {
+    name: "Festivals & Live Shows",
+    href: "/#contact",
+    desc: "Large-format stages, open-air events, and festival bookings — high-energy performances across India and beyond.",
+    bg: `https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80`,
+  },
+  {
+    name: "Brand & Experiential",
+    href: "/#contact",
+    desc: "DJ sets woven into brand activations, pop-ups, product drops, and launch events — music that makes moments memorable.",
+    bg: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80`,
+  },
+];
+---
+
+<Layout
+  title="DJ VIC — International DJ, Producer & Remixer | Bangalore"
+  description="DJ VIC — 19+ years of international experience across India, the UK, and Australia. Original remixes, weddings, corporate events, and nightlife culture."
+>
+  <Nav />
+
+  <main>
+
+    <!-- ===================== HERO ===================== -->
+    <section id="hero" class="hero-bg">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <p class="hero-eyebrow">DJ &nbsp;·&nbsp; Producer &nbsp;·&nbsp; Remixer</p>
+          <h1>DJ<br/>VIC</h1>
+          <p class="hero-tagline">Curator of Atmosphere</p>
+          <div class="hero-actions">
+            <a href="/#contact" class="cta-btn-primary">Book DJ Vic</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <strong>Est. 2005</strong>
+          <span>In the Industry</span>
+        </div>
+        <div class="stat-item">
+          <strong>18</strong>
+          <span>Countries</span>
+        </div>
+        <div class="stat-item">
+          <strong>1400+</strong>
+          <span>Nights Performed</span>
+        </div>
+        <div class="stat-item">
+          <strong>Universal</strong>
+          <span>Music Partner</span>
+        </div>
+        <div class="stat-item">
+          <strong>50+</strong>
+          <span>Conversations Published</span>
+        </div>
+        <div class="stat-item">
+          <strong>150+</strong>
+          <span>Artists Collaborated With</span>
+        </div>
+        <div class="stat-item">
+          <strong>10M+</strong>
+          <span>Content Views</span>
+        </div>
+        <div class="stat-item">
+          <strong>300+</strong>
+          <span>Private &amp; Corporate Events</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ABOUT ===================== -->
+    <section id="about">
+      <h2>About</h2>
+      <p>
+        Active since 2007, DJ VIC brings nearly two decades of international experience
+        across India, the UK, and Australia. His sound is a fusion of English and Indian
+        music, delivered through original remixes and mashups crafted uniquely for every
+        venue and audience.
+      </p>
+      <p>
+        Having collaborated with major Indian labels including Universal Music, VIC
+        specialises in audio-visual compositions that move both the dancefloor and the
+        digital space. Whether in clubs, corporate events, or curated concept nights —
+        he designs experiences, not just playlists.
+      </p>
+    </section>
+
+    <!-- ===================== SERVICES ===================== -->
+    <section id="services">
+      <h2>Services</h2>
+      <div class="services-grid">
+        {services.map((s) => (
+          <a
+            href={s.href}
+            class="service-card"
+            style={`background-image: linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.6) 55%, rgba(6,6,6,0.3) 100%), url('${s.bg}'); background-size: cover; background-position: center;`}
+          >
+            <div class="service-text">
+              <span class="service-name">{s.name}</span>
+              <p>{s.desc}</p>
+            </div>
+            <span class="service-arrow">&rarr;</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ===================== VIDEOS ===================== -->
+    <section id="videos">
+      <h2>Remixes &amp; Mashups</h2>
+      <p>From the dance floor to your playlist — remixed and reimagined.</p>
+
+      <div class="yt-grid">
+        {[
+          "wHOB8H-HB_Y","Hgb_g-xBblw","ssFIKwChfHc","modKUclnVJY","aN2BIfUNUs4",
+          "KWUoJJ6xsfk","rcGuVSoki6U","MXxbN1xYteY","zhaNQwYQi_8","gf0hYLxr6eo",
+          "Yx3pD4uhJRE","h48i6wSQjso","5oA311R6Wkg","PxgvwE1nZmw","4oTBe25wvE0"
+        ].map((id) => (
+          <a
+            href={`https://youtu.be/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-card"
+          >
+            <div class="yt-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
+                alt="DJ VIC Remix"
+                loading="lazy"
+              />
+              <div class="yt-play">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="36" height="36">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+            <span class="yt-tag">Mashup &nbsp;·&nbsp; DJ Vic</span>
+          </a>
+        ))}
+      </div>
+
+      <a href="/remixes/" class="cta-button cta-outline">Stream &amp; Download Free &rarr;</a>
+    </section>
+
+    <!-- ===================== CONTACT ===================== -->
+    <section id="contact">
+      <h2>Get in Touch</h2>
+      <p>Available for bookings, collaborations, and inquiries.</p>
+
+      <a
+        href="https://wa.me/918105363636"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="whatsapp-btn"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/>
+        </svg>
+        Chat on WhatsApp
+        <span class="whatsapp-note">Fastest response</span>
+      </a>
+
+      <ul>
+        <li>Phone: <a href="tel:+919611711677">+91 9611711677</a></li>
+        <li>
+          <a href="mailto:bookings@djvicofficial.com">
+            bookings@djvicofficial.com
+          </a>
+        </li>
+      </ul>
+
+      <h3>Send a Message</h3>
+      <form method="POST" action="#contact">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" required placeholder="Your name" />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required placeholder="your@email.com" />
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="5" required placeholder="Your message"></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ── HERO ────────────────────────────────────────── */
+  #hero {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    background-image:
+      linear-gradient(to right, rgba(6,6,6,0.82) 25%, rgba(6,6,6,0.25) 55%, rgba(6,6,6,0) 100%),
+      linear-gradient(to bottom, rgba(6,6,6,0.3) 0%, rgba(6,6,6,0) 40%, rgba(6,6,6,0.9) 100%),
+      url('/images/hero2.jpg');
+    background-size: cover;
+    background-position: center right;
+    background-repeat: no-repeat;
+    padding: 0;
+  }
+
+  .hero-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 10rem 2.5rem 3rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+    max-width: none;
+  }
+
+  .hero-text h1 {
+    line-height: 0.85;
+    letter-spacing: -0.01em;
+    font-size: clamp(6rem, 18vw, 14rem);
+  }
+
+  .hero-tagline {
+    font-family: var(--font-display);
+    font-size: clamp(0.85rem, 2vw, 1.2rem);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--grey) !important;
+    margin-top: 1.5rem;
+    max-width: none;
+  }
+
+
+  /* ── STATS BAR ──────────────────────────────────── */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid #1e1e1e;
+    background: rgba(6,6,6,0.95);
+  }
+
+  .stat-item {
+    padding: 1.25rem 1.5rem;
+    border-right: 1px solid rgba(201,168,76,0.2);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  /* Remove right border on every 4th item */
+  .stat-item:nth-child(4n) {
+    border-right: none;
+  }
+
+  /* Remove bottom border on last row */
+  .stat-item:nth-last-child(-n+4) {
+    border-bottom: none;
+  }
+
+  .stat-item strong {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-item span {
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.6);
+    line-height: 1.4;
+  }
+
+  /* ── SERVICE CARDS ──────────────────────────────── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin-top: 2rem;
+    background: #1a1a1a;
+    border: 1px solid #1a1a1a;
+  }
+
+  .service-card {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    position: relative;
+    min-height: 280px;
+    justify-content: flex-end;
+    background-color: var(--black-card);
+    overflow: hidden;
+  }
+
+  .service-name {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    transition: color 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .service-card:hover .service-name {
+    color: var(--gold);
+  }
+
+  .service-card p {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.65);
+    max-width: 32ch;
+    margin: 0;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  .service-arrow {
+    margin-top: 0.75rem;
+    font-size: 1.1rem;
+    color: var(--gold);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.2s, transform 0.25s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .service-card:hover .service-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ── YOUTUBE THUMBNAIL GRID ─────────────────────── */
+  .yt-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 2rem;
+  }
+
+  .yt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .yt-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+    border-radius: 4px;
+  }
+
+  .yt-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .yt-card:hover .yt-thumb img {
+    transform: scale(1.04);
+  }
+
+  .yt-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    opacity: 0;
+    transition: opacity 0.25s;
+    color: var(--gold);
+  }
+
+  .yt-play svg {
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+  }
+
+  .yt-card:hover .yt-play {
+    opacity: 1;
+  }
+
+  .yt-tag {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .cta-outline {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    margin-top: 2.5rem;
+    display: inline-block;
+  }
+
+  .cta-outline:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  @media (max-width: 900px) {
+    .yt-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 500px) {
+    .yt-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ── WHATSAPP CTA ───────────────────────────────── */
+  .whatsapp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+    padding: 1rem 2rem;
+    background: #25D366;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+    text-decoration: none;
+    border: none;
+  }
+
+  .whatsapp-btn:hover {
+    background: #1ebe59;
+    color: #fff;
+  }
+
+  .whatsapp-note {
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    opacity: 0.75;
+    text-transform: none;
+    font-weight: 400;
+    border-left: 1px solid rgba(255,255,255,0.4);
+    padding-left: 0.75rem;
+    margin-left: 0.25rem;
+  }
+
+  /* ── RESPONSIVE ─────────────────────────────────── */
+  @media (max-width: 700px) {
+    .hero-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-item:nth-child(4n) {
+      border-right: rgba(201,168,76,0.2) 1px solid;
+    }
+
+    .stat-item:nth-child(2n) {
+      border-right: none;
+    }
+
+    .stat-item:nth-last-child(-n+4) {
+      border-bottom: 1px solid rgba(201,168,76,0.1);
+    }
+
+    .stat-item:nth-last-child(-n+2) {
+      border-bottom: none;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .services-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .services-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

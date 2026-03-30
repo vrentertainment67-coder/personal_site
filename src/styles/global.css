@@ -1,0 +1,934 @@
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --black:      #0a0a0a;
+  --black-soft: #111111;
+  --black-card: #161616;
+  --gold:       #c9a84c;
+  --gold-light: #e2c475;
+  --white:      #ffffff;
+  --grey:       #a0a0a0;
+  --grey-dim:   #3a3a3a;
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Space Grotesk', sans-serif;
+
+  --max-width: 1100px;
+  --section-padding: 4.5rem 2rem;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #050a08;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 80% 55% at 65% 30%, #072e20 0%, #041a10 35%, #020d08 65%, #050a08 100%),
+    radial-gradient(ellipse 50% 40% at 55% 45%, #0a3828 0%, transparent 70%);
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-size: 256px 256px, 100% 100%, 100% 100%;
+  background-position: top left, center center, center center;
+  background-attachment: scroll, fixed, fixed;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--gold-light);
+}
+
+ul {
+  list-style: none;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  line-height: 1.0;
+  text-transform: uppercase;
+}
+
+h1 { font-size: clamp(5rem, 16vw, 12rem); }
+h2 { font-size: clamp(2.5rem, 5vw, 4rem); }
+h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+
+p {
+  color: var(--grey);
+  max-width: 65ch;
+}
+
+blockquote p {
+  font-style: italic;
+  color: var(--white);
+  font-size: 1.05rem;
+}
+
+blockquote footer {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: var(--font-display);
+}
+
+/* ============================================================
+   LAYOUT HELPERS
+   ============================================================ */
+.container {
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: 2rem;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1.25rem 2.5rem;
+  display: flex;
+  align-items: center;
+  background: rgba(10,10,10,0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+}
+
+nav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.15em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.logo:hover {
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+.logo img {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+
+.footer-logo {
+  display: block;
+}
+
+.footer-logo img {
+  height: 48px;
+  width: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.footer-logo:hover img {
+  opacity: 1;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.75rem;
+  flex: 1;
+}
+
+nav ul li a {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--grey);
+  transition: color 0.2s;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+nav ul li a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.25s;
+}
+
+nav ul li a:hover,
+nav ul li a[aria-current="page"] {
+  color: var(--gold);
+}
+
+nav ul li a:hover::after,
+nav ul li a[aria-current="page"]::after {
+  width: 100%;
+}
+
+.nav-phone {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  white-space: nowrap;
+  border: 1px solid var(--gold);
+  padding: 0.45rem 1rem;
+  transition: background 0.2s, color 0.2s;
+  margin-left: auto;
+}
+
+.nav-phone:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+#hero {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 8rem 2.5rem 5rem;
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle radial glow behind hero text */
+#hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 70%, rgba(201,168,76,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 80% 20%, rgba(255,255,255,0.02) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+#hero > * {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+}
+
+/* Inner hero text wrapper aligned left within max-width */
+#hero h1 {
+  color: var(--white);
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+
+/* Hero background image helper — applied per-page via scoped styles */
+.hero-bg {
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* Sub-hero pages */
+#gallery-hero,
+#podcast-hero,
+#weddings-hero,
+#corporate-hero {
+  min-height: 60svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 8rem 2.5rem 4rem;
+  max-width: 100%;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+#gallery-hero h1,
+#podcast-hero h1,
+#weddings-hero h1,
+#corporate-hero h1 {
+  color: var(--white);
+  font-size: clamp(3rem, 8vw, 7rem);
+}
+
+.tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold) !important;
+  margin-top: 1.25rem;
+  max-width: none;
+}
+
+/* ============================================================
+   CALL TO ACTION BUTTONS
+   ============================================================ */
+.cta-button,
+.cta-btn-primary,
+.cta-btn-outline {
+  display: inline-block;
+  padding: 14px 32px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  transition: background 0.22s, color 0.22s, border-color 0.22s;
+  text-shadow: none;
+}
+
+/* Primary — filled gold */
+.cta-button,
+.cta-btn-primary {
+  background: var(--gold);
+  color: #000;
+  border: 1px solid var(--gold);
+}
+
+.cta-button:hover,
+.cta-btn-primary:hover {
+  background: var(--gold-light);
+  border-color: var(--gold-light);
+  color: #000;
+}
+
+/* Secondary — outlined gold */
+.cta-btn-outline {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.cta-btn-outline:hover {
+  background: var(--gold);
+  color: #000;
+}
+
+/* Hero button container */
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section {
+  padding: var(--section-padding);
+  max-width: var(--max-width);
+  margin-inline: auto;
+  width: 100%;
+  background-image: radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.04) 0%, transparent 70%);
+}
+
+section + section {
+  border-top: 1px solid #181818;
+}
+
+/* Gold accent bar above every section heading */
+section h2 {
+  color: var(--white);
+  margin-bottom: 1.75rem;
+  position: relative;
+  padding-top: 1.25rem;
+}
+
+section h2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--gold);
+}
+
+section h3 {
+  color: var(--gold);
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+section p {
+  margin-bottom: 1rem;
+}
+
+section p:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   LISTS
+   ============================================================ */
+section ul {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+section ul li {
+  color: var(--grey);
+  padding-left: 1.5rem;
+  position: relative;
+  font-size: 0.95rem;
+}
+
+section ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
+section ul li a {
+  color: var(--grey);
+  transition: color 0.2s;
+}
+
+section ul li a:hover {
+  color: var(--gold-light);
+}
+
+/* ============================================================
+   ARROW LINKS
+   ============================================================ */
+section > a,
+section p > a {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px solid rgba(201,168,76,0.4);
+  padding-bottom: 3px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+section > a:hover,
+section p > a:hover {
+  color: var(--gold-light);
+  border-color: var(--gold-light);
+}
+
+/* ============================================================
+   EVENT CARDS
+   ============================================================ */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1px;
+  margin-top: 2rem;
+  border: 1px solid #222;
+}
+
+article {
+  background: var(--black-card);
+  padding: 2rem;
+  transition: background 0.2s;
+  border: none;
+}
+
+article:hover {
+  background: #1e1e1e;
+}
+
+article h3 {
+  color: var(--white);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+article p {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+  color: var(--grey);
+}
+
+/* ============================================================
+   BLOCKQUOTES
+   ============================================================ */
+blockquote {
+  border-left: 2px solid var(--gold);
+  padding: 1.25rem 1.75rem;
+  margin: 2rem 0;
+  background: var(--black-card);
+}
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 520px;
+  margin-top: 2rem;
+}
+
+label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin-bottom: -0.75rem;
+}
+
+input,
+textarea {
+  background: var(--black-card);
+  border: 1px solid #2a2a2a;
+  color: var(--white);
+  padding: 0.9rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #3a3a3a;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+button[type="submit"] {
+  align-self: flex-start;
+  padding: 1rem 3rem;
+  background: var(--gold);
+  color: var(--black);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid var(--gold);
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+
+button[type="submit"]:hover {
+  background: transparent;
+  color: var(--gold);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  border-top: 1px solid rgba(201,168,76,0.15);
+  max-width: var(--max-width);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3rem;
+  padding: 3.5rem 2.5rem 2.5rem;
+  border-bottom: 1px solid #181818;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footer-bio {
+  font-size: 0.8rem;
+  color: #444;
+  line-height: 1.7;
+  max-width: none;
+}
+
+.footer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.footer-nav a {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+  transition: color 0.2s;
+}
+
+.footer-nav a:hover {
+  color: var(--gold);
+}
+
+.footer-social-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.footer-social-col a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+  transition: color 0.2s;
+}
+
+.footer-social-col a:hover {
+  color: var(--gold);
+}
+
+.footer-social-col svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.footer-social-col a:hover svg {
+  opacity: 1;
+}
+
+.footer-bottom {
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.footer-bottom p {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2e2e2e;
+  max-width: none;
+}
+
+.footer-email {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: #2e2e2e;
+  transition: color 0.2s;
+}
+
+.footer-email:hover {
+  color: var(--gold);
+}
+
+@media (max-width: 700px) {
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2.5rem 1.25rem;
+  }
+
+  .footer-bottom {
+    padding: 1.25rem 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   SOCIAL RAIL (fixed)
+   ============================================================ */
+.social-rail {
+  position: fixed;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.social-rail a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(6,6,6,0.7);
+  border: 1px solid #2a2a2a;
+  color: var(--grey);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.social-rail a:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(6,6,6,0.9);
+}
+
+@media (max-width: 900px) {
+  .social-rail {
+    display: none;
+  }
+}
+
+/* ============================================================
+   TESTIMONIAL GRID
+   ============================================================ */
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.testimonial-grid blockquote {
+  margin: 0;
+}
+
+/* ============================================================
+   REMIX GRID
+   ============================================================ */
+.remix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.remix-card {
+  background: var(--black-card);
+  border: 1px solid #222;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.remix-card:hover {
+  border-color: var(--gold);
+}
+
+.remix-video {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+}
+
+.remix-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.remix-info {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.remix-type {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.remix-info h3 {
+  color: var(--white);
+  margin-top: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.download-btn {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--black);
+  background: var(--gold);
+  padding: 0.5rem 1.25rem;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid var(--gold);
+}
+
+.download-btn:hover {
+  background: transparent;
+  color: var(--gold);
+}
+
+/* Sub-hero for remixes page */
+#remixes-hero {
+  min-height: 60svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 8rem 2.5rem 4rem;
+  max-width: 100%;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+#remixes-hero h1 {
+  color: var(--white);
+  font-size: clamp(3rem, 8vw, 7rem);
+}
+
+/* ============================================================
+   GLOBAL CARD OVERLAY SCRIM
+   ============================================================ */
+[class*="card"],
+[class*="tile"],
+[class*="grid-item"] {
+  position: relative;
+}
+
+[class*="card"]::after,
+[class*="tile"]::after,
+[class*="grid-item"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Text inside cards stays above the overlay */
+[class*="card"] h2,
+[class*="card"] h3,
+[class*="card"] p,
+[class*="card"] span,
+[class*="card"] a,
+[class*="tile"] h2,
+[class*="tile"] h3,
+[class*="tile"] p,
+[class*="tile"] span {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* ============================================================
+   SERVICE CARD OVERRIDES
+   ============================================================ */
+.services-grid {
+  align-items: stretch;
+}
+.service-card .service-name {
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.service-card p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+}
+
+.service-card .service-text {
+  border-left: 2px solid var(--gold);
+  padding-left: 0.85rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 600px) {
+  :root {
+    --section-padding: 5rem 1.25rem;
+  }
+
+  header {
+    padding: 1rem 1.25rem;
+  }
+
+  nav ul {
+    display: none;
+  }
+
+  #hero,
+  #gallery-hero,
+  #podcast-hero,
+  #weddings-hero,
+  #corporate-hero {
+    padding-inline: 1.25rem;
+  }
+
+  footer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 1.25rem;
+  }
+}

@@ -1,0 +1,550 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+// Section 3 — Wedding Vlogs
+const weddingVlogs = [
+  { id: "bFWIs4dhvew", caption: "Prachi & Mridhul — Wedding Vlog, Wayanad" },
+  { id: "sebNDm7uiWQ", caption: "Visaaly & Sharan — Destination Wedding, Colombo" },
+];
+
+// Section 5 — Couple Testimonial Videos
+const coupleVideos = [
+  { id: "Dw5gerVqA7w", caption: "Kanchana & Nihar" },
+  { id: "x9Q_nA4820w", caption: "Diksha & Pranav" },
+  { id: "UCVpbps9hrk", caption: "Raksha & Rahul" },
+];
+
+// Section 4 — Wedding Showcase (replace SHOWCASE_VIDEO_ID with your video ID)
+const showcaseVideoId = "TU_R42SDuns";
+
+// Section 6 — Curated AV Showcase
+const avVideoId = "3FJl0cbpOYY";
+---
+
+<Layout
+  title="Wedding DJ in Bangalore | Luxury Wedding DJ — DJ VIC"
+  description="DJ VIC — 19+ years of experience creating unforgettable music experiences for sangeet nights, cocktail parties, receptions, and luxury destination weddings."
+>
+  <Nav />
+
+  <main>
+
+    <!-- ══════════════════════════════════════════
+         1. HERO
+    ══════════════════════════════════════════ -->
+    <section id="weddings-hero" class="hero-bg">
+      <h1>Your Love Story,<br/>Our Soundtrack</h1>
+      <p class="tagline">From Sangeet Night to the Last Dance</p>
+      <p>Wedding stories told through music, moments, and movement.</p>
+      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         3. FROM SUNRISE DRIVES TO THE LAST DANCE
+    ══════════════════════════════════════════ -->
+    <section id="weddings-vlogs">
+      <div class="section-label">Wedding Films</div>
+      <h2>From Sunrise Drives to the Last Dance</h2>
+      <p class="section-sub">
+        Real couples. Real celebrations. A glimpse into the magic we create together.
+      </p>
+      <div class="yt-grid yt-grid--2col">
+        {weddingVlogs.map((v) => (
+          <a
+            href={`https://youtu.be/${v.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-card"
+          >
+            <div class="yt-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`}
+                alt={v.caption}
+                loading="lazy"
+                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`}
+              />
+              <div class="yt-play">
+                <svg viewBox="0 0 68 48" width="52" height="37">
+                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                  <path d="M45 24 27 14v20" fill="#000"/>
+                </svg>
+              </div>
+            </div>
+            <p class="yt-caption">{v.caption}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         4. ROCKING WEDDINGS SINCE 2007
+    ══════════════════════════════════════════ -->
+    <section id="weddings-showcase" class="section-alt">
+      <div class="section-label">Wedding Showcase</div>
+      <h2>Rocking Weddings Since 2007</h2>
+      <p class="section-sub">
+        Nearly two decades of dancefloors, sangeet nights, and unforgettable receptions
+        — India and beyond.
+      </p>
+      {showcaseVideoId !== "SHOWCASE_VIDEO_ID" ? (
+        <div class="yt-grid yt-grid--1col">
+          <a
+            href={`https://youtu.be/${showcaseVideoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-card"
+          >
+            <div class="yt-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${showcaseVideoId}/maxresdefault.jpg`}
+                alt="Wedding Showcase — DJ VIC"
+                loading="lazy"
+                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${showcaseVideoId}/hqdefault.jpg'`}
+              />
+              <div class="yt-play">
+                <svg viewBox="0 0 68 48" width="52" height="37">
+                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                  <path d="M45 24 27 14v20" fill="#000"/>
+                </svg>
+              </div>
+            </div>
+            <p class="yt-caption">Wedding Showcase — DJ VIC</p>
+          </a>
+        </div>
+      ) : (
+        <div class="placeholder-card">
+          <p><!-- TODO: Replace SHOWCASE_VIDEO_ID in weddings.astro with your Wedding Showcase YouTube video ID --></p>
+          <p class="placeholder-text">Wedding showcase video coming soon.</p>
+        </div>
+      )}
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         5. TRUSTED BY COUPLES
+    ══════════════════════════════════════════ -->
+    <section id="weddings-couples">
+      <div class="section-label">Real Weddings</div>
+      <h2>Trusted by Couples</h2>
+      <p class="section-sub">Watch their stories — and hear what they have to say.</p>
+      <div class="yt-grid yt-grid--3col">
+        {coupleVideos.map((v) => (
+          <a
+            href={`https://youtu.be/${v.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-card"
+          >
+            <div class="yt-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`}
+                alt={v.caption}
+                loading="lazy"
+                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`}
+              />
+              <div class="yt-play">
+                <svg viewBox="0 0 68 48" width="52" height="37">
+                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                  <path d="M45 24 27 14v20" fill="#000"/>
+                </svg>
+              </div>
+            </div>
+            <p class="yt-caption">{v.caption}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         6. CURATED MUSIC & AUDIO VISUAL
+    ══════════════════════════════════════════ -->
+    <section id="weddings-av" class="section-alt">
+      <div class="section-label">Performance Showcase</div>
+      <h2>Curated Music &amp; Audio Visual Experiences for Your Special Day</h2>
+      <p class="section-sub section-sub--gold">
+        A recent performance showcase at JW Marriott, Golfshire, Nandi Hills
+      </p>
+      <div class="yt-grid yt-grid--center">
+        <a
+          href={`https://youtu.be/${avVideoId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="yt-card"
+        >
+          <div class="yt-thumb">
+            <img
+              src="/images/av-thumbnail.jpg"
+              alt="Wedding Pool Party — JW Marriott, Golfshire, Nandi Hills"
+              loading="lazy"
+            />
+            <div class="yt-play">
+              <svg viewBox="0 0 68 48" width="64" height="45">
+                <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                <path d="M45 24 27 14v20" fill="#000"/>
+              </svg>
+            </div>
+          </div>
+          <p class="yt-caption">Wedding Pool Party — JW Marriott, Golfshire, Nandi Hills</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         7. TESTIMONIALS
+    ══════════════════════════════════════════ -->
+    <section id="weddings-testimonials">
+      <div class="section-label">Client Reviews</div>
+      <h2>Here's What the Clients Have to Say</h2>
+      <p class="section-sub">Straight from the couples and planners who trusted DJ VIC with their big day.</p>
+      <div class="testimonial-grid">
+
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">
+            Vic absolutely nailed our wedding! From the cocktail night to the reception,
+            he read the room perfectly and kept everyone on the dancefloor all night.
+            Couldn't have asked for better energy.
+          </p>
+          <footer class="t-footer">
+            <strong class="t-name">Sarthak</strong>
+            <span class="t-role">Groom &nbsp;·&nbsp; Dec 2024 &nbsp;·&nbsp; Kochi</span>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">
+            VIC played for my special day recently, and rocked our cocktail night! Being a
+            North-South wedding, he chose the perfect energetic tunes to keep our guests
+            going on the floor!
+          </p>
+          <footer class="t-footer">
+            <strong class="t-name">Rashmi Jaiswal</strong>
+            <span class="t-role">Bride &nbsp;·&nbsp; Jan 2025 &nbsp;·&nbsp; Bangalore</span>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">
+            I think no one left the dancefloor while Vic was playing! He executed the perfect
+            blend of English and Bollywood songs for my entire wedding functions and it was
+            spot on!
+          </p>
+          <footer class="t-footer">
+            <strong class="t-name">Aryaman</strong>
+            <span class="t-role">Groom &nbsp;·&nbsp; July 2025 &nbsp;·&nbsp; Bangalore</span>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">
+            VIC was recommended by my cousin and livened up our wedding parties with his
+            music selection and engaging performances. A special mention on the live baraat
+            with dhol performance!!
+          </p>
+          <footer class="t-footer">
+            <strong class="t-name">Kruthi Singar</strong>
+            <span class="t-role">Bride &nbsp;·&nbsp; Dec 2023 &nbsp;·&nbsp; Bangalore</span>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <span class="t-quote">&ldquo;</span>
+          <p class="t-body">
+            Working with Vic on multiple weddings has been seamless every time. He's
+            professional, well-prepared, and genuinely elevates the experience. Highly
+            recommended for any event.
+          </p>
+          <footer class="t-footer">
+            <strong class="t-name">Manish Fitkariwala</strong>
+            <span class="t-role">Wedding Planner &nbsp;·&nbsp; Catapultt</span>
+          </footer>
+        </blockquote>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         8. CLOSING CTA
+    ══════════════════════════════════════════ -->
+    <section id="weddings-cta" class="cta-section">
+      <h2>Ready to Make Your Wedding Unforgettable?</h2>
+      <p class="section-sub">Get in touch and let's plan the music for your special day.</p>
+      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic &rarr;</a>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ─── Hero ─────────────────────────────────────── */
+  #weddings-hero {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.82) 30%, rgba(0,0,0,0.45) 65%, rgba(0,0,0,0.25) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
+      url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=85');
+    background-position: center center;
+  }
+
+  /* ─── Gold CTA button ──────────────────────────── */
+  .cta-btn {
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px;
+    margin-top: 2rem;
+  }
+  .cta-btn--gold {
+    background: var(--gold);
+    color: #000;
+    border: 1px solid var(--gold);
+  }
+  .cta-btn--gold:hover {
+    background: var(--gold-light);
+    color: #000;
+    transform: translateY(-1px);
+  }
+
+  /* ─── Section shared ──────────────────────────── */
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    color: var(--white);
+  }
+
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 760px;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-sub--gold {
+    color: rgba(201,168,76,0.75);
+  }
+
+  .section-alt {
+    background: rgba(0,0,0,0.25);
+  }
+
+  /* ─── YouTube thumbnail cards ─────────────────── */
+  .yt-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .yt-grid--2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .yt-grid--3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .yt-grid--1col {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .yt-grid--center {
+    grid-template-columns: 1fr;
+    max-width: 780px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .yt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .yt-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+    border-radius: 10px;
+    border: 1px solid #1e1e1e;
+  }
+
+  .yt-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+  }
+
+  .yt-card:hover .yt-thumb img {
+    transform: scale(1.04);
+  }
+
+  .yt-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .yt-card:hover .yt-play {
+    opacity: 1;
+  }
+
+  .yt-caption {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+    line-height: 1.4;
+    padding: 0 0.25rem;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* ─── Placeholder card ────────────────────────── */
+  .placeholder-card {
+    background: #111;
+    border: 1px dashed #2a2a2a;
+    border-radius: 10px;
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 680px;
+    margin-top: 2rem;
+  }
+
+  .placeholder-text {
+    color: var(--grey);
+    font-size: 0.85rem;
+  }
+
+  /* ─── Testimonials ────────────────────────────── */
+  .testimonial-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
+
+  .testimonial-card {
+    position: relative;
+    background: #111;
+    border-radius: 10px;
+    border-left: 2px solid var(--gold);
+    padding: 1.75rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 0 1 calc(33.333% - 1rem);
+    min-width: 260px;
+  }
+
+  .t-quote {
+    font-family: Georgia, serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--gold);
+    opacity: 0.35;
+    display: block;
+    margin-bottom: -0.5rem;
+  }
+
+  .t-body {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--white);
+    flex: 1;
+    max-width: none;
+  }
+
+  .t-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .t-name {
+    color: var(--white);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .t-role {
+    color: var(--gold);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Closing CTA section ─────────────────────── */
+  .cta-section {
+    text-align: center;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .cta-section h2 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+  }
+
+  .cta-section h2::before {
+    display: none;
+  }
+
+  .cta-section .section-sub {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .cta-section .cta-btn {
+    margin-top: 2rem;
+  }
+
+  /* ─── Responsive ──────────────────────────────── */
+  @media (max-width: 860px) {
+    .testimonial-card {
+      flex: 0 1 calc(50% - 1rem);
+    }
+    .yt-grid--3col {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .yt-grid--2col,
+    .yt-grid--3col {
+      grid-template-columns: 1fr;
+    }
+    .testimonial-card {
+      flex: 0 1 100%;
+    }
+  }
+</style>

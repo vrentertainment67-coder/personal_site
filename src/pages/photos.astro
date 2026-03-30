@@ -1,0 +1,365 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
+
+const photos = [
+  '07c0f6eab1701c1d508901023512a096.jpg',
+  '298c07a92d4903cbabd91c0b2a16abd6.jpg',
+  '395173e132071fd9ba0a5358c0fcd303.jpg',
+  '5bfd516625730ff7f8fc3183473e2be2.jpg',
+  '8cf00a645bcc4ebe2a282ecaa8ec0ad6.jpg',
+  '9cb31e23751f9a8e7f25f32ea3f0e089.jpg',
+  '22abc12a9a9074841eafc24eae21128f.jpg',
+  '0db7b40ce5a1d0021f56fb8f6484f71f.jpg',
+  'a287f96d3f2b80c7288439de3d1ceedf.jpg',
+  '829ffc472525d115862441b5e012bef0.jpg',
+  'bc00edb8969117ff526ed05cd958b80c.jpg',
+  'ff3d91ead582e8b7a152679931daad5a.jpg',
+  '056fb93002c33eaa1763e4e880c2eecd.jpg',
+  '0ed4bc46f1b6c558d03abac15e3ac199.jpg',
+  'bb614cf2b38f2b212cc415c0cf57deee.jpg',
+  'cd1199f6cfd9a119850b2f34d49a1e9b.jpg',
+  'ce0766bc3ffa73fc87e8dfaf906738a9.jpg',
+  'd222aeef9959bbddd0ef5e8ee8976664.jpg',
+  'fe08c6a572f16d1240f67ba7bfd7db1c.jpg',
+  '126ec1d3128a6ef981a1c441bbf81f60.jpg',
+  '1d6eeb6b40e1892ad04c43cf08ec89a3.jpg',
+  '3c8bf758088e7183b09a03f7fcbfd6a9.jpg',
+  '6b7bdc87a5287ffe665ad959a29301ae.jpg',
+  '83ab4f60989d531b991915ff5eae456b.jpg',
+  'c0199910b1e772b84eea44b34d52c783.jpg',
+  '188a0ef5634fc8e5183570efd933d4cb.jpg',
+  '08c724ec311ec5e595cb366401e0d8ff.jpg',
+  '1f95638535f32016a47b0deacc01ec00.jpg',
+  '87e451f54c478d9a3a09bbc70e6de835.jpg',
+  '8af6dead5831ada33a771ca333ff9400.jpg',
+  '035a62b9d94630a5ac59f8fe1b8f1cc7.jpg',
+  '083fe810983b545beddc2af7c3d1f058.jpg',
+  '21a5b0ba6fdbd10a2f44c432306785db.jpg',
+  '38757946d4f77aa7f52552c06f54812b.jpg',
+  '48b9289351995dc5ce57d99323b5f4b0.jpg',
+  '501a58cd4c0ce74544201712fb90e356.jpg',
+];
+---
+
+<Layout
+  title="DJ VIC — Live Events & Club Performances Gallery"
+  description="Photos from DJ VIC's live events, club performances, weddings and corporate events across Bangalore and beyond."
+>
+  <Nav />
+
+  <main>
+    <section id="gallery-hero" class="hero-bg">
+      <div class="section-label">Photo Gallery</div>
+      <h1>Live Events &amp;<br/>Performances</h1>
+      <p>
+        From Bangalore's top clubs to destination weddings and corporate stages —
+        captured in the moment.
+      </p>
+    </section>
+
+    <section id="gallery">
+      <div class="photo-grid">
+        {photos.map((src) => (
+          <div
+            class="photo-item"
+            data-src={`${BASE}${src}`}
+            role="button"
+            tabindex="0"
+            aria-label="View photo — DJ VIC"
+          >
+            <img
+              src={`${BASE}${src}`}
+              alt="DJ VIC — Live Event"
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── Lightbox ─────────────────────────────── -->
+    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+      <button id="lb-close" aria-label="Close">&times;</button>
+      <button id="lb-prev" aria-label="Previous photo">&#8592;</button>
+      <button id="lb-next" aria-label="Next photo">&#8594;</button>
+      <div id="lb-img-wrap">
+        <img id="lb-img" src="" alt="" />
+      </div>
+      <div id="lb-counter"></div>
+    </div>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  #gallery-hero {
+    background-image:
+      linear-gradient(to bottom, rgba(6,6,6,0.3) 0%, rgba(6,6,6,0.65) 50%, rgba(6,6,6,1) 100%),
+      url('https://hosting.renderforestsites.com/19480377/1066059/media/cbcb21ad3960fc82de8f296e385e745e.jpg');
+  }
+
+  /* ─── Gallery ───────────────────────────────── */
+  #gallery {
+    padding: 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .photo-item {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: #111;
+  }
+
+  .photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .photo-item:hover img {
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 900px) {
+    .photo-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .photo-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .photo-section {
+      padding: 2rem 1rem;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .photo-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ─── Photo item cursor ──────────────────────── */
+  .photo-item {
+    cursor: zoom-in;
+  }
+
+  /* ─── Lightbox ───────────────────────────────── */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.96);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #lightbox.open {
+    display: flex;
+  }
+
+  #lb-img-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    flex: 1;
+    padding: 4rem 6rem;
+    box-sizing: border-box;
+    min-height: 0;
+  }
+
+  #lb-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+  }
+
+  #lb-caption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding-bottom: 1.5rem;
+  }
+
+  #lb-caption-venue {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  #lb-caption-tag {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  #lb-counter {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.3);
+    padding-bottom: 0.75rem;
+  }
+
+  #lb-close {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    font-size: 2.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 1001;
+    padding: 0.25rem 0.5rem;
+  }
+
+  #lb-close:hover {
+    color: var(--white);
+  }
+
+  #lb-prev,
+  #lb-next {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white);
+    font-size: 1.25rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    z-index: 1001;
+  }
+
+  #lb-prev { left: 1.25rem; }
+  #lb-next { right: 1.25rem; }
+
+  #lb-prev:hover,
+  #lb-next:hover {
+    background: rgba(201,168,76,0.2);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  @media (max-width: 600px) {
+    #lb-img-wrap {
+      padding: 4.5rem 1rem 1rem;
+    }
+    #lb-prev { left: 0.5rem; }
+    #lb-next { right: 0.5rem; }
+  }
+</style>
+
+<script>
+  const items = Array.from(document.querySelectorAll('.photo-item'));
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbVenue = document.getElementById('lb-caption-venue');
+  const lbTag = document.getElementById('lb-caption-tag');
+  const lbCounter = document.getElementById('lb-counter');
+  const lbClose = document.getElementById('lb-close');
+  const lbPrev = document.getElementById('lb-prev');
+  const lbNext = document.getElementById('lb-next');
+
+  let current = 0;
+
+  function open(index) {
+    current = index;
+    show();
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function show() {
+    const item = items[current];
+    lbImg.src = item.dataset.src;
+    lbImg.alt = 'DJ VIC — Live Event';
+    lbCounter.textContent = (current + 1) + ' / ' + items.length;
+  }
+
+  function prev() {
+    current = (current - 1 + items.length) % items.length;
+    show();
+  }
+
+  function next() {
+    current = (current + 1) % items.length;
+    show();
+  }
+
+  // Click on photo
+  items.forEach((item, i) => {
+    item.addEventListener('click', () => open(i));
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(i); }
+    });
+  });
+
+  // Controls
+  lbClose.addEventListener('click', close);
+  lbPrev.addEventListener('click', prev);
+  lbNext.addEventListener('click', next);
+
+  // Click outside image to close
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) close();
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') prev();
+    if (e.key === 'ArrowRight') next();
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  lightbox.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+  });
+</script>

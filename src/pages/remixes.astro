@@ -1,0 +1,276 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const ytVideos = [
+  "wHOB8H-HB_Y","Hgb_g-xBblw","ssFIKwChfHc","modKUclnVJY","aN2BIfUNUs4",
+  "KWUoJJ6xsfk","rcGuVSoki6U","MXxbN1xYteY","zhaNQwYQi_8","gf0hYLxr6eo",
+  "Yx3pD4uhJRE","h48i6wSQjso","5oA311R6Wkg","PxgvwE1nZmw","4oTBe25wvE0",
+];
+
+const audiomackSlugs = [
+  "badtameezdil",
+  "ishqjalakar",
+  "rambhaho",
+  "luttlegaya",
+  "softly",
+  "69ca78246aaaa",
+  "69ca7829bfeb3",
+  "69ca782ad85f6",
+  "69ca782b2ec06",
+  "69ca782ead011",
+  "69ca782ef1c46",
+  "rapture-x-lat-lag-gayee",
+  "69ca7833c1c91",
+  "69ca7834567ec",
+  "69ca7835af06e",
+  "yeah-x-amplifier-usher-x-imran-khan",
+  "saturday-saturday-tech-house-edit",
+  "69ca783b117d5",
+  "dola-re-x-waves-wavs",
+  "yeh-ek-zindagi-afro-edit",
+  "69ca7847102f9",
+  "tere-liye-x-fallen-leaf",
+  "besharam-rang-x-mwaki",
+  "69ca784f8c695",
+];
+---
+
+<Layout
+  title="Remixes & Mashups — DJ VIC"
+  description="Stream and download DJ VIC's original remixes and mashups — Bollywood, English, and Indian fusion. Free on Audiomack."
+>
+  <Nav />
+
+  <main>
+
+    <section id="remixes-hero" class="hero-bg">
+      <div class="hero-header">
+        <div>
+          <h1>Remixes &amp;<br/>Mashups</h1>
+          <p class="tagline">From the dance floor to your playlist — remixed and reimagined.</p>
+        </div>
+        <a
+          href="https://audiomack.com/vrentertainment67"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="audiomack-link"
+        >
+          Follow on Audiomack &rarr;
+        </a>
+      </div>
+    </section>
+
+    <!-- Audiomack embeds -->
+    <section id="stream-section">
+      <div class="stream-header">
+        <h2>Stream &amp; Download Free</h2>
+        <p class="stream-label">Stream &amp; Download Free</p>
+      </div>
+      <div class="audiomack-grid">
+        {audiomackSlugs.map((slug) => (
+          <div class="audiomack-card">
+            <iframe
+              src={`https://audiomack.com/embed/vrentertainment67/song/${slug}`}
+              width="100%"
+              height="252"
+              scrolling="no"
+              allow="autoplay"
+              frameborder="0"
+              loading="lazy"
+            ></iframe>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section id="all-mixes">
+      <h2>All Mixes</h2>
+      <p>The full catalogue of mixes and DJ sets across all platforms.</p>
+      <ul>
+        <li>
+          <a href="https://audiomack.com/vrentertainment67" target="_blank" rel="noopener noreferrer">
+            Audiomack — Stream &amp; Download
+          </a>
+        </li>
+        <li>
+          <a href="https://hearthis.at/djvicofficial" target="_blank" rel="noopener noreferrer">
+            Hearthis.at — djvicofficial
+          </a>
+        </li>
+        <li>
+          <a href="https://www.mixcloud.com/thedjvicofficial/" target="_blank" rel="noopener noreferrer">
+            Mixcloud — DJ Sets
+          </a>
+        </li>
+      </ul>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  #remixes-hero {
+    background-image:
+      linear-gradient(to bottom, rgba(6,6,6,0.4) 0%, rgba(6,6,6,0.65) 50%, rgba(6,6,6,1) 100%),
+      url('https://hosting.renderforestsites.com/19480377/1066059/media/8e04c902b5752f2a05c19bca328c6c9e.jpg');
+  }
+
+  .hero-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .audiomack-link {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.4);
+    padding-bottom: 3px;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    align-self: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  .audiomack-link:hover {
+    color: var(--gold-light);
+    border-color: var(--gold-light);
+  }
+
+  /* YouTube grid */
+  #yt-section,
+  #stream-section {
+    background: #0a0a0a;
+  }
+
+  .yt-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 2rem;
+  }
+
+  .yt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .yt-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+    border-radius: 6px;
+  }
+
+  .yt-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .yt-card:hover .yt-thumb img {
+    transform: scale(1.04);
+  }
+
+  .yt-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s;
+    color: var(--gold);
+  }
+
+  .yt-play svg {
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+  }
+
+  .yt-card:hover .yt-play {
+    opacity: 1;
+  }
+
+  .yt-tag {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* Audiomack grid */
+  .stream-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stream-header h2 {
+    margin-bottom: 0;
+  }
+
+  .stream-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.4);
+    padding: 0.35rem 0.85rem;
+    max-width: none;
+    margin: 0;
+  }
+
+  .audiomack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .audiomack-card {
+    background: #111;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #1e1e1e;
+  }
+
+  .audiomack-card iframe {
+    display: block;
+  }
+
+  @media (max-width: 900px) {
+    .yt-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .yt-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .audiomack-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
