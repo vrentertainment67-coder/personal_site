@@ -45,6 +45,20 @@ const fromVicFix = Astro.url.searchParams.get('from') === 'vicfix';
     </section>
   </main>
   <Footer />
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const from = params.get('from');
+  const waBtn = document.querySelector('.whatsapp-btn');
+  if (waBtn) {
+    if (from === 'vicfix') {
+      waBtn.href = 'https://wa.me/918105363636?text=Hi+Vic,+I+just+applied+to+be+a+guest+on+The+Vic+Fix';
+    } else {
+      waBtn.href = 'https://wa.me/918105363636?text=Hi+Vic,+I+just+filled+your+booking+enquiry+form';
+    }
+  }
+</script>
+
 </Layout>
 
 <style>

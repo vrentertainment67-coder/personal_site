@@ -304,6 +304,25 @@ const services = [
   </main>
 
   <Footer />
+
+<script>
+  const bookingForm = document.querySelector('form[action*="xdapzdnw"]');
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', function () {
+      const name = document.getElementById('name')?.value || '';
+      const phone = document.getElementById('phone')?.value || '';
+      const eventType = document.getElementById('event_type')?.value || '';
+      const eventDate = document.getElementById('event_date')?.value || '';
+      const msg = encodeURIComponent(
+        `🎧 New Booking Enquiry\n\nName: ${name}\nPhone: ${phone}\nEvent: ${eventType}\nDate: ${eventDate}\n\n(Full details sent to email)`
+      );
+      setTimeout(() => {
+        window.open(`https://wa.me/918105363636?text=${msg}`, '_blank');
+      }, 1000);
+    });
+  }
+</script>
+
 </Layout>
 
 <style>

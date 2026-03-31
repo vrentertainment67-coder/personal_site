@@ -304,6 +304,23 @@ const platforms = [
   </main>
 
   <Footer />
+
+<script>
+  const guestForm = document.querySelector('form[action*="mzdkgvpq"]');
+  if (guestForm) {
+    guestForm.addEventListener('submit', function () {
+      const name = document.getElementById('guest-name')?.value || '';
+      const role = document.getElementById('guest-role')?.value || '';
+      const msg = encodeURIComponent(
+        `🎙️ New VIC Fix Guest Application\n\nName: ${name}\nRole: ${role}\n\n(Full details sent to email)`
+      );
+      setTimeout(() => {
+        window.open(`https://wa.me/918105363636?text=${msg}`, '_blank');
+      }, 1000);
+    });
+  }
+</script>
+
 </Layout>
 
 <style>
