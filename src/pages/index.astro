@@ -21,7 +21,7 @@ const services = [
   {
     name: "Club & Nightlife",
     href: "/#contact",
-    desc: "Resident sets, guest slots, and headline club nights — open-format music built for the floor.",
+    desc: "Guest slots and headline club nights — open-format music and audio-visual sets built for the floor.",
     bg: `${BASE}38757946d4f77aa7f52552c06f54812b.jpg`,
   },
   {
@@ -175,6 +175,10 @@ const services = [
         digital space. Whether in clubs, corporate events, or curated concept nights —
         he designs experiences, not just playlists.
       </p>
+      <div class="av-callout">
+        <span class="av-label">Signature</span>
+        <p>DJ VIC is known for his <strong>audio-visual sets</strong> — original music synced with visuals, crafted as a single, immersive performance. A format he has taken to clubs, corporate stages, and destination weddings across India and internationally.</p>
+      </div>
     </section>
 
     <!-- ===================== SERVICES ===================== -->
@@ -279,6 +283,34 @@ const services = [
 </Layout>
 
 <style>
+  /* ── AV CALLOUT ──────────────────────────────────── */
+  .av-callout {
+    margin-top: 2rem;
+    border-left: 3px solid var(--gold);
+    padding: 1.25rem 1.5rem;
+    background: rgba(201,168,76,0.05);
+  }
+  .av-label {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .av-callout p {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    margin: 0;
+    max-width: 60ch;
+  }
+  .av-callout strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+
   /* ── HERO ────────────────────────────────────────── */
   #hero {
     min-height: 100svh;
