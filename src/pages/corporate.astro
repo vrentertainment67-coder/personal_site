@@ -6,19 +6,29 @@ import Footer from '../components/Footer.astro';
 ---
 
 <Layout
-  title="Corporate DJ in Bangalore — DJ VIC"
-  description="DJ VIC — Premium DJ + MC services for corporate events in Bangalore. 19+ years of experience delivering high-energy experiences for conferences, product launches, annual days, and brand celebrations."
+  title="Corporate DJ in Bangalore — Conferences, Product Launches & Annual Days | DJ VIC"
+  description="DJ VIC delivers premium DJ + MC services for corporate events in Bangalore. Trusted by SAP, Infosys, KPMG & more. Book for conferences, product launches, annual days, and brand activations."
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Corporate DJ Services by DJ VIC",
+    "provider": { "@type": "LocalBusiness", "name": "DJ VIC Official", "url": "https://djvicofficial.com" },
+    "serviceType": "Corporate Event DJ",
+    "areaServed": ["Bangalore", "India", "International"],
+    "description": "Premium DJ and MC services for corporate events including conferences, product launches, annual days, award nights, and brand activations.",
+    "url": "https://djvicofficial.com/corporate/"
+  }}
 >
   <Nav />
 
-  <main>
+  <main id="main-content">
 
     <!-- ══════════════════════════════════════════
          1. HERO
     ══════════════════════════════════════════ -->
     <section id="corporate-hero" class="hero-bg">
-      <h1>Built for<br/>Big Moments</h1>
-      <p class="tagline">Premium DJ + MC for Corporate Events</p>
+      <h1>Corporate DJ in Bangalore</h1>
+      <p class="tagline">Built for Big Moments</p>
       <p>High-energy experiences, delivered with precision and crowd control.</p>
       <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ VIC for Your Event</a>
     </section>

@@ -24,19 +24,56 @@ const avVideoId = "3FJl0cbpOYY";
 ---
 
 <Layout
-  title="Wedding DJ in Bangalore | Luxury Wedding DJ — DJ VIC"
-  description="DJ VIC — 19+ years of experience creating unforgettable music experiences for sangeet nights, cocktail parties, receptions, and luxury destination weddings."
+  title="Wedding DJ in Bangalore — Sangeet, Reception & Destination Weddings | DJ VIC"
+  description="DJ VIC is Bangalore's top wedding DJ. Curated music for sangeet nights, cocktail hours, receptions, and destination weddings across India and abroad. 19+ years experience."
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Wedding DJ Services by DJ VIC",
+      "provider": {
+        "@type": "LocalBusiness",
+        "name": "DJ VIC Official",
+        "url": "https://djvicofficial.com"
+      },
+      "serviceType": "Wedding DJ",
+      "areaServed": ["Bangalore", "India", "International"],
+      "description": "Premium DJ services for sangeet nights, cocktail hours, wedding receptions, and destination weddings. DJ VIC creates bespoke music experiences tailored to every couple.",
+      "url": "https://djvicofficial.com/weddings/"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How far in advance should I book DJ VIC for my wedding?",
+          "acceptedAnswer": { "@type": "Answer", "text": "We recommend booking at least 3–6 months in advance, especially for peak wedding season (October–February). Popular dates fill quickly." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does DJ VIC perform at destination weddings?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. DJ VIC has performed at destination weddings across India and internationally, including Sri Lanka and beyond." }
+        },
+        {
+          "@type": "Question",
+          "name": "What events does DJ VIC cover at a wedding?",
+          "acceptedAnswer": { "@type": "Answer", "text": "DJ VIC covers all wedding events including sangeet nights, mehendi, cocktail hours, wedding receptions, and after-parties." }
+        }
+      ]
+    }
+  ]}
 >
   <Nav />
 
-  <main>
+  <main id="main-content">
 
     <!-- ══════════════════════════════════════════
          1. HERO
     ══════════════════════════════════════════ -->
     <section id="weddings-hero" class="hero-bg">
-      <h1>Your Love Story,<br/>Our Soundtrack</h1>
-      <p class="tagline">From Sangeet Night to the Last Dance</p>
+      <h1>Wedding DJ in Bangalore</h1>
+      <p class="tagline">Your Love Story, Our Soundtrack</p>
       <p>Wedding stories told through music, moments, and movement.</p>
       <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
     </section>

@@ -1,0 +1,114 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout
+  title="Sangeet Night DJ in Bangalore — DJ VIC | Bollywood & Punjabi Sets"
+  description="DJ VIC specialises in sangeet night DJ sets in Bangalore. High-energy Bollywood, Punjabi, and fusion music for your pre-wedding celebrations. Book now."
+  canonical="https://djvicofficial.com/sangeet/"
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Sangeet Night DJ by DJ VIC",
+    "provider": { "@type": "LocalBusiness", "name": "DJ VIC Official", "url": "https://djvicofficial.com" },
+    "serviceType": "Sangeet Night DJ",
+    "areaServed": ["Bangalore", "India"],
+    "description": "High-energy Bollywood, Punjabi, and fusion DJ sets tailored for sangeet nights and pre-wedding celebrations.",
+    "url": "https://djvicofficial.com/sangeet/"
+  }}
+>
+  <Nav />
+  <main id="main-content">
+
+    <section id="sangeet-hero" class="hero-bg">
+      <div class="section-label">Pre-Wedding Entertainment</div>
+      <h1>Sangeet Night DJ in Bangalore</h1>
+      <p class="tagline">Bollywood, Punjabi & Fusion — All Night Long</p>
+      <p>
+        Your sangeet night deserves more than a playlist. DJ VIC curates a live set
+        that moves with the energy of the room — from the opening dance to the last
+        Bollywood anthem.
+      </p>
+      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Sangeet &rarr;</a>
+    </section>
+
+    <section id="sangeet-about">
+      <div class="section-label">What We Do</div>
+      <h2>A Sangeet Set Built Around You</h2>
+      <p class="section-sub">
+        Every sangeet is different. DJ VIC works with you beforehand to understand
+        your family's taste, the flow of the evening, and any must-play tracks —
+        then delivers a set that feels completely bespoke.
+      </p>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <span class="feature-label">Bollywood Classics to Current Hits</span>
+          <p>From 90s golden era to the latest chartbusters — we read the floor and keep energy high all night.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">Punjabi & Regional Music</span>
+          <p>Bhangra, Punjabi pop, and regional favourites woven seamlessly into the set.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">Choreography Sync</span>
+          <p>Coordinating with your choreographer to cue tracks at the right moments.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">Custom Mashups</span>
+          <p>Signature DJ VIC mashups and edits that no one else will play at your event.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sangeet-cta" class="cta-section">
+      <h2>Ready to Plan Your Sangeet Night?</h2>
+      <p class="section-sub">Get in touch and let's build the perfect set for your pre-wedding celebration.</p>
+      <a href={`${base}/weddings/`} class="cta-btn cta-btn--gold">See Wedding Services &rarr;</a>
+    </section>
+
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  #sangeet-hero {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.88) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.2) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
+      url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&q=85');
+    background-position: center center;
+  }
+  .section-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+  }
+  h2 { color: var(--white); }
+  .section-sub { color: rgba(255,255,255,0.65); max-width: 680px; margin-top: 0.5rem; margin-bottom: 2rem; }
+  .cta-btn {
+    display: inline-block; padding: 0.85rem 2rem; font-family: var(--font-body);
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px; margin-top: 2rem;
+  }
+  .cta-btn--gold { background: var(--gold); color: #000; border: 1px solid var(--gold); }
+  .cta-btn--gold:hover { background: var(--gold-light); color: #000; transform: translateY(-1px); }
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem;
+  }
+  .feature-item {
+    background: #111; border: 1px solid rgba(201,168,76,0.12);
+    border-left: 3px solid var(--gold); padding: 1.5rem;
+  }
+  .feature-label {
+    display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+  }
+  .feature-item p { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.7; margin: 0; }
+  .cta-section { text-align: center; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(201,168,76,0.1); }
+  .cta-section h2::before { display: none; }
+  .cta-section .section-sub { margin-left: auto; margin-right: auto; text-align: center; }
+  @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
+</style>

@@ -34,12 +34,23 @@ const platforms = [
 ---
 
 <Layout
-  title="The VIC Fix — Podcast by DJ VIC"
-  description="The VIC Fix: Real Stories. Real Culture. Real Nightlife. A long-form podcast by DJ VIC documenting India's nightlife culture through unfiltered conversations with DJs, artists, founders, and creative leaders."
+  title="The VIC Fix — India's Nightlife Podcast by DJ VIC | 38+ Episodes"
+  description="The VIC Fix is a long-form podcast by DJ VIC documenting India's nightlife culture. Real conversations with DJs, bartenders, venue founders, and artists. 2 seasons, 38+ episodes on YouTube."
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "PodcastSeries",
+    "name": "The VIC Fix",
+    "url": "https://djvicofficial.com/thevicfix/",
+    "description": "A long-form podcast by DJ VIC documenting India's nightlife culture through unfiltered conversations with DJs, artists, founders, and creative leaders.",
+    "author": { "@type": "Person", "name": "DJ VIC" },
+    "webFeed": "https://www.youtube.com/@thedjvicofficial",
+    "inLanguage": "en-IN",
+    "numberOfEpisodes": 38
+  }}
 >
   <Nav />
 
-  <main>
+  <main id="main-content">
 
     <!-- ══════════════════════════════════════════
          1. HERO

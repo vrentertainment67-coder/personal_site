@@ -1,0 +1,112 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout
+  title="Private Event DJ in Bangalore — Birthdays, House Parties & Social Events | DJ VIC"
+  description="DJ VIC brings professional DJ setups and curated music to private events in Bangalore — milestone birthdays, house parties, anniversaries, and intimate celebrations."
+  canonical="https://djvicofficial.com/private-events/"
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Private Event DJ by DJ VIC",
+    "provider": { "@type": "LocalBusiness", "name": "DJ VIC Official", "url": "https://djvicofficial.com" },
+    "serviceType": "Private Event DJ",
+    "areaServed": ["Bangalore", "India"],
+    "description": "Professional DJ setups and curated music for private events in Bangalore — birthdays, house parties, anniversaries, and intimate celebrations.",
+    "url": "https://djvicofficial.com/private-events/"
+  }}
+>
+  <Nav />
+  <main id="main-content">
+
+    <section id="private-hero" class="hero-bg">
+      <div class="section-label">Private Events</div>
+      <h1>Private Event DJ in Bangalore</h1>
+      <p class="tagline">Your Party, Your Music, Your Rules</p>
+      <p>
+        Milestone birthdays, intimate house parties, anniversary dinners — DJ VIC
+        brings a professional setup and a set built entirely around you and your guests.
+      </p>
+      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Event &rarr;</a>
+    </section>
+
+    <section id="private-about">
+      <div class="section-label">What We Do</div>
+      <h2>Music That Fits Your Moment</h2>
+      <p class="section-sub">
+        No templates, no generic playlists. DJ VIC works with you ahead of the event to
+        understand your taste, your guests, and the mood you want to create — then delivers exactly that.
+      </p>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <span class="feature-label">Milestone Birthdays</span>
+          <p>30s, 40s, 50s and beyond — sets that span the era and soundtrack the celebration properly.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">House Parties</span>
+          <p>Professional sound in an intimate setting — without the club-night energy if that's not the vibe.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">Anniversaries & Dinners</span>
+          <p>From background ambience to a full dance floor moment — calibrated to the tone of the evening.</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">Custom Playlists</span>
+          <p>Pre-event consultation to lock in must-plays, avoid certain tracks, and understand the crowd.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="private-cta" class="cta-section">
+      <h2>Planning a Private Event?</h2>
+      <p class="section-sub">Get in touch to check availability and discuss what you need.</p>
+      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Get in Touch &rarr;</a>
+    </section>
+
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  #private-hero {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.88) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.2) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
+      url('https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&q=85');
+    background-position: center center;
+  }
+  .section-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+  }
+  h2 { color: var(--white); }
+  .section-sub { color: rgba(255,255,255,0.65); max-width: 680px; margin-top: 0.5rem; margin-bottom: 2rem; }
+  .cta-btn {
+    display: inline-block; padding: 0.85rem 2rem; font-family: var(--font-body);
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px; margin-top: 2rem;
+  }
+  .cta-btn--gold { background: var(--gold); color: #000; border: 1px solid var(--gold); }
+  .cta-btn--gold:hover { background: var(--gold-light); color: #000; transform: translateY(-1px); }
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem;
+  }
+  .feature-item {
+    background: #111; border: 1px solid rgba(201,168,76,0.12);
+    border-left: 3px solid var(--gold); padding: 1.5rem;
+  }
+  .feature-label {
+    display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+  }
+  .feature-item p { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.7; margin: 0; }
+  .cta-section { text-align: center; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(201,168,76,0.1); }
+  .cta-section h2::before { display: none; }
+  .cta-section .section-sub { margin-left: auto; margin-right: auto; text-align: center; }
+  @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
+</style>

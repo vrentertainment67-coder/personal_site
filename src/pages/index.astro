@@ -46,12 +46,71 @@ const services = [
 ---
 
 <Layout
-  title="DJ VIC — International DJ, Producer & Remixer | Bangalore"
-  description="DJ VIC — 19+ years of international experience across India, the UK, and Australia. Original remixes, weddings, corporate events, and nightlife culture."
+  title="DJ VIC — Wedding & Corporate DJ in Bangalore | 19+ Years Experience"
+  description="DJ VIC is Bangalore's premier DJ for weddings, corporate events, and nightlife. 19+ years, 1360+ events, 18 countries. Book for sangeet nights, receptions, product launches, and club nights."
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "DJ VIC",
+      "url": "https://djvicofficial.com",
+      "image": "https://hosting.renderforestsites.com/19480377/1066059/media/a492fd01e8532f473aa84075c5a1f840.png",
+      "jobTitle": "DJ, Music Producer & Remixer",
+      "description": "International DJ and music producer based in Bangalore with 19+ years of experience across weddings, corporate events, and nightlife.",
+      "sameAs": [
+        "https://instagram.djvicofficial.com",
+        "https://www.youtube.com/@thedjvicofficial",
+        "https://www.facebook.com/djvicofficial"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "DJ VIC Official",
+      "url": "https://djvicofficial.com",
+      "telephone": "+918105363636",
+      "email": "bookings@djvicofficial.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Bangalore",
+        "addressRegion": "Karnataka",
+        "addressCountry": "IN"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 12.9716,
+        "longitude": 77.5946
+      },
+      "priceRange": "₹₹₹",
+      "servesCuisine": null,
+      "areaServed": ["Bangalore", "India", "International"],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "DJ Services",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wedding DJ Services" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Corporate Event DJ" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Sangeet Night DJ" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Club Night DJ" } }
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "DJ VIC Official",
+      "url": "https://djvicofficial.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://djvicofficial.com/?s={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]}
 >
   <Nav />
 
-  <main>
+  <main id="main-content">
 
     <!-- ===================== HERO ===================== -->
     <section id="hero" class="hero-bg">
