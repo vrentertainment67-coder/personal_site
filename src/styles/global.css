@@ -528,7 +528,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   background: var(--black-card);
   border: 1px solid #2a2a2a;
   color: var(--white);
@@ -545,9 +546,19 @@ textarea::placeholder {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--gold);
+}
+
+select option {
+  background: var(--black-card);
+  color: var(--white);
+}
+
+label span {
+  color: var(--gold);
 }
 
 textarea {

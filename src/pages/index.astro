@@ -266,13 +266,37 @@ const services = [
       </ul>
 
       <h3>Send a Message</h3>
-      <form method="POST" action="#contact">
-        <label for="name">Name</label>
-        <input id="name" name="name" type="text" required placeholder="Your name" />
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required placeholder="your@email.com" />
+      <form method="POST" action="https://formspree.io/f/xdapzdnw">
+        <input type="hidden" name="_subject" value="New Booking Enquiry — DJ VIC" />
+        <input type="hidden" name="_next" value="https://djvicofficial.com/thanks/" />
+        <input type="text" name="_gotcha" style="display:none" />
+
+        <label for="name">Your Name <span>*</span></label>
+        <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name" />
+
+        <label for="email">Email Address <span>*</span></label>
+        <input id="email" type="email" name="email" required placeholder="your@email.com" autocomplete="email" />
+
+        <label for="phone">Phone / WhatsApp <span>*</span></label>
+        <input id="phone" type="tel" name="phone" required placeholder="+91 98765 43210" autocomplete="tel" />
+
+        <label for="event_type">Event Type <span>*</span></label>
+        <select id="event_type" name="event_type" required>
+          <option value="" disabled selected>Select event type</option>
+          <option value="Wedding">Wedding</option>
+          <option value="Corporate">Corporate Event</option>
+          <option value="Private Party">Private Party</option>
+          <option value="Club Night">Club Night</option>
+          <option value="Festival">Festival</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label for="event_date">Event Date</label>
+        <input id="event_date" type="date" name="event_date" />
+
         <label for="message">Message</label>
-        <textarea id="message" name="message" rows="5" required placeholder="Your message"></textarea>
+        <textarea id="message" name="message" rows="5" placeholder="Tell us about your event..."></textarea>
+
         <button type="submit">Send Message</button>
       </form>
     </section>
