@@ -9,64 +9,170 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   title="Sangeet Night DJ in Bangalore — DJ VIC | Bollywood & Punjabi Sets"
   description="DJ VIC specialises in sangeet night DJ sets in Bangalore. High-energy Bollywood, Punjabi, and fusion music for your pre-wedding celebrations. Book now."
   canonical="https://djvicofficial.com/sangeet/"
-  schema={{
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "name": "Sangeet Night DJ by DJ VIC",
-    "provider": { "@type": "LocalBusiness", "name": "DJ VIC Official", "url": "https://djvicofficial.com" },
-    "serviceType": "Sangeet Night DJ",
-    "areaServed": ["Bangalore", "India"],
-    "description": "High-energy Bollywood, Punjabi, and fusion DJ sets tailored for sangeet nights and pre-wedding celebrations.",
-    "url": "https://djvicofficial.com/sangeet/"
-  }}
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Sangeet Night DJ Bangalore — DJ VIC",
+      "provider": { "@id": "https://djvicofficial.com/#business" },
+      "serviceType": "Sangeet Night DJ",
+      "areaServed": ["Bangalore", "India"],
+      "description": "High-energy Bollywood, Punjabi, and fusion DJ sets tailored for sangeet nights and pre-wedding celebrations.",
+      "url": "https://djvicofficial.com/sangeet/"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What genres does DJ VIC play at a sangeet night?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DJ VIC plays Bollywood classics and current hits, Punjabi and bhangra tracks, regional favourites, and his signature mashups. He tailors the set to the family's preferences after a pre-event consultation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can DJ VIC coordinate with our sangeet choreographer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. DJ VIC coordinates with your choreographer before the event to cue specific tracks at the right moments, manage transitions between performances, and keep the energy high between acts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does DJ VIC also cover the wedding reception?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Many couples book DJ VIC for both their sangeet night and wedding reception. Visit the Weddings page for full details on reception packages."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How early should I book DJ VIC for my sangeet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Wedding season dates (October–March) fill up 3–6 months in advance. Book as early as possible to secure your date, especially for peak season weekends."
+          }
+        }
+      ]
+    }
+  ]}
 >
   <Nav />
   <main id="main-content">
 
-    <section id="sangeet-hero" class="hero-bg">
-      <div class="section-label">Pre-Wedding Entertainment</div>
-      <h1>Sangeet Night DJ in Bangalore</h1>
-      <p class="tagline">Bollywood, Punjabi & Fusion — All Night Long</p>
-      <p>
-        Your sangeet night deserves more than a playlist. DJ VIC curates a live set
-        that moves with the energy of the room — from the opening dance to the last
-        Bollywood anthem.
-      </p>
-      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Sangeet &rarr;</a>
+    <section id="sangeet-hero" class="hero-section">
+      <div class="hero-inner">
+        <div class="section-label">Pre-Wedding Entertainment</div>
+        <h1>Sangeet Night DJ<br/>in Bangalore</h1>
+        <p class="hero-sub">Bollywood, Punjabi &amp; Fusion — All Night Long. Your sangeet deserves more than a playlist.</p>
+        <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Sangeet &rarr;</a>
+      </div>
     </section>
 
     <section id="sangeet-about">
-      <div class="section-label">What We Do</div>
-      <h2>A Sangeet Set Built Around You</h2>
-      <p class="section-sub">
-        Every sangeet is different. DJ VIC works with you beforehand to understand
-        your family's taste, the flow of the evening, and any must-play tracks —
-        then delivers a set that feels completely bespoke.
-      </p>
-      <div class="feature-grid">
-        <div class="feature-item">
-          <span class="feature-label">Bollywood Classics to Current Hits</span>
-          <p>From 90s golden era to the latest chartbusters — we read the floor and keep energy high all night.</p>
+      <div class="section-inner">
+        <div class="section-label">What We Do</div>
+        <h2>A Sangeet Set Built Around You</h2>
+        <p class="section-sub">
+          Every sangeet is different. DJ VIC works with you beforehand to understand your family's taste,
+          the flow of the evening, and any must-play tracks — then delivers a set that feels completely bespoke.
+        </p>
+        <div class="features-grid">
+          <div class="feature-item">
+            <span class="feature-label">Bollywood Classics to Current Hits</span>
+            <p>From 90s golden era to the latest chartbusters — we read the floor and keep energy high all night.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Punjabi &amp; Regional Music</span>
+            <p>Bhangra, Punjabi pop, and regional favourites woven seamlessly into the set.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Choreography Sync</span>
+            <p>Coordinating with your choreographer to cue tracks at the right moments and manage transitions between performances.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Custom Mashups</span>
+            <p>Signature DJ VIC mashups and edits — unique tracks that no one else will play at your event.</p>
+          </div>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">Punjabi & Regional Music</span>
-          <p>Bhangra, Punjabi pop, and regional favourites woven seamlessly into the set.</p>
+      </div>
+    </section>
+
+    <section id="sangeet-venues">
+      <div class="section-inner">
+        <div class="section-label">Past Venues</div>
+        <h2>Played Across Bangalore's Best</h2>
+        <p class="section-sub">
+          19+ years of sangeet nights at Bangalore's top wedding venues. DJ VIC knows the rooms, the acoustics, and how to work them.
+        </p>
+        <div class="venues-grid">
+          <div class="venue-item">The Leela Palace</div>
+          <div class="venue-item">ITC Windsor</div>
+          <div class="venue-item">Taj West End</div>
+          <div class="venue-item">Radisson Blu</div>
+          <div class="venue-item">The Ritz-Carlton</div>
+          <div class="venue-item">Shangri-La Bangalore</div>
+          <div class="venue-item">Hyatt Centric</div>
+          <div class="venue-item">Sheraton Grand</div>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">Choreography Sync</span>
-          <p>Coordinating with your choreographer to cue tracks at the right moments.</p>
+      </div>
+    </section>
+
+    <section id="sangeet-testimonial">
+      <div class="section-inner">
+        <blockquote class="testimonial">
+          <p class="testimonial-text">
+            "DJ VIC absolutely nailed our sangeet. He knew exactly when to slow things down for the family moments and when to fire up the floor. Every single person danced all night. Unforgettable."
+          </p>
+          <footer class="testimonial-author">
+            <span class="author-name">Kruthi Singar</span>
+            <span class="author-event">Sangeet Night — Bangalore</span>
+          </footer>
+        </blockquote>
+      </div>
+    </section>
+
+    <section id="sangeet-faq">
+      <div class="section-inner">
+        <div class="section-label">Questions</div>
+        <h2>Frequently Asked</h2>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>What genres does DJ VIC play at a sangeet night?</summary>
+            <p>DJ VIC plays Bollywood classics and current hits, Punjabi and bhangra tracks, regional favourites, and his signature mashups. He tailors the set to the family's preferences after a pre-event consultation.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can DJ VIC coordinate with our sangeet choreographer?</summary>
+            <p>Yes. DJ VIC coordinates with your choreographer before the event to cue specific tracks at the right moments, manage transitions between performances, and keep the energy high between acts.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Does DJ VIC also cover the wedding reception?</summary>
+            <p>Yes. Many couples book DJ VIC for both their sangeet night and wedding reception. Visit the <a href={`${base}/weddings/`}>Weddings page</a> for full details on reception packages.</p>
+          </details>
+          <details class="faq-item">
+            <summary>How early should I book DJ VIC for my sangeet?</summary>
+            <p>Wedding season dates (October–March) fill up 3–6 months in advance. Book as early as possible to secure your date, especially for peak season weekends.</p>
+          </details>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">Custom Mashups</span>
-          <p>Signature DJ VIC mashups and edits that no one else will play at your event.</p>
-        </div>
+      </div>
+    </section>
+
+    <section id="sangeet-links">
+      <div class="section-inner links-row">
+        <span class="links-label">Explore more</span>
+        <a href={`${base}/weddings/`}>Wedding DJ &rarr;</a>
+        <a href={`${base}/private-events/`}>Private Events &rarr;</a>
+        <a href={`${base}/remixes/`}>Bollywood Remixes &rarr;</a>
       </div>
     </section>
 
     <section id="sangeet-cta" class="cta-section">
       <h2>Ready to Plan Your Sangeet Night?</h2>
       <p class="section-sub">Get in touch and let's build the perfect set for your pre-wedding celebration.</p>
-      <a href={`${base}/weddings/`} class="cta-btn cta-btn--gold">See Wedding Services &rarr;</a>
+      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
     </section>
 
   </main>
@@ -74,41 +180,283 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 </Layout>
 
 <style>
-  #sangeet-hero {
+  /* ─── Hero ─────────────────────────────────────── */
+  .hero-section {
+    min-height: 50svh;
+    display: flex;
+    align-items: flex-end;
     background-image:
-      linear-gradient(to right, rgba(0,0,0,0.88) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.2) 100%),
-      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
+      linear-gradient(to right, rgba(0,0,0,0.92) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.2) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%),
       url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&q=85');
-    background-position: center center;
+    background-size: cover;
+    background-position: center;
+    padding: 0;
   }
+
+  .hero-inner {
+    padding: 8rem 2.5rem 4rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-section h1 {
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    line-height: 1.05;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 1rem;
+    max-width: 50ch;
+    margin: 0 0 2rem;
+  }
+
+  /* ─── Section layout ──────────────────────────── */
+  .section-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
   .section-label {
-    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.25em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
   }
-  h2 { color: var(--white); }
-  .section-sub { color: rgba(255,255,255,0.65); max-width: 680px; margin-top: 0.5rem; margin-bottom: 2rem; }
+
+  h2 { color: var(--white); margin-bottom: 1rem; }
+
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 65ch;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+
+  /* ─── Features grid ───────────────────────────── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .feature-item {
+    background: #111;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-left: 3px solid var(--gold);
+    padding: 1.5rem 1.75rem;
+  }
+
+  .feature-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+
+  .feature-item p {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ─── Venues ──────────────────────────────────── */
+  #sangeet-venues { background: #080808; }
+
+  .venues-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.08);
+    margin-top: 2.5rem;
+  }
+
+  .venue-item {
+    background: #0d0d0d;
+    padding: 1.25rem 1.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.65);
+  }
+
+  /* ─── Testimonial ─────────────────────────────── */
+  .testimonial {
+    border-left: 3px solid var(--gold);
+    padding: 2rem 2.5rem;
+    background: #111;
+    margin: 0;
+  }
+
+  .testimonial-text {
+    font-size: 1.1rem;
+    line-height: 1.75;
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+    margin: 0 0 1.5rem;
+  }
+
+  .testimonial-author {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .author-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .author-event {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── FAQ ─────────────────────────────────────── */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 2rem;
+    border-top: 1px solid rgba(201,168,76,0.12);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+  }
+
+  .faq-item summary {
+    padding: 1.25rem 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--white);
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .faq-item summary::-webkit-details-marker { display: none; }
+
+  .faq-item summary::after {
+    content: '+';
+    color: var(--gold);
+    font-size: 1.25rem;
+    font-weight: 300;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .faq-item[open] summary::after { transform: rotate(45deg); }
+
+  .faq-item p {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+    margin: 0;
+    padding-bottom: 1.25rem;
+  }
+
+  .faq-item a {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .faq-item a:hover { text-decoration: underline; }
+
+  /* ─── Internal links ──────────────────────────── */
+  #sangeet-links {
+    border-top: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .links-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .links-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-right: 0.5rem;
+  }
+
+  .links-row a {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .links-row a:hover { opacity: 0.7; }
+
+  /* ─── CTA ─────────────────────────────────────── */
+  .cta-section {
+    text-align: center;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .cta-section h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+  .cta-section h2::before { display: none; }
+  .cta-section .section-sub { margin-inline: auto; }
+
   .cta-btn {
-    display: inline-block; padding: 0.85rem 2rem; font-family: var(--font-body);
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
-    cursor: pointer; transition: background 0.2s, color 0.2s, transform 0.15s;
-    border-radius: 2px; margin-top: 2rem;
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px;
+    margin-top: 2rem;
+    text-decoration: none;
   }
+
   .cta-btn--gold { background: var(--gold); color: #000; border: 1px solid var(--gold); }
   .cta-btn--gold:hover { background: var(--gold-light); color: #000; transform: translateY(-1px); }
-  .feature-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem;
+
+  /* ─── Responsive ──────────────────────────────── */
+  @media (max-width: 900px) {
+    .venues-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  .feature-item {
-    background: #111; border: 1px solid rgba(201,168,76,0.12);
-    border-left: 3px solid var(--gold); padding: 1.5rem;
+
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .venues-grid { grid-template-columns: 1fr; }
+    .hero-inner { padding-inline: 1.25rem; }
+    .section-inner { padding-inline: 1.25rem; }
   }
-  .feature-label {
-    display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
-  }
-  .feature-item p { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.7; margin: 0; }
-  .cta-section { text-align: center; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(201,168,76,0.1); }
-  .cta-section h2::before { display: none; }
-  .cta-section .section-sub { margin-left: auto; margin-right: auto; text-align: center; }
-  @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
 </style>

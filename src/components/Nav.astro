@@ -3,6 +3,17 @@ const { pathname } = Astro.url;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const is = (path: string) => pathname === base + path || pathname === base + path + '/';
 const startsWith = (path: string) => pathname.startsWith(base + path);
+
+const services = [
+  { href: `${base}/weddings/`, label: 'Weddings' },
+  { href: `${base}/corporate/`, label: 'Corporate' },
+  { href: `${base}/sangeet/`, label: 'Sangeet Night' },
+  { href: `${base}/private-events/`, label: 'Private Events' },
+  { href: `${base}/nightlife/`, label: 'Club & Nightlife' },
+  { href: `${base}/festivals/`, label: 'Festivals' },
+];
+
+const isServices = startsWith('/weddings') || startsWith('/corporate') || startsWith('/sangeet') || startsWith('/private-events') || startsWith('/nightlife') || startsWith('/festivals');
 ---
 
 <header>
@@ -15,8 +26,28 @@ const startsWith = (path: string) => pathname.startsWith(base + path);
     </a>
     <ul>
       <li><a href={`${base}/#about`} class:list={[{ active: is('/') }]}>About</a></li>
-      <li><a href={`${base}/weddings/`} aria-current={startsWith('/weddings') ? 'page' : undefined}>Weddings</a></li>
-      <li><a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a></li>
+      <li class="has-dropdown">
+        <button
+          class:list={['dropdown-trigger', { active: isServices }]}
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Services <span class="chevron" aria-hidden="true">&#8964;</span>
+        </button>
+        <ul class="dropdown">
+          {services.map(({ href, label }) => (
+            <li>
+              <a
+                href={href}
+                aria-current={startsWith(href.replace(base, '').replace(/\/$/, '')) ? 'page' : undefined}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </li>
+      <li><a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a></li>
       <li><a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a></li>
       <li><a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a></li>
       <li><a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Photos</a></li>
@@ -24,3 +55,116 @@ const startsWith = (path: string) => pathname.startsWith(base + path);
     <a href={`${base}/#contact`} class="nav-phone">Contact</a>
   </nav>
 </header>
+
+<script>
+  // Dropdown open/close
+  document.querySelectorAll('.dropdown-trigger').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const li = btn.closest('.has-dropdown');
+      const isOpen = li?.classList.contains('open');
+      document.querySelectorAll('.has-dropdown.open').forEach((el) => el.classList.remove('open'));
+      if (!isOpen) li?.classList.add('open');
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.has-dropdown.open').forEach((el) => {
+      el.classList.remove('open');
+      el.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.has-dropdown.open').forEach((el) => {
+        el.classList.remove('open');
+        el.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+</script>
+
+<style>
+  /* Dropdown trigger looks like a nav link */
+  .dropdown-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-body);
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .dropdown-trigger:hover,
+  .dropdown-trigger.active {
+    color: var(--white);
+  }
+
+  .chevron {
+    font-size: 0.8em;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .has-dropdown.open .chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Dropdown panel */
+  .has-dropdown {
+    position: relative;
+  }
+
+  .dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0d0d0d;
+    border: 1px solid rgba(201,168,76,0.18);
+    min-width: 180px;
+    z-index: 200;
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    flex-direction: column;
+  }
+
+  .has-dropdown.open .dropdown {
+    display: flex;
+  }
+
+  .dropdown li { margin: 0; padding: 0; }
+
+  .dropdown a {
+    display: block;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .dropdown a:hover,
+  .dropdown a[aria-current='page'] {
+    color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+</style>

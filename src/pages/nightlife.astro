@@ -12,8 +12,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   schema={{
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Nightlife DJ by DJ VIC",
-    "provider": { "@type": "LocalBusiness", "name": "DJ VIC Official", "url": "https://djvicofficial.com" },
+    "name": "Club & Nightlife DJ Bangalore — DJ VIC",
+    "provider": { "@id": "https://djvicofficial.com/#business" },
     "serviceType": "Nightlife & Club DJ",
     "areaServed": ["Bangalore", "India"],
     "description": "High-energy club sets spanning Bollywood, hip-hop, EDM, and commercial house for Bangalore's top bars and clubs.",
@@ -23,41 +23,106 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   <Nav />
   <main id="main-content">
 
-    <section id="nightlife-hero" class="hero-bg">
-      <div class="section-label">Club & Bar Events</div>
-      <h1>Nightlife DJ in Bangalore</h1>
-      <p class="tagline">From First Drop to Last Call</p>
-      <p>
-        19+ years reading Bangalore's dance floors. DJ VIC brings the energy,
-        the programming, and the instinct to keep every room locked in all night.
-      </p>
-      <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Venue &rarr;</a>
+    <section id="nightlife-hero" class="hero-section">
+      <div class="hero-inner">
+        <div class="section-label">Club & Bar Events</div>
+        <h1>Club &amp; Nightlife<br/>DJ Bangalore</h1>
+        <p class="hero-sub">From First Drop to Last Call — 19+ years reading Bangalore's dance floors.</p>
+        <a href={`${base}/#contact`} class="cta-btn cta-btn--gold">Book DJ VIC for Your Venue &rarr;</a>
+      </div>
     </section>
 
     <section id="nightlife-about">
-      <div class="section-label">What We Do</div>
-      <h2>Built for the Dance Floor</h2>
-      <p class="section-sub">
-        Guest slots, headline nights, and concept events — DJ VIC
-        delivers a set calibrated to the room, the crowd, and the energy of the moment.
-      </p>
-      <div class="feature-grid">
-        <div class="feature-item">
-          <span class="feature-label">Bollywood & Commercial</span>
-          <p>The Bollywood hits and remix edits that keep Indian dance floors moving from 10pm to close.</p>
+      <div class="section-inner">
+        <div class="section-label">What DJ VIC Brings</div>
+        <h2>Built for the Dance Floor</h2>
+        <p class="section-sub">
+          Guest slots, headline nights, and concept events — DJ VIC delivers a set calibrated
+          to the room, the crowd, and the energy of the moment. No two nights sound the same.
+        </p>
+        <div class="features-grid">
+          <div class="feature-item">
+            <span class="feature-label">AV Sets</span>
+            <p>Music and visuals composed and synced together for a full sensory experience — DJ VIC's signature club offering.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Crowd Reading</span>
+            <p>19+ years of instinct. DJ VIC reads the floor in real time and adjusts the arc of the set to keep energy moving.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Genre Fluidity</span>
+            <p>Bollywood to hip-hop, commercial house to EDM — seamless genre transitions that hold the floor across a full night.</p>
+          </div>
+          <div class="feature-item">
+            <span class="feature-label">Pro Pioneer Setup</span>
+            <p>Full Pioneer CDJ setup with backup hardware. Club-standard gear, professionally maintained for every performance.</p>
+          </div>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">Hip-Hop & R&B</span>
-          <p>Current chart hits and classic anthems — seamlessly blended into the set at the right moment.</p>
+      </div>
+    </section>
+
+    <section id="nightlife-formats">
+      <div class="section-inner">
+        <div class="section-label">Formats</div>
+        <h2>How It Works</h2>
+        <div class="formats-grid">
+          <div class="format-card">
+            <span class="format-num">01</span>
+            <span class="format-name">Resident Nights</span>
+            <p>Regular weekly or monthly residency slots — DJ VIC builds the crowd and owns the room over time.</p>
+          </div>
+          <div class="format-card">
+            <span class="format-num">02</span>
+            <span class="format-name">Guest Slots</span>
+            <p>One-off guest appearances at existing club nights — DJ VIC brings his crowd and his sound.</p>
+          </div>
+          <div class="format-card">
+            <span class="format-num">03</span>
+            <span class="format-name">Headline Sets</span>
+            <p>Full headline billing for special events and venue takeovers — extended sets and full production.</p>
+          </div>
+          <div class="format-card">
+            <span class="format-num">04</span>
+            <span class="format-name">Pop-up & Brand Nights</span>
+            <p>DJ sets woven into brand activations, rooftop events, and experiential evenings.</p>
+          </div>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">EDM & House</span>
-          <p>Commercial EDM to deep and tech house — DJ VIC reads the room and takes it where it needs to go.</p>
+      </div>
+    </section>
+
+    <section id="nightlife-video">
+      <div class="section-inner">
+        <div class="section-label">Watch a Set</div>
+        <h2>Live from the Floor</h2>
+        <div class="video-wrap">
+          <a
+            href="https://youtu.be/wHOB8H-HB_Y"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="video-thumb"
+          >
+            <img
+              src="https://img.youtube.com/vi/wHOB8H-HB_Y/maxresdefault.jpg"
+              alt="VIC — Tu Hi Meri Shab Hai X Say What (Afro Mashup) — live club set"
+              loading="lazy"
+            />
+            <div class="video-play">
+              <svg viewBox="0 0 68 48" width="68" height="48">
+                <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                <path d="M45 24 27 14v20" fill="#000"/>
+              </svg>
+            </div>
+          </a>
         </div>
-        <div class="feature-item">
-          <span class="feature-label">Audio Visual Sets</span>
-          <p>DJ VIC is known for his audio-visual performances — music and visuals composed and synced together for a full sensory experience.</p>
-        </div>
+      </div>
+    </section>
+
+    <section id="nightlife-links">
+      <div class="section-inner links-row">
+        <span class="links-label">Explore more</span>
+        <a href={`${base}/weddings/`}>Wedding DJ &rarr;</a>
+        <a href={`${base}/corporate/`}>Corporate DJ &rarr;</a>
+        <a href={`${base}/remixes/`}>Remixes &amp; Mashups &rarr;</a>
       </div>
     </section>
 
@@ -72,41 +137,262 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 </Layout>
 
 <style>
-  #nightlife-hero {
+  /* ─── Hero ─────────────────────────────────────── */
+  .hero-section {
+    min-height: 50svh;
+    display: flex;
+    align-items: flex-end;
     background-image:
-      linear-gradient(to right, rgba(0,0,0,0.88) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.2) 100%),
-      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
+      linear-gradient(to right, rgba(0,0,0,0.92) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.2) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%),
       url('https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=1600&q=85');
-    background-position: center center;
+    background-size: cover;
+    background-position: center;
+    padding: 0;
   }
+
+  .hero-inner {
+    padding: 8rem 2.5rem 4rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-section h1 {
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 1rem;
+    max-width: 50ch;
+    margin: 0 0 2rem;
+  }
+
+  /* ─── Shared section layout ───────────────────── */
+  .section-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
   .section-label {
-    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.25em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
   }
-  h2 { color: var(--white); }
-  .section-sub { color: rgba(255,255,255,0.65); max-width: 680px; margin-top: 0.5rem; margin-bottom: 2rem; }
+
+  h2 { color: var(--white); margin-bottom: 1rem; }
+
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 65ch;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+
+  /* ─── Features grid ───────────────────────────── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .feature-item {
+    background: #111;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-left: 3px solid var(--gold);
+    padding: 1.5rem 1.75rem;
+  }
+
+  .feature-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+
+  .feature-item p {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ─── Formats grid ────────────────────────────── */
+  #nightlife-formats {
+    background: #080808;
+  }
+
+  .formats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.1);
+    margin-top: 2rem;
+  }
+
+  .format-card {
+    background: #0d0d0d;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .format-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--gold);
+    opacity: 0.4;
+    line-height: 1;
+  }
+
+  .format-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+  }
+
+  .format-card p {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* ─── Video ───────────────────────────────────── */
+  .video-wrap {
+    margin-top: 2rem;
+    max-width: 720px;
+  }
+
+  .video-thumb {
+    display: block;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #111;
+  }
+
+  .video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+  }
+
+  .video-thumb:hover img { transform: scale(1.03); }
+
+  .video-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    transition: background 0.25s;
+  }
+
+  .video-thumb:hover .video-play { background: rgba(0,0,0,0.3); }
+
+  /* ─── Internal links row ──────────────────────── */
+  #nightlife-links {
+    border-top: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .links-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .links-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-right: 0.5rem;
+  }
+
+  .links-row a {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .links-row a:hover { opacity: 0.7; }
+
+  /* ─── CTA ─────────────────────────────────────── */
+  .cta-section {
+    text-align: center;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .cta-section h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+  .cta-section h2::before { display: none; }
+
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 600px;
+    margin-bottom: 0;
+  }
+
+  .cta-section .section-sub { margin-inline: auto; }
+
   .cta-btn {
-    display: inline-block; padding: 0.85rem 2rem; font-family: var(--font-body);
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
-    cursor: pointer; transition: background 0.2s, color 0.2s, transform 0.15s;
-    border-radius: 2px; margin-top: 2rem;
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px;
+    margin-top: 2rem;
+    text-decoration: none;
   }
+
   .cta-btn--gold { background: var(--gold); color: #000; border: 1px solid var(--gold); }
   .cta-btn--gold:hover { background: var(--gold-light); color: #000; transform: translateY(-1px); }
-  .feature-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem;
+
+  /* ─── Responsive ──────────────────────────────── */
+  @media (max-width: 900px) {
+    .formats-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  .feature-item {
-    background: #111; border: 1px solid rgba(201,168,76,0.12);
-    border-left: 3px solid var(--gold); padding: 1.5rem;
+
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .formats-grid { grid-template-columns: 1fr; }
+    .hero-inner { padding-inline: 1.25rem; }
+    .section-inner { padding-inline: 1.25rem; }
   }
-  .feature-label {
-    display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
-  }
-  .feature-item p { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.7; margin: 0; }
-  .cta-section { text-align: center; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(201,168,76,0.1); }
-  .cta-section h2::before { display: none; }
-  .cta-section .section-sub { margin-left: auto; margin-right: auto; text-align: center; }
-  @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
 </style>

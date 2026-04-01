@@ -1,0 +1,185 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout
+  title="DJ VIC Blog — Nightlife, Music & Event Insights"
+  description="Insights on nightlife, DJ culture, weddings, and events from DJ VIC — Bangalore's leading international DJ with 19+ years of experience."
+>
+  <Nav />
+  <main id="main-content">
+
+    <section id="blog-hero" class="hero-section">
+      <div class="hero-inner">
+        <div class="section-label">Insights</div>
+        <h1>The Blog</h1>
+        <p class="hero-sub">Nightlife, music, weddings, and events — from behind the decks.</p>
+      </div>
+    </section>
+
+    <section id="blog-posts">
+      <div class="posts-grid">
+        {posts.map((post) => (
+          <a href={`${base}/blog/${post.id}/`} class="post-card">
+            <div class="post-meta">
+              <span class="post-date">{new Date(post.data.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              {post.data.tags && post.data.tags.slice(0, 2).map((tag: string) => (
+                <span class="post-tag">{tag}</span>
+              ))}
+            </div>
+            <h2 class="post-title">{post.data.title}</h2>
+            <p class="post-excerpt">{post.data.description}</p>
+            <span class="post-read">Read More &rarr;</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .hero-section {
+    min-height: 35svh;
+    display: flex;
+    align-items: flex-end;
+    background-image:
+      linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%);
+    padding: 0;
+  }
+
+  .hero-inner {
+    padding: 7rem 2.5rem 3.5rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-section h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    max-width: 50ch;
+    margin: 0;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  #blog-posts {
+    padding: 4rem 2rem;
+    max-width: var(--max-width);
+    margin-inline: auto;
+  }
+
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 2rem;
+    background: #111;
+    border: 1px solid rgba(201,168,76,0.1);
+    border-top: 3px solid var(--gold);
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .post-card:hover {
+    background: #161616;
+    border-top-color: var(--gold-light);
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .post-date {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .post-tag {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .post-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    letter-spacing: 0.04em;
+    color: var(--white);
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .post-excerpt {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.7;
+    flex: 1;
+    margin: 0;
+  }
+
+  .post-read {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 0.5rem;
+    transition: color 0.2s;
+  }
+
+  .post-card:hover .post-read {
+    color: var(--gold-light);
+  }
+
+  @media (max-width: 800px) {
+    .posts-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 500px) {
+    .posts-grid { grid-template-columns: 1fr; }
+    .hero-inner { padding-inline: 1.25rem; }
+  }
+</style>
