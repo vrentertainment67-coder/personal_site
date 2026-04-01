@@ -47,10 +47,10 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
           ))}
         </ul>
       </li>
-      <li><a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a></li>
       <li><a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a></li>
       <li><a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a></li>
       <li><a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Photos</a></li>
+      <li><a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a></li>
     </ul>
     <a href={`${base}/#contact`} class="nav-phone">Contact</a>
   </nav>
@@ -94,11 +94,11 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     border: none;
     padding: 0;
     font-family: var(--font-body);
-    font-size: inherit;
-    font-weight: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-    color: rgba(255,255,255,0.65);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--grey);
     cursor: pointer;
     display: flex;
     align-items: center;
