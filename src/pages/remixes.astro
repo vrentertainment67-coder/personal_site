@@ -3,116 +3,117 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
-const ytVideos = [
-  "wHOB8H-HB_Y","Hgb_g-xBblw","ssFIKwChfHc","modKUclnVJY","aN2BIfUNUs4",
-  "KWUoJJ6xsfk","rcGuVSoki6U","MXxbN1xYteY","zhaNQwYQi_8","gf0hYLxr6eo",
-  "Yx3pD4uhJRE","h48i6wSQjso","5oA311R6Wkg","PxgvwE1nZmw","4oTBe25wvE0",
+const remixes = [
+  { id: "wHOB8H-HB_Y", title: "VIC - Tu Hi Meri Shab Hai X Say What (Afro Mashup)" },
+  { id: "Hgb_g-xBblw", title: "Tera hone laga hoon X Viva La Vida | Mashup | Atif Aslam | Coldplay | VIC" },
+  { id: "ssFIKwChfHc", title: "Sooraj Ki Baahon Mein x Forever (Mashup) | VIC | Chris Brown | Zindagi Na Milegi Dobara" },
+  { id: "modKUclnVJY", title: "Sach Keh Raha Hai X Tujhe Bhula Diya X I Adore You | VIC Mashup" },
+  { id: "aN2BIfUNUs4", title: "Dil Luteya (Desi Mix) – Jazzy B Ft. Apache Indian | DJ VIC Remix" },
+  { id: "KWUoJJ6xsfk", title: "Kesariya x Can't Stop The Feeling — Bollywood Meets Pop | VIC Mashup" },
+  { id: "rcGuVSoki6U", title: "Its that Oo Antava Time | Mashup | DSP | Pushpa | Fisher | VIC" },
+  { id: "MXxbN1xYteY", title: "Tere Liye | Progressive Edit | VIC | Prince | Atif Aslam" },
+  { id: "zhaNQwYQi_8", title: "Aaj Ki Raat | Progressive Edit | VIC | Stree 2 | Tamannaah Bhatia | Sachin-Jigar" },
+  { id: "gf0hYLxr6eo", title: "Kahin Aag Lage X Rejection | Tech Mix | VIC" },
+  { id: "Yx3pD4uhJRE", title: "Titliaan – Progressive Rework | DJ VIC" },
+  { id: "h48i6wSQjso", title: "Boom Boom X Body Funk | Nazia Hassan | VIC | Remix" },
+  { id: "5oA311R6Wkg", title: "Tamma Tamma x Makeba | Sanjay Dutt | Madhuri Dixit | VIC | Remix" },
+  { id: "PxgvwE1nZmw", title: "Jimmy (VIC Disco Edit) | Bollywood Remix 2025" },
+  { id: "4oTBe25wvE0", title: "Ghungroo Remix | DJ VIC Sun n Sand Rework (War)" },
 ];
 
-const audiomackSlugs = [
-  "badtameezdil",
-  "ishqjalakar",
-  "rambhaho",
-  "luttlegaya",
-  "softly",
-  "69ca78246aaaa",
-  "69ca7829bfeb3",
-  "69ca782ad85f6",
-  "69ca782b2ec06",
-  "69ca782ead011",
-  "69ca782ef1c46",
-  "rapture-x-lat-lag-gayee",
-  "69ca7833c1c91",
-  "69ca7834567ec",
-  "69ca7835af06e",
-  "yeah-x-amplifier-usher-x-imran-khan",
-  "saturday-saturday-tech-house-edit",
-  "69ca783b117d5",
-  "dola-re-x-waves-wavs",
-  "yeh-ek-zindagi-afro-edit",
-  "69ca7847102f9",
-  "tere-liye-x-fallen-leaf",
-  "besharam-rang-x-mwaki",
-  "69ca784f8c695",
+const platforms = [
+  {
+    name: "Audiomack",
+    href: "https://audiomack.com/vrentertainment67",
+    desc: "Free streaming & download",
+  },
+  {
+    name: "Hearthis.at",
+    href: "https://hearthis.at/djvicofficial",
+    desc: "Stream DJ sets",
+  },
+  {
+    name: "Mixcloud",
+    href: "https://www.mixcloud.com/thedjvicofficial/",
+    desc: "Full DJ mixes",
+  },
 ];
 ---
 
 <Layout
-  title="DJ VIC Remixes & Mashups — Bollywood, English & Indian Fusion | Free Stream"
-  description="Stream DJ VIC's original remixes and mashups free on Audiomack and YouTube. Bollywood, English, and Indian fusion edits crafted for weddings, clubs, and events."
+  title="Free DJ Remixes & Mashups Download — DJ VIC | Bangalore"
+  description="Stream and download free DJ mashups and remixes by DJ VIC — Bangalore's leading DJ and Universal Music partner. English-Bollywood fusion mixes on Audiomack, Mixcloud, and Hearthis."
   schema={{
     "@context": "https://schema.org",
-    "@type": "MusicGroup",
-    "name": "DJ VIC",
+    "@type": "MusicPlaylist",
+    "name": "DJ VIC Remixes & Mashups",
+    "description": "Free DJ mashups and remixes by DJ VIC — English-Bollywood fusion mixes.",
     "url": "https://djvicofficial.com/remixes/",
-    "genre": ["Bollywood", "Indian Fusion", "Electronic Dance Music"],
-    "description": "Original remixes and mashups by DJ VIC — Bollywood, English, and Indian fusion music available free on Audiomack and YouTube."
+    "author": { "@id": "https://djvicofficial.com/#person" }
   }}
 >
   <Nav />
 
   <main id="main-content">
 
-    <section id="remixes-hero" class="hero-bg">
-      <div class="hero-header">
-        <div>
-          <h1>Remixes &amp;<br/>Mashups</h1>
-          <p class="tagline">From the dance floor to your playlist — remixed and reimagined.</p>
-        </div>
-        <a
-          href="https://audiomack.com/vrentertainment67"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="audiomack-link"
-        >
-          Follow on Audiomack &rarr;
-        </a>
+    <section id="remixes-hero" class="hero-section">
+      <div class="hero-inner">
+        <div class="section-label">Free Downloads</div>
+        <h1>Remixes &amp; Mashups</h1>
+        <p class="hero-sub">From the dance floor to your playlist — remixed and reimagined.</p>
       </div>
     </section>
 
-    <!-- Audiomack embeds -->
-    <section id="stream-section">
-      <div class="stream-header">
-        <h2>Stream &amp; Download Free</h2>
-        <p class="stream-label">Stream &amp; Download Free</p>
-      </div>
-      <div class="audiomack-grid">
-        {audiomackSlugs.map((slug) => (
-          <div class="audiomack-card">
-            <iframe
-              src={`https://audiomack.com/embed/vrentertainment67/song/${slug}`}
-              width="100%"
-              height="252"
-              scrolling="no"
-              allow="autoplay"
-              frameborder="0"
-              loading="lazy"
-            ></iframe>
-          </div>
+    <section id="remixes-platforms">
+      <div class="section-label">Stream &amp; Download Free</div>
+      <h2>Available On</h2>
+      <div class="platforms-grid">
+        {platforms.map((p) => (
+          <a href={p.href} target="_blank" rel="noopener noreferrer" class="platform-card">
+            <div class="platform-info">
+              <span class="platform-name">{p.name}</span>
+              <span class="platform-desc">{p.desc}</span>
+            </div>
+            <span class="platform-arrow">&rarr;</span>
+          </a>
         ))}
       </div>
     </section>
 
-    <section id="all-mixes">
-      <h2>All Mixes</h2>
-      <p>The full catalogue of mixes and DJ sets across all platforms.</p>
-      <ul>
-        <li>
-          <a href="https://audiomack.com/vrentertainment67" target="_blank" rel="noopener noreferrer">
-            Audiomack — Stream &amp; Download
+    <section id="remixes-grid">
+      <div class="section-label">Latest Tracks</div>
+      <h2>Watch &amp; Listen</h2>
+      <div class="yt-grid">
+        {remixes.map(({ id, title }) => (
+          <a
+            href={`https://youtu.be/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-card"
+          >
+            <div class="yt-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
+                alt={title}
+                loading="lazy"
+              />
+              <div class="yt-play">
+                <svg viewBox="0 0 68 48" width="52" height="37">
+                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                  <path d="M45 24 27 14v20" fill="#000"/>
+                </svg>
+              </div>
+            </div>
+            <p class="yt-caption">{title}</p>
           </a>
-        </li>
-        <li>
-          <a href="https://hearthis.at/djvicofficial" target="_blank" rel="noopener noreferrer">
-            Hearthis.at — djvicofficial
-          </a>
-        </li>
-        <li>
-          <a href="https://www.mixcloud.com/thedjvicofficial/" target="_blank" rel="noopener noreferrer">
-            Mixcloud — DJ Sets
-          </a>
-        </li>
-      </ul>
+        ))}
+      </div>
+    </section>
+
+    <section id="remixes-cta" class="cta-section">
+      <h2>Want DJ VIC at Your Event?</h2>
+      <p class="section-sub">Hear what he can do — then book him for your wedding, corporate night, or club event.</p>
+      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
     </section>
 
   </main>
@@ -121,51 +122,123 @@ const audiomackSlugs = [
 </Layout>
 
 <style>
-  #remixes-hero {
-    background-image:
-      linear-gradient(to bottom, rgba(6,6,6,0.4) 0%, rgba(6,6,6,0.65) 50%, rgba(6,6,6,1) 100%),
-      url('https://hosting.renderforestsites.com/19480377/1066059/media/8e04c902b5752f2a05c19bca328c6c9e.jpg');
-  }
-
-  .hero-header {
+  /* ─── Hero ─────────────────────────────────────── */
+  .hero-section {
+    min-height: 40svh;
     display: flex;
     align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    width: 100%;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.88) 40%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%),
+      url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=85');
+    background-size: cover;
+    background-position: center;
+    padding: 0;
   }
 
-  .audiomack-link {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.18em;
+  .hero-inner {
+    padding: 8rem 2.5rem 4rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-section h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 1rem;
+    max-width: 50ch;
+    margin: 0;
+  }
+
+  /* ─── Section shared ──────────────────────────── */
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
     color: var(--gold);
-    border-bottom: 1px solid rgba(201,168,76,0.4);
-    padding-bottom: 3px;
-    transition: color 0.2s, border-color 0.2s;
-    white-space: nowrap;
-    align-self: flex-end;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
-  .audiomack-link:hover {
-    color: var(--gold-light);
-    border-color: var(--gold-light);
+  h2 {
+    color: var(--white);
+    margin-bottom: 2rem;
   }
 
-  /* YouTube grid */
-  #yt-section,
-  #stream-section {
-    background: #0a0a0a;
+  .section-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 600px;
+    margin-bottom: 2rem;
   }
 
+  /* ─── Platforms ───────────────────────────────── */
+  .platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.12);
+  }
+
+  .platform-card {
+    background: #0d0d0d;
+    padding: 2rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .platform-card:hover {
+    background: #161616;
+  }
+
+  .platform-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  .platform-name {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+    color: var(--white);
+  }
+
+  .platform-desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.05em;
+  }
+
+  .platform-arrow {
+    font-size: 1.1rem;
+    color: var(--gold);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .platform-card:hover .platform-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ─── YouTube grid ────────────────────────────── */
   .yt-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin-top: 2rem;
+    gap: 1rem;
   }
 
   .yt-card {
@@ -173,6 +246,7 @@ const audiomackSlugs = [
     flex-direction: column;
     gap: 0.5rem;
     text-decoration: none;
+    color: inherit;
   }
 
   .yt-thumb {
@@ -180,7 +254,7 @@ const audiomackSlugs = [
     aspect-ratio: 16 / 9;
     overflow: hidden;
     background: #111;
-    border-radius: 6px;
+    border-radius: 4px;
   }
 
   .yt-thumb img {
@@ -188,7 +262,7 @@ const audiomackSlugs = [
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.3s ease;
+    transition: transform 0.35s ease;
   }
 
   .yt-card:hover .yt-thumb img {
@@ -201,84 +275,80 @@ const audiomackSlugs = [
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.45);
     opacity: 0;
     transition: opacity 0.25s;
-    color: var(--gold);
-  }
-
-  .yt-play svg {
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
   }
 
   .yt-card:hover .yt-play {
     opacity: 1;
   }
 
-  .yt-tag {
-    font-size: 0.6rem;
+  .yt-caption {
+    font-size: 0.7rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ─── CTA section ─────────────────────────────── */
+  .cta-section {
+    text-align: center;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .cta-section h2 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+  }
+
+  .cta-section h2::before { display: none; }
+
+  .cta-section .section-sub {
+    margin-inline: auto;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--gold);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border-radius: 2px;
+    margin-top: 1.5rem;
+    text-decoration: none;
   }
 
-  /* Audiomack grid */
-  .stream-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 2rem;
+  .cta-btn--gold {
+    background: var(--gold);
+    color: #000;
+    border: 1px solid var(--gold);
   }
 
-  .stream-header h2 {
-    margin-bottom: 0;
+  .cta-btn--gold:hover {
+    background: var(--gold-light);
+    color: #000;
+    transform: translateY(-1px);
   }
 
-  .stream-label {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold);
-    border: 1px solid rgba(201,168,76,0.4);
-    padding: 0.35rem 0.85rem;
-    max-width: none;
-    margin: 0;
-  }
-
-  .audiomack-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-
-  .audiomack-card {
-    background: #111;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #1e1e1e;
-  }
-
-  .audiomack-card iframe {
-    display: block;
-  }
-
+  /* ─── Responsive ──────────────────────────────── */
   @media (max-width: 900px) {
-    .yt-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .yt-grid { grid-template-columns: repeat(3, 1fr); }
+    .platforms-grid { grid-template-columns: 1fr; }
   }
 
-  @media (max-width: 600px) {
-    .yt-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .audiomack-grid {
-      grid-template-columns: 1fr;
-    }
+  @media (max-width: 500px) {
+    .yt-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-inner { padding-inline: 1.25rem; }
   }
 </style>

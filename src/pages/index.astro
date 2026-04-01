@@ -48,65 +48,41 @@ const services = [
 <Layout
   title="DJ VIC — Wedding & Corporate DJ in Bangalore | 19+ Years Experience"
   description="DJ VIC is Bangalore's premier DJ for weddings, corporate events, and nightlife. 19+ years, 1360+ events, 18 countries. Book for sangeet nights, receptions, product launches, and club nights."
-  schema={[
-    {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "DJ VIC",
-      "url": "https://djvicofficial.com",
-      "image": "https://hosting.renderforestsites.com/19480377/1066059/media/a492fd01e8532f473aa84075c5a1f840.png",
-      "jobTitle": "DJ, Music Producer & Remixer",
-      "description": "International DJ and music producer based in Bangalore with 19+ years of experience across weddings, corporate events, and nightlife.",
-      "sameAs": [
-        "https://instagram.djvicofficial.com",
-        "https://www.youtube.com/@thedjvicofficial",
-        "https://www.facebook.com/djvicofficial"
-      ]
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "DJ VIC Official",
-      "url": "https://djvicofficial.com",
-      "telephone": "+919611711677",
-      "email": "bookings@djvicofficial.com",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Bangalore",
-        "addressRegion": "Karnataka",
-        "addressCountry": "IN"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 12.9716,
-        "longitude": 77.5946
-      },
-      "priceRange": "₹₹₹",
-      "servesCuisine": null,
-      "areaServed": ["Bangalore", "India", "International"],
-      "hasOfferCatalog": {
-        "@type": "OfferCatalog",
-        "name": "DJ Services",
-        "itemListElement": [
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wedding DJ Services" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Corporate Event DJ" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Sangeet Night DJ" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Club Night DJ" } }
+  schema={{
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://djvicofficial.com/#person",
+        "name": "DJ VIC",
+        "description": "International DJ, producer, and remixer based in Bangalore with 19+ years of experience across 18 countries. Universal Music partner.",
+        "url": "https://djvicofficial.com",
+        "jobTitle": "DJ, Music Producer, Podcast Host",
+        "sameAs": [
+          "https://www.instagram.com/djvicofficial",
+          "https://www.youtube.com/@thedjvicofficial",
+          "https://www.facebook.com/djvicofficial"
         ]
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://djvicofficial.com/#business",
+        "name": "DJ VIC Official",
+        "description": "Premium DJ services for weddings, corporate events, clubs and festivals in Bangalore.",
+        "url": "https://djvicofficial.com",
+        "telephone": "+919611711677",
+        "email": "bookings@djvicofficial.com",
+        "priceRange": "₹₹₹",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bangalore",
+          "addressRegion": "Karnataka",
+          "addressCountry": "IN"
+        },
+        "areaServed": ["Bangalore", "Mumbai", "Delhi", "Chennai", "India"]
       }
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "DJ VIC Official",
-      "url": "https://djvicofficial.com",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://djvicofficial.com/?s={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-  ]}
+    ]
+  }}
 >
   <Nav />
 
@@ -208,10 +184,22 @@ const services = [
 
       <div class="yt-grid">
         {[
-          "wHOB8H-HB_Y","Hgb_g-xBblw","ssFIKwChfHc","modKUclnVJY","aN2BIfUNUs4",
-          "KWUoJJ6xsfk","rcGuVSoki6U","MXxbN1xYteY","zhaNQwYQi_8","gf0hYLxr6eo",
-          "Yx3pD4uhJRE","h48i6wSQjso","5oA311R6Wkg","PxgvwE1nZmw","4oTBe25wvE0"
-        ].map((id) => (
+          { id: "wHOB8H-HB_Y", title: "VIC - Tu Hi Meri Shab Hai X Say What (Afro Mashup)" },
+          { id: "Hgb_g-xBblw", title: "Tera hone laga hoon X Viva La Vida | Mashup | Atif Aslam | Coldplay | VIC" },
+          { id: "ssFIKwChfHc", title: "Sooraj Ki Baahon Mein x Forever (Mashup) | VIC | Chris Brown | Zindagi Na Milegi Dobara" },
+          { id: "modKUclnVJY", title: "Sach Keh Raha Hai X Tujhe Bhula Diya X I Adore You | VIC Mashup" },
+          { id: "aN2BIfUNUs4", title: "Dil Luteya (Desi Mix) – Jazzy B Ft. Apache Indian | DJ VIC Remix" },
+          { id: "KWUoJJ6xsfk", title: "Kesariya x Can't Stop The Feeling — Bollywood Meets Pop | VIC Mashup" },
+          { id: "rcGuVSoki6U", title: "Its that Oo Antava Time | Mashup | DSP | Pushpa | Fisher | VIC" },
+          { id: "MXxbN1xYteY", title: "Tere Liye | Progressive Edit | VIC | Prince | Atif Aslam" },
+          { id: "zhaNQwYQi_8", title: "Aaj Ki Raat | Progressive Edit | VIC | Stree 2 | Tamannaah Bhatia | Sachin-Jigar" },
+          { id: "gf0hYLxr6eo", title: "Kahin Aag Lage X Rejection | Tech Mix | VIC" },
+          { id: "Yx3pD4uhJRE", title: "Titliaan – Progressive Rework | DJ VIC" },
+          { id: "h48i6wSQjso", title: "Boom Boom X Body Funk | Nazia Hassan | VIC | Remix" },
+          { id: "5oA311R6Wkg", title: "Tamma Tamma x Makeba | Sanjay Dutt | Madhuri Dixit | VIC | Remix" },
+          { id: "PxgvwE1nZmw", title: "Jimmy (VIC Disco Edit) | Bollywood Remix 2025" },
+          { id: "4oTBe25wvE0", title: "Ghungroo Remix | DJ VIC Sun n Sand Rework (War)" },
+        ].map(({ id, title }) => (
           <a
             href={`https://youtu.be/${id}`}
             target="_blank"
@@ -221,7 +209,7 @@ const services = [
             <div class="yt-thumb">
               <img
                 src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
-                alt="DJ VIC Remix"
+                alt={title}
                 loading="lazy"
               />
               <div class="yt-play">
