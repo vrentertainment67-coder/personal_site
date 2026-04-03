@@ -20,24 +20,29 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 <Layout
   title={post.data.title + ' — DJ VIC Blog'}
   description={post.data.description}
-  schema={{
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": post.data.title,
-    "description": post.data.description,
-    "datePublished": post.data.date,
-    "author": {
-      "@type": "Person",
-      "name": "DJ VIC",
-      "url": "https://djvicofficial.com"
+  canonical={`https://djvicofficial.com/blog/${post.id}/`}
+  ogType="article"
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": post.data.title,
+      "description": post.data.description,
+      "datePublished": post.data.date,
+      "author": { "@id": "https://djvicofficial.com/#person" },
+      "publisher": { "@id": "https://djvicofficial.com/#business" },
+      "url": `https://djvicofficial.com/blog/${post.id}/`
     },
-    "publisher": {
-      "@type": "Organization",
-      "name": "DJ VIC Official",
-      "url": "https://djvicofficial.com"
-    },
-    "url": `https://djvicofficial.com/blog/${post.id}/`
-  }}
+    ...(post.data.faq ? [{
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": post.data.faq.map((item: { q: string; a: string }) => ({
+        "@type": "Question",
+        "name": item.q,
+        "acceptedAnswer": { "@type": "Answer", "text": item.a }
+      }))
+    }] : [])
+  ]}
 >
   <Nav />
   <main id="main-content">

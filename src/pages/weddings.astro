@@ -305,7 +305,18 @@ const avVideoId = "3FJl0cbpOYY";
     </section>
 
     <!-- ══════════════════════════════════════════
-         8. CLOSING CTA
+         8. DESTINATION GUIDE LINK
+    ══════════════════════════════════════════ -->
+    <section id="weddings-guide">
+      <div class="guide-inner">
+        <span class="guide-label">Destination Weddings</span>
+        <p class="guide-text">Planning a destination wedding? Read our complete guide to hiring a DJ — sound logistics, multi-day planning, and what to brief your DJ before the event.</p>
+        <a href="/blog/destination-wedding-dj-india/" class="guide-link">Destination Wedding DJ Guide &rarr;</a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         9. CLOSING CTA
     ══════════════════════════════════════════ -->
     <section id="weddings-cta" class="cta-section">
       <h2>Ready to Make Your Wedding Unforgettable?</h2>
@@ -539,6 +550,54 @@ const avVideoId = "3FJl0cbpOYY";
     font-size: 0.72rem;
     letter-spacing: 0.04em;
   }
+
+  /* ─── Destination guide link strip ───────────── */
+  #weddings-guide {
+    border-top: 1px solid rgba(201,168,76,0.12);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+  }
+
+  .guide-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 2.5rem 2.5rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+  }
+
+  .guide-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .guide-text {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .guide-link {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+
+  .guide-link:hover { opacity: 0.7; }
 
   /* ─── Closing CTA section ─────────────────────── */
   .cta-section {
