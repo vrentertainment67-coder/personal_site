@@ -108,7 +108,10 @@ const eventsData = allEvents.map(e => ({
             <p class="modal-address" id="modal-address"></p>
           </div>
 
-          <div class="modal-tags" id="modal-genre"></div>
+          <div id="modal-genre-wrap">
+            <span class="field-label" style="display:block;margin-bottom:6px">Genres</span>
+            <div class="modal-tags" id="modal-genre"></div>
+          </div>
 
           <div class="modal-field" id="modal-dresscode-wrap">
             <span class="field-label">Dress Code</span>
@@ -264,7 +267,8 @@ const eventsData = allEvents.map(e => ({
       document.getElementById('modal-venue-block').style.display = 'block';
 
       // Genre tags
-      const genreWrap = document.getElementById('modal-genre');
+      const genreWrap    = document.getElementById('modal-genre');
+      const genreSection = document.getElementById('modal-genre-wrap');
       genreWrap.innerHTML = '';
       if (event.genre && event.genre.length) {
         event.genre.forEach(g => {
@@ -273,9 +277,10 @@ const eventsData = allEvents.map(e => ({
           span.textContent = g;
           genreWrap.appendChild(span);
         });
-        genreWrap.style.display = 'flex';
+        genreSection.style.display = 'block';
+        genreWrap.style.display    = 'flex';
       } else {
-        genreWrap.style.display = 'none';
+        genreSection.style.display = 'none';
       }
 
       // Dress code
@@ -291,7 +296,7 @@ const eventsData = allEvents.map(e => ({
       const luWrap  = document.getElementById('modal-lineup-wrap');
       const parts   = [];
       if (event.hostedBy)  parts.push(`Hosted by ${event.hostedBy}`);
-      if (event.videoSetBy) parts.push(`Video Sets: ${event.videoSetBy}`);
+      if (event.videoSetBy) parts.push(`Video Set by ${event.videoSetBy}`);
       if (parts.length) {
         document.getElementById('modal-lineup').textContent = parts.join('  ·  ');
         luWrap.style.display = 'flex';
@@ -543,10 +548,14 @@ const eventsData = allEvents.map(e => ({
     line-height: 1;
   }
 
-  .cal-cell--today .cal-num,
-  .cal-cell--event .cal-num {
+  .cal-cell--today .cal-num {
     color: #e0dccf;
     font-weight: 600;
+  }
+
+  .cal-cell--event .cal-num {
+    color: #c9a84c;
+    font-weight: 700;
   }
 
   .cal-cell--past .cal-num {
