@@ -36,98 +36,97 @@ const eventsData = allEvents.map(e => ({
 
   <main id="main-content">
 
-    <section id="events-header">
-      <div class="events-header-inner">
-        <div class="section-label">Live &amp; In Person</div>
+    <!-- ── Hero ─────────────────────────────────────── -->
+    <section id="events-hero">
+      <div class="hero-inner">
+        <span class="hero-label">Live &amp; In Person</span>
         <h1>Events</h1>
-        <p>Upcoming sets, club nights, and appearances. Click any highlighted date for details.</p>
+        <p class="hero-sub">Upcoming sets, club nights, and appearances.<br/>Click any highlighted date for event details and guest list.</p>
       </div>
     </section>
 
+    <!-- ── Calendar ──────────────────────────────────── -->
     <section id="calendar-section">
-      <div class="calendar-wrap">
+      <div class="cal-container" id="cal-container">
 
-        <!-- Calendar nav -->
-        <div class="cal-nav">
+        <!-- Month nav -->
+        <div class="cal-header">
           <button class="cal-arrow" id="cal-prev" aria-label="Previous month">&#8592;</button>
-          <div class="cal-nav-center">
-            <span class="cal-title" id="cal-title"></span>
-            <select class="cal-year-select" id="year-select" aria-label="Select year"></select>
+          <div class="cal-header-center">
+            <span class="cal-month-name" id="cal-month-name"></span>
+            <select class="cal-year-select" id="year-select" aria-label="Select year">
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
           </div>
           <button class="cal-arrow" id="cal-next" aria-label="Next month">&#8594;</button>
         </div>
 
-        <!-- Day headers -->
-        <div class="cal-days-header">
+        <!-- Day labels -->
+        <div class="cal-day-labels">
           <span>Sun</span><span>Mon</span><span>Tue</span>
           <span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
         </div>
 
-        <!-- Grid -->
+        <!-- Date grid -->
         <div class="cal-grid" id="cal-grid"></div>
 
       </div>
 
-      <!-- No events message -->
-      <p class="no-events-msg" id="no-events-msg" style="display:none">
+      <p class="cal-no-events" id="cal-no-events" style="display:none">
         No events this month — check back soon.
       </p>
     </section>
 
   </main>
 
-  <!-- Event modal -->
-  <div class="event-modal" id="event-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <!-- ── Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="event-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-box">
       <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
 
-      <div class="modal-img-wrap" id="modal-img-wrap">
+      <div id="modal-img-wrap">
         <img src="" alt="" id="modal-img" class="modal-img" />
       </div>
 
-      <div class="modal-body">
-        <div class="modal-private" id="modal-private" style="display:none">
-          <span class="modal-private-badge">Private Event</span>
-          <p>This is a private event — not open to the public.</p>
+      <div class="modal-content">
+
+        <!-- Private state -->
+        <div id="modal-private" style="display:none">
+          <span class="private-badge">Private Event</span>
+          <p class="private-text">This is a private booking — not open to the public.</p>
         </div>
 
-        <div class="modal-public" id="modal-public">
-          <h2 id="modal-title" class="modal-title"></h2>
+        <!-- Public state -->
+        <div id="modal-public">
+          <p class="modal-datetime" id="modal-datetime"></p>
+          <h2 class="modal-title" id="modal-title"></h2>
 
-          <div class="modal-meta">
-            <div class="modal-meta-row" id="modal-datetime-row">
-              <span class="modal-meta-icon">&#128197;</span>
-              <div>
-                <span id="modal-date" class="modal-meta-value"></span>
-                <span class="modal-meta-sep">·</span>
-                <span id="modal-time" class="modal-meta-value"></span>
-              </div>
-            </div>
-            <div class="modal-meta-row" id="modal-venue-row">
-              <span class="modal-meta-icon">&#128205;</span>
-              <div>
-                <span id="modal-venue" class="modal-meta-value modal-venue-name"></span>
-                <span id="modal-address" class="modal-meta-sub"></span>
-              </div>
-            </div>
+          <div id="modal-venue-block">
+            <p class="modal-venue" id="modal-venue"></p>
+            <p class="modal-address" id="modal-address"></p>
           </div>
 
-          <div class="modal-genre" id="modal-genre"></div>
+          <div class="modal-tags" id="modal-genre"></div>
 
-          <div class="modal-detail-row" id="modal-dresscode-wrap">
-            <span class="modal-detail-label">Dress Code</span>
-            <span id="modal-dresscode" class="modal-detail-value"></span>
+          <div class="modal-field" id="modal-dresscode-wrap">
+            <span class="field-label">Dress Code</span>
+            <span class="field-value" id="modal-dresscode"></span>
           </div>
 
-          <div class="modal-detail-row" id="modal-hosted-wrap">
-            <span class="modal-detail-label">Line-up</span>
-            <span id="modal-hosted" class="modal-detail-value"></span>
+          <div class="modal-field" id="modal-lineup-wrap">
+            <span class="field-label">Line-up</span>
+            <span class="field-value" id="modal-lineup"></span>
           </div>
         </div>
 
-        <div class="modal-cta-wrap" id="modal-cta-wrap">
+        <div class="modal-divider" id="modal-divider"></div>
+
+        <div id="modal-cta-wrap">
           <a href="#" id="modal-cta" class="modal-cta-btn">Join the Guest List &rarr;</a>
         </div>
+
       </div>
     </div>
   </div>
@@ -136,41 +135,41 @@ const eventsData = allEvents.map(e => ({
 </Layout>
 
 <script define:vars={{ eventsData, base }}>
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const DAYS_LONG = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS_LONG = ['January','February','March','April','May','June',
+                       'July','August','September','October','November','December'];
 
-  // Build event map keyed by date string YYYY-MM-DD
+  // Event map: 'YYYY-MM-DD' -> event
   const eventMap = {};
-  for (const ev of eventsData) {
-    eventMap[ev.date] = ev;
-  }
+  for (const ev of eventsData) eventMap[ev.date] = ev;
 
   const today = new Date();
   let currentYear = today.getFullYear();
   let currentMonth = today.getMonth();
 
-  // Populate year select: current year ±2
   const yearSelect = document.getElementById('year-select');
-  for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 2; y++) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    yearSelect.appendChild(opt);
-  }
   yearSelect.value = currentYear;
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
   function renderCalendar(year, month) {
-    document.getElementById('cal-title').textContent = `${MONTHS[month]} ${year}`;
+    document.getElementById('cal-month-name').textContent = `${MONTHS[month]}`;
     yearSelect.value = year;
 
-    const firstDay = new Date(year, month, 1).getDay();
+    const firstDay  = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    const todayStr  = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
 
     const grid = document.getElementById('cal-grid');
-    grid.innerHTML = '';
 
+    // Trigger slide-in animation on re-render
+    grid.style.animation = 'none';
+    void grid.offsetWidth;
+    grid.style.animation = '';
+
+    grid.innerHTML = '';
     let hasEvents = false;
 
     // Empty leading cells
@@ -180,52 +179,49 @@ const eventsData = allEvents.map(e => ({
       grid.appendChild(empty);
     }
 
-    // Day cells
+    // Date cells
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
-      const event = eventMap[dateStr];
+      const event   = eventMap[dateStr];
       const isToday = dateStr === todayStr;
-      const isPast = dateStr < todayStr;
+      const isPast  = dateStr < todayStr;
 
       const cell = document.createElement('div');
-      const classes = ['cal-cell'];
-      if (isToday) classes.push('cal-cell--today');
-      if (isPast) classes.push('cal-cell--past');
-      if (event) classes.push('cal-cell--has-event');
-      cell.className = classes.join(' ');
+      const cls  = ['cal-cell'];
+      if (isToday) cls.push('cal-cell--today');
+      if (isPast)  cls.push('cal-cell--past');
+      if (event && !event.isPrivate) cls.push('cal-cell--event');
+      if (event &&  event.isPrivate) cls.push('cal-cell--private');
+      cell.className = cls.join(' ');
 
+      // Date number
       const num = document.createElement('span');
       num.className = 'cal-num';
       num.textContent = d;
       cell.appendChild(num);
 
+      // Event dot (no labels ever)
       if (event) {
         hasEvents = true;
-        if (event.isPrivate) {
-          const dot = document.createElement('span');
-          dot.className = 'cal-private-dot';
-          dot.setAttribute('title', 'Private Event');
-          cell.appendChild(dot);
-        } else {
-          const lbl = document.createElement('span');
-          lbl.className = 'cal-event-label';
-          const t = event.title;
-          lbl.textContent = t.length > 13 ? t.slice(0, 11) + '…' : t;
-          lbl.setAttribute('title', t);
-          cell.appendChild(lbl);
+        const dot = document.createElement('span');
+        dot.className = event.isPrivate ? 'cal-dot cal-dot--dim' : 'cal-dot';
+        cell.appendChild(dot);
+
+        if (!event.isPrivate) {
+          cell.setAttribute('tabindex', '0');
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('aria-label', `${event.title} — ${dateStr}. Press Enter for details.`);
+          cell.addEventListener('click', () => openModal(event));
+          cell.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(event); }
+          });
         }
-        cell.addEventListener('click', () => openModal(event));
-        cell.setAttribute('tabindex', '0');
-        cell.setAttribute('role', 'button');
-        cell.setAttribute('aria-label', `Event on ${dateStr}: ${event.isPrivate ? 'Private Event' : event.title}`);
-        cell.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(event); } });
       }
 
       grid.appendChild(cell);
     }
 
-    const noEventsMsg = document.getElementById('no-events-msg');
-    noEventsMsg.style.display = hasEvents ? 'none' : 'block';
+    document.getElementById('cal-no-events').style.display = hasEvents ? 'none' : 'block';
   }
 
   function openModal(event) {
@@ -233,7 +229,7 @@ const eventsData = allEvents.map(e => ({
 
     // Image
     const imgWrap = document.getElementById('modal-img-wrap');
-    const img = document.getElementById('modal-img');
+    const img     = document.getElementById('modal-img');
     if (event.creativeImage) {
       img.src = event.creativeImage;
       img.alt = event.title;
@@ -244,38 +240,36 @@ const eventsData = allEvents.map(e => ({
 
     if (event.isPrivate) {
       document.getElementById('modal-private').style.display = 'block';
-      document.getElementById('modal-public').style.display = 'none';
-      document.getElementById('modal-title').textContent = 'Private Event';
+      document.getElementById('modal-public').style.display  = 'none';
       document.getElementById('modal-cta-wrap').style.display = 'none';
+      document.getElementById('modal-divider').style.display  = 'none';
+      document.getElementById('modal-title').textContent = 'Private Event';
     } else {
       document.getElementById('modal-private').style.display = 'none';
-      document.getElementById('modal-public').style.display = 'block';
+      document.getElementById('modal-public').style.display  = 'block';
       document.getElementById('modal-title').textContent = event.title;
 
-      // Date / time
+      // Date + time line  e.g. "SATURDAY, 25 APRIL 2026  ·  9:00 PM ONWARDS"
       const d = new Date(event.date + 'T00:00:00');
-      document.getElementById('modal-date').textContent = d.toLocaleDateString('en-IN', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      });
-      document.getElementById('modal-time').textContent = event.time;
+      const dayName  = DAYS_LONG[d.getDay()].toUpperCase();
+      const monthName = MONTHS_LONG[d.getMonth()].toUpperCase();
+      document.getElementById('modal-datetime').textContent =
+        `${dayName}, ${d.getDate()} ${monthName} ${d.getFullYear()}  ·  ${event.time.toUpperCase()}`;
 
       // Venue
       document.getElementById('modal-venue').textContent = event.venue;
       const addrEl = document.getElementById('modal-address');
-      if (event.address) {
-        addrEl.textContent = event.address;
-        addrEl.style.display = 'block';
-      } else {
-        addrEl.style.display = 'none';
-      }
+      addrEl.textContent  = event.address;
+      addrEl.style.display = event.address ? 'block' : 'none';
+      document.getElementById('modal-venue-block').style.display = 'block';
 
-      // Genre
+      // Genre tags
       const genreWrap = document.getElementById('modal-genre');
       genreWrap.innerHTML = '';
       if (event.genre && event.genre.length) {
         event.genre.forEach(g => {
           const span = document.createElement('span');
-          span.className = 'modal-tag';
+          span.className   = 'modal-tag';
           span.textContent = g;
           genreWrap.appendChild(span);
         });
@@ -293,25 +287,28 @@ const eventsData = allEvents.map(e => ({
         dcWrap.style.display = 'none';
       }
 
-      // Line-up / hosted by
-      const hostedWrap = document.getElementById('modal-hosted-wrap');
-      const parts = [];
-      if (event.hostedBy) parts.push(`Hosted by ${event.hostedBy}`);
+      // Line-up
+      const luWrap  = document.getElementById('modal-lineup-wrap');
+      const parts   = [];
+      if (event.hostedBy)  parts.push(`Hosted by ${event.hostedBy}`);
       if (event.videoSetBy) parts.push(`Video Sets: ${event.videoSetBy}`);
       if (parts.length) {
-        document.getElementById('modal-hosted').textContent = parts.join(' · ');
-        hostedWrap.style.display = 'flex';
+        document.getElementById('modal-lineup').textContent = parts.join('  ·  ');
+        luWrap.style.display = 'flex';
       } else {
-        hostedWrap.style.display = 'none';
+        luWrap.style.display = 'none';
       }
 
       // CTA
       const ctaWrap = document.getElementById('modal-cta-wrap');
+      const divider = document.getElementById('modal-divider');
       if (event.guestListAvailable) {
         document.getElementById('modal-cta').href = `${base}/events/${event.slug}/`;
         ctaWrap.style.display = 'block';
+        divider.style.display = 'block';
       } else {
         ctaWrap.style.display = 'none';
+        divider.style.display = 'none';
       }
     }
 
@@ -325,7 +322,6 @@ const eventsData = allEvents.map(e => ({
     document.body.style.overflow = '';
   }
 
-  // Navigation
   document.getElementById('cal-prev').addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
@@ -351,467 +347,457 @@ const eventsData = allEvents.map(e => ({
     if (e.key === 'Escape') closeModal();
   });
 
-  // Init
   renderCalendar(currentYear, currentMonth);
 </script>
 
 <style>
-  /* ─── Header ──────────────────────────────────────── */
-  #events-header {
-    padding: 7rem 2rem 3rem;
+  /* ── Hero ─────────────────────────────────────────── */
+  #events-hero {
+    padding: 7rem 2rem 3.5rem;
     text-align: center;
   }
 
-  .events-header-inner {
-    max-width: var(--max-width);
+  .hero-inner {
+    max-width: 640px;
     margin-inline: auto;
   }
 
-  .section-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
+  .hero-label {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1rem;
+    color: #c9a84c;
+    margin-bottom: 1.25rem;
   }
 
-  #events-header h1 {
-    font-size: clamp(4rem, 12vw, 9rem);
-    color: var(--white);
-    margin-bottom: 1rem;
+  #events-hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(64px, 12vw, 96px);
+    color: #e0dccf;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin-bottom: 1.25rem;
+    text-transform: uppercase;
   }
 
-  #events-header p {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.5);
+  .hero-sub {
+    font-size: 15px;
+    color: #888880;
+    line-height: 1.7;
     max-width: 480px;
     margin-inline: auto;
   }
 
-  /* ─── Calendar wrapper ───────────────────────────── */
+  /* ── Calendar section ─────────────────────────────── */
   #calendar-section {
-    padding: 0 2rem 5rem;
+    padding: 0 1.5rem 5rem;
   }
 
-  .calendar-wrap {
+  .cal-container {
     max-width: 860px;
     margin-inline: auto;
-    background: #0e0e0e;
-    border: 1px solid rgba(201,168,76,0.12);
-    border-radius: 4px;
-    overflow: hidden;
+    background: #111111;
+    border: 1px solid #1e1e1e;
+    border-radius: 8px;
+    padding: 40px;
+    animation: fadeIn 0.3s ease;
   }
 
-  /* ─── Calendar nav bar ───────────────────────────── */
-  .cal-nav {
-    display: flex;
+  /* ── Calendar header ──────────────────────────────── */
+  .cal-header {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
     align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(201,168,76,0.1);
-    background: #111;
+    gap: 1rem;
+    margin-bottom: 2rem;
   }
 
   .cal-arrow {
-    background: none;
-    border: 1px solid rgba(201,168,76,0.25);
-    color: var(--gold);
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid #1e1e1e;
+    color: #c9a84c;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: background 0.15s, border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s;
+    flex-shrink: 0;
   }
 
   .cal-arrow:hover {
-    background: rgba(201,168,76,0.1);
-    border-color: var(--gold);
+    border-color: #c9a84c;
+    background: #1a1500;
   }
 
-  .cal-nav-center {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .cal-header-center {
+    text-align: center;
   }
 
-  .cal-title {
-    font-family: var(--font-display);
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    letter-spacing: 0.06em;
-    color: var(--white);
+  .cal-month-name {
+    display: block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 0.05em;
+    color: #e0dccf;
     text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 0.5rem;
   }
 
   .cal-year-select {
-    background: #1a1a1a;
-    border: 1px solid rgba(201,168,76,0.2);
-    color: var(--gold);
-    font-family: var(--font-body);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    padding: 0.3rem 0.6rem;
-    border-radius: 2px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    color: #c9a84c;
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    padding: 4px 12px;
+    border-radius: 4px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
     text-align: center;
+    text-align-last: center;
   }
 
-  /* ─── Day headers ────────────────────────────────── */
-  .cal-days-header {
+  /* ── Day labels ───────────────────────────────────── */
+  .cal-day-labels {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background: #0a0a0a;
-    border-bottom: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid #1e1e1e;
+    margin-bottom: 0;
   }
 
-  .cal-days-header span {
+  .cal-day-labels span {
     text-align: center;
-    font-size: 0.55rem;
-    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-    padding: 0.6rem 0;
+    color: #555550;
+    padding: 12px 0;
   }
 
-  /* ─── Calendar grid ──────────────────────────────── */
+  /* ── Grid ─────────────────────────────────────────── */
   .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: rgba(201,168,76,0.06);
+    animation: slideIn 0.2s ease;
   }
 
+  /* ── Cells ────────────────────────────────────────── */
   .cal-cell {
-    background: #0e0e0e;
     min-height: 80px;
-    padding: 0.6rem 0.5rem 0.5rem;
+    padding: 10px 8px;
+    border: 1px solid #0f0f0f;
     position: relative;
     cursor: default;
+    vertical-align: top;
     transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .cal-cell--empty {
-    background: #090909;
+    background: #0a0a0a;
+    opacity: 0.4;
   }
 
-  .cal-cell--past .cal-num {
-    color: rgba(255,255,255,0.2);
+  /* Today */
+  .cal-cell--today {
+    border-color: #2a2000;
   }
 
   .cal-cell--today .cal-num {
-    color: var(--gold);
-    font-weight: 700;
+    color: #e0dccf !important;
   }
 
-  .cal-cell--today::after {
-    content: '';
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--gold);
-  }
-
-  .cal-cell--has-event {
+  /* Event cell — public */
+  .cal-cell--event {
     cursor: pointer;
-    background: #121212;
   }
 
-  .cal-cell--has-event:hover {
-    background: #1a1a1a;
+  .cal-cell--event:hover {
+    background: #1a1500;
   }
 
+  .cal-cell--event {
+    border-color: #2a2000;
+  }
+
+  /* Date number */
   .cal-num {
     display: block;
-    font-size: 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
     font-weight: 500;
-    color: rgba(255,255,255,0.65);
+    color: #555550;
     line-height: 1;
-    margin-bottom: 0.35rem;
   }
 
-  .cal-cell--has-event .cal-num {
-    color: var(--white);
-    font-weight: 700;
+  .cal-cell--today .cal-num,
+  .cal-cell--event .cal-num {
+    color: #e0dccf;
+    font-weight: 600;
   }
 
-  /* Gold circle behind event date number */
-  .cal-cell--has-event::before {
-    content: '';
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--gold);
-    opacity: 0.15;
+  .cal-cell--past .cal-num {
+    color: #333330;
   }
 
-  .cal-event-label {
-    display: block;
-    font-size: 0.52rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gold);
-    line-height: 1.3;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  .cal-cell--past.cal-cell--event .cal-num {
+    color: #888880;
   }
 
-  .cal-private-dot {
+  /* Event dot */
+  .cal-dot {
     display: block;
     width: 6px;
     height: 6px;
+    background: #c9a84c;
     border-radius: 50%;
-    background: var(--gold);
-    margin-top: 2px;
+    margin-top: 6px;
   }
 
-  /* ─── No events ──────────────────────────────────── */
-  .no-events-msg {
+  .cal-dot--dim {
+    background: #7a6330;
+  }
+
+  /* ── No-events message ────────────────────────────── */
+  .cal-no-events {
     text-align: center;
-    color: rgba(255,255,255,0.3);
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
+    color: #555550;
     padding: 2rem 0 0;
+    max-width: 860px;
+    margin-inline: auto;
   }
 
-  /* ─── Modal overlay ──────────────────────────────── */
-  .event-modal {
+  /* ── Modal overlay ────────────────────────────────── */
+  .modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(0,0,0,0.82);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
+    animation: fadeIn 0.2s ease;
   }
 
-  .event-modal.open {
+  .modal-overlay.open {
     display: flex;
   }
 
-  /* ─── Modal box ──────────────────────────────────── */
+  /* ── Modal box ────────────────────────────────────── */
   .modal-box {
     position: relative;
-    background: #111;
-    border-top: 3px solid var(--gold);
-    border-radius: 4px;
+    background: #111111;
+    border: 1px solid #1e1e1e;
+    border-top: 3px solid #c9a84c;
+    border-radius: 8px;
     max-width: 520px;
-    width: 100%;
+    width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
-    animation: modal-in 0.2s ease;
-  }
-
-  @keyframes modal-in {
-    from { opacity: 0; transform: translateY(16px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
+    box-shadow: 0 32px 100px rgba(0,0,0,0.9);
+    animation: slideUp 0.25s ease;
   }
 
   .modal-close {
     position: absolute;
-    top: 0.9rem;
-    right: 1rem;
-    background: none;
+    top: 16px;
+    right: 16px;
+    background: transparent;
     border: none;
-    color: rgba(255,255,255,0.4);
-    font-size: 1.5rem;
+    color: #888880;
+    font-size: 20px;
     line-height: 1;
     cursor: pointer;
-    z-index: 2;
+    z-index: 10;
+    padding: 4px 8px;
     transition: color 0.15s;
-    padding: 0.2rem 0.4rem;
   }
 
-  .modal-close:hover { color: var(--white); }
+  .modal-close:hover { color: #e0dccf; }
 
-  /* ─── Modal image ────────────────────────────────── */
-  .modal-img-wrap {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    background: #0a0a0a;
-  }
-
+  /* Modal image */
   .modal-img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
     display: block;
+    border-radius: 6px 6px 0 0;
   }
 
-  /* ─── Modal content ──────────────────────────────── */
-  .modal-body {
-    padding: 1.75rem 1.75rem 1.5rem;
+  /* Modal content area */
+  .modal-content {
+    padding: 28px;
   }
 
+  /* Date + time line */
+  .modal-datetime {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #c9a84c;
+    margin-bottom: 8px;
+  }
+
+  /* Event title */
   .modal-title {
-    font-size: clamp(1.4rem, 4vw, 2rem);
-    color: var(--white);
-    margin-bottom: 1.25rem;
-    line-height: 1.1;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    color: #e0dccf;
+    line-height: 1;
+    margin-bottom: 16px;
+    text-transform: uppercase;
     padding-right: 2rem;
   }
 
-  /* Private badge */
-  .modal-private-badge {
-    display: inline-block;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #000;
-    background: var(--gold);
-    padding: 3px 10px;
-    border-radius: 2px;
-    margin-bottom: 1rem;
-  }
-
-  .modal-private p {
-    color: rgba(255,255,255,0.5);
-    font-size: 0.95rem;
-  }
-
-  /* Meta rows */
-  .modal-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .modal-meta-row {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-  }
-
-  .modal-meta-icon {
-    font-size: 0.95rem;
-    margin-top: 1px;
-    flex-shrink: 0;
-  }
-
-  .modal-meta-value {
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.85);
+  /* Venue */
+  .modal-venue {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
     font-weight: 500;
+    color: #888880;
+    margin-bottom: 4px;
   }
 
-  .modal-meta-sep {
-    color: rgba(255,255,255,0.3);
-    margin: 0 0.3rem;
-  }
-
-  .modal-venue-name {
-    display: block;
-    font-weight: 600;
-    color: var(--white);
-  }
-
-  .modal-meta-sub {
-    display: block;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.4);
-    margin-top: 2px;
+  .modal-address {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: #555550;
+    margin-bottom: 16px;
   }
 
   /* Genre tags */
-  .modal-genre {
+  .modal-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 1.1rem;
+    gap: 6px;
+    margin-bottom: 16px;
   }
 
   .modal-tag {
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    background: #1a1500;
+    border: 1px solid #2a2000;
+    color: #c9a84c;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--gold);
-    background: rgba(201,168,76,0.1);
-    border: 1px solid rgba(201,168,76,0.25);
-    padding: 3px 9px;
+    padding: 3px 10px;
     border-radius: 2px;
   }
 
-  /* Detail rows */
-  .modal-detail-row {
+  /* Detail fields (dress code, line-up) */
+  .modal-field {
     display: flex;
-    gap: 0.75rem;
-    align-items: baseline;
-    padding: 0.55rem 0;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 12px;
   }
 
-  .modal-detail-label {
-    font-size: 0.58rem;
+  .field-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-    flex-shrink: 0;
-    min-width: 80px;
+    color: #c9a84c;
   }
 
-  .modal-detail-value {
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.75);
+  .field-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: #888880;
   }
 
-  /* CTA */
-  .modal-cta-wrap {
-    margin-top: 1.5rem;
+  /* Divider */
+  .modal-divider {
+    height: 1px;
+    background: #1e1e1e;
+    margin: 16px 0;
   }
 
+  /* CTA button */
   .modal-cta-btn {
     display: block;
-    text-align: center;
-    background: var(--gold);
-    color: #000;
-    font-family: var(--font-body);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    width: 100%;
+    background: #c9a84c;
+    color: #060606;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 0.9rem 1.5rem;
-    border-radius: 2px;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
     text-decoration: none;
-    transition: background 0.15s, transform 0.15s;
+    cursor: pointer;
+    transition: background 0.15s;
   }
 
   .modal-cta-btn:hover {
-    background: var(--gold-light);
-    color: #000;
-    transform: translateY(-1px);
+    background: #b8923e;
+    color: #060606;
   }
 
-  /* ─── Responsive ─────────────────────────────────── */
+  /* Private state */
+  .private-badge {
+    display: inline-block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #060606;
+    background: #c9a84c;
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 12px;
+  }
+
+  .private-text {
+    font-size: 14px;
+    color: #555550;
+    line-height: 1.6;
+  }
+
+  /* ── Animations ───────────────────────────────────── */
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* ── Mobile ───────────────────────────────────────── */
   @media (max-width: 640px) {
-    .cal-cell { min-height: 58px; padding: 0.4rem 0.3rem; }
-    .cal-num { font-size: 0.75rem; }
-    .cal-event-label { font-size: 0.45rem; }
-    .modal-box { max-height: 95vh; }
-    .modal-body { padding: 1.25rem; }
+    .cal-container { padding: 16px; }
+    .cal-month-name { font-size: 36px; }
+    .cal-arrow { width: 36px; height: 36px; font-size: 15px; }
+    .cal-cell { min-height: 52px; padding: 6px 4px; }
+    .cal-num { font-size: 12px; }
+    .modal-box { max-width: 95vw; max-height: 92vh; }
+    .modal-content { padding: 20px; }
+    .modal-title { font-size: 28px; }
+    .modal-datetime { font-size: 10px; }
   }
 </style>
