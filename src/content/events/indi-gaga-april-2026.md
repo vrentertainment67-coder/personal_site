@@ -12,7 +12,7 @@ dresscode: "Ladies in Indian · Men in Western"
 genre: ["IndiPop", "Desi", "Afro"]
 hostedBy: "Rafi + Richard"
 videoSetBy: "VIC"
-creativeImage: "/images/events/indi-gaga-april-2026.jpg"
+creativeImage: "/images/events/Post_Indigaga_Bastian_Apr.jpg.jpeg"
 description: "The Global Desi Pop-Up is back at Bastian Garden City. VIC on video sets — IndiPop, Desi, and Afro vibes all night. Entry via guestlist and table bookings only. Dress code: Ladies in Indian, Men in Western."
 tags: ["Bangalore", "Club Night", "IndiPop", "Desi"]
 ---
