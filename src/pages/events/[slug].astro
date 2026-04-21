@@ -20,9 +20,9 @@ const formattedDate = eventDate.toLocaleDateString('en-IN', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 });
 
-const waMessage = encodeURIComponent(
-  `Hi DJ VIC! I'd like to join the guest list for ${event.data.title} on ${formattedDate} at ${event.data.venue}. Please let me know the details.`
-);
+const formAction = `https://formspree.io/f/${event.data.guestListFormId || 'xbdqanrk'}`;
+const formSubject = `Guest List RSVP — ${event.data.title} at ${event.data.venue}`;
+const successUrl  = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
 ---
 
 <Layout
@@ -106,7 +106,7 @@ const waMessage = encodeURIComponent(
               <span class="detail-icon">&#127925;</span>
               <div>
                 {event.data.hostedBy && <span class="detail-main">Hosted by {event.data.hostedBy}</span>}
-                {event.data.videoSetBy && <span class="detail-sub">Video Sets: {event.data.videoSetBy}</span>}
+                {event.data.videoSetBy && <span class="detail-sub">Video Set by {event.data.videoSetBy}</span>}
               </div>
             </div>
           )}
@@ -132,16 +132,58 @@ const waMessage = encodeURIComponent(
             <div class="guestlist-card">
               <span class="gl-label">Entry</span>
               <h2>Join the Guest List</h2>
-              <p>Entry is via guestlist only. Tap below to message DJ VIC directly on WhatsApp to request your spot — include your name and the number of guests.</p>
-              <a
-                href={`https://wa.me/919611711677?text=${waMessage}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="cta-btn cta-btn--gold"
+              <p>Fill in your details below and we'll confirm your spot closer to the date. Entry is via guestlist only.</p>
+
+              <!-- Success state -->
+              <div id="rsvp-success" class="rsvp-success" style="display:none">
+                <span class="rsvp-tick">✓</span>
+                <p>You're on the list! We'll be in touch closer to the date.</p>
+              </div>
+
+              <!-- Form -->
+              <form
+                class="guestlist-form"
+                action={formAction}
+                method="POST"
               >
-                Request Guest List via WhatsApp &rarr;
-              </a>
-              <p class="gl-note">Alternatively, email <a href="mailto:bookings@djvicofficial.com">bookings@djvicofficial.com</a></p>
+                <input type="hidden" name="_subject" value={formSubject} />
+                <input type="hidden" name="_next"    value={successUrl} />
+                <input type="hidden" name="event_name"  value={event.data.title} />
+                <input type="hidden" name="event_date"  value={formattedDate} />
+                <input type="hidden" name="event_venue" value={event.data.venue} />
+
+                <div class="form-row">
+                  <div class="form-field">
+                    <label for="gl-name">Full Name <span class="req">*</span></label>
+                    <input type="text"  id="gl-name"      name="name"      required placeholder="Your name" />
+                  </div>
+                  <div class="form-field">
+                    <label for="gl-phone">Phone Number <span class="req">*</span></label>
+                    <input type="tel"   id="gl-phone"     name="phone"     required placeholder="+91 98765 43210" />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-field">
+                    <label for="gl-guests">Number of Guests <span class="req">*</span></label>
+                    <select id="gl-guests" name="guests" required>
+                      <option value="1">1 — Just me</option>
+                      <option value="2">2 people</option>
+                      <option value="3">3 people</option>
+                      <option value="4">4 people</option>
+                      <option value="5+">5+ people</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="gl-instagram">Instagram Handle</label>
+                    <input type="text" id="gl-instagram" name="instagram" placeholder="@yourusername" />
+                  </div>
+                </div>
+
+                <button type="submit" class="cta-btn cta-btn--gold">Request My Spot &rarr;</button>
+              </form>
+
+              <p class="gl-note">Questions? Email <a href="mailto:bookings@djvicofficial.com">bookings@djvicofficial.com</a></p>
             </div>
           </div>
         ) : (
@@ -158,6 +200,38 @@ const waMessage = encodeURIComponent(
 
   <Footer />
 </Layout>
+
+<script>
+  // WhatsApp notification on form submit
+  const form = document.querySelector('.guestlist-form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      const name      = document.getElementById('gl-name')?.value      || '';
+      const phone     = document.getElementById('gl-phone')?.value     || '';
+      const guests    = document.getElementById('gl-guests')?.value    || '1';
+      const instagram = document.getElementById('gl-instagram')?.value || 'not provided';
+      const eventName  = form.querySelector('[name="event_name"]')?.value  || '';
+      const eventDate  = form.querySelector('[name="event_date"]')?.value  || '';
+      const eventVenue = form.querySelector('[name="event_venue"]')?.value || '';
+
+      const msg = encodeURIComponent(
+        `🎟️ New Guest List RSVP\n\nEvent: ${eventName}\nVenue: ${eventVenue}\nDate: ${eventDate}\n\nName: ${name}\nPhone: ${phone}\nGuests: ${guests}\nInstagram: ${instagram}`
+      );
+
+      setTimeout(() => {
+        window.open(`https://wa.me/919611711677?text=${msg}`, '_blank');
+      }, 1500);
+    });
+  }
+
+  // Show success state if redirected back with ?rsvp=success
+  if (window.location.search.includes('rsvp=success')) {
+    const successEl = document.getElementById('rsvp-success');
+    const formEl    = document.querySelector('.guestlist-form');
+    if (successEl) successEl.style.display = 'block';
+    if (formEl)    formEl.style.display    = 'none';
+  }
+</script>
 
 <style>
   #event-page {
@@ -335,11 +409,95 @@ const waMessage = encodeURIComponent(
     margin-bottom: 1.5rem;
   }
 
+  /* Form */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-field label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .req { color: var(--gold); }
+
+  .form-field input,
+  .form-field select {
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .form-field input::placeholder { color: rgba(255,255,255,0.2); }
+
+  .form-field input:focus,
+  .form-field select:focus {
+    border-color: rgba(201,168,76,0.5);
+  }
+
+  .form-field select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .guestlist-form .cta-btn--gold {
+    margin-top: 0.5rem;
+  }
+
+  /* RSVP success */
+  .rsvp-success {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .rsvp-tick {
+    font-size: 1.2rem;
+    color: var(--gold);
+    flex-shrink: 0;
+    line-height: 1.6;
+  }
+
+  .rsvp-success p {
+    color: rgba(255,255,255,0.75) !important;
+    margin-bottom: 0 !important;
+    font-size: 0.9rem !important;
+  }
+
   .gl-note {
     margin-top: 1rem;
     font-size: 0.75rem !important;
     color: rgba(255,255,255,0.3) !important;
     margin-bottom: 0 !important;
+  }
+
+  @media (max-width: 560px) {
+    .form-row { grid-template-columns: 1fr; }
   }
 
   .gl-note a {

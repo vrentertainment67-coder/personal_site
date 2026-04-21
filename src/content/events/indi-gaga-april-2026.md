@@ -15,6 +15,7 @@ videoSetBy: "VIC"
 creativeImage: "/images/events/Post_Indigaga_Bastian_Apr.jpg.jpeg"
 description: "The Global Desi Pop-Up is back at Bastian Garden City. VIC on video sets — IndiPop, Desi, and Afro vibes all night. Entry via guestlist and table bookings only. Dress code: Ladies in Indian, Men in Western."
 tags: ["Bangalore", "Club Night", "IndiPop", "Desi"]
+guestListFormId: "xbdqanrk"
 ---
 
 The Global Desi Pop-Up returns to Bastian Garden City for a night of IndiPop, Desi, and Afro sounds. VIC on video sets all night.

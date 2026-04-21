@@ -31,6 +31,7 @@ const events = defineCollection({
     creativeImage: z.string().optional(),
     description: z.string(),
     tags: z.array(z.string()).default([]),
+    guestListFormId: z.string().default('xbdqanrk'),
   }),
 });
 
