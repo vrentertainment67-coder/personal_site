@@ -12,4 +12,26 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+const events = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/events' }),
+  schema: z.object({
+    title: z.string(),
+    venue: z.string(),
+    address: z.string().optional(),
+    city: z.string(),
+    date: z.string(),
+    time: z.string(),
+    ticketed: z.boolean().default(false),
+    guestListAvailable: z.boolean().default(false),
+    isPrivate: z.boolean().default(false),
+    dresscode: z.string().optional(),
+    genre: z.array(z.string()).default([]),
+    hostedBy: z.string().optional(),
+    videoSetBy: z.string().optional(),
+    creativeImage: z.string().optional(),
+    description: z.string(),
+    tags: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = { blog, events };

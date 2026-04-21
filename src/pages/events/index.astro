@@ -1,0 +1,817 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+const allEvents = await getCollection('events');
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const eventsData = allEvents.map(e => ({
+  slug: e.id,
+  title: e.data.title,
+  date: e.data.date,
+  time: e.data.time,
+  venue: e.data.venue,
+  address: e.data.address || '',
+  city: e.data.city,
+  isPrivate: e.data.isPrivate || false,
+  guestListAvailable: e.data.guestListAvailable || false,
+  creativeImage: e.data.creativeImage || '',
+  dresscode: e.data.dresscode || '',
+  genre: e.data.genre || [],
+  hostedBy: e.data.hostedBy || '',
+  videoSetBy: e.data.videoSetBy || '',
+  description: e.data.description,
+  tags: e.data.tags || [],
+}));
+---
+
+<Layout
+  title="Events — DJ VIC Live in Bangalore"
+  description="Catch DJ VIC live — view upcoming events, club nights and sets in Bangalore. Click a date to see event details and join the guest list."
+  canonical="https://djvicofficial.com/events/"
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <section id="events-header">
+      <div class="events-header-inner">
+        <div class="section-label">Live &amp; In Person</div>
+        <h1>Events</h1>
+        <p>Upcoming sets, club nights, and appearances. Click any highlighted date for details.</p>
+      </div>
+    </section>
+
+    <section id="calendar-section">
+      <div class="calendar-wrap">
+
+        <!-- Calendar nav -->
+        <div class="cal-nav">
+          <button class="cal-arrow" id="cal-prev" aria-label="Previous month">&#8592;</button>
+          <div class="cal-nav-center">
+            <span class="cal-title" id="cal-title"></span>
+            <select class="cal-year-select" id="year-select" aria-label="Select year"></select>
+          </div>
+          <button class="cal-arrow" id="cal-next" aria-label="Next month">&#8594;</button>
+        </div>
+
+        <!-- Day headers -->
+        <div class="cal-days-header">
+          <span>Sun</span><span>Mon</span><span>Tue</span>
+          <span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <!-- Grid -->
+        <div class="cal-grid" id="cal-grid"></div>
+
+      </div>
+
+      <!-- No events message -->
+      <p class="no-events-msg" id="no-events-msg" style="display:none">
+        No events this month — check back soon.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- Event modal -->
+  <div class="event-modal" id="event-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+
+      <div class="modal-img-wrap" id="modal-img-wrap">
+        <img src="" alt="" id="modal-img" class="modal-img" />
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-private" id="modal-private" style="display:none">
+          <span class="modal-private-badge">Private Event</span>
+          <p>This is a private event — not open to the public.</p>
+        </div>
+
+        <div class="modal-public" id="modal-public">
+          <h2 id="modal-title" class="modal-title"></h2>
+
+          <div class="modal-meta">
+            <div class="modal-meta-row" id="modal-datetime-row">
+              <span class="modal-meta-icon">&#128197;</span>
+              <div>
+                <span id="modal-date" class="modal-meta-value"></span>
+                <span class="modal-meta-sep">·</span>
+                <span id="modal-time" class="modal-meta-value"></span>
+              </div>
+            </div>
+            <div class="modal-meta-row" id="modal-venue-row">
+              <span class="modal-meta-icon">&#128205;</span>
+              <div>
+                <span id="modal-venue" class="modal-meta-value modal-venue-name"></span>
+                <span id="modal-address" class="modal-meta-sub"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-genre" id="modal-genre"></div>
+
+          <div class="modal-detail-row" id="modal-dresscode-wrap">
+            <span class="modal-detail-label">Dress Code</span>
+            <span id="modal-dresscode" class="modal-detail-value"></span>
+          </div>
+
+          <div class="modal-detail-row" id="modal-hosted-wrap">
+            <span class="modal-detail-label">Line-up</span>
+            <span id="modal-hosted" class="modal-detail-value"></span>
+          </div>
+        </div>
+
+        <div class="modal-cta-wrap" id="modal-cta-wrap">
+          <a href="#" id="modal-cta" class="modal-cta-btn">Join the Guest List &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<script define:vars={{ eventsData, base }}>
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Build event map keyed by date string YYYY-MM-DD
+  const eventMap = {};
+  for (const ev of eventsData) {
+    eventMap[ev.date] = ev;
+  }
+
+  const today = new Date();
+  let currentYear = today.getFullYear();
+  let currentMonth = today.getMonth();
+
+  // Populate year select: current year ±2
+  const yearSelect = document.getElementById('year-select');
+  for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 2; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  }
+  yearSelect.value = currentYear;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function renderCalendar(year, month) {
+    document.getElementById('cal-title').textContent = `${MONTHS[month]} ${year}`;
+    yearSelect.value = year;
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    let hasEvents = false;
+
+    // Empty leading cells
+    for (let i = 0; i < firstDay; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'cal-cell cal-cell--empty';
+      grid.appendChild(empty);
+    }
+
+    // Day cells
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
+      const event = eventMap[dateStr];
+      const isToday = dateStr === todayStr;
+      const isPast = dateStr < todayStr;
+
+      const cell = document.createElement('div');
+      const classes = ['cal-cell'];
+      if (isToday) classes.push('cal-cell--today');
+      if (isPast) classes.push('cal-cell--past');
+      if (event) classes.push('cal-cell--has-event');
+      cell.className = classes.join(' ');
+
+      const num = document.createElement('span');
+      num.className = 'cal-num';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      if (event) {
+        hasEvents = true;
+        if (event.isPrivate) {
+          const dot = document.createElement('span');
+          dot.className = 'cal-private-dot';
+          dot.setAttribute('title', 'Private Event');
+          cell.appendChild(dot);
+        } else {
+          const lbl = document.createElement('span');
+          lbl.className = 'cal-event-label';
+          const t = event.title;
+          lbl.textContent = t.length > 13 ? t.slice(0, 11) + '…' : t;
+          lbl.setAttribute('title', t);
+          cell.appendChild(lbl);
+        }
+        cell.addEventListener('click', () => openModal(event));
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('aria-label', `Event on ${dateStr}: ${event.isPrivate ? 'Private Event' : event.title}`);
+        cell.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(event); } });
+      }
+
+      grid.appendChild(cell);
+    }
+
+    const noEventsMsg = document.getElementById('no-events-msg');
+    noEventsMsg.style.display = hasEvents ? 'none' : 'block';
+  }
+
+  function openModal(event) {
+    const modal = document.getElementById('event-modal');
+
+    // Image
+    const imgWrap = document.getElementById('modal-img-wrap');
+    const img = document.getElementById('modal-img');
+    if (event.creativeImage) {
+      img.src = event.creativeImage;
+      img.alt = event.title;
+      imgWrap.style.display = 'block';
+    } else {
+      imgWrap.style.display = 'none';
+    }
+
+    if (event.isPrivate) {
+      document.getElementById('modal-private').style.display = 'block';
+      document.getElementById('modal-public').style.display = 'none';
+      document.getElementById('modal-title').textContent = 'Private Event';
+      document.getElementById('modal-cta-wrap').style.display = 'none';
+    } else {
+      document.getElementById('modal-private').style.display = 'none';
+      document.getElementById('modal-public').style.display = 'block';
+      document.getElementById('modal-title').textContent = event.title;
+
+      // Date / time
+      const d = new Date(event.date + 'T00:00:00');
+      document.getElementById('modal-date').textContent = d.toLocaleDateString('en-IN', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+      document.getElementById('modal-time').textContent = event.time;
+
+      // Venue
+      document.getElementById('modal-venue').textContent = event.venue;
+      const addrEl = document.getElementById('modal-address');
+      if (event.address) {
+        addrEl.textContent = event.address;
+        addrEl.style.display = 'block';
+      } else {
+        addrEl.style.display = 'none';
+      }
+
+      // Genre
+      const genreWrap = document.getElementById('modal-genre');
+      genreWrap.innerHTML = '';
+      if (event.genre && event.genre.length) {
+        event.genre.forEach(g => {
+          const span = document.createElement('span');
+          span.className = 'modal-tag';
+          span.textContent = g;
+          genreWrap.appendChild(span);
+        });
+        genreWrap.style.display = 'flex';
+      } else {
+        genreWrap.style.display = 'none';
+      }
+
+      // Dress code
+      const dcWrap = document.getElementById('modal-dresscode-wrap');
+      if (event.dresscode) {
+        document.getElementById('modal-dresscode').textContent = event.dresscode;
+        dcWrap.style.display = 'flex';
+      } else {
+        dcWrap.style.display = 'none';
+      }
+
+      // Line-up / hosted by
+      const hostedWrap = document.getElementById('modal-hosted-wrap');
+      const parts = [];
+      if (event.hostedBy) parts.push(`Hosted by ${event.hostedBy}`);
+      if (event.videoSetBy) parts.push(`Video Sets: ${event.videoSetBy}`);
+      if (parts.length) {
+        document.getElementById('modal-hosted').textContent = parts.join(' · ');
+        hostedWrap.style.display = 'flex';
+      } else {
+        hostedWrap.style.display = 'none';
+      }
+
+      // CTA
+      const ctaWrap = document.getElementById('modal-cta-wrap');
+      if (event.guestListAvailable) {
+        document.getElementById('modal-cta').href = `${base}/events/${event.slug}/`;
+        ctaWrap.style.display = 'block';
+      } else {
+        ctaWrap.style.display = 'none';
+      }
+    }
+
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modal-close').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('event-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Navigation
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  yearSelect.addEventListener('change', (e) => {
+    currentYear = parseInt(e.target.value);
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('event-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('event-modal')) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Init
+  renderCalendar(currentYear, currentMonth);
+</script>
+
+<style>
+  /* ─── Header ──────────────────────────────────────── */
+  #events-header {
+    padding: 7rem 2rem 3rem;
+    text-align: center;
+  }
+
+  .events-header-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  #events-header h1 {
+    font-size: clamp(4rem, 12vw, 9rem);
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  #events-header p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    max-width: 480px;
+    margin-inline: auto;
+  }
+
+  /* ─── Calendar wrapper ───────────────────────────── */
+  #calendar-section {
+    padding: 0 2rem 5rem;
+  }
+
+  .calendar-wrap {
+    max-width: 860px;
+    margin-inline: auto;
+    background: #0e0e0e;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* ─── Calendar nav bar ───────────────────────────── */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    background: #111;
+  }
+
+  .cal-arrow {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .cal-arrow:hover {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--gold);
+  }
+
+  .cal-nav-center {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .cal-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    letter-spacing: 0.06em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .cal-year-select {
+    background: #1a1a1a;
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--gold);
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.6rem;
+    border-radius: 2px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+  }
+
+  /* ─── Day headers ────────────────────────────────── */
+  .cal-days-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #0a0a0a;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .cal-days-header span {
+    text-align: center;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    padding: 0.6rem 0;
+  }
+
+  /* ─── Calendar grid ──────────────────────────────── */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: rgba(201,168,76,0.06);
+  }
+
+  .cal-cell {
+    background: #0e0e0e;
+    min-height: 80px;
+    padding: 0.6rem 0.5rem 0.5rem;
+    position: relative;
+    cursor: default;
+    transition: background 0.15s;
+  }
+
+  .cal-cell--empty {
+    background: #090909;
+  }
+
+  .cal-cell--past .cal-num {
+    color: rgba(255,255,255,0.2);
+  }
+
+  .cal-cell--today .cal-num {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .cal-cell--today::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  .cal-cell--has-event {
+    cursor: pointer;
+    background: #121212;
+  }
+
+  .cal-cell--has-event:hover {
+    background: #1a1a1a;
+  }
+
+  .cal-num {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.65);
+    line-height: 1;
+    margin-bottom: 0.35rem;
+  }
+
+  .cal-cell--has-event .cal-num {
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  /* Gold circle behind event date number */
+  .cal-cell--has-event::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.15;
+  }
+
+  .cal-event-label {
+    display: block;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    line-height: 1.3;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .cal-private-dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-top: 2px;
+  }
+
+  /* ─── No events ──────────────────────────────────── */
+  .no-events-msg {
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2rem 0 0;
+  }
+
+  /* ─── Modal overlay ──────────────────────────────── */
+  .event-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .event-modal.open {
+    display: flex;
+  }
+
+  /* ─── Modal box ──────────────────────────────────── */
+  .modal-box {
+    position: relative;
+    background: #111;
+    border-top: 3px solid var(--gold);
+    border-radius: 4px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    animation: modal-in 0.2s ease;
+  }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 0.9rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.15s;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .modal-close:hover { color: var(--white); }
+
+  /* ─── Modal image ────────────────────────────────── */
+  .modal-img-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #0a0a0a;
+  }
+
+  .modal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ─── Modal content ──────────────────────────────── */
+  .modal-body {
+    padding: 1.75rem 1.75rem 1.5rem;
+  }
+
+  .modal-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    color: var(--white);
+    margin-bottom: 1.25rem;
+    line-height: 1.1;
+    padding-right: 2rem;
+  }
+
+  /* Private badge */
+  .modal-private-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+  }
+
+  .modal-private p {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95rem;
+  }
+
+  /* Meta rows */
+  .modal-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-meta-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .modal-meta-icon {
+    font-size: 0.95rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  .modal-meta-value {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  .modal-meta-sep {
+    color: rgba(255,255,255,0.3);
+    margin: 0 0.3rem;
+  }
+
+  .modal-venue-name {
+    display: block;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .modal-meta-sub {
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+  }
+
+  /* Genre tags */
+  .modal-genre {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .modal-tag {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    padding: 3px 9px;
+    border-radius: 2px;
+  }
+
+  /* Detail rows */
+  .modal-detail-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.55rem 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .modal-detail-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+
+  .modal-detail-value {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* CTA */
+  .modal-cta-wrap {
+    margin-top: 1.5rem;
+  }
+
+  .modal-cta-btn {
+    display: block;
+    text-align: center;
+    background: var(--gold);
+    color: #000;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.9rem 1.5rem;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .modal-cta-btn:hover {
+    background: var(--gold-light);
+    color: #000;
+    transform: translateY(-1px);
+  }
+
+  /* ─── Responsive ─────────────────────────────────── */
+  @media (max-width: 640px) {
+    .cal-cell { min-height: 58px; padding: 0.4rem 0.3rem; }
+    .cal-num { font-size: 0.75rem; }
+    .cal-event-label { font-size: 0.45rem; }
+    .modal-box { max-height: 95vh; }
+    .modal-body { padding: 1.25rem; }
+  }
+</style>

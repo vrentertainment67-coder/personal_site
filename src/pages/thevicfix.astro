@@ -5,25 +5,25 @@ import Footer from '../components/Footer.astro';
 
 const episodes = [
   {
+    id: "LcsG09yaQkg",
+    title: "DJ Whosane — Tabloids, Trance & The Album India Forgot",
+    subtitle: "Pioneer of India's underground dance music",
+    desc: "Hussain Babai — known as DJ Whosane — on trance, tabloids, and the album that India forgot. One of the original architects of the country's underground dance music scene, unfiltered.",
+    label: "S2 · E10 · Latest",
+  },
+  {
+    id: "zbt0Hni_S0E",
+    title: "Carlton Braganza — The Man Who Built Bangalore's Most Loved Venue",
+    subtitle: "How Opus was born",
+    desc: "Carlton Braganza on building Opus, the live music venue that became the heartbeat of Bangalore's nightlife — the vision, the grind, and what it takes to make a room legendary.",
+    label: "S2 · E9",
+  },
+  {
     id: "51Y-9dtuWYM",
     title: "Assad Namazi — 30 Years as a DJ",
     subtitle: "What Nobody Tells You",
     desc: "Three decades behind the decks. Assad Namazi breaks down what it actually takes to survive and thrive in the DJ game — the real story, unfiltered.",
-    label: "S2 · E8 · Latest",
-  },
-  {
-    id: "ou0y1tXqAqQ",
-    title: "The Bartender Who Never Forgets Your Drink",
-    subtitle: "Avalon Byford",
-    desc: "Avalon Byford on the art of hospitality, reading a room from behind the bar, and why the best nights are built on more than just music.",
-    label: "S2 · E7",
-  },
-  {
-    id: "j0_FbFQtdE0",
-    title: "DJ Joy — Programming the Night",
-    subtitle: "The craft of the set",
-    desc: "DJ Joy on how great nights are architected — the psychology of programming, energy management, and what it means to truly own a room.",
-    label: "S2 · E6",
+    label: "S2 · E8",
   },
 ];
 
@@ -61,25 +61,28 @@ const platforms = [
     <section id="podcast-hero" class="hero-bg">
       <img
         src="/images/vic fix logo2.png"
-        alt="The VIC Fix — India's Nightlife Podcast"
+        alt=""
+        aria-hidden="true"
         class="vicfix-logo"
       />
-      <div class="hero-eyebrow">
-        <span class="hero-badge">Season 2 — Now Live</span>
-      </div>
-      <h1>The VIC Fix</h1>
-      <p class="tagline">Real Stories. Real Culture. Real Nightlife.</p>
-      <p>
-        A long-form podcast documenting India's nightlife culture — unfiltered
-        conversations with DJs, artists, founders, and creative leaders.
-      </p>
-      <div class="hero-actions">
-        <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--gold">
-          Watch on YouTube &rarr;
-        </a>
-        <a href="https://www.instagram.com/thevicfix" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--outline">
-          @thevicfix
-        </a>
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <span class="hero-badge">Season 2 — Now Live</span>
+        </div>
+        <h1>The VIC Fix</h1>
+        <p class="tagline">Real Stories. Real Culture. Real Nightlife.</p>
+        <p>
+          A long-form podcast documenting India's nightlife culture — unfiltered
+          conversations with DJs, artists, founders, and creative leaders.
+        </p>
+        <div class="hero-actions">
+          <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--gold">
+            Watch on YouTube &rarr;
+          </a>
+          <a href="https://www.instagram.com/thevicfix" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--outline">
+            @thevicfix
+          </a>
+        </div>
       </div>
     </section>
 
@@ -334,6 +337,8 @@ const platforms = [
 <style>
   /* ─── Hero ─────────────────────────────────────── */
   #podcast-hero {
+    position: relative;
+    overflow: hidden;
     background-image:
       linear-gradient(to right, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.3) 100%),
       linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%),
@@ -342,11 +347,21 @@ const platforms = [
   }
 
   .vicfix-logo {
-    display: block;
-    width: clamp(160px, 28vw, 300px);
+    position: absolute;
+    right: -3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: clamp(320px, 48vw, 600px);
     height: auto;
-    margin-bottom: 2rem;
-    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.6));
+    opacity: 0.07;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
   }
 
   .hero-eyebrow {

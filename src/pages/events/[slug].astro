@@ -1,0 +1,420 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const events = await getCollection('events');
+  return events.map((event) => ({
+    params: { slug: event.id },
+    props: { event },
+  }));
+}
+
+const { event } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const eventDate = new Date(event.data.date + 'T00:00:00');
+const formattedDate = eventDate.toLocaleDateString('en-IN', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+const waMessage = encodeURIComponent(
+  `Hi DJ VIC! I'd like to join the guest list for ${event.data.title} on ${formattedDate} at ${event.data.venue}. Please let me know the details.`
+);
+---
+
+<Layout
+  title={`${event.data.title} — Guest List | DJ VIC`}
+  description={event.data.description}
+  canonical={`https://djvicofficial.com/events/${event.id}/`}
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": event.data.title,
+    "startDate": event.data.date,
+    "location": {
+      "@type": "Place",
+      "name": event.data.venue,
+      "address": event.data.address || event.data.city
+    },
+    "description": event.data.description,
+    "organizer": {
+      "@type": "Person",
+      "name": "DJ VIC",
+      "url": "https://djvicofficial.com"
+    }
+  }}
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <article id="event-page">
+
+      {event.data.creativeImage && (
+        <div class="event-hero-img">
+          <img
+            src={event.data.creativeImage}
+            alt={event.data.title}
+            class="event-flyer"
+          />
+        </div>
+      )}
+
+      <div class="event-content">
+
+        <a href={`${base}/events/`} class="back-link">&larr; All Events</a>
+
+        <div class="event-meta-row">
+          {event.data.tags.map((tag: string) => (
+            <span class="event-tag">{tag}</span>
+          ))}
+        </div>
+
+        <h1>{event.data.title}</h1>
+
+        <div class="event-details">
+          <div class="event-detail">
+            <span class="detail-icon">&#128197;</span>
+            <div>
+              <span class="detail-main">{formattedDate}</span>
+              <span class="detail-sub">{event.data.time}</span>
+            </div>
+          </div>
+          {!event.data.isPrivate && (
+            <div class="event-detail">
+              <span class="detail-icon">&#128205;</span>
+              <div>
+                <span class="detail-main">{event.data.venue}</span>
+                {event.data.address && <span class="detail-sub">{event.data.address}</span>}
+              </div>
+            </div>
+          )}
+          {event.data.dresscode && (
+            <div class="event-detail">
+              <span class="detail-icon">&#128084;</span>
+              <div>
+                <span class="detail-label">Dress Code</span>
+                <span class="detail-main">{event.data.dresscode}</span>
+              </div>
+            </div>
+          )}
+          {(event.data.hostedBy || event.data.videoSetBy) && (
+            <div class="event-detail">
+              <span class="detail-icon">&#127925;</span>
+              <div>
+                {event.data.hostedBy && <span class="detail-main">Hosted by {event.data.hostedBy}</span>}
+                {event.data.videoSetBy && <span class="detail-sub">Video Sets: {event.data.videoSetBy}</span>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {event.data.genre.length > 0 && (
+          <div class="event-genre-tags">
+            {event.data.genre.map((g: string) => (
+              <span class="genre-tag">{g}</span>
+            ))}
+          </div>
+        )}
+
+        <p class="event-description">{event.data.description}</p>
+
+        {event.data.isPrivate ? (
+          <div class="private-notice">
+            <span class="private-badge">Private Event</span>
+            <p>This event is not open to the public.</p>
+          </div>
+        ) : event.data.guestListAvailable ? (
+          <div class="guestlist-section">
+            <div class="guestlist-card">
+              <span class="gl-label">Entry</span>
+              <h2>Join the Guest List</h2>
+              <p>Entry is via guestlist only. Tap below to message DJ VIC directly on WhatsApp to request your spot — include your name and the number of guests.</p>
+              <a
+                href={`https://wa.me/919611711677?text=${waMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="cta-btn cta-btn--gold"
+              >
+                Request Guest List via WhatsApp &rarr;
+              </a>
+              <p class="gl-note">Alternatively, email <a href="mailto:bookings@djvicofficial.com">bookings@djvicofficial.com</a></p>
+            </div>
+          </div>
+        ) : (
+          <div class="guestlist-section">
+            <a href={`${base}/#contact`} class="cta-btn cta-btn--outline">Get in Touch &rarr;</a>
+          </div>
+        )}
+
+      </div>
+
+    </article>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  #event-page {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 7rem 2rem 5rem;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .event-hero-img {
+    position: sticky;
+    top: 6rem;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.6);
+  }
+
+  .event-flyer {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .event-content {
+    padding-top: 1rem;
+  }
+
+  .back-link {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--gold); }
+
+  .event-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .event-tag {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--white);
+    margin-bottom: 2rem;
+    line-height: 1.05;
+  }
+
+  .event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .event-detail {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+  }
+
+  .detail-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .detail-label {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 2px;
+  }
+
+  .detail-main {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.4;
+  }
+
+  .detail-sub {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    margin-top: 2px;
+  }
+
+  .event-genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .genre-tag {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 3px 9px;
+    border-radius: 2px;
+  }
+
+  .event-description {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+
+  /* Guest list card */
+  .guestlist-section {
+    margin-top: 1.5rem;
+  }
+
+  .guestlist-card {
+    background: #111;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-top: 3px solid var(--gold);
+    border-radius: 4px;
+    padding: 2rem;
+  }
+
+  .gl-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .guestlist-card h2 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: var(--white);
+    margin-bottom: 0.75rem;
+  }
+
+  .guestlist-card p {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .gl-note {
+    margin-top: 1rem;
+    font-size: 0.75rem !important;
+    color: rgba(255,255,255,0.3) !important;
+    margin-bottom: 0 !important;
+  }
+
+  .gl-note a {
+    color: rgba(255,255,255,0.4);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .gl-note a:hover { color: var(--gold); }
+
+  /* Private notice */
+  .private-notice {
+    margin-top: 1.5rem;
+  }
+  .private-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 3px 10px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+  .private-notice p {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9rem;
+  }
+
+  /* CTA buttons */
+  .cta-btn {
+    display: inline-block;
+    padding: 0.8rem 1.75rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    border: 1px solid transparent;
+  }
+  .cta-btn--gold {
+    background: var(--gold);
+    color: #000;
+    border-color: var(--gold);
+    width: 100%;
+    text-align: center;
+  }
+  .cta-btn--gold:hover {
+    background: var(--gold-light);
+    color: #000;
+    transform: translateY(-1px);
+  }
+  .cta-btn--outline {
+    background: transparent;
+    color: var(--white);
+    border-color: rgba(255,255,255,0.3);
+  }
+  .cta-btn--outline:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* No image: full-width single column */
+  @media (max-width: 768px) {
+    #event-page {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding-inline: 1.25rem;
+    }
+    .event-hero-img { position: static; }
+  }
+</style>
