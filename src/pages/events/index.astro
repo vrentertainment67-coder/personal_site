@@ -355,19 +355,17 @@ const eventsData = allEvents.map(e => ({
   renderCalendar(currentYear, currentMonth);
 </script>
 
-<style>
+<style is:global>
   /* ── Hero ─────────────────────────────────────────── */
   #events-hero {
     padding: 7rem 2rem 3.5rem;
     text-align: center;
   }
-
-  .hero-inner {
+  #events-hero .hero-inner {
     max-width: 640px;
     margin-inline: auto;
   }
-
-  .hero-label {
+  #events-hero .hero-label {
     display: block;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 11px;
@@ -377,7 +375,6 @@ const eventsData = allEvents.map(e => ({
     color: #c9a84c;
     margin-bottom: 1.25rem;
   }
-
   #events-hero h1 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(64px, 12vw, 96px);
@@ -387,8 +384,7 @@ const eventsData = allEvents.map(e => ({
     margin-bottom: 1.25rem;
     text-transform: uppercase;
   }
-
-  .hero-sub {
+  #events-hero .hero-sub {
     font-size: 15px;
     color: #888880;
     line-height: 1.7;
@@ -400,8 +396,7 @@ const eventsData = allEvents.map(e => ({
   #calendar-section {
     padding: 0 1.5rem 5rem;
   }
-
-  .cal-container {
+  #calendar-section .cal-container {
     max-width: 860px;
     margin-inline: auto;
     background: #111111;
@@ -412,15 +407,14 @@ const eventsData = allEvents.map(e => ({
   }
 
   /* ── Calendar header ──────────────────────────────── */
-  .cal-header {
+  #calendar-section .cal-header {
     display: grid;
     grid-template-columns: 44px 1fr 44px;
     align-items: center;
     gap: 1rem;
     margin-bottom: 2rem;
   }
-
-  .cal-arrow {
+  #calendar-section .cal-arrow {
     width: 44px;
     height: 44px;
     background: transparent;
@@ -435,17 +429,14 @@ const eventsData = allEvents.map(e => ({
     transition: border-color 0.15s, background 0.15s;
     flex-shrink: 0;
   }
-
-  .cal-arrow:hover {
+  #calendar-section .cal-arrow:hover {
     border-color: #c9a84c;
     background: #1a1500;
   }
-
-  .cal-header-center {
+  #calendar-section .cal-header-center {
     text-align: center;
   }
-
-  .cal-month-name {
+  #calendar-section .cal-month-name {
     display: block;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 48px;
@@ -455,8 +446,7 @@ const eventsData = allEvents.map(e => ({
     line-height: 1;
     margin-bottom: 0.5rem;
   }
-
-  .cal-year-select {
+  #calendar-section .cal-year-select {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 14px;
     color: #c9a84c;
@@ -472,14 +462,13 @@ const eventsData = allEvents.map(e => ({
   }
 
   /* ── Day labels ───────────────────────────────────── */
-  .cal-day-labels {
+  #calendar-section .cal-day-labels {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     border-bottom: 1px solid #1e1e1e;
     margin-bottom: 0;
   }
-
-  .cal-day-labels span {
+  #calendar-section .cal-day-labels span {
     text-align: center;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 11px;
@@ -491,14 +480,14 @@ const eventsData = allEvents.map(e => ({
   }
 
   /* ── Grid ─────────────────────────────────────────── */
-  .cal-grid {
+  #cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     animation: slideIn 0.2s ease;
   }
 
-  /* ── Cells ────────────────────────────────────────── */
-  .cal-cell {
+  /* ── Cells — all JS-generated, must be global ──────── */
+  #cal-grid .cal-cell {
     min-height: 80px;
     padding: 10px 8px;
     border: 1px solid #0f0f0f;
@@ -510,36 +499,23 @@ const eventsData = allEvents.map(e => ({
     flex-direction: column;
     align-items: flex-start;
   }
-
-  .cal-cell--empty {
+  #cal-grid .cal-cell--empty {
     background: #0a0a0a;
     opacity: 0.4;
   }
-
-  /* Today */
-  .cal-cell--today {
+  #cal-grid .cal-cell--today {
     border-color: #2a2000;
   }
-
-  .cal-cell--today .cal-num {
-    color: #e0dccf !important;
-  }
-
-  /* Event cell — public */
-  .cal-cell--event {
+  #cal-grid .cal-cell--event {
     cursor: pointer;
+    border-color: #2a2000;
   }
-
-  .cal-cell--event:hover {
+  #cal-grid .cal-cell--event:hover {
     background: #1a1500;
   }
 
-  .cal-cell--event {
-    border-color: #2a2000;
-  }
-
   /* Date number */
-  .cal-num {
+  #cal-grid .cal-num {
     display: block;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 14px;
@@ -547,27 +523,23 @@ const eventsData = allEvents.map(e => ({
     color: #555550;
     line-height: 1;
   }
-
-  .cal-cell--today .cal-num {
+  #cal-grid .cal-cell--today .cal-num {
     color: #e0dccf;
     font-weight: 600;
   }
-
-  .cal-cell--event .cal-num {
+  #cal-grid .cal-cell--event .cal-num {
     color: #c9a84c;
     font-weight: 700;
   }
-
-  .cal-cell--past .cal-num {
+  #cal-grid .cal-cell--past .cal-num {
     color: #333330;
   }
-
-  .cal-cell--past.cal-cell--event .cal-num {
+  #cal-grid .cal-cell--past.cal-cell--event .cal-num {
     color: #888880;
   }
 
   /* Event dot */
-  .cal-dot {
+  #cal-grid .cal-dot {
     display: block;
     width: 6px;
     height: 6px;
@@ -575,13 +547,12 @@ const eventsData = allEvents.map(e => ({
     border-radius: 50%;
     margin-top: 6px;
   }
-
-  .cal-dot--dim {
+  #cal-grid .cal-dot--dim {
     background: #7a6330;
   }
 
   /* ── No-events message ────────────────────────────── */
-  .cal-no-events {
+  #cal-no-events {
     text-align: center;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 13px;
@@ -593,8 +564,8 @@ const eventsData = allEvents.map(e => ({
     margin-inline: auto;
   }
 
-  /* ── Modal overlay ────────────────────────────────── */
-  .modal-overlay {
+  /* ── Modal ────────────────────────────────────────── */
+  #event-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -605,15 +576,12 @@ const eventsData = allEvents.map(e => ({
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
+  }
+  #event-modal.open {
+    display: flex;
     animation: fadeIn 0.2s ease;
   }
-
-  .modal-overlay.open {
-    display: flex;
-  }
-
-  /* ── Modal box ────────────────────────────────────── */
-  .modal-box {
+  #event-modal .modal-box {
     position: relative;
     background: #111111;
     border: 1px solid #1e1e1e;
@@ -626,8 +594,7 @@ const eventsData = allEvents.map(e => ({
     box-shadow: 0 32px 100px rgba(0,0,0,0.9);
     animation: slideUp 0.25s ease;
   }
-
-  .modal-close {
+  #event-modal .modal-close {
     position: absolute;
     top: 16px;
     right: 16px;
@@ -641,24 +608,17 @@ const eventsData = allEvents.map(e => ({
     padding: 4px 8px;
     transition: color 0.15s;
   }
-
-  .modal-close:hover { color: #e0dccf; }
-
-  /* Modal image */
-  .modal-img {
+  #event-modal .modal-close:hover { color: #e0dccf; }
+  #event-modal .modal-img {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 6px 6px 0 0;
   }
-
-  /* Modal content area */
-  .modal-content {
+  #event-modal .modal-content {
     padding: 28px;
   }
-
-  /* Date + time line */
-  .modal-datetime {
+  #event-modal .modal-datetime {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 12px;
     font-weight: 600;
@@ -667,9 +627,7 @@ const eventsData = allEvents.map(e => ({
     color: #c9a84c;
     margin-bottom: 8px;
   }
-
-  /* Event title */
-  .modal-title {
+  #event-modal .modal-title {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 36px;
     letter-spacing: 0.04em;
@@ -679,32 +637,26 @@ const eventsData = allEvents.map(e => ({
     text-transform: uppercase;
     padding-right: 2rem;
   }
-
-  /* Venue */
-  .modal-venue {
+  #event-modal .modal-venue {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 14px;
     font-weight: 500;
     color: #888880;
     margin-bottom: 4px;
   }
-
-  .modal-address {
+  #event-modal .modal-address {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 13px;
     color: #555550;
     margin-bottom: 16px;
   }
-
-  /* Genre tags */
-  .modal-tags {
+  #event-modal .modal-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
-
-  .modal-tag {
+  #event-modal .modal-tag {
     background: #1a1500;
     border: 1px solid #2a2000;
     color: #c9a84c;
@@ -716,16 +668,13 @@ const eventsData = allEvents.map(e => ({
     padding: 3px 10px;
     border-radius: 2px;
   }
-
-  /* Detail fields (dress code, line-up) */
-  .modal-field {
+  #event-modal .modal-field {
     display: flex;
     flex-direction: column;
     gap: 3px;
     margin-bottom: 12px;
   }
-
-  .field-label {
+  #event-modal .field-label {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 10px;
     font-weight: 700;
@@ -733,22 +682,17 @@ const eventsData = allEvents.map(e => ({
     text-transform: uppercase;
     color: #c9a84c;
   }
-
-  .field-value {
+  #event-modal .field-value {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 13px;
     color: #888880;
   }
-
-  /* Divider */
-  .modal-divider {
+  #event-modal .modal-divider {
     height: 1px;
     background: #1e1e1e;
     margin: 16px 0;
   }
-
-  /* CTA button */
-  .modal-cta-btn {
+  #event-modal .modal-cta-btn {
     display: block;
     width: 100%;
     background: #c9a84c;
@@ -765,14 +709,11 @@ const eventsData = allEvents.map(e => ({
     cursor: pointer;
     transition: background 0.15s;
   }
-
-  .modal-cta-btn:hover {
+  #event-modal .modal-cta-btn:hover {
     background: #b8923e;
     color: #060606;
   }
-
-  /* Private state */
-  .private-badge {
+  #event-modal .private-badge {
     display: inline-block;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 11px;
@@ -785,8 +726,7 @@ const eventsData = allEvents.map(e => ({
     border-radius: 2px;
     margin-bottom: 12px;
   }
-
-  .private-text {
+  #event-modal .private-text {
     font-size: 14px;
     color: #555550;
     line-height: 1.6;
@@ -799,14 +739,14 @@ const eventsData = allEvents.map(e => ({
 
   /* ── Mobile ───────────────────────────────────────── */
   @media (max-width: 640px) {
-    .cal-container { padding: 16px; }
-    .cal-month-name { font-size: 36px; }
-    .cal-arrow { width: 36px; height: 36px; font-size: 15px; }
-    .cal-cell { min-height: 52px; padding: 6px 4px; }
-    .cal-num { font-size: 12px; }
-    .modal-box { max-width: 95vw; max-height: 92vh; }
-    .modal-content { padding: 20px; }
-    .modal-title { font-size: 28px; }
-    .modal-datetime { font-size: 10px; }
+    #calendar-section .cal-container { padding: 16px; }
+    #calendar-section .cal-month-name { font-size: 36px; }
+    #calendar-section .cal-arrow { width: 36px; height: 36px; font-size: 15px; }
+    #cal-grid .cal-cell { min-height: 52px; padding: 6px 4px; }
+    #cal-grid .cal-num { font-size: 12px; }
+    #event-modal .modal-box { max-width: 95vw; max-height: 92vh; }
+    #event-modal .modal-content { padding: 20px; }
+    #event-modal .modal-title { font-size: 28px; }
+    #event-modal .modal-datetime { font-size: 10px; }
   }
 </style>
