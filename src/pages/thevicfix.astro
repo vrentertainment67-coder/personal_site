@@ -2,40 +2,18 @@
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import { getCollection } from 'astro:content';
 
-const episodes = [
-  {
-    id: "LcsG09yaQkg",
-    title: "DJ Whosane — Tabloids, Trance & The Album India Forgot",
-    subtitle: "Pioneer of India's underground dance music",
-    desc: "Hussain Babai — known as DJ Whosane — on trance, tabloids, and the album that India forgot. One of the original architects of the country's underground dance music scene, unfiltered.",
-    label: "S2 · E10 · Latest",
-  },
-  {
-    id: "zbt0Hni_S0E",
-    title: "Carlton Braganza — The Man Who Built Bangalore's Most Loved Venue",
-    subtitle: "How Opus was born",
-    desc: "Carlton Braganza on building Opus, the live music venue that became the heartbeat of Bangalore's nightlife — the vision, the grind, and what it takes to make a room legendary.",
-    label: "S2 · E9",
-  },
-  {
-    id: "51Y-9dtuWYM",
-    title: "Assad Namazi — 30 Years as a DJ",
-    subtitle: "What Nobody Tells You",
-    desc: "Three decades behind the decks. Assad Namazi breaks down what it actually takes to survive and thrive in the DJ game — the real story, unfiltered.",
-    label: "S2 · E8",
-  },
-];
-
-const platforms = [
-  { name: "YouTube", url: "https://www.youtube.com/@thedjvicofficial", icon: "▶" },
-  { name: "Instagram", url: "https://www.instagram.com/thevicfix", icon: "◈" },
-];
+const allEpisodes = await getCollection('vicfixEpisodes');
+const episodes = allEpisodes.sort((a, b) => {
+  if (a.data.season !== b.data.season) return a.data.season - b.data.season;
+  return a.data.episode - b.data.episode;
+});
 ---
 
 <Layout
-  title="The VIC Fix — India's Nightlife Podcast by DJ VIC | 38+ Episodes"
-  description="The VIC Fix is a long-form podcast by DJ VIC documenting India's nightlife culture. Real conversations with DJs, bartenders, venue founders, and artists. 2 seasons, 38+ episodes on YouTube."
+  title="The VIC Fix — India's Nightlife Podcast by DJ VIC | 42 Episodes"
+  description="The VIC Fix is a long-form podcast by DJ VIC documenting India's nightlife culture. Real conversations with DJs, bartenders, venue founders, and artists. 2 seasons, 42 episodes on YouTube."
   schema={{
     "@context": "https://schema.org",
     "@type": "PodcastSeries",
@@ -87,7 +65,68 @@ const platforms = [
     </section>
 
     <!-- ══════════════════════════════════════════
-         2. ABOUT THE SHOW
+         2. FILTERS + EPISODE GRID
+    ══════════════════════════════════════════ -->
+    <section id="episode-listing">
+      <div class="listing-inner">
+
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <div class="filter-row filter-seasons">
+            <button class="season-btn active" data-season="all">All Seasons</button>
+            <button class="season-btn" data-season="1">Season 1</button>
+            <button class="season-btn" data-season="2">Season 2</button>
+          </div>
+          <div class="filter-row filter-cats">
+            <button class="cat-btn active" data-category="all">All</button>
+            <button class="cat-btn" data-category="behind-the-decks">Behind the Decks</button>
+            <button class="cat-btn" data-category="room-makers">The Room Makers</button>
+            <button class="cat-btn" data-category="architects">The Architects</button>
+            <button class="cat-btn" data-category="other-side-of-the-bar">Other Side of the Bar</button>
+            <button class="cat-btn" data-category="bigger-picture">The Bigger Picture</button>
+          </div>
+        </div>
+
+        <p class="episode-count">Showing {episodes.length} episodes</p>
+
+        <!-- Episode grid -->
+        <div class="episodes-grid" id="episodes-grid">
+          {episodes.map((ep) => {
+            const ytThumb = `https://img.youtube.com/vi/${ep.data.youtubeId}/maxresdefault.jpg`;
+            const imgSrc = ep.data.guestPhoto ? ep.data.guestPhoto : ytThumb;
+            return (
+              <a
+                href={`/thevicfix/${ep.id}/`}
+                class="episode-card"
+                data-category={ep.data.category}
+                data-season={String(ep.data.season)}
+              >
+                <div class="card-thumb">
+                  <img
+                    src={imgSrc}
+                    alt={ep.data.guestName}
+                    loading="lazy"
+                    onerror={`this.src='https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg'`}
+                  />
+                  <span class="season-badge">S{ep.data.season} &middot; E{ep.data.episode}</span>
+                  <span class="category-tag">{ep.data.categoryLabel}</span>
+                </div>
+                <div class="card-body">
+                  <h3>{ep.data.guestName}</h3>
+                  <p class="guest-title-ep">{ep.data.guestTitle}</p>
+                  <p class="ep-tagline">{ep.data.tagline}</p>
+                  <span class="watch-cta">Watch Episode &rarr;</span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         3. ABOUT THE SHOW
     ══════════════════════════════════════════ -->
     <section id="podcast-about">
       <div class="section-label">About the Show</div>
@@ -104,7 +143,7 @@ const platforms = [
           <span class="stat-label">Seasons</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">38<span class="stat-plus">+</span></span>
+          <span class="stat-num">42<span class="stat-plus">+</span></span>
           <span class="stat-label">Episodes</span>
         </div>
         <div class="stat-item">
@@ -115,54 +154,7 @@ const platforms = [
     </section>
 
     <!-- ══════════════════════════════════════════
-         3. LATEST EPISODES
-    ══════════════════════════════════════════ -->
-    <section id="podcast-episodes" class="section-alt">
-      <div class="section-label">Season 2</div>
-      <h2>Latest Episodes</h2>
-      <p class="section-sub">
-        New episodes dropping on YouTube &amp; Instagram — don't miss one.
-      </p>
-      <div class="episodes-grid">
-        {episodes.map((ep) => (
-          <a
-            href={`https://www.youtube.com/watch?v=${ep.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="episode-card"
-          >
-            <div class="episode-thumb">
-              <img
-                src={`https://img.youtube.com/vi/${ep.id}/maxresdefault.jpg`}
-                alt={ep.title}
-                onerror={`this.src='https://img.youtube.com/vi/${ep.id}/hqdefault.jpg'`}
-                loading="lazy"
-              />
-              <div class="episode-play">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              <span class="episode-badge">{ep.label}</span>
-            </div>
-            <div class="episode-body">
-              <h3 class="episode-title">{ep.title}</h3>
-              <p class="episode-subtitle">{ep.subtitle}</p>
-              <p class="episode-desc">{ep.desc}</p>
-              <span class="episode-watch">Watch on YouTube &rarr;</span>
-            </div>
-          </a>
-        ))}
-      </div>
-      <div class="episodes-cta">
-        <a href="https://www.youtube.com/@thedjvicofficial" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn--gold">
-          View All Episodes on YouTube &rarr;
-        </a>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         4. LISTEN ON
+         4. WHERE TO WATCH
     ══════════════════════════════════════════ -->
     <section id="podcast-platforms">
       <div class="section-label">Where to Watch</div>
@@ -187,7 +179,7 @@ const platforms = [
     </section>
 
     <!-- ══════════════════════════════════════════
-         5. TESTIMONIAL
+         5. TESTIMONIALS
     ══════════════════════════════════════════ -->
     <section id="podcast-testimonials" class="section-alt">
       <div class="section-label">What People Are Saying</div>
@@ -223,6 +215,7 @@ const platforms = [
     <!-- ══════════════════════════════════════════
          6. BE A GUEST FORM
     ══════════════════════════════════════════ -->
+    <span id="apply"></span>
     <section id="podcast-collab">
       <div class="guest-layout">
 
@@ -317,6 +310,49 @@ const platforms = [
   <Footer />
 
 <script>
+  // ── Filter logic ──────────────────────────────────────
+  const cards = document.querySelectorAll('.episode-card');
+  const countEl = document.querySelector('.episode-count');
+
+  function updateFilters() {
+    const activeSeasonBtn = document.querySelector('.season-btn.active');
+    const activeCatBtn = document.querySelector('.cat-btn.active');
+    const activeSeason = activeSeasonBtn ? activeSeasonBtn.dataset.season : 'all';
+    const activeCategory = activeCatBtn ? activeCatBtn.dataset.category : 'all';
+    let visible = 0;
+    cards.forEach(card => {
+      const matchSeason = activeSeason === 'all' || card.dataset.season === activeSeason;
+      const matchCat = activeCategory === 'all' || card.dataset.category === activeCategory;
+      const show = matchSeason && matchCat;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (countEl) {
+      countEl.textContent = `Showing ${visible} episode${visible !== 1 ? 's' : ''}`;
+    }
+  }
+
+  document.querySelectorAll('.season-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateFilters();
+    });
+  });
+
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateFilters();
+    });
+  });
+
+  updateFilters();
+</script>
+
+<script>
+  // ── WA notification on guest form submit ──────────────
   const guestForm = document.querySelector('form[action*="mzdkgvpq"]');
   if (guestForm) {
     guestForm.addEventListener('submit', function () {
@@ -418,6 +454,208 @@ const platforms = [
     transform: translateY(-1px);
   }
 
+  /* ─── Episode Listing Section ─────────────────── */
+  #episode-listing {
+    background: #050505;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+  }
+
+  .listing-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 4rem 2.5rem 5rem;
+  }
+
+  /* ─── Filter bar ──────────────────────────────── */
+  .filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .season-btn,
+  .cat-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.5);
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.45rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    border-radius: 2px;
+  }
+
+  .season-btn:hover,
+  .cat-btn:hover {
+    border-color: rgba(201,168,76,0.4);
+    color: var(--gold);
+  }
+
+  .season-btn.active,
+  .cat-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+  }
+
+  .episode-count {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 2rem;
+  }
+
+  /* ─── Episodes grid ───────────────────────────── */
+  .episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .episode-card {
+    display: flex;
+    flex-direction: column;
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    color: var(--white);
+    transition: border-color 0.25s, background 0.25s;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .episode-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+    z-index: 1;
+  }
+
+  .episode-card:hover {
+    border-color: rgba(201,168,76,0.25);
+    background: #131313;
+  }
+
+  .episode-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .card-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .episode-card:hover .card-thumb img {
+    transform: scale(1.04);
+  }
+
+  .season-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    font-size: 0.48rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.2rem 0.55rem;
+  }
+
+  .category-tag {
+    position: absolute;
+    bottom: 0.6rem;
+    left: 0.6rem;
+    font-size: 0.45rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+    background: rgba(0,0,0,0.72);
+    padding: 0.2rem 0.5rem;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .card-body {
+    padding: 1.1rem 1.1rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+  }
+
+  .card-body h3 {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  .guest-title-ep {
+    font-size: 0.7rem;
+    color: var(--gold);
+    letter-spacing: 0.03em;
+    margin: 0;
+    opacity: 0.85;
+  }
+
+  .ep-tagline {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.55;
+    margin: 0.25rem 0 0.6rem;
+    flex: 1;
+  }
+
+  .watch-cta {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 1px;
+    align-self: flex-start;
+    transition: color 0.2s;
+  }
+
+  .episode-card:hover .watch-cta {
+    color: var(--gold-light, #e0c060);
+  }
+
   /* ─── Section shared ──────────────────────────── */
   .section-label {
     font-size: 0.6rem;
@@ -481,143 +719,6 @@ const platforms = [
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.45);
-  }
-
-  /* ─── Episodes grid ───────────────────────────── */
-  .episodes-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-top: 2rem;
-  }
-
-  .episode-card {
-    display: flex;
-    flex-direction: column;
-    background: #111;
-    border: 1px solid rgba(255,255,255,0.06);
-    text-decoration: none;
-    color: var(--white);
-    transition: border-color 0.25s, background 0.25s;
-    overflow: hidden;
-  }
-
-  .episode-card:hover {
-    border-color: rgba(201,168,76,0.35);
-    background: #161616;
-  }
-
-  .episode-thumb {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #0d0d0d;
-  }
-
-  .episode-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.4s ease;
-  }
-
-  .episode-card:hover .episode-thumb img {
-    transform: scale(1.04);
-  }
-
-  .episode-play {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.25s;
-  }
-
-  .episode-play svg {
-    width: 44px;
-    height: 44px;
-    background: var(--gold);
-    color: #000;
-    border-radius: 50%;
-    padding: 10px;
-    padding-left: 13px;
-    transition: transform 0.2s;
-  }
-
-  .episode-card:hover .episode-play {
-    background: rgba(0,0,0,0.2);
-  }
-
-  .episode-card:hover .episode-play svg {
-    transform: scale(1.1);
-  }
-
-  .episode-badge {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #000;
-    background: var(--gold);
-    padding: 0.25rem 0.6rem;
-  }
-
-  .episode-body {
-    padding: 1.25rem 1.25rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    flex: 1;
-  }
-
-  .episode-title {
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--white);
-    line-height: 1.35;
-    margin: 0;
-  }
-
-  .episode-subtitle {
-    font-size: 0.75rem;
-    color: var(--gold);
-    letter-spacing: 0.04em;
-    margin: 0;
-  }
-
-  .episode-desc {
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.5);
-    line-height: 1.6;
-    margin: 0.25rem 0 0.75rem;
-    flex: 1;
-  }
-
-  .episode-watch {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--gold);
-    border-bottom: 1px solid rgba(201,168,76,0.3);
-    padding-bottom: 2px;
-    align-self: flex-start;
-    transition: color 0.2s;
-  }
-
-  .episode-card:hover .episode-watch {
-    color: var(--gold-light, #e0c060);
-  }
-
-  .episodes-cta {
-    margin-top: 2rem;
   }
 
   /* ─── Platform cards ──────────────────────────── */
@@ -877,10 +978,13 @@ const platforms = [
   }
 
   /* ─── Responsive ──────────────────────────────── */
-  @media (max-width: 900px) {
+  @media (max-width: 960px) {
     .episodes-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+  }
+
+  @media (max-width: 900px) {
     .guest-layout {
       grid-template-columns: 1fr;
       gap: 2.5rem;
@@ -912,6 +1016,17 @@ const platforms = [
     .form-submit {
       width: 100%;
       text-align: center;
+    }
+    .listing-inner {
+      padding-inline: 1.25rem;
+    }
+    .filter-row {
+      gap: 0.4rem;
+    }
+    .season-btn,
+    .cat-btn {
+      font-size: 0.58rem;
+      padding: 0.4rem 0.75rem;
     }
   }
 </style>

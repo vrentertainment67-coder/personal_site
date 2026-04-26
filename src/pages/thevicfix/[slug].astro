@@ -1,0 +1,635 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+
+export async function getStaticPaths() {
+  const episodes = await getCollection('vicfixEpisodes');
+  return episodes.map(ep => ({
+    params: { slug: ep.id },
+    props: { episode: ep },
+  }));
+}
+
+const { episode } = Astro.props;
+const { data: ep } = episode;
+
+const ytThumb = `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg`;
+const pageImage = ep.guestPhoto || ytThumb;
+const bioFirstSentence = ep.bio.split('\n\n')[0].split('.')[0] + '.';
+const bioDescription = ep.bio.replace(/\n\n/g, ' ').slice(0, 160);
+const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
+
+const all = await getCollection('vicfixEpisodes');
+const related = all
+  .filter(e => e.id !== episode.id && e.data.category === ep.category)
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 3);
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": `${ep.guestName} — The VIC Fix`,
+  "description": bioDescription,
+  "thumbnailUrl": ytThumb,
+  "embedUrl": `https://www.youtube.com/embed/${ep.youtubeId}`,
+  "uploadDate": ep.publishDate,
+  "author": {
+    "@type": "Person",
+    "name": "DJ VIC",
+    "url": "https://djvicofficial.com"
+  }
+};
+---
+
+<Layout
+  title={`${ep.guestName} — The VIC Fix S${ep.season}E${ep.episode} | DJ VIC`}
+  description={bioDescription}
+  image={pageImage}
+  schema={schema}
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ── Breadcrumb ──────────────────────────────── -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <div class="breadcrumb-inner">
+        <a href="/thevicfix/">The VIC Fix</a>
+        <span class="bc-sep">/</span>
+        <span>Season {ep.season}</span>
+        <span class="bc-sep">/</span>
+        <span class="bc-current">{ep.guestName}</span>
+      </div>
+    </nav>
+
+    <!-- ── Episode Header ─────────────────────────── -->
+    <section id="ep-header">
+      <div class="ep-inner">
+        <div class="ep-eyebrow">
+          S{ep.season} &middot; E{ep.episode} &middot; {ep.categoryLabel}
+        </div>
+        <h1 class="ep-name">{ep.guestName}</h1>
+        <p class="ep-guest-title">{ep.guestTitle}</p>
+        <p class="ep-tagline">{ep.tagline}</p>
+      </div>
+    </section>
+
+    <!-- ── Guest Photo (conditional) ─────────────── -->
+    {ep.guestPhoto && (
+      <section id="ep-photo">
+        <div class="ep-inner">
+          <div class="guest-photo-wrap">
+            <img src={ep.guestPhoto} alt={ep.guestName} />
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ── YouTube Embed ──────────────────────────── -->
+    <section id="ep-video">
+      <div class="ep-inner">
+        <div class="yt-wrap">
+          <iframe
+            src={`https://www.youtube.com/embed/${ep.youtubeId}`}
+            title={`${ep.guestName} on The VIC Fix`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Bio ────────────────────────────────────── -->
+    <section id="ep-bio">
+      <div class="ep-inner ep-bio-inner">
+        {bioParagraphs.map(p => (
+          <p class="bio-para">{p}</p>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── Pull Quote (conditional) ──────────────── -->
+    {ep.pullQuote && (
+      <section id="ep-quote">
+        <div class="ep-inner">
+          <blockquote class="pull-quote">
+            <p>&ldquo;{ep.pullQuote}&rdquo;</p>
+            <footer>&mdash; {ep.guestName}</footer>
+          </blockquote>
+        </div>
+      </section>
+    )}
+
+    <!-- ── Topics (conditional) ──────────────────── -->
+    {ep.topics.length > 0 && (
+      <section id="ep-topics">
+        <div class="ep-inner">
+          <div class="topics-label">Topics Covered</div>
+          <div class="topics">
+            {ep.topics.map(t => (
+              <span class="topic-tag">{t}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ── Related Episodes ───────────────────────── -->
+    {related.length > 0 && (
+      <section id="ep-related">
+        <div class="ep-inner ep-related-inner">
+          <div class="section-label">More From The VIC Fix</div>
+          <h2>More Episodes</h2>
+          <div class="related-grid">
+            {related.map(rel => {
+              const relThumb = rel.data.guestPhoto || `https://img.youtube.com/vi/${rel.data.youtubeId}/maxresdefault.jpg`;
+              return (
+                <a href={`/thevicfix/${rel.id}/`} class="related-card">
+                  <div class="related-thumb">
+                    <img
+                      src={relThumb}
+                      alt={rel.data.guestName}
+                      loading="lazy"
+                      onerror={`this.src='https://img.youtube.com/vi/${rel.data.youtubeId}/hqdefault.jpg'`}
+                    />
+                    <span class="related-badge">S{rel.data.season} &middot; E{rel.data.episode}</span>
+                  </div>
+                  <div class="related-body">
+                    <h3>{rel.data.guestName}</h3>
+                    <p class="related-title">{rel.data.guestTitle}</p>
+                    <span class="related-cta">Watch &rarr;</span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ── Apply CTA ──────────────────────────────── -->
+    <section id="ep-apply">
+      <div class="ep-inner">
+        <p class="apply-label">Want to be on The VIC Fix?</p>
+        <a href="/thevicfix/#apply" class="apply-link">Apply to be a guest &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+
+</Layout>
+
+<style>
+  /* ─── Breadcrumb ──────────────────────────────── */
+  .breadcrumb {
+    background: #050505;
+    border-bottom: 1px solid #111;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .breadcrumb-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 0.85rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb-inner a {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumb-inner a:hover {
+    color: var(--gold-light);
+  }
+
+  .breadcrumb-inner span {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .bc-sep {
+    color: rgba(255,255,255,0.15) !important;
+  }
+
+  .bc-current {
+    color: rgba(255,255,255,0.55) !important;
+  }
+
+  /* ─── Shared inner layout ─────────────────────── */
+  .ep-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 0 2.5rem;
+  }
+
+  /* ─── Episode Header ─────────────────────────── */
+  #ep-header {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+    border-bottom: 1px solid #111;
+  }
+
+  #ep-header .ep-inner {
+    padding-top: 4rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .ep-eyebrow {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+  }
+
+  .ep-name {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 0.95;
+    color: var(--white);
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .ep-guest-title {
+    font-size: 0.85rem;
+    color: var(--gold);
+    font-style: italic;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.75rem;
+  }
+
+  .ep-tagline {
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
+    line-height: 1.65;
+    max-width: 56ch;
+    margin: 0;
+  }
+
+  /* ─── Guest Photo ────────────────────────────── */
+  #ep-photo {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  #ep-photo .ep-inner {
+    padding-top: 2.5rem;
+    padding-bottom: 0;
+  }
+
+  .guest-photo-wrap {
+    max-width: 320px;
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .guest-photo-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    aspect-ratio: 1;
+    filter: grayscale(15%);
+  }
+
+  /* ─── YouTube embed ──────────────────────────── */
+  #ep-video {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  #ep-video .ep-inner {
+    padding-top: 3rem;
+    padding-bottom: 0;
+  }
+
+  .yt-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+
+  .yt-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* ─── Bio ────────────────────────────────────── */
+  #ep-bio {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .ep-bio-inner {
+    padding-top: 3rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .bio-para {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.85;
+    max-width: 64ch;
+    margin: 0 0 1.5rem;
+  }
+
+  .bio-para:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ─── Pull Quote ─────────────────────────────── */
+  #ep-quote {
+    background: #080808;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+  }
+
+  #ep-quote .ep-inner {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .pull-quote {
+    border-left: 3px solid var(--gold);
+    padding: 1.5rem 2rem;
+    margin: 0;
+    background: rgba(201,168,76,0.04);
+    max-width: 64ch;
+  }
+
+  .pull-quote p {
+    font-family: Georgia, serif;
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+    line-height: 1.65;
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+    margin: 0 0 1rem;
+  }
+
+  .pull-quote footer {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.75;
+  }
+
+  /* ─── Topics ─────────────────────────────────── */
+  #ep-topics {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  #ep-topics .ep-inner {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .topics-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 1rem;
+  }
+
+  .topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .topic-tag {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.35rem 0.8rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .topic-tag:hover {
+    border-color: rgba(201,168,76,0.35);
+    color: var(--gold);
+  }
+
+  /* ─── Related ────────────────────────────────── */
+  #ep-related {
+    background: #080808;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  .ep-related-inner {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  #ep-related h2 {
+    color: var(--white);
+    margin-bottom: 2rem;
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .related-card {
+    display: flex;
+    flex-direction: column;
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    color: var(--white);
+    transition: border-color 0.25s, background 0.25s;
+    overflow: hidden;
+  }
+
+  .related-card:hover {
+    border-color: rgba(201,168,76,0.25);
+    background: #131313;
+  }
+
+  .related-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .related-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .related-card:hover .related-thumb img {
+    transform: scale(1.04);
+  }
+
+  .related-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.45rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.2rem 0.5rem;
+  }
+
+  .related-body {
+    padding: 1rem 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+  }
+
+  .related-body h3 {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  .related-title {
+    font-size: 0.66rem;
+    color: var(--gold);
+    opacity: 0.8;
+    margin: 0;
+    flex: 1;
+  }
+
+  .related-cta {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 1px;
+    align-self: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  /* ─── Apply CTA ──────────────────────────────── */
+  #ep-apply {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  #ep-apply .ep-inner {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .apply-label {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.45);
+    margin: 0;
+    font-style: italic;
+  }
+
+  .apply-link {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(201,168,76,0.35);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .apply-link:hover {
+    color: var(--gold-light);
+    border-color: var(--gold-light);
+  }
+
+  /* ─── Responsive ─────────────────────────────── */
+  @media (max-width: 768px) {
+    .ep-inner {
+      padding-inline: 1.25rem;
+    }
+    .breadcrumb-inner {
+      padding-inline: 1.25rem;
+    }
+    .related-grid {
+      grid-template-columns: 1fr;
+    }
+    #ep-apply .ep-inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 500px) {
+    .ep-name {
+      font-size: clamp(2.5rem, 10vw, 3.5rem);
+    }
+  }
+</style>

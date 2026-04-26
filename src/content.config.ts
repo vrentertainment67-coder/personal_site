@@ -35,4 +35,25 @@ const events = defineCollection({
   }),
 });
 
-export const collections = { blog, events };
+const vicfixEpisodes = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/vicfix' }),
+  schema: z.object({
+    guestName: z.string(),
+    guestTitle: z.string(),
+    season: z.number(),
+    episode: z.number(),
+    youtubeId: z.string(),
+    category: z.enum(['behind-the-decks', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture']),
+    categoryLabel: z.string(),
+    tagline: z.string(),
+    bio: z.string(),
+    pullQuote: z.string().optional(),
+    guestPhoto: z.string().optional(),
+    topics: z.array(z.string()).default([]),
+    publishDate: z.string(),
+    viewCount: z.string().default(''),
+    featured: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, events, vicfixEpisodes };
