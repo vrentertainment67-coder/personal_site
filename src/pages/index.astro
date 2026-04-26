@@ -5,42 +5,96 @@ import Footer from '../components/Footer.astro';
 
 const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
 
-const services = [
+const primaryServices = [
   {
     name: "Weddings",
     href: "/weddings/",
-    desc: "From sangeet nights to the last dance — curated music for every moment of your celebration.",
+    desc: "From sangeet nights to the last dance — curated music and visuals for every moment of your celebration.",
     bg: `${BASE}fc1c338a80d635c2429d234301f2ba98.jpg`,
   },
   {
     name: "Corporate Events",
     href: "/corporate/",
-    desc: "Conferences, product launches, annual days and brand activations — delivered with precision and energy.",
+    desc: "Conferences, product launches, annual days — delivered with precision and the right energy for every room.",
     bg: `${BASE}c26853944612fd45df1fe9d9f6d3417f.jpg`,
   },
+];
+
+const secondaryServices = [
   {
     name: "Club & Nightlife",
     href: "/nightlife/",
-    desc: "Guest slots and headline club nights — open-format music and audio-visual sets built for the floor.",
-    bg: `${BASE}38757946d4f77aa7f52552c06f54812b.jpg`,
+    desc: "Open-format audio-visual sets built for the dance floor.",
   },
   {
     name: "Private Events",
     href: "/private-events/",
-    desc: "Birthdays, anniversaries, and intimate gatherings — personalised sets tailored to your vibe.",
-    bg: `https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80`,
+    desc: "Birthdays, anniversaries, intimate gatherings — personalised to your vibe.",
   },
   {
     name: "Festivals & Live Shows",
     href: "/festivals/",
-    desc: "Large-format stages, open-air events, and festival bookings — high-energy performances across India and beyond.",
-    bg: `https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80`,
+    desc: "Large-format stages and open-air events across India and beyond.",
   },
   {
     name: "Brand & Experiential",
     href: "/#contact",
-    desc: "DJ sets woven into brand activations, pop-ups, product drops, and launch events — music that makes moments memorable.",
-    bg: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80`,
+    desc: "Music woven into brand activations, pop-ups, and product drops.",
+  },
+];
+
+const testimonials = [
+  {
+    quote: "VIC made our wedding night truly unforgettable. The transitions were seamless, the energy never dropped, and the audio-visual element left our guests speechless.",
+    name: "Kruthi S.",
+    event: "Wedding, Bangalore",
+  },
+  {
+    quote: "We booked VIC for our annual brand event and he read the room perfectly — from the opening set to the close, it was exactly the tone we needed.",
+    name: "Rashmi J.",
+    event: "Corporate Event",
+  },
+  {
+    quote: "We wanted our reception to feel cinematic, not just loud. VIC understood exactly what we meant — the music and visuals together were something else.",
+    name: "Aryaman & Prerna",
+    event: "Wedding Reception",
+  },
+];
+
+const featuredTrack = {
+  id: "wHOB8H-HB_Y",
+  title: "Tu Hi Meri Shab Hai × Say What (Afro Mashup)",
+};
+
+const tracks = [
+  { id: "Hgb_g-xBblw",  title: "Tera Hone Laga Hoon × Viva La Vida" },
+  { id: "ssFIKwChfHc",  title: "Sooraj Ki Baahon Mein × Forever" },
+  { id: "modKUclnVJY",  title: "Sach Keh Raha Hai × Tujhe Bhula Diya" },
+  { id: "aN2BIfUNUs4",  title: "Dil Luteya — Desi Mix" },
+  { id: "KWUoJJ6xsfk",  title: "Kesariya × Can't Stop The Feeling" },
+  { id: "rcGuVSoki6U",  title: "Oo Antava Time" },
+  { id: "MXxbN1xYteY",  title: "Tere Liye — Progressive Edit" },
+  { id: "zhaNQwYQi_8",  title: "Aaj Ki Raat — Progressive Edit" },
+  { id: "gf0hYLxr6eo",  title: "Kahin Aag Lage × Rejection" },
+  { id: "Yx3pD4uhJRE",  title: "Titliaan — Progressive Rework" },
+  { id: "h48i6wSQjso",  title: "Boom Boom × Body Funk" },
+  { id: "5oA311R6Wkg",  title: "Tamma Tamma × Makeba" },
+  { id: "PxgvwE1nZmw",  title: "Jimmy (VIC Disco Edit)" },
+  { id: "4oTBe25wvE0",  title: "Ghungroo — Sun n Sand Rework" },
+];
+
+const vicfixEpisodes = [
+  {
+    id: "LcsG09yaQkg",
+    label: "S2 · E10 · Latest",
+    title: "DJ Whosane — Tabloids, Trance & The Album India Forgot",
+    desc: "Pioneer of India's underground dance music on the record that changed everything.",
+  },
+  {
+    id: "zbt0Hni_S0E",
+    label: "S2 · E9",
+    title: "Carlton Braganza — The Man Who Built Bangalore's Most Loved Venue",
+    desc: "The origin story of Opus and two decades of shaping Bangalore's nightlife.",
   },
 ];
 ---
@@ -88,19 +142,48 @@ const services = [
 
   <main id="main-content">
 
-    <!-- ===================== HERO ===================== -->
-    <section id="hero" class="hero-bg">
-      <div class="hero-inner">
-        <div class="hero-text">
-          <p class="hero-eyebrow">DJ &nbsp;·&nbsp; Producer &nbsp;·&nbsp; Remixer</p>
-          <h1>DJ<br/>VIC</h1>
-          <p class="hero-tagline">Curator of Atmosphere</p>
-          <div class="hero-actions">
-            <a href="/#contact" class="cta-btn-primary">Book DJ Vic</a>
-          </div>
+    <!-- ════════════════════════════════ HERO ════════════════════════════════ -->
+    <section id="hero-cinema">
+      <div class="hc-inner">
+        <span class="hc-eyebrow">DJ &nbsp;·&nbsp; Producer &nbsp;·&nbsp; Remixer</span>
+        <h1 class="hc-headline">
+          Some nights,<br />
+          the music is<br />
+          the memory.
+        </h1>
+        <p class="hc-sub">
+          International DJ, producer, and remixer.<br />
+          Audio-visual performances from Bangalore to the world.
+        </p>
+        <div class="hc-ctas">
+          <a href="/#contact" class="cta-btn-primary">Book VIC</a>
+          <a href="/remixes/" class="cta-btn-outline">Watch Remixes</a>
         </div>
       </div>
-      <div class="hero-stats">
+      <div class="hc-scroll">
+        <span class="hc-scroll-label">Scroll</span>
+        <div class="hc-scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════ SIGNATURE STATEMENT ══════════════════════════ -->
+    <div id="signature">
+      <div class="sig-inner">
+        <p class="sig-text">
+          Not a DJ set.<br />
+          An audio-visual performance.
+        </p>
+        <span class="sig-note">Signature format · since 2007</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ STATS ════════════════════════════════ -->
+    <section id="about">
+      <p class="stats-lead">
+        Active since 2005 — two decades on stage, eighteen countries performed in,
+        over 1,400 nights of live sets. Here's what that looks like in numbers.
+      </p>
+      <div class="stats-grid">
         <div class="stat-item">
           <strong>Est. 2005</strong>
           <span>In the Industry</span>
@@ -136,157 +219,251 @@ const services = [
       </div>
     </section>
 
-    <!-- ===================== ABOUT ===================== -->
-    <section id="about">
-      <h2>About</h2>
-      <p>
-        Active since 2007, DJ VIC brings nearly two decades of international experience
-        across India, the UK, and Australia. His sound is a fusion of English and Indian
-        music, delivered through original remixes and mashups crafted uniquely for every
-        venue and audience.
-      </p>
-      <p>
-        Having collaborated with major Indian labels including Universal Music, VIC
-        specialises in audio-visual compositions that move both the dancefloor and the
-        digital space. Whether in clubs, corporate events, or curated concept nights —
-        he designs experiences, not just playlists.
-      </p>
-      <div class="av-callout">
-        <span class="av-label">Signature</span>
-        <p>DJ VIC is known for his <strong>audio-visual sets</strong> — original music synced with visuals, crafted as a single, immersive performance. A format he has taken to clubs, corporate stages, and destination weddings across India and internationally.</p>
+    <!-- ════════════════════════════ VIC FIX CALLOUT ════════════════════════════ -->
+    <section id="vicfix-callout">
+      <span class="section-label">The VIC Fix · Podcast</span>
+      <h2>Long-form conversations with the people who shaped the scene.</h2>
+      <div class="vf-episodes">
+        {vicfixEpisodes.map((ep) => (
+          <a
+            href={`https://youtu.be/${ep.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="vf-ep"
+          >
+            <div class="vf-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${ep.id}/maxresdefault.jpg`}
+                alt={ep.title}
+                loading="lazy"
+              />
+              <div class="vf-play">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span class="vf-ep-label">{ep.label}</span>
+            </div>
+            <div class="vf-ep-info">
+              <h3>{ep.title}</h3>
+              <p>{ep.desc}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div class="vf-cta-wrap">
+        <a href="/thevicfix/" class="vf-cta">Watch All Episodes &rarr;</a>
       </div>
     </section>
 
-    <!-- ===================== SERVICES ===================== -->
-    <section id="services">
-      <h2>Services</h2>
-      <div class="services-grid">
-        {services.map((s) => (
+    <!-- ════════════════════════════════ WORK ════════════════════════════════ -->
+    <section id="work">
+      <span class="section-label">What VIC Does</span>
+      <h2>Work</h2>
+
+      <!-- Primary: 2 large cards -->
+      <div class="work-primary-grid">
+        {primaryServices.map((s) => (
           <a
             href={s.href}
-            class="service-card"
-            style={`background-image: linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.6) 55%, rgba(6,6,6,0.3) 100%), url('${s.bg}'); background-size: cover; background-position: center;`}
+            class="work-primary"
+            style={`background-image: linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.55) 55%, rgba(6,6,6,0.2) 100%), url('${s.bg}'); background-size: cover; background-position: center;`}
           >
-            <div class="service-text">
-              <span class="service-name">{s.name}</span>
+            <div class="work-primary-text">
+              <span class="work-name">{s.name}</span>
               <p>{s.desc}</p>
+              <span class="work-arrow">&rarr;</span>
             </div>
-            <span class="service-arrow">&rarr;</span>
+          </a>
+        ))}
+      </div>
+
+      <!-- Secondary: 4 compact cards -->
+      <div class="work-secondary-grid">
+        {secondaryServices.map((s) => (
+          <a href={s.href} class="work-secondary">
+            <div class="work-secondary-border"></div>
+            <span class="work-name">{s.name}</span>
+            <p>{s.desc}</p>
+            <span class="work-arrow">&rarr;</span>
           </a>
         ))}
       </div>
     </section>
 
-    <!-- ===================== VIDEOS ===================== -->
-    <section id="videos">
-      <h2>Remixes &amp; Mashups</h2>
-      <p>From the dance floor to your playlist — remixed and reimagined.</p>
+    <!-- ════════════════════════════ TESTIMONIALS ════════════════════════════ -->
+    <section id="testimonials">
+      <span class="section-label">Client Voices</span>
+      <h2>What they say</h2>
+      <div class="testi-grid">
+        {testimonials.map((t) => (
+          <div class="testi-item">
+            <div class="testi-quote-mark">&ldquo;</div>
+            <p class="testi-text">{t.quote}</p>
+            <div class="testi-attr">
+              <strong>{t.name}</strong>
+              <span>{t.event}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
 
-      <div class="yt-grid">
-        {[
-          { id: "wHOB8H-HB_Y", title: "VIC - Tu Hi Meri Shab Hai X Say What (Afro Mashup)" },
-          { id: "Hgb_g-xBblw", title: "Tera hone laga hoon X Viva La Vida | Mashup | Atif Aslam | Coldplay | VIC" },
-          { id: "ssFIKwChfHc", title: "Sooraj Ki Baahon Mein x Forever (Mashup) | VIC | Chris Brown | Zindagi Na Milegi Dobara" },
-          { id: "modKUclnVJY", title: "Sach Keh Raha Hai X Tujhe Bhula Diya X I Adore You | VIC Mashup" },
-          { id: "aN2BIfUNUs4", title: "Dil Luteya (Desi Mix) – Jazzy B Ft. Apache Indian | DJ VIC Remix" },
-          { id: "KWUoJJ6xsfk", title: "Kesariya x Can't Stop The Feeling — Bollywood Meets Pop | VIC Mashup" },
-          { id: "rcGuVSoki6U", title: "Its that Oo Antava Time | Mashup | DSP | Pushpa | Fisher | VIC" },
-          { id: "MXxbN1xYteY", title: "Tere Liye | Progressive Edit | VIC | Prince | Atif Aslam" },
-          { id: "zhaNQwYQi_8", title: "Aaj Ki Raat | Progressive Edit | VIC | Stree 2 | Tamannaah Bhatia | Sachin-Jigar" },
-          { id: "gf0hYLxr6eo", title: "Kahin Aag Lage X Rejection | Tech Mix | VIC" },
-          { id: "Yx3pD4uhJRE", title: "Titliaan – Progressive Rework | DJ VIC" },
-          { id: "h48i6wSQjso", title: "Boom Boom X Body Funk | Nazia Hassan | VIC | Remix" },
-          { id: "5oA311R6Wkg", title: "Tamma Tamma x Makeba | Sanjay Dutt | Madhuri Dixit | VIC | Remix" },
-          { id: "PxgvwE1nZmw", title: "Jimmy (VIC Disco Edit) | Bollywood Remix 2025" },
-          { id: "4oTBe25wvE0", title: "Ghungroo Remix | DJ VIC Sun n Sand Rework (War)" },
-        ].map(({ id, title }) => (
+    <!-- ════════════════════════════════ MUSIC ════════════════════════════════ -->
+    <section id="music">
+      <span class="section-label">Remixes &amp; Mashups</span>
+      <h2>The Sound</h2>
+      <p class="music-lead">From the dance floor to your playlist — remixed and reimagined.</p>
+
+      <!-- Featured track -->
+      <div class="music-featured-wrap">
+      <a
+        href={`https://youtu.be/${featuredTrack.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="music-featured"
+        aria-label={`Watch ${featuredTrack.title} on YouTube`}
+      >
+        <div class="music-featured-thumb">
+          <img
+            src={`https://img.youtube.com/vi/${featuredTrack.id}/maxresdefault.jpg`}
+            alt={featuredTrack.title}
+            loading="lazy"
+          />
+          <div class="music-featured-overlay">
+            <div class="music-featured-play">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="52" height="52">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+            <div class="music-featured-info">
+              <span class="music-featured-label">Featured · Latest Release</span>
+              <p class="music-featured-title">{featuredTrack.title}</p>
+            </div>
+          </div>
+        </div>
+      </a>
+      </div>
+
+      <!-- Horizontal scroll tracks -->
+      <div class="tracks-scroll" role="list">
+        {tracks.map(({ id, title }) => (
           <a
             href={`https://youtu.be/${id}`}
             target="_blank"
             rel="noopener noreferrer"
-            class="yt-card"
+            class="track-item"
+            role="listitem"
           >
-            <div class="yt-thumb">
+            <div class="track-thumb">
               <img
-                src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
+                src={`https://img.youtube.com/vi/${id}/mqdefault.jpg`}
                 alt={title}
                 loading="lazy"
               />
-              <div class="yt-play">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="36" height="36">
+              <div class="track-play">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </div>
             </div>
-            <span class="yt-tag">Mashup &nbsp;·&nbsp; DJ Vic</span>
+            <span class="track-title">{title}</span>
           </a>
         ))}
       </div>
 
-      <a href="/remixes/" class="cta-button cta-outline">Stream &amp; Download Free &rarr;</a>
+      <div class="music-cta-wrap">
+        <a href="/remixes/" class="cta-btn-outline">Stream &amp; Download Free &rarr;</a>
+      </div>
     </section>
 
-    <!-- ===================== CONTACT ===================== -->
+    <!-- ════════════════════════════════ CONTACT ════════════════════════════════ -->
     <section id="contact">
-      <h2>Get in Touch</h2>
-      <p>Available for bookings, collaborations, and inquiries.</p>
+      <span class="section-label">Bookings</span>
+      <h2>Work With VIC</h2>
+      <p class="contact-lead">
+        VIC takes on a limited number of bookings each month to ensure every performance
+        is delivered at its highest standard. If you have a date in mind — reach out now.
+      </p>
 
-      <a
-        href="https://wa.me/919611711677"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="whatsapp-btn"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/>
-        </svg>
-        Chat on WhatsApp
-        <span class="whatsapp-note">Fastest response</span>
-      </a>
+      <div class="contact-layout">
+        <div class="contact-form-col">
+          <form id="booking-form" method="POST" action="https://formspree.io/f/xdapzdnw">
+            <input type="hidden" name="_subject" value="New Booking Enquiry — DJ VIC" />
+            <input type="hidden" name="_next" value="https://djvicofficial.com/thanks/" />
+            <input type="text" name="_gotcha" style="display:none" />
 
-      <ul>
-        <li>Phone: <a href="tel:+919611711677">+91 9611711677</a></li>
-        <li>
-          <a href="mailto:bookings@djvicofficial.com">
-            bookings@djvicofficial.com
-          </a>
-        </li>
-      </ul>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="name">Your Name <span>*</span></label>
+                <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name" />
+              </div>
+              <div class="form-field">
+                <label for="email">Email Address <span>*</span></label>
+                <input id="email" type="email" name="email" required placeholder="your@email.com" autocomplete="email" />
+              </div>
+            </div>
 
-      <h3>Send a Message</h3>
-      <form method="POST" action="https://formspree.io/f/xdapzdnw">
-        <input type="hidden" name="_subject" value="New Booking Enquiry — DJ VIC" />
-        <input type="hidden" name="_next" value="https://djvicofficial.com/thanks/" />
-        <input type="text" name="_gotcha" style="display:none" />
+            <div class="form-row">
+              <div class="form-field">
+                <label for="phone">Phone / WhatsApp <span>*</span></label>
+                <input id="phone" type="tel" name="phone" required placeholder="+91 98765 43210" autocomplete="tel" />
+              </div>
+              <div class="form-field">
+                <label for="event_type">Event Type <span>*</span></label>
+                <select id="event_type" name="event_type" required>
+                  <option value="" disabled selected>Select event type</option>
+                  <option value="Wedding">Wedding</option>
+                  <option value="Corporate">Corporate Event</option>
+                  <option value="Private Party">Private Party</option>
+                  <option value="Club Night">Club Night</option>
+                  <option value="Festival">Festival</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
 
-        <label for="name">Your Name <span>*</span></label>
-        <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name" />
+            <div class="form-row">
+              <div class="form-field">
+                <label for="event_date">Event Date</label>
+                <input id="event_date" type="date" name="event_date" />
+              </div>
+              <div class="form-field">
+                <label for="city">City / Venue</label>
+                <input id="city" type="text" name="city" placeholder="Bangalore, Mumbai…" />
+              </div>
+            </div>
 
-        <label for="email">Email Address <span>*</span></label>
-        <input id="email" type="email" name="email" required placeholder="your@email.com" autocomplete="email" />
+            <div class="form-field">
+              <label for="message">Tell us more</label>
+              <textarea id="message" name="message" rows="4" placeholder="Brief about your event, guests, vibe…"></textarea>
+            </div>
 
-        <label for="phone">Phone / WhatsApp <span>*</span></label>
-        <input id="phone" type="tel" name="phone" required placeholder="+91 98765 43210" autocomplete="tel" />
+            <button type="submit">Send Enquiry</button>
+          </form>
+        </div>
 
-        <label for="event_type">Event Type <span>*</span></label>
-        <select id="event_type" name="event_type" required>
-          <option value="" disabled selected>Select event type</option>
-          <option value="Wedding">Wedding</option>
-          <option value="Corporate">Corporate Event</option>
-          <option value="Private Party">Private Party</option>
-          <option value="Club Night">Club Night</option>
-          <option value="Festival">Festival</option>
-          <option value="Other">Other</option>
-        </select>
-
-        <label for="event_date">Event Date</label>
-        <input id="event_date" type="date" name="event_date" />
-
-        <label for="message">Message</label>
-        <textarea id="message" name="message" rows="5" placeholder="Tell us about your event..."></textarea>
-
-        <button type="submit">Send Message</button>
-      </form>
+        <div class="contact-aside">
+          <div class="contact-wa-block">
+            <p class="contact-wa-label">Fastest response</p>
+            <a
+              href="https://wa.me/919611711677"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="contact-wa-btn"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/>
+              </svg>
+              Chat on WhatsApp
+            </a>
+          </div>
+          <div class="contact-direct">
+            <a href="mailto:bookings@djvicofficial.com" class="contact-email">bookings@djvicofficial.com</a>
+            <a href="tel:+919611711677" class="contact-phone">+91 96117 11677</a>
+          </div>
+        </div>
+      </div>
     </section>
 
   </main>
@@ -294,13 +471,14 @@ const services = [
   <Footer />
 
 <script>
-  const bookingForm = document.querySelector('form[action*="xdapzdnw"]');
+  // WhatsApp notification on booking form submit
+  const bookingForm = document.getElementById('booking-form');
   if (bookingForm) {
     bookingForm.addEventListener('submit', function () {
-      const name = document.getElementById('name')?.value || '';
-      const phone = document.getElementById('phone')?.value || '';
-      const eventType = document.getElementById('event_type')?.value || '';
-      const eventDate = document.getElementById('event_date')?.value || '';
+      const name = (document.getElementById('name') as HTMLInputElement)?.value || '';
+      const phone = (document.getElementById('phone') as HTMLInputElement)?.value || '';
+      const eventType = (document.getElementById('event_type') as HTMLSelectElement)?.value || '';
+      const eventDate = (document.getElementById('event_date') as HTMLInputElement)?.value || '';
       const msg = encodeURIComponent(
         `🎧 New Booking Enquiry\n\nName: ${name}\nPhone: ${phone}\nEvent: ${eventType}\nDate: ${eventDate}\n\n(Full details sent to email)`
       );
@@ -314,219 +492,703 @@ const services = [
 </Layout>
 
 <style>
-  /* ── AV CALLOUT ──────────────────────────────────── */
-  .av-callout {
-    margin-top: 2rem;
-    border-left: 3px solid var(--gold);
-    padding: 1.25rem 1.5rem;
-    background: rgba(201,168,76,0.05);
-  }
-  .av-label {
-    display: inline-block;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.5rem;
-  }
-  .av-callout p {
-    color: rgba(255,255,255,0.75);
-    font-size: 0.9375rem;
-    line-height: 1.75;
-    margin: 0;
-    max-width: 60ch;
-  }
-  .av-callout strong {
-    color: var(--white);
-    font-weight: 600;
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+  /* ══════════════════════════════════════════════
+     ANIMATIONS
+     ══════════════════════════════════════════════ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── HERO ────────────────────────────────────────── */
-  #hero {
+  @keyframes scrollBlink {
+    0%, 100% { opacity: 0.3; }
+    50%       { opacity: 1; }
+  }
+
+  /* ══════════════════════════════════════════════
+     HERO CINEMA
+     ══════════════════════════════════════════════ */
+  #hero-cinema {
     min-height: 100svh;
     display: flex;
     flex-direction: column;
-    background-image:
-      linear-gradient(to right, rgba(6,6,6,0.82) 25%, rgba(6,6,6,0.25) 55%, rgba(6,6,6,0) 100%),
-      linear-gradient(to bottom, rgba(6,6,6,0.3) 0%, rgba(6,6,6,0) 40%, rgba(6,6,6,0.9) 100%),
-      url('/images/hero2.jpg');
-    background-size: cover;
-    background-position: center right;
-    background-repeat: no-repeat;
+    justify-content: flex-end;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
     padding: 0;
+    background-color: #060606;
+    background-image:
+      linear-gradient(to right,  rgba(6,6,6,0.92) 0%,  rgba(6,6,6,0.65) 50%, rgba(6,6,6,0.2) 100%),
+      linear-gradient(to bottom, rgba(6,6,6,0.5)  0%,  rgba(6,6,6,0)    30%, rgba(6,6,6,0.88) 100%),
+      url('/images/hero2.jpg');
+    background-size: auto, auto, cover;
+    background-position: center, center, center right;
+    background-repeat: no-repeat;
   }
 
-  .hero-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 10rem 2.5rem 3rem;
+  .hc-inner {
     max-width: var(--max-width);
     width: 100%;
     margin-inline: auto;
+    padding: 9rem 2.5rem 5rem;
   }
 
-  .hero-eyebrow {
+  .hc-eyebrow {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
     font-size: 0.65rem;
     font-weight: 600;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: 1.25rem;
-    max-width: none;
+    margin-bottom: 1.75rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.15s;
   }
 
-  .hero-text h1 {
-    line-height: 0.85;
-    letter-spacing: -0.01em;
-    font-size: clamp(6rem, 18vw, 14rem);
-  }
-
-  .hero-tagline {
+  .hc-headline {
     font-family: var(--font-display);
-    font-size: clamp(0.85rem, 2vw, 1.2rem);
-    letter-spacing: 0.25em;
+    font-size: clamp(3.5rem, 7.5vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    color: var(--white);
     text-transform: uppercase;
-    color: var(--grey) !important;
-    margin-top: 1.5rem;
-    max-width: none;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.9s ease forwards 0.35s;
   }
 
+  .hc-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(0.875rem, 1.4vw, 1rem);
+    font-weight: 300;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.75;
+    max-width: 44ch;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.55s;
+  }
 
-  /* ── STATS BAR ──────────────────────────────────── */
-  .hero-stats {
+  .hc-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.75s;
+  }
+
+  /* Scroll indicator */
+  .hc-scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1.1s;
+    pointer-events: none;
+  }
+
+  .hc-scroll-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.52rem;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .hc-scroll-line {
+    width: 1px;
+    height: 44px;
+    background: linear-gradient(to bottom, rgba(201,168,76,0.8), transparent);
+    animation: scrollBlink 2s ease-in-out infinite;
+  }
+
+  /* ══════════════════════════════════════════════
+     SIGNATURE STATEMENT
+     ══════════════════════════════════════════════ */
+  #signature {
+    background: #060606;
+    border-top: 1px solid #0f0f0f;
+    border-bottom: 1px solid #0f0f0f;
+  }
+
+  .sig-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+    text-align: center;
+  }
+
+  .sig-text {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 5.5vw, 4.5rem);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--white);
+    line-height: 1.1;
+    max-width: none;
+    margin: 0 auto;
+  }
+
+  .sig-note {
+    display: block;
+    margin-top: 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+  }
+
+  /* ══════════════════════════════════════════════
+     STATS
+     ══════════════════════════════════════════════ */
+  .stats-lead {
+    font-family: 'DM Sans', sans-serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+    color: rgba(255,255,255,0.5);
+    line-height: 1.8;
+    max-width: 60ch;
+    margin-bottom: 3rem;
+  }
+
+  .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-top: 1px solid #1e1e1e;
-    background: rgba(6,6,6,0.95);
+    border: 1px solid #1e1e1e;
   }
 
   .stat-item {
-    padding: 1.25rem 1.5rem;
-    border-right: 1px solid rgba(201,168,76,0.2);
-    border-bottom: 1px solid rgba(201,168,76,0.1);
+    padding: 1.5rem 1.75rem;
+    border-right: 1px solid rgba(201,168,76,0.15);
+    border-bottom: 1px solid rgba(201,168,76,0.08);
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.3rem;
   }
 
-  /* Remove right border on every 4th item */
-  .stat-item:nth-child(4n) {
-    border-right: none;
-  }
-
-  /* Remove bottom border on last row */
-  .stat-item:nth-last-child(-n+4) {
-    border-bottom: none;
-  }
+  .stat-item:nth-child(4n)   { border-right: none; }
+  .stat-item:nth-last-child(-n+4) { border-bottom: none; }
 
   .stat-item strong {
     font-family: var(--font-display);
-    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-size: clamp(1.5rem, 2.8vw, 2.2rem);
     letter-spacing: 0.05em;
     color: var(--gold);
     line-height: 1;
   }
 
   .stat-item span {
-    font-size: 0.58rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(201,168,76,0.6);
+    color: rgba(201,168,76,0.5);
     line-height: 1.4;
   }
 
-  /* ── SERVICE CARDS ──────────────────────────────── */
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    margin-top: 2rem;
-    background: #1a1a1a;
-    border: 1px solid #1a1a1a;
+  /* ══════════════════════════════════════════════
+     SECTION LABEL (shared utility)
+     ══════════════════════════════════════════════ */
+  .section-label {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.75;
+    margin-bottom: 0.75rem;
   }
 
-  .service-card {
-    padding: 2rem;
+  /* ══════════════════════════════════════════════
+     VIC FIX CALLOUT
+     ══════════════════════════════════════════════ */
+  #vicfix-callout h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    max-width: 22ch;
+    margin-bottom: 2.5rem;
+  }
+
+  .vf-episodes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .vf-ep {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.25rem;
     text-decoration: none;
+    color: inherit;
+    background: #111;
+    border: 1px solid #1e1e1e;
+    transition: border-color 0.25s;
+  }
+
+  .vf-ep:hover {
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  .vf-thumb {
     position: relative;
-    min-height: 280px;
-    justify-content: flex-end;
-    background-color: var(--black-card);
+    aspect-ratio: 16 / 9;
     overflow: hidden;
   }
 
-  .service-name {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2.5vw, 2rem);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--white);
-    transition: color 0.2s;
-    position: relative;
-    z-index: 1;
+  .vf-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
   }
 
-  .service-card:hover .service-name {
+  .vf-ep:hover .vf-thumb img {
+    transform: scale(1.04);
+  }
+
+  .vf-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s;
     color: var(--gold);
   }
 
-  .service-card p {
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.65);
-    max-width: 32ch;
-    margin: 0;
-    line-height: 1.6;
-    position: relative;
-    z-index: 1;
+  .vf-ep:hover .vf-play {
+    opacity: 1;
   }
 
-  .service-arrow {
-    margin-top: 0.75rem;
-    font-size: 1.1rem;
+  .vf-ep-label {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #060606;
+    background: var(--gold);
+    padding: 0.25rem 0.6rem;
+  }
+
+  .vf-ep-info {
+    padding: 0 1.25rem 1.5rem;
+  }
+
+  .vf-ep-info h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    letter-spacing: 0.04em;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .vf-ep-info p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    max-width: none;
+    margin: 0;
+  }
+
+  .vf-cta-wrap {
+    margin-top: 2rem;
+  }
+
+  .vf-cta {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.4);
+    padding-bottom: 3px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .vf-cta:hover {
+    color: var(--gold-light);
+    border-color: var(--gold-light);
+  }
+
+  /* ══════════════════════════════════════════════
+     WORK (SERVICES TWO-TIER)
+     ══════════════════════════════════════════════ */
+
+  /* Primary: 2 large image cards */
+  .work-primary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    margin-top: 2rem;
+    background: #1a1a1a;
+  }
+
+  .work-primary {
+    position: relative;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    text-decoration: none;
+    overflow: hidden;
+    background-color: #111;
+  }
+
+  .work-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .work-primary:hover::before {
+    transform: scaleX(1);
+  }
+
+  .work-primary-text {
+    position: relative;
+    z-index: 1;
+    padding: 2rem 2rem 2.25rem;
+  }
+
+  .work-name {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.8vw, 2.25rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 0.6rem;
+    transition: color 0.2s;
+  }
+
+  .work-primary:hover .work-name,
+  .work-secondary:hover .work-name {
+    color: var(--gold);
+  }
+
+  .work-primary-text p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    max-width: 36ch;
+    line-height: 1.65;
+    margin: 0 0 1rem;
+  }
+
+  .work-arrow {
+    display: inline-block;
+    font-size: 1rem;
     color: var(--gold);
     opacity: 0;
     transform: translateX(-8px);
-    transition: opacity 0.2s, transform 0.25s;
-    position: relative;
-    z-index: 1;
+    transition: opacity 0.25s, transform 0.25s;
   }
 
-  .service-card:hover .service-arrow {
+  .work-primary:hover .work-arrow,
+  .work-secondary:hover .work-arrow {
     opacity: 1;
     transform: translateX(0);
   }
 
-  /* ── YOUTUBE THUMBNAIL GRID ─────────────────────── */
-  .yt-grid {
+  /* Secondary: 4 compact dark cards */
+  .work-secondary-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin-top: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    margin-top: 1px;
+    background: #1a1a1a;
   }
 
-  .yt-card {
+  .work-secondary {
+    position: relative;
+    background: #0d0d0d;
+    padding: 2rem 1.5rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    text-decoration: none;
+    overflow: hidden;
+    transition: background 0.25s;
+  }
+
+  .work-secondary-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .work-secondary:hover .work-secondary-border {
+    transform: scaleX(1);
+  }
+
+  .work-secondary:hover {
+    background: #141414;
+  }
+
+  .work-secondary .work-name {
+    font-size: clamp(1rem, 1.6vw, 1.3rem);
+    margin-bottom: 0;
+  }
+
+  .work-secondary p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+    max-width: none;
+    margin: 0;
+    flex: 1;
+  }
+
+  /* ══════════════════════════════════════════════
+     TESTIMONIALS
+     ══════════════════════════════════════════════ */
+  .testi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .testi-item {
+    background: #0e0e0e;
+    border: 1px solid #1e1e1e;
+    padding: 2rem 1.75rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    transition: border-color 0.25s;
+  }
+
+  .testi-item:hover {
+    border-color: rgba(201,168,76,0.3);
+  }
+
+  .testi-quote-mark {
+    font-family: Georgia, serif;
+    font-size: 3.5rem;
+    line-height: 0.7;
+    color: var(--gold);
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+
+  .testi-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.75;
+    max-width: none;
+    margin: 0;
+    flex: 1;
+  }
+
+  .testi-attr {
+    border-top: 1px solid #1e1e1e;
+    padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .testi-attr strong {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  .testi-attr span {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.65;
+  }
+
+  /* ══════════════════════════════════════════════
+     MUSIC SECTION
+     ══════════════════════════════════════════════ */
+  .music-lead {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 2.5rem;
+    max-width: 50ch;
+  }
+
+  /* Featured track */
+  .music-featured {
+    display: block;
+    position: relative;
+    width: 100%;
+    text-decoration: none;
+    overflow: hidden;
+    background: #111;
+    margin-bottom: 1.5rem;
+  }
+
+  .music-featured-thumb {
+    position: relative;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+  }
+
+  .music-featured-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+
+  .music-featured:hover .music-featured-thumb img {
+    transform: scale(1.03);
+  }
+
+  .music-featured-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to right,
+      rgba(6,6,6,0.9) 0%,
+      rgba(6,6,6,0.5) 50%,
+      rgba(6,6,6,0.15) 100%
+    );
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    padding: 0 3rem;
+  }
+
+  .music-featured-play {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    transition: background 0.25s, color 0.25s;
+  }
+
+  .music-featured:hover .music-featured-play {
+    background: var(--gold);
+    color: #060606;
+  }
+
+  .music-featured-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .music-featured-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .music-featured-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--white);
+    line-height: 1.15;
+    max-width: 30ch;
+    margin: 0;
+  }
+
+  /* Horizontal scroll tracks */
+  .tracks-scroll {
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201,168,76,0.4) #111;
+    margin-top: 0.5rem;
+  }
+
+  .tracks-scroll::-webkit-scrollbar {
+    height: 3px;
+  }
+  .tracks-scroll::-webkit-scrollbar-track {
+    background: #111;
+  }
+  .tracks-scroll::-webkit-scrollbar-thumb {
+    background: rgba(201,168,76,0.4);
+  }
+
+  .track-item {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     text-decoration: none;
   }
 
-  .yt-thumb {
+  .track-thumb {
     position: relative;
     aspect-ratio: 16 / 9;
     overflow: hidden;
     background: #111;
-    border-radius: 4px;
   }
 
-  .yt-thumb img {
+  .track-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -534,131 +1196,246 @@ const services = [
     transition: transform 0.3s ease;
   }
 
-  .yt-card:hover .yt-thumb img {
-    transform: scale(1.04);
+  .track-item:hover .track-thumb img {
+    transform: scale(1.06);
   }
 
-  .yt-play {
+  .track-play {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.4);
     opacity: 0;
-    transition: opacity 0.25s;
+    transition: opacity 0.2s;
     color: var(--gold);
   }
 
-  .yt-play svg {
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
-  }
-
-  .yt-card:hover .yt-play {
+  .track-item:hover .track-play {
     opacity: 1;
   }
 
-  .yt-tag {
+  .track-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.4;
+    transition: color 0.2s;
+    /* clamp to 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .track-item:hover .track-title {
+    color: rgba(255,255,255,0.85);
+  }
+
+  .music-cta-wrap {
+    margin-top: 2.5rem;
+  }
+
+  /* ══════════════════════════════════════════════
+     CONTACT
+     ══════════════════════════════════════════════ */
+  .contact-lead {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.75;
+    max-width: 52ch;
+    margin-bottom: 3rem;
+  }
+
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* Override global form max-width for this section */
+  .contact-form-col form {
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .contact-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-top: 0.5rem;
+  }
+
+  .contact-wa-label {
+    font-family: 'DM Sans', sans-serif;
     font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: rgba(255,255,255,0.35);
+    max-width: none;
+    margin-bottom: 0.75rem;
   }
 
-  .cta-outline {
-    background: transparent;
-    color: var(--gold);
-    border: 1px solid var(--gold);
-    margin-top: 2.5rem;
-    display: inline-block;
-  }
-
-  .cta-outline:hover {
-    background: var(--gold);
-    color: var(--black);
-  }
-
-  @media (max-width: 900px) {
-    .yt-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 500px) {
-    .yt-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  /* ── WHATSAPP CTA ───────────────────────────────── */
-  .whatsapp-btn {
-    display: inline-flex;
+  .contact-wa-btn {
+    display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-top: 1.75rem;
-    margin-bottom: 0.5rem;
-    padding: 1rem 2rem;
+    padding: 0.9rem 1.5rem;
     background: #25D366;
     color: #fff;
     font-family: var(--font-display);
-    font-size: 1rem;
-    letter-spacing: 0.15em;
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    transition: background 0.2s;
     text-decoration: none;
-    border: none;
+    transition: background 0.2s;
+    width: 100%;
+    justify-content: center;
   }
 
-  .whatsapp-btn:hover {
-    background: #1ebe59;
+  .contact-wa-btn:hover {
+    background: #1ebe5a;
     color: #fff;
   }
 
-  .whatsapp-note {
-    font-family: var(--font-body);
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    opacity: 0.75;
-    text-transform: none;
-    font-weight: 400;
-    border-left: 1px solid rgba(255,255,255,0.4);
-    padding-left: 0.75rem;
-    margin-left: 0.25rem;
+  .contact-direct {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px solid #1e1e1e;
+    padding-top: 1.5rem;
   }
 
-  /* ── RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 700px) {
-    .hero-stats {
+  .contact-email,
+  .contact-phone {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .contact-email:hover,
+  .contact-phone:hover {
+    color: var(--gold);
+  }
+
+  /* ══════════════════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════════════════ */
+  @media (max-width: 960px) {
+    .testi-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .stat-item:nth-child(4n) {
-      border-right: rgba(201,168,76,0.2) 1px solid;
+    .work-secondary-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
 
-    .stat-item:nth-child(2n) {
-      border-right: none;
+    .contact-layout {
+      grid-template-columns: 1fr;
     }
 
-    .stat-item:nth-last-child(-n+4) {
-      border-bottom: 1px solid rgba(201,168,76,0.1);
+    .contact-aside {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1.5rem;
     }
 
-    .stat-item:nth-last-child(-n+2) {
-      border-bottom: none;
+    .contact-wa-block {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .contact-direct {
+      flex: 1;
+      border-top: none;
+      padding-top: 0;
+      border-left: 1px solid #1e1e1e;
+      padding-left: 1.5rem;
+      justify-content: center;
     }
   }
 
   @media (max-width: 700px) {
-    .services-grid {
+    .hc-headline {
+      font-size: clamp(2.8rem, 12vw, 5rem);
+    }
+
+    .vf-episodes {
+      grid-template-columns: 1fr;
+    }
+
+    .work-primary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .work-primary {
+      min-height: 280px;
+    }
+
+    .testi-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .work-secondary-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-item:nth-child(4n)   { border-right: 1px solid rgba(201,168,76,0.15); }
+    .stat-item:nth-child(2n)   { border-right: none; }
+    .stat-item:nth-last-child(-n+4) { border-bottom: 1px solid rgba(201,168,76,0.08); }
+    .stat-item:nth-last-child(-n+2) { border-bottom: none; }
+
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .music-featured-thumb {
+      aspect-ratio: 16 / 9;
+    }
+
+    .music-featured-overlay {
+      padding: 0 1.5rem;
+      gap: 1.25rem;
+    }
+
+    .music-featured-play {
+      width: 52px;
+      height: 52px;
     }
   }
 
   @media (max-width: 480px) {
-    .services-grid {
+    .work-secondary-grid {
       grid-template-columns: 1fr;
+    }
+
+    .hc-ctas {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 </style>
