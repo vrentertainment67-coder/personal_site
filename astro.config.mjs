@@ -19,6 +19,7 @@ export default defineConfig({
         'https://djvicofficial.com/sangeet/',
         'https://djvicofficial.com/nightlife/',
         'https://djvicofficial.com/private-events/',
+        'https://djvicofficial.com/private-sessions/',
       ],
       serialize(item) {
         const priorities = {
@@ -28,6 +29,7 @@ export default defineConfig({
           'https://djvicofficial.com/sangeet/':   { priority: 0.8, changefreq: 'monthly' },
           'https://djvicofficial.com/nightlife/': { priority: 0.8, changefreq: 'monthly' },
           'https://djvicofficial.com/private-events/': { priority: 0.8, changefreq: 'monthly' },
+          'https://djvicofficial.com/private-sessions/': { priority: 0.7, changefreq: 'monthly' },
           'https://djvicofficial.com/thevicfix/': { priority: 0.7, changefreq: 'weekly' },
           'https://djvicofficial.com/remixes/':   { priority: 0.6, changefreq: 'monthly' },
           'https://djvicofficial.com/photos/':    { priority: 0.6, changefreq: 'monthly' },

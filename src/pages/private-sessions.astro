@@ -1,0 +1,372 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout
+  title="Private DJ Sessions — DJ VIC | Bangalore"
+  description="Private one-on-one DJ sessions with DJ VIC in Bangalore. By enquiry only. For those who want to master the craft on their own terms."
+  canonical="https://djvicofficial.com/private-sessions/"
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Private DJ Sessions",
+    "provider": { "@id": "https://djvicofficial.com/#business" },
+    "description": "Private one-on-one DJ sessions with DJ VIC. By enquiry only.",
+    "areaServed": "Bangalore, India"
+  }}
+>
+  <Nav />
+  <main id="main-content">
+
+    <!-- ── HERO ───────────────────────────────────────── -->
+    <section id="ps-hero">
+      <div class="ps-hero-inner">
+        <div class="ps-eyebrow">By Appointment Only</div>
+        <h1>The Instrument That No<br />Boardroom Teaches.</h1>
+        <p class="ps-hero-body">
+          Some of India's most accomplished people have sat across from VIC — not to discuss
+          business, not to network, but to learn something entirely different. How to read a room.
+          How to hold an audience through sound. How to feel the energy shift before anyone else does.
+        </p>
+        <p class="ps-hero-body">
+          This is not a beginner's course. It is a private craft session — designed for people who
+          are already exceptional at everything else.
+        </p>
+        <a href="#ps-enquire" class="ps-cta-link">Enquire About a Session &darr;</a>
+      </div>
+    </section>
+
+    <!-- ── WHO THIS IS FOR ────────────────────────────── -->
+    <section id="ps-who">
+      <div class="ps-inner">
+        <div class="ps-label">Clientele</div>
+        <h2>Who Sits Across From VIC</h2>
+        <p class="ps-body-wide">
+          The private session clientele includes founders, chairmen, and senior executives from
+          India's leading technology, real estate, and media companies — individuals who treat
+          personal mastery with the same rigour they bring to their professional lives. Sessions
+          are held in complete confidence. No names are shared without explicit permission.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── WHAT A SESSION IS ──────────────────────────── -->
+    <section id="ps-what">
+      <div class="ps-inner">
+        <div class="ps-label">Format</div>
+        <h2>What to Expect</h2>
+        <div class="ps-details-grid">
+          <div class="ps-detail">
+            <span class="ps-detail-num">01</span>
+            <span class="ps-detail-title">One-on-one only</span>
+            <p>No group sessions, no online-only formats. Every session is in-person and private.</p>
+          </div>
+          <div class="ps-detail">
+            <span class="ps-detail-num">02</span>
+            <span class="ps-detail-title">Your schedule</span>
+            <p>Duration and frequency built entirely around your calendar, not the other way around.</p>
+          </div>
+          <div class="ps-detail">
+            <span class="ps-detail-num">03</span>
+            <span class="ps-detail-title">Any level</span>
+            <p>Fundamentals through advanced live mixing and audio-visual production — wherever you are.</p>
+          </div>
+          <div class="ps-detail">
+            <span class="ps-detail-num">04</span>
+            <span class="ps-detail-title">Equipment provided</span>
+            <p>Or sessions held at your own setup if you have one. Fully flexible on both counts.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ENQUIRE ─────────────────────────────────────── -->
+    <section id="ps-enquire">
+      <div class="ps-inner">
+        <div class="ps-label">Bookings</div>
+        <h2>Enquire</h2>
+        <p class="ps-body-wide">
+          Sessions are limited and taken by personal enquiry only. No public pricing.
+          All conversations handled directly by VIC.
+        </p>
+
+        <div class="ps-enquire-actions">
+          <a
+            href="https://wa.me/919611711677?text=Hi%20Vic%2C%20I'm%20interested%20in%20private%20DJ%20sessions."
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ps-wa-btn"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/>
+            </svg>
+            Message on WhatsApp
+          </a>
+          <a href="mailto:bookings@djvicofficial.com" class="ps-email-link">
+            bookings@djvicofficial.com
+          </a>
+        </div>
+
+        <p class="ps-footer-note">
+          Private sessions are separate from public bookings and event performances.
+        </p>
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  /* ── Hero ─────────────────────────────────────────── */
+  #ps-hero {
+    min-height: 80svh;
+    display: flex;
+    align-items: flex-end;
+    background-image:
+      linear-gradient(to right, rgba(6,6,6,0.96) 30%, rgba(6,6,6,0.75) 65%, rgba(6,6,6,0.35) 100%),
+      linear-gradient(to bottom, rgba(6,6,6,0.3) 0%, rgba(6,6,6,0.1) 40%, rgba(6,6,6,0.9) 100%),
+      url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .ps-hero-inner {
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+    padding: 9rem 2.5rem 5rem;
+  }
+
+  .ps-eyebrow {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+  }
+
+  #ps-hero h1 {
+    font-size: clamp(2.8rem, 6.5vw, 5.5rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 2rem;
+    max-width: 18ch;
+  }
+
+  .ps-hero-body {
+    font-size: clamp(0.875rem, 1.4vw, 1rem);
+    color: rgba(255,255,255,0.6);
+    line-height: 1.8;
+    max-width: 54ch;
+    margin: 0 0 1rem;
+  }
+
+  .ps-cta-link {
+    display: inline-block;
+    margin-top: 2rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.4);
+    padding-bottom: 3px;
+    transition: color 0.2s, border-color 0.2s;
+    text-decoration: none;
+  }
+
+  .ps-cta-link:hover {
+    color: var(--gold-light);
+    border-color: var(--gold-light);
+  }
+
+  /* ── Shared section layout ──────────────────────── */
+  .ps-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
+  .ps-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.75;
+    margin-bottom: 0.75rem;
+  }
+
+  #ps-who h2,
+  #ps-what h2,
+  #ps-enquire h2 {
+    color: var(--white);
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: 2rem;
+  }
+
+  .ps-body-wide {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.85;
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  /* ── Who section bg ─────────────────────────────── */
+  #ps-who {
+    background: #080808;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+  }
+
+  /* ── Detail cards ───────────────────────────────── */
+  .ps-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    margin-top: 2.5rem;
+    background: #1a1a1a;
+  }
+
+  .ps-detail {
+    background: #0d0d0d;
+    padding: 2.25rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    position: relative;
+    transition: background 0.25s;
+    overflow: hidden;
+  }
+
+  .ps-detail::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .ps-detail:hover {
+    background: #131313;
+  }
+
+  .ps-detail:hover::before {
+    transform: scaleX(1);
+  }
+
+  .ps-detail-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--gold);
+    opacity: 0.3;
+    line-height: 1;
+  }
+
+  .ps-detail-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+    line-height: 1.2;
+  }
+
+  .ps-detail p {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.7;
+    margin: 0;
+    max-width: 32ch;
+  }
+
+  /* ── Enquire section ────────────────────────────── */
+  .ps-enquire-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+    margin-top: 2.5rem;
+  }
+
+  .ps-wa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1.75rem;
+    background: #25D366;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .ps-wa-btn:hover {
+    background: #1ebe5a;
+    color: #fff;
+  }
+
+  .ps-email-link {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.45);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .ps-email-link:hover {
+    color: var(--gold);
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  .ps-footer-note {
+    margin-top: 3.5rem;
+    font-style: italic;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.22);
+    max-width: none;
+    border-top: 1px solid #1a1a1a;
+    padding-top: 1.5rem;
+  }
+
+  /* ── Responsive ─────────────────────────────────── */
+  @media (max-width: 700px) {
+    .ps-details-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ps-hero-inner {
+      padding-inline: 1.25rem;
+      padding-bottom: 3.5rem;
+    }
+
+    .ps-inner {
+      padding-inline: 1.25rem;
+    }
+
+    .ps-enquire-actions {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
