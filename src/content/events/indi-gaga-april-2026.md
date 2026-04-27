@@ -6,7 +6,7 @@ city: "Bangalore"
 date: "2026-04-25"
 time: "9:00 PM onwards"
 ticketed: false
-guestListAvailable: true
+guestListAvailable: false
 isPrivate: false
 dresscode: "Ladies in Indian · Men in Western"
 genre: ["IndiPop", "Desi", "Afro"]
