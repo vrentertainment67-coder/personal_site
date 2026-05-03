@@ -2,6 +2,8 @@
 export interface Props {
   title: string;
   description: string;
+  ogTitle?: string;
+  ogDescription?: string;
   canonical?: string;
   ogImage?: string;
   ogType?: 'website' | 'article' | 'music.album';
@@ -12,6 +14,8 @@ export interface Props {
 const {
   title,
   description,
+  ogTitle,
+  ogDescription,
   canonical,
   ogImage = 'https://djvicofficial.com/images/og-default.jpg',
   ogType = 'website',
@@ -21,6 +25,10 @@ const {
 
 const canonicalURL = canonical ?? new URL(Astro.url.pathname, 'https://djvicofficial.com').href;
 const schemaArray = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+
+// Social sharing titles — broader positioning, separate from SEO <title>
+const socialTitle = ogTitle || title;
+const socialDescription = ogDescription || description;
 ---
 
 <!-- Primary -->
@@ -32,11 +40,11 @@ const schemaArray = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 <link rel="canonical" href={canonicalURL} />
 {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-<!-- Open Graph -->
+<!-- Open Graph — for WhatsApp, Instagram, LinkedIn previews -->
 <meta property="og:type" content={ogType} />
 <meta property="og:site_name" content="DJ VIC Official" />
-<meta property="og:title" content={title} />
-<meta property="og:description" content={description} />
+<meta property="og:title" content={socialTitle} />
+<meta property="og:description" content={socialDescription} />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:image" content={ogImage} />
 <meta property="og:image:width" content="1200" />
@@ -49,8 +57,8 @@ const schemaArray = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@djvicofficial" />
 <meta name="twitter:creator" content="@djvicofficial" />
-<meta name="twitter:title" content={title} />
-<meta name="twitter:description" content={description} />
+<meta name="twitter:title" content={socialTitle} />
+<meta name="twitter:description" content={socialDescription} />
 <meta name="twitter:image" content={ogImage} />
 
 <!-- Favicon -->
