@@ -24,6 +24,8 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
         alt="DJ VIC"
       />
     </a>
+
+    <!-- Desktop nav links -->
     <ul>
       <li><a href={`${base}/#about`} class:list={[{ active: is('/') }]}>About</a></li>
       <li class="has-dropdown">
@@ -53,22 +55,57 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
       <li><a href={`${base}/events/`} aria-current={startsWith('/events') ? 'page' : undefined}>Events</a></li>
       <li><a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a></li>
     </ul>
+
     <a href={`${base}/#contact`} class="nav-book-btn">Book VIC</a>
+
+    <!-- Hamburger button — mobile only -->
+    <button
+      class="nav-hamburger"
+      id="hamburger-btn"
+      aria-label="Open navigation menu"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
   </nav>
 </header>
 
+<!-- Mobile full-screen menu -->
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close navigation menu">
+    <span class="bar"></span>
+    <span class="bar"></span>
+  </button>
+  <nav class="mobile-nav">
+    <a href={`${base}/#about`}>About</a>
+    <a href={`${base}/weddings/`} aria-current={startsWith('/weddings') ? 'page' : undefined}>Weddings</a>
+    <a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a>
+    <a href={`${base}/sangeet/`} aria-current={startsWith('/sangeet') ? 'page' : undefined}>Sangeet</a>
+    <a href={`${base}/nightlife/`} aria-current={startsWith('/nightlife') ? 'page' : undefined}>Club & Nightlife</a>
+    <a href={`${base}/private-events/`} aria-current={startsWith('/private-events') ? 'page' : undefined}>Private Events</a>
+    <a href={`${base}/festivals/`} aria-current={startsWith('/festivals') ? 'page' : undefined}>Festivals</a>
+    <a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a>
+    <a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a>
+    <a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Photos</a>
+    <a href={`${base}/events/`} aria-current={startsWith('/events') ? 'page' : undefined}>Events</a>
+    <a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a>
+    <a href={`${base}/#contact`} class="mobile-cta">Book VIC</a>
+  </nav>
+</div>
+
 <script>
-  // Sticky scroll: transparent → dark after 60 px
+  // ── Sticky scroll: transparent → dark after 60px ──────────────────
   const header = document.getElementById('site-header');
   if (header) {
-    const onScroll = () => {
-      header.classList.toggle('scrolled', window.scrollY > 60);
-    };
+    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
 
-  // Dropdown open/close
+  // ── Desktop dropdown ───────────────────────────────────────────────
   document.querySelectorAll('.dropdown-trigger').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -87,18 +124,46 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     });
   });
 
+  // ── Mobile hamburger toggle ────────────────────────────────────────
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const mobileMenu   = document.getElementById('mobile-menu');
+  const closeBtn     = document.getElementById('mobile-menu-close');
+
+  function openMenu() {
+    mobileMenu?.classList.add('is-open');
+    hamburgerBtn?.classList.add('is-open');
+    hamburgerBtn?.setAttribute('aria-expanded', 'true');
+    mobileMenu?.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    mobileMenu?.classList.remove('is-open');
+    hamburgerBtn?.classList.remove('is-open');
+    hamburgerBtn?.setAttribute('aria-expanded', 'false');
+    mobileMenu?.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  hamburgerBtn?.addEventListener('click', () => {
+    mobileMenu?.classList.contains('is-open') ? closeMenu() : openMenu();
+  });
+
+  closeBtn?.addEventListener('click', closeMenu);
+
+  // Close when a nav link is clicked
+  mobileMenu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Close on Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.has-dropdown.open').forEach((el) => {
-        el.classList.remove('open');
-        el.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
-      });
-    }
+    if (e.key === 'Escape' && mobileMenu?.classList.contains('is-open')) closeMenu();
   });
 </script>
 
 <style is:global>
-  /* Override global header: start transparent, go dark on scroll */
+  /* ── Header scroll behaviour ──────────────────────────────────────── */
   #site-header {
     background: transparent !important;
     backdrop-filter: none !important;
@@ -114,7 +179,7 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     border-bottom-color: rgba(201,168,76,0.12) !important;
   }
 
-  /* "Book VIC" filled gold button */
+  /* ── "Book VIC" desktop button ────────────────────────────────────── */
   .nav-book-btn {
     font-family: var(--font-display);
     font-size: 1rem;
@@ -134,10 +199,156 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     background: var(--gold-light) !important;
     color: #060606 !important;
   }
+
+  /* ── Hamburger button ─────────────────────────────────────────────── */
+  .nav-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 28px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+    flex-shrink: 0;
+  }
+
+  .nav-hamburger .bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #e0dccf;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Hamburger → X when open */
+  .nav-hamburger.is-open .bar:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+  }
+  .nav-hamburger.is-open .bar:nth-child(2) {
+    opacity: 0;
+  }
+  .nav-hamburger.is-open .bar:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
+  }
+
+  /* ── Mobile breakpoint ───────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Show hamburger */
+    .nav-hamburger {
+      display: flex;
+    }
+
+    /* Hide desktop links and Book VIC button */
+    header nav ul,
+    .nav-book-btn {
+      display: none !important;
+    }
+  }
+
+  /* ── Mobile full-screen menu ─────────────────────────────────────── */
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #060606;
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow-y: auto;
+  }
+
+  .mobile-menu.is-open {
+    display: flex;
+    animation: mobileMenuIn 0.25s ease;
+  }
+
+  @keyframes mobileMenuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Close (×) button inside mobile menu */
+  .mobile-menu-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 28px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .mobile-menu-close .bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #e0dccf;
+    border-radius: 2px;
+  }
+
+  .mobile-menu-close .bar:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+  }
+
+  .mobile-menu-close .bar:nth-child(2) {
+    transform: translateY(-9px) rotate(-45deg);
+  }
+
+  /* Nav links inside mobile menu */
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .mobile-nav a {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 0.05em;
+    color: #e0dccf;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a[aria-current='page'] {
+    color: #c9a84c;
+  }
+
+  .mobile-nav .mobile-cta {
+    margin-top: 16px;
+    color: #060606;
+    background: #c9a84c;
+    padding: 12px 40px;
+    border-radius: 2px;
+    font-size: 26px;
+    transition: background 0.2s ease;
+  }
+
+  .mobile-nav .mobile-cta:hover {
+    background: #b8923e;
+    color: #060606;
+  }
 </style>
 
 <style>
-  /* Dropdown trigger */
+  /* ── Desktop dropdown trigger ─────────────────────────────────────── */
   .dropdown-trigger {
     background: none;
     border: none;
@@ -171,7 +382,7 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     transform: rotate(180deg);
   }
 
-  /* Dropdown panel */
+  /* ── Dropdown panel ───────────────────────────────────────────────── */
   .has-dropdown {
     position: relative;
     display: flex;
