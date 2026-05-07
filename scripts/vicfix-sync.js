@@ -155,9 +155,9 @@ async function main() {
   console.log('Node version:', process.version);
 
   if (!YOUTUBE_API_KEY) {
-    console.error('❌ YOUTUBE_API_KEY secret is not set or empty.');
-    console.error('Go to GitHub repo → Settings → Secrets → Actions → add YOUTUBE_API_KEY');
-    process.exit(1);
+    console.warn('⚠️  YOUTUBE_API_KEY secret is not set — skipping sync.');
+    console.warn('To enable: GitHub repo → Settings → Secrets → Actions → New secret → YOUTUBE_API_KEY');
+    process.exit(0); // exit 0 = workflow shows green, not red
   }
 
   console.log('✅ API key found');
