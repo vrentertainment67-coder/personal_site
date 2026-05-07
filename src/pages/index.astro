@@ -90,16 +90,18 @@ const tracks = [
 
 const vicfixEpisodes = [
   {
-    id: "jbcBwc0NKK4",
-    label: "S2 · E11 · Latest",
-    title: "Ma Faiza — The Mother of Electronica",
-    desc: "One of India's pioneering figures in electronic music on a career that shaped the country's music history.",
+    id: "_7ique3N8KU",
+    label: "S2 · E12 · Latest",
+    title: "Sharath Rice — Inside VRO Hospitality",
+    desc: "The co-founder of Bangalore's biggest F&B empire on building nightlife brands from scratch.",
+    slug: "sharath-rice",
   },
   {
-    id: "LcsG09yaQkg",
-    label: "S2 · E10",
-    title: "DJ Whosane — Tabloids, Trance & The Album India Forgot",
-    desc: "Pioneer of India's underground dance music on the record that changed everything.",
+    id: "jbcBwc0NKK4",
+    label: "S2 · E11",
+    title: "Ma Faiza — The Mother of Electronica",
+    desc: "One of India's pioneering figures in electronic music on a career that shaped the country's music history.",
+    slug: "ma-faiza",
   },
 ];
 ---
@@ -233,7 +235,7 @@ const vicfixEpisodes = [
       <div class="vf-episodes">
         {vicfixEpisodes.map((ep) => (
           <a
-            href={`https://youtu.be/${ep.id}`}
+            href={ep.slug ? `/thevicfix/${ep.slug}/` : `https://youtu.be/${ep.id}`}
             target="_blank"
             rel="noopener noreferrer"
             class="vf-ep"
