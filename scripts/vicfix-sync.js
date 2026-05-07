@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const CHANNEL_ID = 'UCK2PKwBr-pKnlN6DxWJkNFQ'; // thedjvicofficial channel ID
+const CHANNEL_ID = 'UCiVpJtVD3eV7s1hpULI3cYg'; // verified via RSS feed: youtube.com/@thedjvicofficial
 const EPISODES_DIR = path.join(__dirname, '../src/content/vicfix');
 const VIC_FIX_SEARCH_TERM = 'The Vic Fix';
 
@@ -17,14 +17,26 @@ async function fetchLatestVicFixVideos() {
   url.searchParams.set('maxResults', '5');
   url.searchParams.set('part', 'snippet');
 
+  console.log('📡 Calling YouTube API...');
+  console.log('Channel ID:', CHANNEL_ID);
+  console.log('API Key set:', !!YOUTUBE_API_KEY);
+
   const res = await fetch(url.toString());
   const data = await res.json();
 
+  // Log the full response so we can see any API errors
+  if (data.error) {
+    console.error('❌ YouTube API error:', JSON.stringify(data.error, null, 2));
+    process.exit(1);
+  }
+
   if (!data.items || data.items.length === 0) {
-    console.log('No results from YouTube API');
+    console.log('⚠️  No results returned from YouTube API');
+    console.log('Full response:', JSON.stringify(data, null, 2));
     return [];
   }
 
+  console.log(`✅ Got ${data.items.length} videos from YouTube`);
   return data.items.map(item => ({
     youtubeId: item.id.videoId,
     title: item.snippet.title,
@@ -140,11 +152,15 @@ featured: true
 // Main
 async function main() {
   console.log('🎙️  Vic Fix Auto Sync starting...');
+  console.log('Node version:', process.version);
 
   if (!YOUTUBE_API_KEY) {
-    console.error('❌ YOUTUBE_API_KEY not set. Add it as a GitHub secret.');
+    console.error('❌ YOUTUBE_API_KEY secret is not set or empty.');
+    console.error('Go to GitHub repo → Settings → Secrets → Actions → add YOUTUBE_API_KEY');
     process.exit(1);
   }
+
+  console.log('✅ API key found');
 
   const existingIds = getExistingEpisodeIds();
   console.log(`📁 Found ${existingIds.size} existing episodes`);
