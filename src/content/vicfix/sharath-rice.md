@@ -13,5 +13,5 @@ guestPhoto: ""
 topics: ["VRO Hospitality", "F&B Empire", "Bangalore Nightlife", "Multi-Format Restaurants", "Entrepreneurship", "Series A", "Nightlife Disruption"]
 publishDate: "2026-05-01"
 viewCount: "0"
-featured: true
+featured: false
 ---
