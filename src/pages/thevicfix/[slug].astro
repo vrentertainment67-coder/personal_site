@@ -16,10 +16,15 @@ const { episode } = Astro.props;
 const { data: ep } = episode;
 
 const ytThumb = `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg`;
-const pageImage = ep.guestPhoto || ytThumb;
-const bioFirstSentence = ep.bio.split('\n\n')[0].split('.')[0] + '.';
-const bioDescription = ep.bio.replace(/\n\n/g, ' ').slice(0, 160);
+const ogImage = ep.guestPhoto || ytThumb;
 const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
+
+// Structured meta description — use explicit seoDescription if set, otherwise compute from fields
+const rawDesc = `${ep.guestName} on The VIC Fix S${ep.season}E${ep.episode} — ${ep.tagline} Hosted by DJ VIC.`;
+const computedDesc = rawDesc.length > 160 ? rawDesc.slice(0, 157) + '…' : rawDesc;
+const metaDescription = ep.seoDescription || computedDesc;
+
+const episodeUrl = `https://djvicofficial.com/thevicfix/${episode.id}/`;
 
 const all = await getCollection('vicfixEpisodes');
 const related = all
@@ -27,27 +32,44 @@ const related = all
   .sort(() => Math.random() - 0.5)
   .slice(0, 3);
 
-const schema = {
-  "@context": "https://schema.org",
-  "@type": "VideoObject",
-  "name": `${ep.guestName} — The VIC Fix`,
-  "description": bioDescription,
-  "thumbnailUrl": ytThumb,
-  "embedUrl": `https://www.youtube.com/embed/${ep.youtubeId}`,
-  "uploadDate": ep.publishDate,
-  "author": {
-    "@type": "Person",
-    "name": "DJ VIC",
-    "url": "https://djvicofficial.com"
+const schemas = [
+  {
+    "@context": "https://schema.org",
+    "@type": "PodcastEpisode",
+    "url": episodeUrl,
+    "name": `${ep.guestName} — The VIC Fix S${ep.season}E${ep.episode}`,
+    "datePublished": ep.publishDate,
+    "description": metaDescription,
+    "partOfSeries": {
+      "@type": "PodcastSeries",
+      "name": "The VIC Fix",
+      "url": "https://djvicofficial.com/thevicfix/"
+    },
+    "associatedMedia": {
+      "@type": "MediaObject",
+      "contentUrl": `https://www.youtube.com/watch?v=${ep.youtubeId}`
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home",        "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "The VIC Fix", "item": "https://djvicofficial.com/thevicfix/" },
+      { "@type": "ListItem", "position": 3, "name": ep.guestName,  "item": episodeUrl }
+    ]
   }
-};
+];
 ---
 
 <Layout
   title={`${ep.guestName} — The VIC Fix S${ep.season}E${ep.episode} | DJ VIC`}
-  description={bioDescription}
-  image={pageImage}
-  schema={schema}
+  description={metaDescription}
+  ogTitle={`${ep.guestName} — The VIC Fix`}
+  ogDescription={metaDescription}
+  ogImage={ogImage}
+  ogType="article"
+  schema={schemas}
 >
   <Nav />
 

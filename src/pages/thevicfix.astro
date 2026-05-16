@@ -97,29 +97,33 @@ const episodes = allEpisodes.sort((a, b) => {
             const ytThumb = `https://img.youtube.com/vi/${ep.data.youtubeId}/maxresdefault.jpg`;
             const imgSrc = ep.data.guestPhoto ? ep.data.guestPhoto : ytThumb;
             return (
-              <a
-                href={`/thevicfix/${ep.id}/`}
+              <div
                 class="episode-card"
                 data-category={ep.data.category}
                 data-season={String(ep.data.season)}
               >
-                <div class="card-thumb">
-                  <img
-                    src={imgSrc}
-                    alt={ep.data.guestName}
-                    loading="lazy"
-                    onerror={`this.src='https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg'`}
-                  />
-                  <span class="season-badge">S{ep.data.season} &middot; E{ep.data.episode}</span>
-                  <span class="category-tag">{ep.data.categoryLabel}</span>
+                <a href={`/thevicfix/${ep.id}/`} class="ep-card-inner">
+                  <div class="card-thumb">
+                    <img
+                      src={imgSrc}
+                      alt={ep.data.guestName}
+                      loading="lazy"
+                      onerror={`this.src='https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg'`}
+                    />
+                    <span class="season-badge">S{ep.data.season} &middot; E{ep.data.episode}</span>
+                    <span class="category-tag">{ep.data.categoryLabel}</span>
+                  </div>
+                  <div class="card-body">
+                    <h3>{ep.data.guestName}</h3>
+                    <p class="guest-title-ep">{ep.data.guestTitle}</p>
+                    <p class="ep-tagline">{ep.data.tagline}</p>
+                  </div>
+                </a>
+                <div class="card-footer">
+                  <a href={`/thevicfix/${ep.id}/`} class="watch-cta">Read Episode &rarr;</a>
+                  <a href={`https://youtu.be/${ep.data.youtubeId}`} class="yt-cta" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
                 </div>
-                <div class="card-body">
-                  <h3>{ep.data.guestName}</h3>
-                  <p class="guest-title-ep">{ep.data.guestTitle}</p>
-                  <p class="ep-tagline">{ep.data.tagline}</p>
-                  <span class="watch-cta">Watch Episode &rarr;</span>
-                </div>
-              </a>
+              </div>
             );
           })}
         </div>
@@ -535,7 +539,6 @@ const episodes = allEpisodes.sort((a, b) => {
     flex-direction: column;
     background: #0d0d0d;
     border: 1px solid rgba(255,255,255,0.06);
-    text-decoration: none;
     color: var(--white);
     transition: border-color 0.25s, background 0.25s;
     overflow: hidden;
@@ -563,6 +566,14 @@ const episodes = allEpisodes.sort((a, b) => {
     transform: scaleX(1);
   }
 
+  .ep-card-inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+  }
+
   .card-thumb {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -578,7 +589,7 @@ const episodes = allEpisodes.sort((a, b) => {
     transition: transform 0.4s ease;
   }
 
-  .episode-card:hover .card-thumb img {
+  .ep-card-inner:hover .card-thumb img {
     transform: scale(1.04);
   }
 
@@ -638,8 +649,17 @@ const episodes = allEpisodes.sort((a, b) => {
     font-size: 0.78rem;
     color: rgba(255,255,255,0.45);
     line-height: 1.55;
-    margin: 0.25rem 0 0.6rem;
+    margin: 0.25rem 0 0;
     flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.1rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: auto;
   }
 
   .watch-cta {
@@ -648,14 +668,30 @@ const episodes = allEpisodes.sort((a, b) => {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--gold);
+    text-decoration: none;
     border-bottom: 1px solid rgba(201,168,76,0.3);
     padding-bottom: 1px;
-    align-self: flex-start;
     transition: color 0.2s;
   }
 
-  .episode-card:hover .watch-cta {
+  .watch-cta:hover {
     color: var(--gold-light, #e0c060);
+  }
+
+  .yt-cta {
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-decoration: none;
+    margin-left: auto;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .yt-cta:hover {
+    color: rgba(255,255,255,0.7);
   }
 
   /* ─── Section shared ──────────────────────────── */

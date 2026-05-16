@@ -22,19 +22,34 @@ export default defineConfig({
         'https://djvicofficial.com/private-sessions/',
       ],
       serialize(item) {
-        const priorities = {
-          'https://djvicofficial.com/':           { priority: 1.0, changefreq: 'weekly' },
-          'https://djvicofficial.com/weddings/':  { priority: 0.9, changefreq: 'weekly' },
-          'https://djvicofficial.com/corporate/': { priority: 0.9, changefreq: 'weekly' },
-          'https://djvicofficial.com/sangeet/':   { priority: 0.8, changefreq: 'monthly' },
-          'https://djvicofficial.com/nightlife/': { priority: 0.8, changefreq: 'monthly' },
-          'https://djvicofficial.com/private-events/': { priority: 0.8, changefreq: 'monthly' },
-          'https://djvicofficial.com/private-sessions/': { priority: 0.7, changefreq: 'monthly' },
-          'https://djvicofficial.com/thevicfix/': { priority: 0.7, changefreq: 'weekly' },
-          'https://djvicofficial.com/remixes/':   { priority: 0.6, changefreq: 'monthly' },
-          'https://djvicofficial.com/photos/':    { priority: 0.6, changefreq: 'monthly' },
+        const exact = {
+          'https://djvicofficial.com/':                 { priority: 1.0, changefreq: 'weekly' },
+          'https://djvicofficial.com/weddings/':        { priority: 0.9, changefreq: 'weekly' },
+          'https://djvicofficial.com/corporate/':       { priority: 0.9, changefreq: 'weekly' },
+          'https://djvicofficial.com/sangeet/':         { priority: 0.8, changefreq: 'monthly' },
+          'https://djvicofficial.com/nightlife/':       { priority: 0.8, changefreq: 'monthly' },
+          'https://djvicofficial.com/private-events/':  { priority: 0.8, changefreq: 'monthly' },
+          'https://djvicofficial.com/private-sessions/':{ priority: 0.7, changefreq: 'monthly' },
+          'https://djvicofficial.com/thevicfix/':       { priority: 0.8, changefreq: 'weekly' },
+          'https://djvicofficial.com/remixes/':         { priority: 0.7, changefreq: 'weekly' },
+          'https://djvicofficial.com/photos/':          { priority: 0.6, changefreq: 'monthly' },
+          'https://djvicofficial.com/events/':          { priority: 0.7, changefreq: 'weekly' },
+          'https://djvicofficial.com/blog/':            { priority: 0.7, changefreq: 'weekly' },
         };
-        return { ...item, ...(priorities[item.url] ?? {}) };
+        if (exact[item.url]) return { ...item, ...exact[item.url] };
+        // Episode pages — /thevicfix/[slug]/
+        if (item.url.startsWith('https://djvicofficial.com/thevicfix/'))
+          return { ...item, priority: 0.75, changefreq: 'monthly' };
+        // Remix pages — /remixes/[slug]/
+        if (item.url.startsWith('https://djvicofficial.com/remixes/'))
+          return { ...item, priority: 0.65, changefreq: 'monthly' };
+        // Blog posts — /blog/[slug]/
+        if (item.url.startsWith('https://djvicofficial.com/blog/'))
+          return { ...item, priority: 0.65, changefreq: 'monthly' };
+        // Event pages — /events/[slug]/
+        if (item.url.startsWith('https://djvicofficial.com/events/'))
+          return { ...item, priority: 0.6, changefreq: 'weekly' };
+        return { ...item, priority: 0.5, changefreq: 'monthly' };
       },
     }),
   ],
