@@ -2,8 +2,22 @@
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import { getCollection } from 'astro:content';
 
 const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
+
+const allRemixes = (await getCollection('remixes'))
+  .sort((a, b) => new Date(b.data.releaseDate).getTime() - new Date(a.data.releaseDate).getTime());
+
+const latestRemixes  = allRemixes.slice(0, 3);
+const scrollRemixes  = allRemixes.slice(3);
+
+const remixTypeLabel: Record<string, string> = {
+  mashup:  'Mashup',
+  remix:   'Remix',
+  edit:    'Edit',
+  rework:  'Rework',
+};
 
 const primaryServices = [
   {
@@ -66,27 +80,6 @@ const testimonials = [
   },
 ];
 
-const featuredTrack = {
-  id: "wHOB8H-HB_Y",
-  title: "Tu Hi Meri Shab Hai × Say What (Afro Mashup)",
-};
-
-const tracks = [
-  { id: "Hgb_g-xBblw",  title: "Tera Hone Laga Hoon × Viva La Vida" },
-  { id: "ssFIKwChfHc",  title: "Sooraj Ki Baahon Mein × Forever" },
-  { id: "modKUclnVJY",  title: "Sach Keh Raha Hai × Tujhe Bhula Diya" },
-  { id: "aN2BIfUNUs4",  title: "Dil Luteya — Desi Mix" },
-  { id: "KWUoJJ6xsfk",  title: "Kesariya × Can't Stop The Feeling" },
-  { id: "rcGuVSoki6U",  title: "Oo Antava Time" },
-  { id: "MXxbN1xYteY",  title: "Tere Liye — Progressive Edit" },
-  { id: "zhaNQwYQi_8",  title: "Aaj Ki Raat — Progressive Edit" },
-  { id: "gf0hYLxr6eo",  title: "Kahin Aag Lage × Rejection" },
-  { id: "Yx3pD4uhJRE",  title: "Titliaan — Progressive Rework" },
-  { id: "h48i6wSQjso",  title: "Boom Boom × Body Funk" },
-  { id: "5oA311R6Wkg",  title: "Tamma Tamma × Makeba" },
-  { id: "PxgvwE1nZmw",  title: "Jimmy (VIC Disco Edit)" },
-  { id: "4oTBe25wvE0",  title: "Ghungroo — Sun n Sand Rework" },
-];
 
 const vicfixEpisodes = [
   {
@@ -236,8 +229,7 @@ const vicfixEpisodes = [
         {vicfixEpisodes.map((ep) => (
           <a
             href={ep.slug ? `/thevicfix/${ep.slug}/` : `https://youtu.be/${ep.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(!ep.slug ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             class="vf-ep"
           >
             <div class="vf-thumb">
@@ -324,50 +316,46 @@ const vicfixEpisodes = [
       <h2>The Sound</h2>
       <p class="music-lead">From the dance floor to your playlist — remixed and reimagined.</p>
 
-      <!-- Featured track -->
-      <div class="music-featured-wrap">
-      <a
-        href={`https://youtu.be/${featuredTrack.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="music-featured"
-        aria-label={`Watch ${featuredTrack.title} on YouTube`}
-      >
-        <div class="music-featured-thumb">
-          <img
-            src={`https://img.youtube.com/vi/${featuredTrack.id}/maxresdefault.jpg`}
-            alt={featuredTrack.title}
-            loading="lazy"
-          />
-          <div class="music-featured-overlay">
-            <div class="music-featured-play">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="52" height="52">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
+      <!-- Latest 3 releases -->
+      <div class="latest-remixes-grid">
+        {latestRemixes.map((r, i) => (
+          <a href={`/remixes/${r.id}/`} class="lrc">
+            <div class="lrc-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${r.data.youtubeId}/maxresdefault.jpg`}
+                alt={r.data.title}
+                loading="lazy"
+              />
+              <div class="lrc-play">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span class="lrc-badge">
+                {i === 0 ? 'Latest' : remixTypeLabel[r.data.type] || 'Mashup'}
+              </span>
             </div>
-            <div class="music-featured-info">
-              <span class="music-featured-label">Featured · Latest Release</span>
-              <p class="music-featured-title">{featuredTrack.title}</p>
+            <div class="lrc-info">
+              <span class="lrc-type">{remixTypeLabel[r.data.type] || 'Mashup'}</span>
+              <h3 class="lrc-title">{r.data.title}</h3>
+              <span class="lrc-cta">Watch &rarr;</span>
             </div>
-          </div>
-        </div>
-      </a>
+          </a>
+        ))}
       </div>
 
-      <!-- Horizontal scroll tracks -->
+      <!-- Horizontal scroll — remaining tracks -->
       <div class="tracks-scroll" role="list">
-        {tracks.map(({ id, title }) => (
+        {scrollRemixes.map(r => (
           <a
-            href={`https://youtu.be/${id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/remixes/${r.id}/`}
             class="track-item"
             role="listitem"
           >
             <div class="track-thumb">
               <img
-                src={`https://img.youtube.com/vi/${id}/mqdefault.jpg`}
-                alt={title}
+                src={`https://img.youtube.com/vi/${r.data.youtubeId}/mqdefault.jpg`}
+                alt={r.data.title}
                 loading="lazy"
               />
               <div class="track-play">
@@ -376,7 +364,7 @@ const vicfixEpisodes = [
                 </svg>
               </div>
             </div>
-            <span class="track-title">{title}</span>
+            <span class="track-title">{r.data.title}</span>
           </a>
         ))}
       </div>
@@ -1070,92 +1058,121 @@ const vicfixEpisodes = [
     max-width: 50ch;
   }
 
-  /* Featured track */
-  .music-featured {
-    display: block;
-    position: relative;
-    width: 100%;
+  /* ── Latest 3 remix cards ────────────────── */
+  .latest-remixes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.1);
+    margin-bottom: 2rem;
+  }
+
+  .lrc {
+    background: #0d0d0d;
+    display: flex;
+    flex-direction: column;
     text-decoration: none;
+    color: inherit;
+    transition: background 0.2s;
+  }
+
+  .lrc:hover {
+    background: #141414;
+  }
+
+  .lrc-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
     background: #111;
-    margin-bottom: 1.5rem;
   }
 
-  .music-featured-thumb {
-    position: relative;
-    aspect-ratio: 16 / 7;
-    overflow: hidden;
-  }
-
-  .music-featured-thumb img {
+  .lrc-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.5s ease;
+    transition: transform 0.4s ease;
   }
 
-  .music-featured:hover .music-featured-thumb img {
-    transform: scale(1.03);
+  .lrc:hover .lrc-thumb img {
+    transform: scale(1.04);
   }
 
-  .music-featured-overlay {
+  .lrc-play {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      to right,
-      rgba(6,6,6,0.9) 0%,
-      rgba(6,6,6,0.5) 50%,
-      rgba(6,6,6,0.15) 100%
-    );
-    display: flex;
-    align-items: center;
-    gap: 2.5rem;
-    padding: 0 3rem;
-  }
-
-  .music-featured-play {
-    flex-shrink: 0;
-    width: 72px;
-    height: 72px;
-    border: 2px solid var(--gold);
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 0.25s;
     color: var(--gold);
-    transition: background 0.25s, color 0.25s;
   }
 
-  .music-featured:hover .music-featured-play {
+  .lrc:hover .lrc-play {
+    opacity: 1;
+  }
+
+  .lrc-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #000;
     background: var(--gold);
-    color: #060606;
+    padding: 0.2rem 0.55rem;
   }
 
-  .music-featured-info {
+  .lrc-info {
+    padding: 1rem 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.35rem;
+    flex: 1;
   }
 
-  .music-featured-label {
+  .lrc-type {
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.58rem;
+    font-size: 0.55rem;
     font-weight: 600;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--gold);
+    opacity: 0.7;
   }
 
-  .music-featured-title {
+  .lrc-title {
     font-family: var(--font-display);
-    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    font-size: clamp(0.9rem, 1.4vw, 1.1rem);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--white);
-    line-height: 1.15;
-    max-width: 30ch;
+    line-height: 1.2;
     margin: 0;
+    flex: 1;
+  }
+
+  .lrc-cta {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: 0.25rem;
+  }
+
+  .lrc:hover .lrc-cta {
+    opacity: 1;
   }
 
   /* Horizontal scroll tracks */
@@ -1351,6 +1368,10 @@ const vicfixEpisodes = [
      RESPONSIVE
      ══════════════════════════════════════════════ */
   @media (max-width: 960px) {
+    .latest-remixes-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .testi-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -1422,18 +1443,8 @@ const vicfixEpisodes = [
       grid-template-columns: 1fr;
     }
 
-    .music-featured-thumb {
-      aspect-ratio: 16 / 9;
-    }
-
-    .music-featured-overlay {
-      padding: 0 1.5rem;
-      gap: 1.25rem;
-    }
-
-    .music-featured-play {
-      width: 52px;
-      height: 52px;
+    .latest-remixes-grid {
+      grid-template-columns: 1fr;
     }
   }
 
