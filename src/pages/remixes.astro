@@ -19,21 +19,20 @@ const audiomackSlugs = [
 ];
 
 const remixes = [
-  { id: "wHOB8H-HB_Y", title: "VIC - Tu Hi Meri Shab Hai X Say What (Afro Mashup)" },
-  { id: "Hgb_g-xBblw", title: "Tera hone laga hoon X Viva La Vida | Mashup | Atif Aslam | Coldplay | VIC" },
-  { id: "ssFIKwChfHc", title: "Sooraj Ki Baahon Mein x Forever (Mashup) | VIC | Chris Brown | Zindagi Na Milegi Dobara" },
-  { id: "modKUclnVJY", title: "Sach Keh Raha Hai X Tujhe Bhula Diya X I Adore You | VIC Mashup" },
-  { id: "aN2BIfUNUs4", title: "Dil Luteya (Desi Mix) – Jazzy B Ft. Apache Indian | DJ VIC Remix" },
-  { id: "KWUoJJ6xsfk", title: "Kesariya x Can't Stop The Feeling — Bollywood Meets Pop | VIC Mashup" },
-  { id: "rcGuVSoki6U", title: "Its that Oo Antava Time | Mashup | DSP | Pushpa | Fisher | VIC" },
-  { id: "MXxbN1xYteY", title: "Tere Liye | Progressive Edit | VIC | Prince | Atif Aslam" },
-
-  { id: "gf0hYLxr6eo", title: "Kahin Aag Lage X Rejection | Tech Mix | VIC" },
-  { id: "Yx3pD4uhJRE", title: "Titliaan – Progressive Rework | DJ VIC" },
-  { id: "h48i6wSQjso", title: "Boom Boom X Body Funk | Nazia Hassan | VIC | Remix" },
-  { id: "5oA311R6Wkg", title: "Tamma Tamma x Makeba | Sanjay Dutt | Madhuri Dixit | VIC | Remix" },
-  { id: "PxgvwE1nZmw", title: "Jimmy (VIC Disco Edit) | Bollywood Remix 2025" },
-  { id: "4oTBe25wvE0", title: "Ghungroo Remix | DJ VIC Sun n Sand Rework (War)" },
+  { id: "wHOB8H-HB_Y", slug: "tu-hi-meri-shab-hai-afro-mashup",     title: "Tu Hi Meri Shab Hai × Say What (Afro Mashup)" },
+  { id: "Hgb_g-xBblw", slug: "tera-hone-laga-hoon-viva-la-vida",     title: "Tera Hone Laga Hoon × Viva La Vida" },
+  { id: "ssFIKwChfHc", slug: "sooraj-ki-baahon-mein-forever",         title: "Sooraj Ki Baahon Mein × Forever" },
+  { id: "modKUclnVJY", slug: "sach-keh-raha-hai-mashup",              title: "Sach Keh Raha Hai × Tujhe Bhula Diya × I Adore You" },
+  { id: "aN2BIfUNUs4", slug: "dil-luteya-desi-mix",                   title: "Dil Luteya (Desi Mix)" },
+  { id: "KWUoJJ6xsfk", slug: "kesariya-cant-stop-the-feeling",        title: "Kesariya × Can't Stop The Feeling" },
+  { id: "rcGuVSoki6U", slug: "oo-antava-afro-mashup",                 title: "Oo Antava (Afro Mashup)" },
+  { id: "MXxbN1xYteY", slug: "tere-liye-progressive-edit",            title: "Tere Liye (Progressive Edit)" },
+  { id: "gf0hYLxr6eo", slug: "kahin-aag-lage-tech-mix",              title: "Kahin Aag Lage × Rejection (Tech Mix)" },
+  { id: "Yx3pD4uhJRE", slug: "titliaan-progressive-rework",           title: "Titliaan (Progressive Rework)" },
+  { id: "h48i6wSQjso", slug: "boom-boom-body-funk",                   title: "Boom Boom × Body Funk" },
+  { id: "5oA311R6Wkg", slug: "tamma-tamma-makeba",                    title: "Tamma Tamma × Makeba" },
+  { id: "PxgvwE1nZmw", slug: "jimmy-disco-edit",                      title: "Jimmy (VIC Disco Edit)" },
+  { id: "4oTBe25wvE0", slug: "ghungroo-sun-n-sand-rework",            title: "Ghungroo (Sun n Sand Rework)" },
 ];
 
 const platforms = [
@@ -126,11 +125,9 @@ const platforms = [
       <div class="section-label">Latest Tracks</div>
       <h2>Watch &amp; Listen</h2>
       <div class="yt-grid">
-        {remixes.map(({ id, title }) => (
+        {remixes.map(({ id, slug, title }) => (
           <a
-            href={`https://youtu.be/${id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/remixes/${slug}/`}
             class="yt-card"
           >
             <div class="yt-thumb">

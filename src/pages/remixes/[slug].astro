@@ -1,0 +1,562 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+
+export async function getStaticPaths() {
+  const tracks = await getCollection('remixes');
+  return tracks.map(track => ({
+    params: { slug: track.id },
+    props: { track },
+  }));
+}
+
+const { track } = Astro.props;
+const { data: t } = track;
+
+const ytThumb = `https://img.youtube.com/vi/${t.youtubeId}/maxresdefault.jpg`;
+
+// Related tracks — same genre, excluding self
+const all = await getCollection('remixes');
+const related = all
+  .filter(r => r.id !== track.id && r.data.genre.some(g => t.genre.includes(g)))
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 3);
+
+const typeLabel: Record<string, string> = {
+  mashup: 'Mashup',
+  remix: 'Remix',
+  edit: 'Edit',
+  rework: 'Rework',
+};
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "MusicRecording",
+  "name": t.title,
+  "description": t.description,
+  "thumbnailUrl": ytThumb,
+  "embedUrl": `https://www.youtube.com/embed/${t.youtubeId}`,
+  "byArtist": {
+    "@type": "Person",
+    "name": "DJ VIC",
+    "url": "https://djvicofficial.com"
+  }
+};
+---
+
+<Layout
+  title={`${t.title} — DJ VIC ${typeLabel[t.type] || 'Mashup'}`}
+  description={t.description}
+  ogTitle={`${t.title} — DJ VIC`}
+  ogDescription={t.description}
+  ogImage={ytThumb}
+  schema={schema}
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ── Breadcrumb ─────────────────────────────── -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <div class="breadcrumb-inner">
+        <a href="/remixes/">Remixes &amp; Mashups</a>
+        <span class="bc-sep">/</span>
+        <span class="bc-current">{t.title}</span>
+      </div>
+    </nav>
+
+    <!-- ── Track Header ──────────────────────────── -->
+    <section id="track-header">
+      <div class="track-inner">
+        <div class="track-eyebrow">
+          {typeLabel[t.type]} &middot; DJ VIC
+        </div>
+        <h1 class="track-title">{t.title}</h1>
+        {t.artists.length > 0 && (
+          <p class="track-artists">
+            {t.artists.join(' · ')}
+          </p>
+        )}
+        <div class="track-genre-tags">
+          {t.genre.map(g => (
+            <span class="genre-tag">{g}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── YouTube Embed ──────────────────────────── -->
+    <section id="track-video">
+      <div class="track-inner">
+        <div class="yt-wrap">
+          <iframe
+            src={`https://www.youtube.com/embed/${t.youtubeId}`}
+            title={t.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Description ───────────────────────────── -->
+    <section id="track-desc">
+      <div class="track-inner track-desc-inner">
+        <p class="desc-text">{t.description}</p>
+
+        {t.tracks.length > 0 && (
+          <div class="track-meta-row">
+            <span class="meta-label">Original Tracks</span>
+            <span class="meta-value">{t.tracks.join(' · ')}</span>
+          </div>
+        )}
+
+        {t.audiomackSlug && (
+          <div class="audiomack-wrap">
+            <p class="am-label">Stream &amp; Download Free</p>
+            <iframe
+              src={`https://audiomack.com/embed/vrentertainment67/song/${t.audiomackSlug}`}
+              width="100%"
+              height="252"
+              scrolling="no"
+              allow="autoplay"
+              loading="lazy"
+              title={`${t.title} on Audiomack`}
+              style="border:0;"
+            ></iframe>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- ── Related Tracks ────────────────────────── -->
+    {related.length > 0 && (
+      <section id="track-related">
+        <div class="track-inner track-related-inner">
+          <div class="section-label">More From DJ VIC</div>
+          <h2>More Remixes &amp; Mashups</h2>
+          <div class="related-grid">
+            {related.map(rel => (
+              <a href={`/remixes/${rel.id}/`} class="related-card">
+                <div class="related-thumb">
+                  <img
+                    src={`https://img.youtube.com/vi/${rel.data.youtubeId}/maxresdefault.jpg`}
+                    alt={rel.data.title}
+                    loading="lazy"
+                  />
+                  <div class="related-play">
+                    <svg viewBox="0 0 68 48" width="40" height="28">
+                      <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
+                      <path d="M45 24 27 14v20" fill="#000"/>
+                    </svg>
+                  </div>
+                  <span class="related-type-badge">{typeLabel[rel.data.type]}</span>
+                </div>
+                <div class="related-body">
+                  <h3>{rel.data.title}</h3>
+                  <span class="related-cta">Watch &rarr;</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ── Bottom CTA ─────────────────────────────── -->
+    <section id="track-cta">
+      <div class="track-inner track-cta-inner">
+        <div class="cta-left">
+          <p class="cta-label">Hear more from DJ VIC</p>
+          <a href="/remixes/" class="cta-back">← All Remixes &amp; Mashups</a>
+        </div>
+        <a href="/#contact" class="cta-book">Book DJ VIC &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ─── Breadcrumb ──────────────────────────────── */
+  .breadcrumb {
+    background: #050505;
+    border-bottom: 1px solid #111;
+  }
+
+  .breadcrumb-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 0.85rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb-inner a {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumb-inner a:hover { color: var(--gold-light); }
+
+  .breadcrumb-inner span {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .bc-sep { color: rgba(255,255,255,0.15) !important; }
+  .bc-current { color: rgba(255,255,255,0.55) !important; }
+
+  /* ─── Shared layout ───────────────────────────── */
+  .track-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 0 2.5rem;
+  }
+
+  /* ─── Track Header ───────────────────────────── */
+  #track-header {
+    background: #060606;
+    border-bottom: 1px solid #111;
+  }
+
+  #track-header .track-inner {
+    padding-top: 4rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .track-eyebrow {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+  }
+
+  .track-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .track-artists {
+    font-size: 0.85rem;
+    color: var(--gold);
+    font-style: italic;
+    letter-spacing: 0.03em;
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+  }
+
+  .track-genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .genre-tag {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.3rem 0.75rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .genre-tag:hover {
+    border-color: rgba(201,168,76,0.35);
+    color: var(--gold);
+  }
+
+  /* ─── YouTube embed ──────────────────────────── */
+  #track-video {
+    background: #060606;
+  }
+
+  #track-video .track-inner {
+    padding-top: 3rem;
+    padding-bottom: 0;
+  }
+
+  .yt-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+
+  .yt-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* ─── Description ────────────────────────────── */
+  #track-desc {
+    background: #060606;
+    border-bottom: 1px solid #111;
+  }
+
+  .track-desc-inner {
+    padding-top: 3rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .desc-text {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.85;
+    max-width: 64ch;
+    margin: 0 0 2rem;
+  }
+
+  .track-meta-row {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+
+  .meta-value {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .audiomack-wrap {
+    margin-top: 1rem;
+    max-width: 560px;
+  }
+
+  .am-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    opacity: 0.7;
+  }
+
+  /* ─── Related ────────────────────────────────── */
+  #track-related {
+    background: #080808;
+    border-top: 1px solid #111;
+  }
+
+  .track-related-inner {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  #track-related h2 {
+    color: var(--white);
+    margin-bottom: 2rem;
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .related-card {
+    display: flex;
+    flex-direction: column;
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    color: var(--white);
+    transition: border-color 0.25s, background 0.25s;
+    overflow: hidden;
+  }
+
+  .related-card:hover {
+    border-color: rgba(201,168,76,0.25);
+    background: #131313;
+  }
+
+  .related-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .related-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .related-card:hover .related-thumb img { transform: scale(1.04); }
+
+  .related-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .related-card:hover .related-play { opacity: 1; }
+
+  .related-type-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.45rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.2rem 0.5rem;
+  }
+
+  .related-body {
+    padding: 0.85rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .related-body h3 {
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.3;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .related-cta {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 1px;
+    align-self: flex-start;
+  }
+
+  /* ─── Bottom CTA ──────────────────────────────── */
+  #track-cta {
+    background: #060606;
+    border-top: 1px solid #111;
+  }
+
+  .track-cta-inner {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .cta-label {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.35);
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  .cta-back {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(201,168,76,0.35);
+    padding-bottom: 2px;
+    transition: color 0.2s;
+  }
+
+  .cta-back:hover { color: var(--gold-light); }
+
+  .cta-book {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.6rem 1.75rem;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .cta-book:hover { background: var(--gold-light); }
+
+  /* ─── Responsive ─────────────────────────────── */
+  @media (max-width: 768px) {
+    .track-inner { padding-inline: 1.25rem; }
+    .breadcrumb-inner { padding-inline: 1.25rem; }
+    .related-grid { grid-template-columns: 1fr 1fr; }
+    .track-cta-inner { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (max-width: 500px) {
+    .related-grid { grid-template-columns: 1fr; }
+    .track-title { font-size: clamp(1.8rem, 8vw, 2.5rem); }
+  }
+</style>

@@ -56,4 +56,19 @@ const vicfixEpisodes = defineCollection({
   }),
 });
 
-export const collections = { blog, events, vicfixEpisodes };
+const remixes = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/remixes' }),
+  schema: z.object({
+    title: z.string(),
+    youtubeId: z.string(),
+    type: z.enum(['mashup', 'remix', 'edit', 'rework']).default('mashup'),
+    genre: z.array(z.string()).default([]),
+    tracks: z.array(z.string()).default([]),
+    artists: z.array(z.string()).default([]),
+    description: z.string(),
+    releaseDate: z.string(),
+    audiomackSlug: z.string().optional(),
+  }),
+});
+
+export const collections = { blog, events, vicfixEpisodes, remixes };
