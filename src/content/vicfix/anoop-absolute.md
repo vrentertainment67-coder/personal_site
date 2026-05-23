@@ -13,5 +13,5 @@ guestPhoto: "/images/vicfix/guests/anoop-absolute.jpg"
 topics: ["Pioneer", "Bangalore Nightlife", "90s Rave Culture", "Howie B", "Luru", "Longevity", "Underground"]
 publishDate: "2026-05-10"
 viewCount: "0"
-featured: true
+featured: false
 ---
