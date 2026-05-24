@@ -95,69 +95,96 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
 </div>
 
 <script>
-  // ── Sticky scroll: transparent → dark after 60px ──────────────────
-  const header = document.getElementById('site-header');
-  if (header) {
-    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 60);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
+  // ── Helpers that query the live DOM each call (safe after View Transitions) ──
 
-  // ── Desktop dropdown ───────────────────────────────────────────────
-  document.querySelectorAll('.dropdown-trigger').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const li = btn.closest('.has-dropdown');
-      const isOpen = li?.classList.contains('open');
-      document.querySelectorAll('.has-dropdown.open').forEach((el) => el.classList.remove('open'));
-      if (!isOpen) li?.classList.add('open');
-      btn.setAttribute('aria-expanded', String(!isOpen));
-    });
-  });
-
-  document.addEventListener('click', () => {
+  function closeAllDropdowns() {
     document.querySelectorAll('.has-dropdown.open').forEach((el) => {
       el.classList.remove('open');
-      el.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+      (el.querySelector('.dropdown-trigger') as HTMLElement)
+        ?.setAttribute('aria-expanded', 'false');
     });
-  });
-
-  // ── Mobile hamburger toggle ────────────────────────────────────────
-  const hamburgerBtn = document.getElementById('hamburger-btn');
-  const mobileMenu   = document.getElementById('mobile-menu');
-  const closeBtn     = document.getElementById('mobile-menu-close');
-
-  function openMenu() {
-    mobileMenu?.classList.add('is-open');
-    hamburgerBtn?.classList.add('is-open');
-    hamburgerBtn?.setAttribute('aria-expanded', 'true');
-    mobileMenu?.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
   }
 
-  function closeMenu() {
-    mobileMenu?.classList.remove('is-open');
-    hamburgerBtn?.classList.remove('is-open');
-    hamburgerBtn?.setAttribute('aria-expanded', 'false');
-    mobileMenu?.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
+  // These document-level listeners are added once; they re-query the DOM
+  // each invocation so they work correctly after View Transition swaps.
+  document.addEventListener('click', closeAllDropdowns);
 
-  hamburgerBtn?.addEventListener('click', () => {
-    mobileMenu?.classList.contains('is-open') ? closeMenu() : openMenu();
-  });
-
-  closeBtn?.addEventListener('click', closeMenu);
-
-  // Close when a nav link is clicked
-  mobileMenu?.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', closeMenu);
-  });
-
-  // Close on Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && mobileMenu?.classList.contains('is-open')) closeMenu();
+    if (e.key !== 'Escape') return;
+    closeAllDropdowns();
+    const mob = document.getElementById('mobile-menu');
+    if (mob?.classList.contains('is-open')) {
+      mob.classList.remove('is-open');
+      const hbtn = document.getElementById('hamburger-btn');
+      hbtn?.classList.remove('is-open');
+      hbtn?.setAttribute('aria-expanded', 'false');
+      mob.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
   });
+
+  // ── Setup: re-runs after every navigation to bind new DOM elements ──
+
+  let cleanupScroll: (() => void) | null = null;
+
+  function setup() {
+    // Sticky header — cancel previous scroll listener, bind to fresh element
+    if (cleanupScroll) cleanupScroll();
+    const header = document.getElementById('site-header');
+    if (header) {
+      const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 60);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      cleanupScroll = () => window.removeEventListener('scroll', onScroll);
+    }
+
+    // Desktop dropdown buttons
+    document.querySelectorAll('.dropdown-trigger').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const li = btn.closest('.has-dropdown');
+        const isOpen = li?.classList.contains('open');
+        closeAllDropdowns();
+        if (!isOpen) li?.classList.add('open');
+        (btn as HTMLElement).setAttribute('aria-expanded', String(!isOpen));
+      });
+    });
+
+    // Mobile hamburger
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const mobileMenu   = document.getElementById('mobile-menu');
+    const closeMobBtn  = document.getElementById('mobile-menu-close');
+
+    function openMenu() {
+      mobileMenu?.classList.add('is-open');
+      hamburgerBtn?.classList.add('is-open');
+      hamburgerBtn?.setAttribute('aria-expanded', 'true');
+      mobileMenu?.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      mobileMenu?.classList.remove('is-open');
+      hamburgerBtn?.classList.remove('is-open');
+      hamburgerBtn?.setAttribute('aria-expanded', 'false');
+      mobileMenu?.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    hamburgerBtn?.addEventListener('click', () => {
+      mobileMenu?.classList.contains('is-open') ? closeMenu() : openMenu();
+    });
+
+    closeMobBtn?.addEventListener('click', closeMenu);
+
+    mobileMenu?.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+  }
+
+  // Run on initial page load, then after every View Transition navigation
+  setup();
+  document.addEventListener('astro:page-load', setup);
 </script>
 
 <style is:global>
