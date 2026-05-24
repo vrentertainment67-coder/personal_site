@@ -39,13 +39,6 @@ const quoteTweetText = ep.pullQuote
   ? encodeURIComponent(`"${ep.pullQuote}" — ${ep.guestName}\n\nThe VIC Fix with DJ VIC 🎧 ${episodeUrl}`)
   : '';
 
-// Per-emoji reaction URL identifiers (each emoji gets its own count)
-const rxUrls = {
-  fire:   `${episodeUrl}?r=fire`,
-  love:   `${episodeUrl}?r=love`,
-  clap:   `${episodeUrl}?r=clap`,
-  listen: `${episodeUrl}?r=listen`,
-};
 
 const all = await getCollection('vicfixEpisodes');
 const related = all
@@ -322,24 +315,29 @@ const schemas = [
 
 </Layout>
 
-<!-- ── Reaction buttons ────────────────────────────── -->
-<script is:inline define:vars={{
-  rxUrls,
-  episodeId: episode.id
-}}>
+<!-- ── Reaction buttons (Supabase) ────────────────── -->
+<script is:inline define:vars={{ episodeId: episode.id }}>
+  var SB_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
+  var SB_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
+  var PAGE_ID    = 'vicfix-' + episodeId;
   var storageKey = 'reacted-' + episodeId;
   var keys = ['fire', 'love', 'clap', 'listen'];
 
-  // Load counts from Applause Button API
-  keys.forEach(function(key) {
-    fetch('https://api.applause-button.com/get-claps?url=' + encodeURIComponent(rxUrls[key]))
-      .then(function(r) { return r.text(); })
-      .then(function(n) {
-        var el = document.getElementById('rc-' + key);
-        if (el) el.textContent = (parseInt(n) || 0) > 0 ? parseInt(n) : '';
-      })
-      .catch(function() {});
-  });
+  // Load live counts from Supabase
+  fetch(SB_URL + '/rest/v1/reactions?page_id=eq.' + encodeURIComponent(PAGE_ID) + '&select=emoji', {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(rows) {
+    if (!Array.isArray(rows)) return;
+    var counts = {};
+    rows.forEach(function(r) { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
+    keys.forEach(function(key) {
+      var el = document.getElementById('rc-' + key);
+      if (el) el.textContent = counts[key] ? counts[key] : '';
+    });
+  })
+  .catch(function() {});
 
   // Restore previous reaction highlight (no graying out)
   var prev = localStorage.getItem(storageKey);
@@ -359,14 +357,20 @@ const schemas = [
       document.querySelectorAll('.rbtn').forEach(function(b) { b.classList.remove('active'); });
       this.classList.add('active');
 
-      // Increment via API and update count optimistically
+      // Optimistic count update
       var countEl = document.getElementById('rc-' + key);
-      if (countEl) {
-        var cur = parseInt(countEl.textContent) || 0;
-        countEl.textContent = cur + 1;
-      }
-      fetch('https://api.applause-button.com/update-claps?url=' + encodeURIComponent(rxUrls[key]), {
-        method: 'POST'
+      if (countEl) countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
+
+      // Save to Supabase
+      fetch(SB_URL + '/rest/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'apikey': SB_KEY,
+          'Authorization': 'Bearer ' + SB_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ page_id: PAGE_ID, emoji: key })
       }).catch(function() {});
     });
   });
