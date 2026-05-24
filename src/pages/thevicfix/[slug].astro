@@ -26,6 +26,20 @@ const metaDescription = ep.seoDescription || computedDesc;
 
 const episodeUrl = `https://djvicofficial.com/thevicfix/${episode.id}/`;
 
+// Share text — pre-encoded for WhatsApp and Twitter/X links
+const waShareText = encodeURIComponent(
+  `${ep.guestName} on The VIC Fix 🎧\n"${ep.tagline}"\n\nWatch: ${episodeUrl}`
+);
+const tweetShareText = ep.pullQuote
+  ? encodeURIComponent(`"${ep.pullQuote}" — ${ep.guestName}\n\nThe VIC Fix with DJ VIC 🎧 ${episodeUrl}`)
+  : encodeURIComponent(`${ep.guestName} on The VIC Fix with DJ VIC 🎧 ${episodeUrl}`);
+const quoteWaText = ep.pullQuote
+  ? encodeURIComponent(`"${ep.pullQuote}" — ${ep.guestName}\n\nThe VIC Fix: ${episodeUrl}`)
+  : '';
+const quoteTweetText = ep.pullQuote
+  ? encodeURIComponent(`"${ep.pullQuote}" — ${ep.guestName}\n\nThe VIC Fix with DJ VIC 🎧 ${episodeUrl}`)
+  : '';
+
 const all = await getCollection('vicfixEpisodes');
 const related = all
   .filter(e => e.id !== episode.id && e.data.category === ep.category)
@@ -133,6 +147,46 @@ const schemas = [
       </div>
     </section>
 
+    <!-- ── Share ──────────────────────────────────── -->
+    <section id="ep-share">
+      <div class="ep-inner">
+        <div class="share-row">
+          <span class="share-label">Share this episode</span>
+          <div class="share-btns">
+            <!-- Web Share API — shown only on supported devices (set visible by JS) -->
+            <button id="share-native" class="share-btn share-native-btn" style="display:none" aria-label="Share">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Share
+            </button>
+            <a
+              href={`https://wa.me/?text=${waShareText}`}
+              class="share-btn share-wa-btn"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share on WhatsApp"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              WhatsApp
+            </a>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${tweetShareText}`}
+              class="share-btn share-x-btn"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share on Twitter/X"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.26 5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>
+              Twitter / X
+            </a>
+            <button id="share-copy" class="share-btn share-copy-btn" aria-label="Copy episode link">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Link
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ── Pull Quote (conditional) ──────────────── -->
     {ep.pullQuote && (
       <section id="ep-quote">
@@ -141,6 +195,21 @@ const schemas = [
             <p>&ldquo;{ep.pullQuote}&rdquo;</p>
             <footer>&mdash; {ep.guestName}</footer>
           </blockquote>
+          <div class="quote-share">
+            <span class="quote-share-label">Share this</span>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${quoteTweetText}`}
+              class="qshare-btn qshare-x"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Twitter / X</a>
+            <a
+              href={`https://wa.me/?text=${quoteWaText}`}
+              class="qshare-btn qshare-wa"
+              target="_blank"
+              rel="noopener noreferrer"
+            >WhatsApp</a>
+          </div>
         </div>
       </section>
     )}
@@ -158,6 +227,35 @@ const schemas = [
         </div>
       </section>
     )}
+
+    <!-- ── Reactions ─────────────────────────────── -->
+    <section id="ep-reactions">
+      <div class="ep-inner">
+        <div class="reactions-wrap">
+          <span class="reactions-label">Did this hit?</span>
+          <applause-button color="#c9a84c" style="width:52px;height:52px;"></applause-button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Comments ──────────────────────────────── -->
+    <!--
+      ACTION REQUIRED before comments go live:
+      1. Go to https://disqus.com/admin/create/ and create a site
+      2. Note your shortname (e.g. "djvicofficial")
+      3. Replace 'djvicofficial' in the script below with your shortname
+      4. Commit and push
+    -->
+    <section id="ep-comments">
+      <div class="ep-inner ep-comments-inner">
+        <div class="section-label">Join The Conversation</div>
+        <h2>Comments</h2>
+        <div id="disqus_thread"></div>
+        <noscript>
+          <p class="disqus-noscript">Enable JavaScript to view comments.</p>
+        </noscript>
+      </div>
+    </section>
 
     <!-- ── Related Episodes ───────────────────────── -->
     {related.length > 0 && (
@@ -205,6 +303,61 @@ const schemas = [
   <Footer />
 
 </Layout>
+
+<!-- ── Share button behaviour ──────────────────────── -->
+<script is:inline define:vars={{ episodeUrl, shareTitle: `${ep.guestName} — The VIC Fix with DJ VIC` }}>
+  // Web Share API — show native button only when supported (iOS/Android)
+  var nativeBtn = document.getElementById('share-native');
+  if (nativeBtn && navigator.share) {
+    nativeBtn.style.display = 'inline-flex';
+    nativeBtn.addEventListener('click', function() {
+      navigator.share({ title: shareTitle, url: episodeUrl }).catch(function() {});
+    });
+  }
+
+  // Copy link button
+  var copyBtn = document.getElementById('share-copy');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+      var btn = this;
+      var original = btn.innerHTML;
+      function markCopied() {
+        btn.innerHTML = btn.innerHTML.replace('Copy Link', '✓ Copied');
+        setTimeout(function() { btn.innerHTML = original; }, 2000);
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(episodeUrl).then(markCopied);
+      } else {
+        var el = document.createElement('textarea');
+        el.value = episodeUrl;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        markCopied();
+      }
+    });
+  }
+</script>
+
+<!-- ── Applause Button (fire reaction with shared count) ── -->
+<script src="https://unpkg.com/applause-button/dist/applause-button.js"></script>
+
+<!-- ── Disqus Comments ─────────────────────────────────── -->
+<script is:inline define:vars={{ disqusUrl: episodeUrl, disqusId: `vicfix-${episode.id}` }}>
+  var disqus_config = function () {
+    this.page.url = disqusUrl;
+    this.page.identifier = disqusId;
+  };
+  (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://djvicofficial.disqus.com/embed.js'; // ← replace 'djvicofficial' with your shortname after setup
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+  })();
+</script>
 
 <style>
   /* ─── Breadcrumb ──────────────────────────────── */
@@ -388,6 +541,82 @@ const schemas = [
     margin-bottom: 0;
   }
 
+  /* ─── Share ──────────────────────────────────── */
+  #ep-share {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  #ep-share .ep-inner {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .share-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .share-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .share-btns {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-body);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: rgba(255,255,255,0.45);
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .share-btn:hover,
+  .share-btn:focus-visible {
+    border-color: rgba(201,168,76,0.4);
+    color: var(--gold);
+    outline: none;
+  }
+
+  .share-wa-btn:hover,
+  .share-wa-btn:focus-visible {
+    border-color: rgba(37,211,102,0.45);
+    color: #25D366;
+  }
+
+  .share-x-btn:hover,
+  .share-x-btn:focus-visible {
+    border-color: rgba(255,255,255,0.28);
+    color: rgba(255,255,255,0.8);
+  }
+
   /* ─── Pull Quote ─────────────────────────────── */
   #ep-quote {
     background: #080808;
@@ -426,6 +655,45 @@ const schemas = [
     text-transform: uppercase;
     color: var(--gold);
     opacity: 0.75;
+  }
+
+  /* Quote share row */
+  .quote-share {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .quote-share-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  .qshare-btn {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.3rem 0.65rem;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .qshare-x:hover {
+    color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  .qshare-wa:hover {
+    color: #25D366;
+    border-color: rgba(37,211,102,0.38);
   }
 
   /* ─── Topics ─────────────────────────────────── */
@@ -471,6 +739,76 @@ const schemas = [
   .topic-tag:hover {
     border-color: rgba(201,168,76,0.35);
     color: var(--gold);
+  }
+
+  /* ─── Reactions ──────────────────────────────── */
+  #ep-reactions {
+    background: #080808;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+  }
+
+  #ep-reactions .ep-inner {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .reactions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .reactions-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin: 0;
+  }
+
+  applause-button {
+    --clap-color: #c9a84c;
+  }
+
+  /* ─── Comments ───────────────────────────────── */
+  #ep-comments {
+    background: #060606;
+    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+    color-scheme: dark;
+  }
+
+  .ep-comments-inner {
+    padding-top: 4rem;
+    padding-bottom: 5rem;
+  }
+
+  #ep-comments .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  #ep-comments h2 {
+    color: var(--white);
+    margin-bottom: 2.5rem;
+  }
+
+  #disqus_thread {
+    min-height: 200px;
+  }
+
+  .disqus-noscript {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.3);
   }
 
   /* ─── Related ────────────────────────────────── */
@@ -647,11 +985,22 @@ const schemas = [
       flex-direction: column;
       align-items: flex-start;
     }
+    .share-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .reactions-wrap {
+      gap: 1rem;
+    }
   }
 
   @media (max-width: 500px) {
     .ep-name {
       font-size: clamp(2.5rem, 10vw, 3.5rem);
+    }
+    .pull-quote {
+      padding: 1.25rem 1.25rem;
     }
   }
 </style>
