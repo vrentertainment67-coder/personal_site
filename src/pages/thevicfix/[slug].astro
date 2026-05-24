@@ -341,30 +341,23 @@ const schemas = [
       .catch(function() {});
   });
 
-  // Restore previous reaction if any
+  // Restore previous reaction highlight (no graying out)
   var prev = localStorage.getItem(storageKey);
   if (prev) {
     var prevBtn = document.getElementById('rbtn-' + prev);
     if (prevBtn) prevBtn.classList.add('active');
-    keys.forEach(function(k) {
-      var b = document.getElementById('rbtn-' + k);
-      if (b) b.disabled = true;
-    });
   }
 
   // Handle click
   document.querySelectorAll('.rbtn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      if (localStorage.getItem(storageKey)) return;
+      if (localStorage.getItem(storageKey)) return; // already reacted — silent ignore
       var key = this.dataset.key;
       localStorage.setItem(storageKey, key);
 
-      // Animate and lock
+      // Highlight selected, leave others fully visible
+      document.querySelectorAll('.rbtn').forEach(function(b) { b.classList.remove('active'); });
       this.classList.add('active');
-      keys.forEach(function(k) {
-        var b = document.getElementById('rbtn-' + k);
-        if (b) b.disabled = true;
-      });
 
       // Increment via API and update count optimistically
       var countEl = document.getElementById('rc-' + key);
@@ -723,8 +716,7 @@ const schemas = [
   }
 
   .rbtn:disabled {
-    cursor: default;
-    opacity: 0.5;
+    cursor: pointer;
   }
 
   .rbtn.active {
