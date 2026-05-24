@@ -19,14 +19,13 @@ const ytThumb = `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg`;
 const ogImage = ep.guestPhoto || ytThumb;
 const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
 
-// Structured meta description — use explicit seoDescription if set, otherwise compute from fields
 const rawDesc = `${ep.guestName} on The VIC Fix S${ep.season}E${ep.episode} — ${ep.tagline} Hosted by DJ VIC.`;
 const computedDesc = rawDesc.length > 160 ? rawDesc.slice(0, 157) + '…' : rawDesc;
 const metaDescription = ep.seoDescription || computedDesc;
 
 const episodeUrl = `https://djvicofficial.com/thevicfix/${episode.id}/`;
 
-// Share text — pre-encoded for WhatsApp and Twitter/X links
+// Share text
 const waShareText = encodeURIComponent(
   `${ep.guestName} on The VIC Fix 🎧\n"${ep.tagline}"\n\nWatch: ${episodeUrl}`
 );
@@ -39,6 +38,14 @@ const quoteWaText = ep.pullQuote
 const quoteTweetText = ep.pullQuote
   ? encodeURIComponent(`"${ep.pullQuote}" — ${ep.guestName}\n\nThe VIC Fix with DJ VIC 🎧 ${episodeUrl}`)
   : '';
+
+// Per-emoji reaction URL identifiers (each emoji gets its own count)
+const rxUrls = {
+  fire:   `${episodeUrl}?r=fire`,
+  love:   `${episodeUrl}?r=love`,
+  clap:   `${episodeUrl}?r=clap`,
+  listen: `${episodeUrl}?r=listen`,
+};
 
 const all = await getCollection('vicfixEpisodes');
 const related = all
@@ -123,7 +130,7 @@ const schemas = [
       </section>
     )}
 
-    <!-- ── YouTube Embed ──────────────────────────── -->
+    <!-- ── 1. VIDEO — watch first ─────────────────── -->
     <section id="ep-video">
       <div class="ep-inner">
         <div class="yt-wrap">
@@ -138,43 +145,48 @@ const schemas = [
       </div>
     </section>
 
-    <!-- ── Bio ────────────────────────────────────── -->
-    <section id="ep-bio">
-      <div class="ep-inner ep-bio-inner">
-        {bioParagraphs.map(p => (
-          <p class="bio-para">{p}</p>
-        ))}
+    <!-- ── 2. REACTIONS — immediate, right under video ── -->
+    <section id="ep-reactions">
+      <div class="ep-inner">
+        <div class="reaction-bar">
+          <span class="reaction-prompt">Did this hit?</span>
+          <div class="reaction-btns" id="reaction-btns">
+            <button class="rbtn" data-key="fire" id="rbtn-fire" aria-label="Fire">
+              <span class="rbtn-emoji">🔥</span>
+              <span class="rbtn-count" id="rc-fire"></span>
+            </button>
+            <button class="rbtn" data-key="love" id="rbtn-love" aria-label="Love">
+              <span class="rbtn-emoji">❤️</span>
+              <span class="rbtn-count" id="rc-love"></span>
+            </button>
+            <button class="rbtn" data-key="clap" id="rbtn-clap" aria-label="Clap">
+              <span class="rbtn-emoji">👏</span>
+              <span class="rbtn-count" id="rc-clap"></span>
+            </button>
+            <button class="rbtn" data-key="listen" id="rbtn-listen" aria-label="Listening">
+              <span class="rbtn-emoji">🎧</span>
+              <span class="rbtn-count" id="rc-listen"></span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- ── Share ──────────────────────────────────── -->
+    <!-- ── 3. SHARE — while the feeling is fresh ───── -->
     <section id="ep-share">
       <div class="ep-inner">
         <div class="share-row">
           <span class="share-label">Share this episode</span>
           <div class="share-btns">
-            <!-- Web Share API — shown only on supported devices (set visible by JS) -->
             <button id="share-native" class="share-btn share-native-btn" style="display:none" aria-label="Share">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
               Share
             </button>
-            <a
-              href={`https://wa.me/?text=${waShareText}`}
-              class="share-btn share-wa-btn"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Share on WhatsApp"
-            >
+            <a href={`https://wa.me/?text=${waShareText}`} class="share-btn share-wa-btn" target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
               WhatsApp
             </a>
-            <a
-              href={`https://twitter.com/intent/tweet?text=${tweetShareText}`}
-              class="share-btn share-x-btn"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Share on Twitter/X"
-            >
+            <a href={`https://twitter.com/intent/tweet?text=${tweetShareText}`} class="share-btn share-x-btn" target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter/X">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.26 5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>
               Twitter / X
             </a>
@@ -187,34 +199,28 @@ const schemas = [
       </div>
     </section>
 
-    <!-- ── Pull Quote (conditional) ──────────────── -->
-    {ep.pullQuote && (
-      <section id="ep-quote">
-        <div class="ep-inner">
-          <blockquote class="pull-quote">
-            <p>&ldquo;{ep.pullQuote}&rdquo;</p>
-            <footer>&mdash; {ep.guestName}</footer>
-          </blockquote>
-          <div class="quote-share">
-            <span class="quote-share-label">Share this</span>
-            <a
-              href={`https://twitter.com/intent/tweet?text=${quoteTweetText}`}
-              class="qshare-btn qshare-x"
-              target="_blank"
-              rel="noopener noreferrer"
-            >Twitter / X</a>
-            <a
-              href={`https://wa.me/?text=${quoteWaText}`}
-              class="qshare-btn qshare-wa"
-              target="_blank"
-              rel="noopener noreferrer"
-            >WhatsApp</a>
-          </div>
-        </div>
-      </section>
-    )}
+    <!-- ── 4. COMMENTS — open, ready to type ─────── -->
+    <section id="ep-comments">
+      <div class="ep-inner ep-comments-inner">
+        <div class="section-label">Join The Conversation</div>
+        <div id="disqus_thread"></div>
+        <noscript>
+          <p class="disqus-noscript">Enable JavaScript to view comments.</p>
+        </noscript>
+      </div>
+    </section>
 
-    <!-- ── Topics (conditional) ──────────────────── -->
+    <!-- ── 5. EPISODE DESCRIPTION — read after engaging -->
+    <section id="ep-bio">
+      <div class="ep-inner ep-bio-inner">
+        <div class="section-label">About This Episode</div>
+        {bioParagraphs.map(p => (
+          <p class="bio-para">{p}</p>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── 6. TOPICS ───────────────────────────────── -->
     {ep.topics.length > 0 && (
       <section id="ep-topics">
         <div class="ep-inner">
@@ -228,36 +234,24 @@ const schemas = [
       </section>
     )}
 
-    <!-- ── Reactions ─────────────────────────────── -->
-    <section id="ep-reactions">
-      <div class="ep-inner">
-        <div class="reactions-wrap">
-          <span class="reactions-label">Did this hit?</span>
-          <applause-button color="#c9a84c" style="width:52px;height:52px;"></applause-button>
+    <!-- ── 7. PULL QUOTE ──────────────────────────── -->
+    {ep.pullQuote && (
+      <section id="ep-quote">
+        <div class="ep-inner">
+          <blockquote class="pull-quote">
+            <p>&ldquo;{ep.pullQuote}&rdquo;</p>
+            <footer>&mdash; {ep.guestName}</footer>
+          </blockquote>
+          <div class="quote-share">
+            <span class="quote-share-label">Share this</span>
+            <a href={`https://twitter.com/intent/tweet?text=${quoteTweetText}`} class="qshare-btn qshare-x" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+            <a href={`https://wa.me/?text=${quoteWaText}`} class="qshare-btn qshare-wa" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    )}
 
-    <!-- ── Comments ──────────────────────────────── -->
-    <!--
-      ACTION REQUIRED before comments go live:
-      1. Go to https://disqus.com/admin/create/ and create a site
-      2. Note your shortname (e.g. "djvicofficial")
-      3. Replace 'djvicofficial' in the script below with your shortname
-      4. Commit and push
-    -->
-    <section id="ep-comments">
-      <div class="ep-inner ep-comments-inner">
-        <div class="section-label">Join The Conversation</div>
-        <h2>Comments</h2>
-        <div id="disqus_thread"></div>
-        <noscript>
-          <p class="disqus-noscript">Enable JavaScript to view comments.</p>
-        </noscript>
-      </div>
-    </section>
-
-    <!-- ── Related Episodes ───────────────────────── -->
+    <!-- ── 8. MORE EPISODES ───────────────────────── -->
     {related.length > 0 && (
       <section id="ep-related">
         <div class="ep-inner ep-related-inner">
@@ -304,9 +298,65 @@ const schemas = [
 
 </Layout>
 
-<!-- ── Share button behaviour ──────────────────────── -->
+<!-- ── Reaction buttons ────────────────────────────── -->
+<script is:inline define:vars={{
+  rxUrls,
+  episodeId: episode.id
+}}>
+  var storageKey = 'reacted-' + episodeId;
+  var keys = ['fire', 'love', 'clap', 'listen'];
+
+  // Load counts from Applause Button API
+  keys.forEach(function(key) {
+    fetch('https://api.applause-button.com/get-claps?url=' + encodeURIComponent(rxUrls[key]))
+      .then(function(r) { return r.text(); })
+      .then(function(n) {
+        var el = document.getElementById('rc-' + key);
+        if (el) el.textContent = (parseInt(n) || 0) > 0 ? parseInt(n) : '';
+      })
+      .catch(function() {});
+  });
+
+  // Restore previous reaction if any
+  var prev = localStorage.getItem(storageKey);
+  if (prev) {
+    var prevBtn = document.getElementById('rbtn-' + prev);
+    if (prevBtn) prevBtn.classList.add('active');
+    keys.forEach(function(k) {
+      var b = document.getElementById('rbtn-' + k);
+      if (b) b.disabled = true;
+    });
+  }
+
+  // Handle click
+  document.querySelectorAll('.rbtn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (localStorage.getItem(storageKey)) return;
+      var key = this.dataset.key;
+      localStorage.setItem(storageKey, key);
+
+      // Animate and lock
+      this.classList.add('active');
+      keys.forEach(function(k) {
+        var b = document.getElementById('rbtn-' + k);
+        if (b) b.disabled = true;
+      });
+
+      // Increment via API and update count optimistically
+      var countEl = document.getElementById('rc-' + key);
+      if (countEl) {
+        var cur = parseInt(countEl.textContent) || 0;
+        countEl.textContent = cur + 1;
+      }
+      fetch('https://api.applause-button.com/update-claps?url=' + encodeURIComponent(rxUrls[key]), {
+        method: 'POST'
+      }).catch(function() {});
+    });
+  });
+</script>
+
+<!-- ── Share buttons ───────────────────────────────── -->
 <script is:inline define:vars={{ episodeUrl, shareTitle: `${ep.guestName} — The VIC Fix with DJ VIC` }}>
-  // Web Share API — show native button only when supported (iOS/Android)
   var nativeBtn = document.getElementById('share-native');
   if (nativeBtn && navigator.share) {
     nativeBtn.style.display = 'inline-flex';
@@ -315,23 +365,21 @@ const schemas = [
     });
   }
 
-  // Copy link button
   var copyBtn = document.getElementById('share-copy');
   if (copyBtn) {
     copyBtn.addEventListener('click', function() {
       var btn = this;
-      var original = btn.innerHTML;
+      var orig = btn.innerHTML;
       function markCopied() {
         btn.innerHTML = btn.innerHTML.replace('Copy Link', '✓ Copied');
-        setTimeout(function() { btn.innerHTML = original; }, 2000);
+        setTimeout(function() { btn.innerHTML = orig; }, 2000);
       }
       if (navigator.clipboard) {
         navigator.clipboard.writeText(episodeUrl).then(markCopied);
       } else {
         var el = document.createElement('textarea');
         el.value = episodeUrl;
-        el.style.position = 'fixed';
-        el.style.opacity = '0';
+        el.style.cssText = 'position:fixed;opacity:0';
         document.body.appendChild(el);
         el.select();
         document.execCommand('copy');
@@ -342,10 +390,7 @@ const schemas = [
   }
 </script>
 
-<!-- ── Applause Button (fire reaction with shared count) ── -->
-<script src="https://unpkg.com/applause-button/dist/applause-button.js"></script>
-
-<!-- ── Disqus Comments ─────────────────────────────────── -->
+<!-- ── Disqus ──────────────────────────────────────── -->
 <script is:inline define:vars={{ disqusUrl: episodeUrl, disqusId: `vicfix-${episode.id}` }}>
   var disqus_config = function () {
     this.page.url = disqusUrl;
@@ -353,7 +398,7 @@ const schemas = [
   };
   (function() {
     var d = document, s = d.createElement('script');
-    s.src = 'https://djvicofficial.disqus.com/embed.js'; // ← replace 'djvicofficial' with your shortname after setup
+    s.src = 'https://djvicofficial.disqus.com/embed.js';
     s.setAttribute('data-timestamp', +new Date());
     (d.head || d.body).appendChild(s);
   })();
@@ -388,9 +433,7 @@ const schemas = [
     transition: color 0.2s;
   }
 
-  .breadcrumb-inner a:hover {
-    color: var(--gold-light);
-  }
+  .breadcrumb-inner a:hover { color: var(--gold-light); }
 
   .breadcrumb-inner span {
     font-size: 0.65rem;
@@ -400,13 +443,8 @@ const schemas = [
     color: rgba(255,255,255,0.3);
   }
 
-  .bc-sep {
-    color: rgba(255,255,255,0.15) !important;
-  }
-
-  .bc-current {
-    color: rgba(255,255,255,0.55) !important;
-  }
+  .bc-sep  { color: rgba(255,255,255,0.15) !important; }
+  .bc-current { color: rgba(255,255,255,0.55) !important; }
 
   /* ─── Shared inner layout ─────────────────────── */
   .ep-inner {
@@ -415,10 +453,19 @@ const schemas = [
     padding: 0 2.5rem;
   }
 
+  .section-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.75;
+    margin-bottom: 0.75rem;
+  }
+
   /* ─── Episode Header ─────────────────────────── */
   #ep-header {
     background: #060606;
-    max-width: 100%;
     padding: 0;
     border-bottom: 1px solid #111;
   }
@@ -465,16 +512,9 @@ const schemas = [
   }
 
   /* ─── Guest Photo ────────────────────────────── */
-  #ep-photo {
-    background: #060606;
-    max-width: 100%;
-    padding: 0;
-  }
+  #ep-photo { background: #060606; padding: 0; }
 
-  #ep-photo .ep-inner {
-    padding-top: 2.5rem;
-    padding-bottom: 0;
-  }
+  #ep-photo .ep-inner { padding-top: 2.5rem; padding-bottom: 0; }
 
   .guest-photo-wrap {
     max-width: 320px;
@@ -490,17 +530,10 @@ const schemas = [
     filter: grayscale(15%);
   }
 
-  /* ─── YouTube embed ──────────────────────────── */
-  #ep-video {
-    background: #060606;
-    max-width: 100%;
-    padding: 0;
-  }
+  /* ─── 1. VIDEO ───────────────────────────────── */
+  #ep-video { background: #060606; padding: 0; }
 
-  #ep-video .ep-inner {
-    padding-top: 3rem;
-    padding-bottom: 0;
-  }
+  #ep-video .ep-inner { padding-top: 3rem; padding-bottom: 0; }
 
   .yt-wrap {
     position: relative;
@@ -517,41 +550,102 @@ const schemas = [
     border: none;
   }
 
-  /* ─── Bio ────────────────────────────────────── */
-  #ep-bio {
+  /* ─── 2. REACTIONS ───────────────────────────── */
+  #ep-reactions {
     background: #060606;
-    max-width: 100%;
     padding: 0;
+    border-bottom: 1px solid #111;
   }
 
-  .ep-bio-inner {
-    padding-top: 3rem;
-    padding-bottom: 2.5rem;
+  #ep-reactions .ep-inner {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
-  .bio-para {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.72);
-    line-height: 1.85;
-    max-width: 64ch;
-    margin: 0 0 1.5rem;
+  .reaction-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
   }
 
-  .bio-para:last-child {
-    margin-bottom: 0;
+  .reaction-prompt {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    margin: 0;
+    white-space: nowrap;
   }
 
-  /* ─── Share ──────────────────────────────────── */
+  .reaction-btns {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rbtn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    min-width: 52px;
+  }
+
+  .rbtn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+  }
+
+  .rbtn:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  .rbtn.active {
+    background: rgba(201,168,76,0.12);
+    border-color: rgba(201,168,76,0.4);
+    opacity: 1 !important;
+    transform: none;
+  }
+
+  .rbtn-emoji {
+    font-size: 1.5rem;
+    line-height: 1;
+    display: block;
+  }
+
+  .rbtn-count {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.4);
+    min-height: 0.8em;
+    display: block;
+  }
+
+  .rbtn.active .rbtn-count {
+    color: var(--gold);
+  }
+
+  /* ─── 3. SHARE ───────────────────────────────── */
   #ep-share {
     background: #060606;
-    max-width: 100%;
     padding: 0;
-    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
   }
 
   #ep-share .ep-inner {
-    padding-top: 1.75rem;
-    padding-bottom: 1.75rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
   }
 
   .share-row {
@@ -566,7 +660,7 @@ const schemas = [
     font-weight: 700;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.22);
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -587,10 +681,10 @@ const schemas = [
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: 0.5rem 0.9rem;
+    padding: 0.45rem 0.85rem;
     border: 1px solid rgba(255,255,255,0.1);
     background: transparent;
-    color: rgba(255,255,255,0.45);
+    color: rgba(255,255,255,0.42);
     text-decoration: none;
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
@@ -598,29 +692,119 @@ const schemas = [
     line-height: 1;
   }
 
-  .share-btn:hover,
-  .share-btn:focus-visible {
+  .share-btn:hover, .share-btn:focus-visible {
     border-color: rgba(201,168,76,0.4);
     color: var(--gold);
     outline: none;
   }
 
-  .share-wa-btn:hover,
-  .share-wa-btn:focus-visible {
+  .share-wa-btn:hover, .share-wa-btn:focus-visible {
     border-color: rgba(37,211,102,0.45);
     color: #25D366;
   }
 
-  .share-x-btn:hover,
-  .share-x-btn:focus-visible {
+  .share-x-btn:hover, .share-x-btn:focus-visible {
     border-color: rgba(255,255,255,0.28);
     color: rgba(255,255,255,0.8);
   }
 
-  /* ─── Pull Quote ─────────────────────────────── */
-  #ep-quote {
+  /* ─── 4. COMMENTS ────────────────────────────── */
+  #ep-comments {
+    background: #060606;
+    padding: 0;
+    border-top: 1px solid #111;
+    color-scheme: dark;
+  }
+
+  .ep-comments-inner {
+    padding-top: 3.5rem;
+    padding-bottom: 4rem;
+  }
+
+  #ep-comments .section-label {
+    margin-bottom: 1.5rem;
+  }
+
+  #disqus_thread { min-height: 200px; }
+
+  .disqus-noscript {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ─── 5. BIO ─────────────────────────────────── */
+  #ep-bio {
     background: #080808;
-    max-width: 100%;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  .ep-bio-inner {
+    padding-top: 3.5rem;
+    padding-bottom: 3rem;
+  }
+
+  #ep-bio .section-label {
+    margin-bottom: 1.5rem;
+  }
+
+  .bio-para {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.85;
+    max-width: 64ch;
+    margin: 0 0 1.5rem;
+  }
+
+  .bio-para:last-child { margin-bottom: 0; }
+
+  /* ─── 6. TOPICS ──────────────────────────────── */
+  #ep-topics {
+    background: #080808;
+    padding: 0;
+    border-top: 1px solid #111;
+  }
+
+  #ep-topics .ep-inner {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .topics-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 1rem;
+  }
+
+  .topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .topic-tag {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.35rem 0.8rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .topic-tag:hover {
+    border-color: rgba(201,168,76,0.35);
+    color: var(--gold);
+  }
+
+  /* ─── 7. PULL QUOTE ──────────────────────────── */
+  #ep-quote {
+    background: #060606;
     padding: 0;
     border-top: 1px solid #111;
     border-bottom: 1px solid #111;
@@ -657,7 +841,6 @@ const schemas = [
     opacity: 0.75;
   }
 
-  /* Quote share row */
   .quote-share {
     display: flex;
     align-items: center;
@@ -686,135 +869,12 @@ const schemas = [
     transition: color 0.2s, border-color 0.2s;
   }
 
-  .qshare-x:hover {
-    color: rgba(255,255,255,0.75);
-    border-color: rgba(255,255,255,0.25);
-  }
+  .qshare-x:hover { color: rgba(255,255,255,0.75); border-color: rgba(255,255,255,0.25); }
+  .qshare-wa:hover { color: #25D366; border-color: rgba(37,211,102,0.38); }
 
-  .qshare-wa:hover {
-    color: #25D366;
-    border-color: rgba(37,211,102,0.38);
-  }
-
-  /* ─── Topics ─────────────────────────────────── */
-  #ep-topics {
-    background: #060606;
-    max-width: 100%;
-    padding: 0;
-    border-top: 1px solid #111;
-  }
-
-  #ep-topics .ep-inner {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-
-  .topics-label {
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--gold);
-    opacity: 0.7;
-    margin-bottom: 1rem;
-  }
-
-  .topics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .topic-tag {
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.55);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 0.35rem 0.8rem;
-    transition: border-color 0.2s, color 0.2s;
-  }
-
-  .topic-tag:hover {
-    border-color: rgba(201,168,76,0.35);
-    color: var(--gold);
-  }
-
-  /* ─── Reactions ──────────────────────────────── */
-  #ep-reactions {
-    background: #080808;
-    max-width: 100%;
-    padding: 0;
-    border-top: 1px solid #111;
-    border-bottom: 1px solid #111;
-  }
-
-  #ep-reactions .ep-inner {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-
-  .reactions-wrap {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .reactions-label {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-    margin: 0;
-  }
-
-  applause-button {
-    --clap-color: #c9a84c;
-  }
-
-  /* ─── Comments ───────────────────────────────── */
-  #ep-comments {
-    background: #060606;
-    max-width: 100%;
-    padding: 0;
-    border-top: 1px solid #111;
-    color-scheme: dark;
-  }
-
-  .ep-comments-inner {
-    padding-top: 4rem;
-    padding-bottom: 5rem;
-  }
-
-  #ep-comments .section-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.75rem;
-  }
-
-  #ep-comments h2 {
-    color: var(--white);
-    margin-bottom: 2.5rem;
-  }
-
-  #disqus_thread {
-    min-height: 200px;
-  }
-
-  .disqus-noscript {
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.3);
-  }
-
-  /* ─── Related ────────────────────────────────── */
+  /* ─── 8. RELATED ─────────────────────────────── */
   #ep-related {
     background: #080808;
-    max-width: 100%;
     padding: 0;
     border-top: 1px solid #111;
   }
@@ -822,15 +882,6 @@ const schemas = [
   .ep-related-inner {
     padding-top: 4rem;
     padding-bottom: 4rem;
-  }
-
-  .section-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.75rem;
   }
 
   #ep-related h2 {
@@ -875,9 +926,7 @@ const schemas = [
     transition: transform 0.4s ease;
   }
 
-  .related-card:hover .related-thumb img {
-    transform: scale(1.04);
-  }
+  .related-card:hover .related-thumb img { transform: scale(1.04); }
 
   .related-badge {
     position: absolute;
@@ -932,7 +981,6 @@ const schemas = [
   /* ─── Apply CTA ──────────────────────────────── */
   #ep-apply {
     background: #060606;
-    max-width: 100%;
     padding: 0;
     border-top: 1px solid #111;
   }
@@ -972,35 +1020,18 @@ const schemas = [
 
   /* ─── Responsive ─────────────────────────────── */
   @media (max-width: 768px) {
-    .ep-inner {
-      padding-inline: 1.25rem;
-    }
-    .breadcrumb-inner {
-      padding-inline: 1.25rem;
-    }
-    .related-grid {
-      grid-template-columns: 1fr;
-    }
-    #ep-apply .ep-inner {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .share-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    .reactions-wrap {
-      gap: 1rem;
-    }
+    .ep-inner { padding-inline: 1.25rem; }
+    .breadcrumb-inner { padding-inline: 1.25rem; }
+    .related-grid { grid-template-columns: 1fr; }
+    #ep-apply .ep-inner { flex-direction: column; align-items: flex-start; }
+    .share-row { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .reaction-bar { gap: 1rem; }
   }
 
   @media (max-width: 500px) {
-    .ep-name {
-      font-size: clamp(2.5rem, 10vw, 3.5rem);
-    }
-    .pull-quote {
-      padding: 1.25rem 1.25rem;
-    }
+    .ep-name { font-size: clamp(2.5rem, 10vw, 3.5rem); }
+    .pull-quote { padding: 1.25rem; }
+    .rbtn { min-width: 46px; padding: 0.45rem 0.55rem; }
+    .rbtn-emoji { font-size: 1.3rem; }
   }
 </style>
