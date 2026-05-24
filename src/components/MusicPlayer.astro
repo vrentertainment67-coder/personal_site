@@ -250,6 +250,15 @@
     { slug: 'tamma-tamma-makeba',                    yt: '5oA311R6Wkg', title: 'Tamma Tamma × Makeba' },
     { slug: 'jimmy-disco-edit',                      yt: 'PxgvwE1nZmw', title: 'Jimmy (VIC Disco Edit)' },
     { slug: 'ghungroo-sun-n-sand-rework',            yt: '4oTBe25wvE0', title: 'Ghungroo (Sun n Sand Rework)' },
+    // Matched to Supabase files by filename word-match
+    { slug: 'besharam-rang-mwaki',              yt: 'Apv1xk-0G8k', title: 'Besharam Rang × Mwaki',                    file: 'Besharam Rang X Mwaki - DJ VIC.mp3' },
+    { slug: 'softly-still-dre',                 yt: 'hwubhCn8wtQ', title: 'Softly × Still D.R.E.',                    file: 'Softly X Still D.R.E.mp3' },
+    { slug: 'naina-whistle',                    yt: 'Ci4CtatRRso', title: 'Naina × Whistle',                          file: 'VIC - Naina X Whistle (Mashup).mp3' },
+    { slug: 'humma-humma-get-your-freak-on',    yt: 'EmSHSq325hU', title: 'Humma Humma × Get Your Freak On',          file: 'VIC - Humma X Get Your Freak On (Mashup).mp3' },
+    { slug: 'next-episode-raashah',             yt: 'kq5Q8VyPJEE', title: 'Snoop Dogg × Badshah — Next Episode',      file: 'VIC - The Next Episode of Raashah (Mashup).mp3' },
+    { slug: 'yeah-amplifier',                   yt: 'Y0YJ8FqMV2I', title: 'Yeah! × Amplifier',                        file: 'VIC - Yeah X Amplifier (Mashup).mp3' },
+    { slug: 'yimmy-yimmy-hey-sexy-lady',        yt: 'UwwvJ7dx49A', title: 'Yimmy Yimmy × Hey Sexy Lady',              file: 'VIC - Yimmy Yimmy X Sexy Lady (Mashup).mp3' },
+    { slug: 'ye-ek-zindagi-afro-edit',          yt: 'gXFxyO7nGdU', title: 'Ye Ek Zindagi (Afro Edit)',                file: 'Yeh Ek Zindagi (Afro Edit) - DJ VIC.mp3' },
   ];
 
   var SB_TRACKS = 'https://jftnhuutttmccmqnnybf.supabase.co/storage/v1/object/public/tracks';
@@ -321,9 +330,13 @@
         /* Tear down previous instance */
         if (ws) { try { ws.destroy(); } catch (e) {} ws = null; }
 
+        /* Build the audio URL — use track.file if set, else fall back to slug convention */
+        var audioPath = track.file ? encodeURIComponent(track.file) : track.slug + '.mp3';
+        var audioUrl  = SB_TRACKS + '/' + audioPath;
+
         if (!window.WaveSurfer) {
           /* Graceful fallback: plain <audio> without waveform */
-          var audio = new Audio(SB_TRACKS + '/' + track.slug + '.mp3');
+          var audio = new Audio(audioUrl);
           audio.addEventListener('loadedmetadata', function () {
             if (durEl) durEl.textContent = fmt(audio.duration);
             setPlayState(autoplay ? 'playing' : 'paused');
@@ -351,7 +364,7 @@
 
         ws = window.WaveSurfer.create({
           container:     waveEl,
-          url:           SB_TRACKS + '/' + track.slug + '.mp3',
+          url:           audioUrl,
           waveColor:     'rgba(201,168,76,0.22)',
           progressColor: 'rgba(201,168,76,0.82)',
           cursorColor:   'rgba(201,168,76,0.55)',
