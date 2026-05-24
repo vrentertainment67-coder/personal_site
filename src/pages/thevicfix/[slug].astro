@@ -441,13 +441,18 @@ const schemas = [
       return;
     }
     wrap.innerHTML = list.map(function(c) {
+      var initial = esc(c.name.trim().charAt(0).toUpperCase());
       return (
         '<div class="comment-item">' +
-          '<div class="ci-header">' +
-            '<span class="ci-name">' + esc(c.name) + '</span>' +
-            '<span class="ci-date">' + fmtDate(c.created_at) + '</span>' +
+          '<div class="ci-avatar">' + initial + '</div>' +
+          '<div class="ci-body">' +
+            '<div class="ci-meta">' +
+              '<span class="ci-name">' + esc(c.name) + '</span>' +
+              '<span class="ci-dot">&middot;</span>' +
+              '<span class="ci-date">' + fmtDate(c.created_at) + '</span>' +
+            '</div>' +
+            '<p class="ci-text">' + esc(c.message) + '</p>' +
           '</div>' +
-          '<p class="ci-text">' + esc(c.message) + '</p>' +
         '</div>'
       );
     }).join('');
@@ -914,8 +919,8 @@ const schemas = [
   .comments-list {
     display: flex;
     flex-direction: column;
-    gap: 0;
     max-width: 640px;
+    border-top: 1px solid rgba(255,255,255,0.08);
   }
 
   .comments-loading,
@@ -924,45 +929,68 @@ const schemas = [
     color: rgba(255,255,255,0.25);
     font-style: italic;
     margin: 0;
-    padding: 0.5rem 0;
+    padding: 1.5rem 0;
   }
 
   .comment-item {
-    padding: 1.25rem 0;
-    border-top: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .comment-item:first-child {
-    border-top: 1px solid rgba(255,255,255,0.12);
-  }
-
-  .ci-header {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .ci-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0;
+  }
+
+  .ci-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ci-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.45rem;
     flex-wrap: wrap;
   }
 
   .ci-name {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--gold);
+    color: rgba(255,255,255,0.88);
+    letter-spacing: 0.02em;
+  }
+
+  .ci-dot {
+    color: rgba(255,255,255,0.18);
+    font-size: 0.7rem;
   }
 
   .ci-date {
     font-size: 0.65rem;
-    color: rgba(255,255,255,0.25);
-    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.28);
+    letter-spacing: 0.03em;
   }
 
   .ci-text {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     color: rgba(255,255,255,0.7);
     line-height: 1.7;
     margin: 0;
-    white-space: pre-wrap;
     word-break: break-word;
   }
 
