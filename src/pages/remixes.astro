@@ -3,21 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
-const audiomackSlugs = [
-  "badtameezdil",
-  "ishqjalakar",
-  "rambhaho",
-  "luttlegaya",
-
-  "69ca78246aaaa",
-  "69ca7829bfeb3",
-  "69ca782ad85f6",
-  "69ca782b2ec06",
-  "69ca782ead011",
-  "69ca782ef1c46",
-  "rapture-x-lat-lag-gayee",
-];
-
 const remixes = [
   { id: "S5yyyjeXWS4", slug: "ranjha-qulma-punjabi-afro-mashup",         title: "Ranjha × Qulma (Punjabi Afro House Mashup)" },
   { id: "aCZ9DWVoU3A", slug: "tu-tu-hai-wahi-afro-mashup",               title: "Tu Tu Hai Wahi × How Deep Is Your Love (Afro Mashup)" },
@@ -78,33 +63,6 @@ const platforms = [
         <div class="section-label">Free Downloads</div>
         <h1>Remixes &amp; Mashups</h1>
         <p class="hero-sub">From the dance floor to your playlist — remixed and reimagined.</p>
-      </div>
-    </section>
-
-    <section id="remixes-player">
-      <div class="player-inner">
-        <div class="section-label">Stream &amp; Download Free</div>
-        <h2>Listen Now</h2>
-        <p class="player-sub">All mixes available to stream and download free — no sign-up needed.</p>
-        <div class="audiomack-grid">
-          {audiomackSlugs.map((slug) => (
-            <iframe
-              src={`https://audiomack.com/embed/vrentertainment67/song/${slug}`}
-              width="100%"
-              height="252"
-              scrolling="no"
-              allow="autoplay"
-              loading="lazy"
-              title={`DJ VIC remix — ${slug}`}
-              style="border:0;"
-            ></iframe>
-          ))}
-        </div>
-        <div class="platform-links">
-          <a href="https://audiomack.com/vrentertainment67" target="_blank" rel="noopener noreferrer">
-            Full catalogue on Audiomack &rarr;
-          </a>
-        </div>
       </div>
     </section>
 
@@ -221,53 +179,6 @@ const platforms = [
     max-width: 600px;
     margin-bottom: 2rem;
   }
-
-  /* ─── Audiomack player ───────────────────────── */
-  #remixes-player {
-    background: #080808;
-    border-bottom: 1px solid rgba(201,168,76,0.1);
-  }
-
-  .player-inner {
-    max-width: var(--max-width);
-    margin-inline: auto;
-    padding: 5rem 2.5rem;
-  }
-
-  .audiomack-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  @media (max-width: 600px) {
-    .audiomack-grid { grid-template-columns: 1fr; }
-  }
-
-  .player-sub {
-    color: rgba(255,255,255,0.6);
-    font-size: 0.95rem;
-    max-width: 55ch;
-    margin: 0 0 2rem;
-    line-height: 1.6;
-  }
-
-  .platform-links {
-    margin-top: 1.25rem;
-  }
-
-  .platform-links a {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--gold);
-    text-decoration: none;
-    transition: opacity 0.2s;
-  }
-
-  .platform-links a:hover { opacity: 0.7; }
 
   /* ─── Platforms ───────────────────────────────── */
   .platforms-grid {
