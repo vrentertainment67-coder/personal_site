@@ -507,7 +507,9 @@ const schemas = [
           form.reset();
           status.textContent = '✓ Posted — will show after a quick review.';
         } else {
-          status.textContent = 'Something went wrong. Try again.';
+          r.text().then(function(body) {
+            status.textContent = 'Error ' + r.status + ': ' + (body || 'unknown');
+          });
         }
       })
       .catch(function() {
