@@ -299,12 +299,10 @@
     document.head.appendChild(s);
   }
 
-  /* ── Core: load track at index ── */
-  function loadTrack(idx, autoplay) {
-    if (autoplay === undefined) autoplay = true;
-    var track = TRACKS[idx];
+  /* ── Core: load a track object (handles both indexed and ad-hoc tracks) ── */
+  function loadTrackObj(track, autoplay, onFinish) {
     if (!track) return;
-    curIdx = idx;
+    if (autoplay === undefined) autoplay = true;
 
     /* Update metadata in UI */
     var titleEl = $id('vp-title');
@@ -336,9 +334,10 @@
           audio.addEventListener('timeupdate', function () {
             if (curEl) curEl.textContent = fmt(audio.currentTime);
           });
-          audio.addEventListener('ended', nextTrack);
+          audio.addEventListener('ended', onFinish || function () {});
           audio.addEventListener('play',  function () { setPlayState('playing'); });
           audio.addEventListener('pause', function () { setPlayState('paused'); });
+          audio.addEventListener('error', function () { setPlayState('paused'); });
           if (autoplay) audio.play().catch(function(){});
           /* Wrap so the rest of the code can call .playPause() / .destroy() */
           ws = {
@@ -373,10 +372,19 @@
         ws.on('timeupdate', function (t) { if (curEl) curEl.textContent = fmt(t); });
         ws.on('play',       function ()  { setPlayState('playing'); });
         ws.on('pause',      function ()  { setPlayState('paused'); });
-        ws.on('finish',     nextTrack);
+        ws.on('finish',     onFinish || function () {});
         ws.on('error',      function (e) { console.warn('[VIC Player]', e); setPlayState('paused'); });
       });
     });
+  }
+
+  /* ── Load by index (for prev/next and TRACKS-list plays) ── */
+  function loadTrack(idx, autoplay) {
+    if (autoplay === undefined) autoplay = true;
+    var track = TRACKS[idx];
+    if (!track) return;
+    curIdx = idx;
+    loadTrackObj(track, autoplay, nextTrack);
   }
 
   function nextTrack() { loadTrack(curIdx < TRACKS.length - 1 ? curIdx + 1 : 0, true); }
@@ -417,7 +425,18 @@
     for (var i = 0; i < TRACKS.length; i++) {
       if (TRACKS[i].slug === d.slug) { idx = i; break; }
     }
-    if (idx !== -1) loadTrack(idx, true);
+    if (idx !== -1) {
+      /* Known track with MP3 — use indexed loader (enables prev/next) */
+      loadTrack(idx, true);
+    } else if (d.youtubeId) {
+      /* Ad-hoc track — show player with cover/title, attempt MP3 load */
+      curIdx = -1;
+      loadTrackObj(
+        { slug: d.slug, yt: d.youtubeId, title: d.title || d.slug },
+        true,
+        null   /* no auto-advance on finish */
+      );
+    }
   });
 
 })();

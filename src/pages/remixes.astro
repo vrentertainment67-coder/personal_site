@@ -4,23 +4,54 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
 const remixes = [
-  { id: "S5yyyjeXWS4", slug: "ranjha-qulma-punjabi-afro-mashup",         title: "Ranjha × Qulma (Punjabi Afro House Mashup)" },
-  { id: "aCZ9DWVoU3A", slug: "tu-tu-hai-wahi-afro-mashup",               title: "Tu Tu Hai Wahi × How Deep Is Your Love (Afro Mashup)" },
-  { id: "eRL1DoX4n2Y", slug: "yeh-ladka-hai-allah-tribute-mashup",        title: "Yeh Ladka Hai Allah × Quit Playing Games (Tribute Mashup)" },
-  { id: "wHOB8H-HB_Y", slug: "tu-hi-meri-shab-hai-afro-mashup",     title: "Tu Hi Meri Shab Hai × Say What (Afro Mashup)" },
-  { id: "Hgb_g-xBblw", slug: "tera-hone-laga-hoon-viva-la-vida",     title: "Tera Hone Laga Hoon × Viva La Vida" },
-  { id: "ssFIKwChfHc", slug: "sooraj-ki-baahon-mein-forever",         title: "Sooraj Ki Baahon Mein × Forever" },
-  { id: "modKUclnVJY", slug: "sach-keh-raha-hai-mashup",              title: "Sach Keh Raha Hai × Tujhe Bhula Diya × I Adore You" },
-  { id: "aN2BIfUNUs4", slug: "dil-luteya-desi-mix",                   title: "Dil Luteya (Desi Mix)" },
-  { id: "KWUoJJ6xsfk", slug: "kesariya-cant-stop-the-feeling",        title: "Kesariya × Can't Stop The Feeling" },
-  { id: "rcGuVSoki6U", slug: "oo-antava-afro-mashup",                 title: "Oo Antava (Afro Mashup)" },
-  { id: "MXxbN1xYteY", slug: "tere-liye-progressive-edit",            title: "Tere Liye (Progressive Edit)" },
-  { id: "gf0hYLxr6eo", slug: "kahin-aag-lage-tech-mix",              title: "Kahin Aag Lage × Rejection (Tech Mix)" },
-  { id: "Yx3pD4uhJRE", slug: "titliaan-progressive-rework",           title: "Titliaan (Progressive Rework)" },
-  { id: "h48i6wSQjso", slug: "boom-boom-body-funk",                   title: "Boom Boom × Body Funk" },
-  { id: "5oA311R6Wkg", slug: "tamma-tamma-makeba",                    title: "Tamma Tamma × Makeba" },
-  { id: "PxgvwE1nZmw", slug: "jimmy-disco-edit",                      title: "Jimmy (VIC Disco Edit)" },
-  { id: "4oTBe25wvE0", slug: "ghungroo-sun-n-sand-rework",            title: "Ghungroo (Sun n Sand Rework)" },
+  // ── Tracks with full detail pages (detail: true) ──────────────────────────
+  { id: "S5yyyjeXWS4", slug: "ranjha-qulma-punjabi-afro-mashup",         title: "Ranjha × Qulma (Punjabi Afro House Mashup)",                detail: true },
+  { id: "aCZ9DWVoU3A", slug: "tu-tu-hai-wahi-afro-mashup",               title: "Tu Tu Hai Wahi × How Deep Is Your Love (Afro Mashup)",       detail: true },
+  { id: "eRL1DoX4n2Y", slug: "yeh-ladka-hai-allah-tribute-mashup",        title: "Yeh Ladka Hai Allah × Quit Playing Games (Tribute Mashup)",  detail: true },
+  { id: "wHOB8H-HB_Y", slug: "tu-hi-meri-shab-hai-afro-mashup",          title: "Tu Hi Meri Shab Hai × Say What (Afro Mashup)",               detail: true },
+  { id: "Hgb_g-xBblw", slug: "tera-hone-laga-hoon-viva-la-vida",         title: "Tera Hone Laga Hoon × Viva La Vida",                         detail: true },
+  { id: "ssFIKwChfHc", slug: "sooraj-ki-baahon-mein-forever",             title: "Sooraj Ki Baahon Mein × Forever",                            detail: true },
+  { id: "modKUclnVJY", slug: "sach-keh-raha-hai-mashup",                  title: "Sach Keh Raha Hai × Tujhe Bhula Diya × I Adore You",         detail: true },
+  { id: "aN2BIfUNUs4", slug: "dil-luteya-desi-mix",                       title: "Dil Luteya (Desi Mix)",                                      detail: true },
+  { id: "KWUoJJ6xsfk", slug: "kesariya-cant-stop-the-feeling",            title: "Kesariya × Can't Stop The Feeling",                          detail: true },
+  { id: "rcGuVSoki6U", slug: "oo-antava-afro-mashup",                     title: "Oo Antava (Afro Mashup)",                                    detail: true },
+  { id: "MXxbN1xYteY", slug: "tere-liye-progressive-edit",                title: "Tere Liye (Progressive Edit)",                               detail: true },
+  { id: "gf0hYLxr6eo", slug: "kahin-aag-lage-tech-mix",                   title: "Kahin Aag Lage × Rejection (Tech Mix)",                      detail: true },
+  { id: "Yx3pD4uhJRE", slug: "titliaan-progressive-rework",               title: "Titliaan (Progressive Rework)",                              detail: true },
+  { id: "h48i6wSQjso", slug: "boom-boom-body-funk",                       title: "Boom Boom × Body Funk",                                      detail: true },
+  { id: "5oA311R6Wkg", slug: "tamma-tamma-makeba",                        title: "Tamma Tamma × Makeba",                                       detail: true },
+  { id: "PxgvwE1nZmw", slug: "jimmy-disco-edit",                          title: "Jimmy (VIC Disco Edit)",                                     detail: true },
+  { id: "4oTBe25wvE0", slug: "ghungroo-sun-n-sand-rework",               title: "Ghungroo (Sun n Sand Rework)",                               detail: true },
+  // ── Additional tracks (caption links to YouTube) ──────────────────────────
+  { id: "Bw0tMjMYpEw", slug: "uptown-funk-muqabala",                      title: "Uptown Funk × Muqabala" },
+  { id: "Pd17lz8YC34", slug: "nachange-saari-raat-stereo-nation-remix",   title: "Nachange Saari Raat (Stereo Nation Remix)" },
+  { id: "Ci4CtatRRso", slug: "naina-whistle",                             title: "Naina × Whistle" },
+  { id: "hwubhCn8wtQ", slug: "softly-still-dre",                          title: "Softly × Still D.R.E." },
+  { id: "gTNbuGHdcuA", slug: "millionaire-new-thang",                     title: "Millionaire × New Thang" },
+  { id: "Z1V_1w4i5No", slug: "malang-sajna-forever-yours",                title: "Malang Sajna × Forever Yours" },
+  { id: "Apv1xk-0G8k", slug: "besharam-rang-mwaki",                       title: "Besharam Rang × Mwaki" },
+  { id: "gXFxyO7nGdU", slug: "ye-ek-zindagi-afro-edit",                   title: "Ye Ek Zindagi (Afro Edit)" },
+  { id: "zhaNQwYQi_8", slug: "aaj-ki-raat-progressive-edit",              title: "Aaj Ki Raat (Progressive Edit)" },
+  { id: "rH8DKG2JgO8", slug: "chaleya-all-we-know",                       title: "Chaleya × All We Know" },
+  { id: "tfhgPJ8PFXI", slug: "kinni-kinni-attention",                      title: "Kinni Kinni × Attention" },
+  { id: "EmSHSq325hU", slug: "humma-humma-get-your-freak-on",             title: "Humma Humma × Get Your Freak On" },
+  { id: "kq5Q8VyPJEE", slug: "next-episode-raashah",                      title: "Snoop Dogg × Badshah — Next Episode of Raashah" },
+  { id: "Y0YJ8FqMV2I", slug: "yeah-amplifier",                            title: "Yeah! × Amplifier" },
+  { id: "UwwvJ7dx49A", slug: "yimmy-yimmy-hey-sexy-lady",                title: "Yimmy Yimmy × Hey Sexy Lady" },
+  { id: "0z9IQ_qb5tE", slug: "love-ya-gimme-gimme",                      title: "Love Ya × Gimme Gimme" },
+  { id: "Fui5ckcHkvA", slug: "akhiyan-gulab-tech-remix",                  title: "Akhiyan Gulab (Tech Remix)" },
+  { id: "T2sSBzyiJ54", slug: "arjan-vailly-we-will-rock-you",             title: "Arjan Vailly × We Will Rock You" },
+  { id: "xg9jLQYg-9k", slug: "945-pon-de-replay",                        title: "9:45 × Pon De Replay" },
+  { id: "a7D11ICZ8pA", slug: "kalaastar-taki-taki",                       title: "Kalaastar × Taki Taki" },
+  { id: "OtG9AWJn9M4", slug: "jeene-ke-hain-rasputin",                    title: "Jeene Ke Hain × Rasputin" },
+  { id: "3McvnbaEO24", slug: "heeriye-belageddu",                         title: "Heeriye × Belageddu" },
+  { id: "9zJtOvP_6ew", slug: "udta-punjab-black-dog-edit",               title: "Udta Punjab (Black Dog Edit)" },
+  { id: "8CunbVOR5U4", slug: "khalasi-party-starter-mashup",              title: "Khalasi (Party Starter Mashup)" },
+  { id: "AqfAxxu8R4I", slug: "dil-of-the-tiger",                         title: "Dil of the Tiger" },
+  { id: "6Gz6UfDXZU8", slug: "nashe-si-chadh-gayi-hey-ma",              title: "Nashe Si Chadh Gayi × Hey Ma" },
+  { id: "KhRCbYQev34", slug: "bewafa-mad-love",                           title: "Bewafa × Mad Love" },
+  { id: "_4aAA0c72pM", slug: "brown-munde-con-calma",                    title: "Brown Munde × Con Calma" },
+  { id: "EcwD2wU5ov8", slug: "jugnu-lover",                              title: "Jugnu × Lover" },
 ];
 
 const platforms = [
@@ -74,7 +105,7 @@ const platforms = [
       <div class="section-label">Latest Tracks</div>
       <h2>Listen</h2>
       <div class="yt-grid">
-        {remixes.map(({ id, slug, title }) => (
+        {remixes.map(({ id, slug, title, detail }) => (
           <div class="yt-card">
             <div class="yt-thumb">
               <img
@@ -94,7 +125,10 @@ const platforms = [
                 </svg>
               </button>
             </div>
-            <a href={`/remixes/${slug}/`} class="yt-caption">{title}</a>
+            {detail
+              ? <a href={`/remixes/${slug}/`} class="yt-caption">{title}</a>
+              : <a href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener noreferrer" class="yt-caption">{title}</a>
+            }
           </div>
         ))}
       </div>
