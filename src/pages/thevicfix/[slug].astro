@@ -454,7 +454,7 @@ const schemas = [
   }
 
   // Load approved comments
-  if (SB_URL.indexOf('YOUR_PROJECT') === -1) {
+  function loadComments() {
     fetch(
       SB_URL + '/rest/v1/comments?page_id=eq.' + encodeURIComponent(PAGE_ID) +
       '&approved=eq.true&order=created_at.desc',
@@ -466,11 +466,8 @@ const schemas = [
       var l = document.getElementById('comments-loading');
       if (l) l.textContent = '';
     });
-  } else {
-    // Credentials not yet set — hide loading state
-    var l = document.getElementById('comments-loading');
-    if (l) l.textContent = '';
   }
+  loadComments();
 
   // Submit comment
   var form = document.getElementById('comment-form');
@@ -495,14 +492,15 @@ const schemas = [
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ page_id: PAGE_ID, name: name, message: message })
+        body: JSON.stringify({ page_id: PAGE_ID, name: name, message: message, approved: true })
       })
       .then(function(r) {
         btn.disabled = false;
         btn.textContent = 'Post';
         if (r.ok) {
           form.reset();
-          status.textContent = '✓ Posted — will show after a quick review.';
+          status.textContent = '✓ Comment posted!';
+          loadComments();
         } else {
           r.text().then(function(body) {
             status.textContent = 'Error ' + r.status + ': ' + (body || 'unknown');
