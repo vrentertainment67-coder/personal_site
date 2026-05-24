@@ -222,41 +222,6 @@ const vicfixEpisodes = [
     </section>
 
     <!-- ════════════════════════════ VIC FIX CALLOUT ════════════════════════════ -->
-    <section id="vicfix-callout">
-      <span class="section-label">The VIC Fix · Podcast</span>
-      <h2>Long-form conversations with the people who shaped the scene.</h2>
-      <div class="vf-episodes">
-        {vicfixEpisodes.map((ep) => (
-          <a
-            href={ep.slug ? `/thevicfix/${ep.slug}/` : `https://youtu.be/${ep.id}`}
-            {...(!ep.slug ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            class="vf-ep"
-          >
-            <div class="vf-thumb">
-              <img
-                src={`https://img.youtube.com/vi/${ep.id}/maxresdefault.jpg`}
-                alt={ep.title}
-                loading="lazy"
-              />
-              <div class="vf-play">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              <span class="vf-ep-label">{ep.label}</span>
-            </div>
-            <div class="vf-ep-info">
-              <h3>{ep.title}</h3>
-              <p>{ep.desc}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-      <div class="vf-cta-wrap">
-        <a href="/thevicfix/" class="vf-cta">Watch All Episodes &rarr;</a>
-      </div>
-    </section>
-
     <!-- ════════════════════════════════ WORK ════════════════════════════════ -->
     <section id="work">
       <span class="section-label">What VIC Does</span>
@@ -371,6 +336,42 @@ const vicfixEpisodes = [
 
       <div class="music-cta-wrap">
         <a href="/remixes/" class="cta-btn-outline">Explore the Full Catalogue &rarr;</a>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════ VIC FIX ══════════════════════════════ -->
+    <section id="vicfix-callout">
+      <span class="section-label">The VIC Fix · Podcast</span>
+      <h2>Long-form conversations with the people who shaped the scene.</h2>
+      <div class="vf-episodes">
+        {vicfixEpisodes.map((ep) => (
+          <a
+            href={ep.slug ? `/thevicfix/${ep.slug}/` : `https://youtu.be/${ep.id}`}
+            {...(!ep.slug ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            class="vf-ep"
+          >
+            <div class="vf-thumb">
+              <img
+                src={`https://img.youtube.com/vi/${ep.id}/maxresdefault.jpg`}
+                alt={ep.title}
+                loading="lazy"
+              />
+              <div class="vf-play">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span class="vf-ep-label">{ep.label}</span>
+            </div>
+            <div class="vf-ep-info">
+              <h3>{ep.title}</h3>
+              <p>{ep.desc}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div class="vf-cta-wrap">
+        <a href="/thevicfix/" class="vf-cta">Watch All Episodes &rarr;</a>
       </div>
     </section>
 
