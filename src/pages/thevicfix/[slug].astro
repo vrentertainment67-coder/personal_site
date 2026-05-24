@@ -448,7 +448,7 @@ const schemas = [
           '<div class="ci-body">' +
             '<div class="ci-meta">' +
               '<span class="ci-name">' + esc(c.name) + '</span>' +
-              '<span class="ci-dot">&middot;</span>' +
+              '<span class="ci-dot">·</span>' +
               '<span class="ci-date">' + fmtDate(c.created_at) + '</span>' +
             '</div>' +
             '<p class="ci-text">' + esc(c.message) + '</p>' +
@@ -915,7 +915,7 @@ const schemas = [
     font-style: italic;
   }
 
-  /* Comments list */
+  /* Comments list (static container — scoped CSS fine here) */
   .comments-list {
     display: flex;
     flex-direction: column;
@@ -923,75 +923,12 @@ const schemas = [
     border-top: 1px solid rgba(255,255,255,0.08);
   }
 
-  .comments-loading,
-  .no-comments {
+  .comments-loading {
     font-size: 0.78rem;
     color: rgba(255,255,255,0.25);
     font-style: italic;
     margin: 0;
     padding: 1.5rem 0;
-  }
-
-  .comment-item {
-    display: flex;
-    gap: 1rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .ci-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(201,168,76,0.12);
-    border: 1px solid rgba(201,168,76,0.25);
-    color: var(--gold);
-    font-size: 0.9rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    letter-spacing: 0;
-  }
-
-  .ci-body {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .ci-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin-bottom: 0.45rem;
-    flex-wrap: wrap;
-  }
-
-  .ci-name {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.88);
-    letter-spacing: 0.02em;
-  }
-
-  .ci-dot {
-    color: rgba(255,255,255,0.18);
-    font-size: 0.7rem;
-  }
-
-  .ci-date {
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.28);
-    letter-spacing: 0.03em;
-  }
-
-  .ci-text {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.7;
-    margin: 0;
-    word-break: break-word;
   }
 
   /* ─── 5. BIO ─────────────────────────────────── */
@@ -1295,5 +1232,79 @@ const schemas = [
     .pull-quote { padding: 1.25rem; }
     .rbtn { min-width: 46px; padding: 0.45rem 0.55rem; }
     .rbtn-emoji { font-size: 1.3rem; }
+  }
+</style>
+
+<!-- Global styles for dynamically rendered comment elements (JS innerHTML bypasses Astro scoping) -->
+<style is:global>
+  .comment-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    align-items: flex-start;
+  }
+
+  .ci-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: #c9a84c;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .ci-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ci-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .ci-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.88);
+    letter-spacing: 0.02em;
+  }
+
+  .ci-dot {
+    color: rgba(255,255,255,0.2);
+    font-size: 0.65rem;
+  }
+
+  .ci-date {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.28);
+    letter-spacing: 0.03em;
+  }
+
+  .ci-text {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .no-comments {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.25);
+    font-style: italic;
+    margin: 0;
+    padding: 1.5rem 0;
   }
 </style>
