@@ -317,63 +317,94 @@ const schemas = [
 
 <!-- ── Reaction buttons (Supabase) ────────────────── -->
 <script is:inline define:vars={{ episodeId: episode.id }}>
-  var SB_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
-  var SB_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
+(function () {
+  var SB_URL     = 'https://jftnhuutttmccmqnnybf.supabase.co';
+  var SB_KEY     = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
   var PAGE_ID    = 'vicfix-' + episodeId;
   var storageKey = 'reacted-' + episodeId;
-  var keys = ['fire', 'love', 'clap', 'listen'];
+  var KEYS       = ['fire', 'love', 'clap', 'listen'];
+  var SB_HEADERS = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
-  // Load live counts from Supabase
-  fetch(SB_URL + '/rest/v1/reactions?page_id=eq.' + encodeURIComponent(PAGE_ID) + '&select=emoji', {
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(rows) {
-    if (!Array.isArray(rows)) return;
-    var counts = {};
-    rows.forEach(function(r) { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
-    keys.forEach(function(key) {
-      var el = document.getElementById('rc-' + key);
-      if (el) el.textContent = counts[key] ? counts[key] : '';
-    });
-  })
-  .catch(function() {});
+  /* ── Fetch real counts from Supabase and paint them ── */
+  function loadCounts() {
+    fetch(
+      SB_URL + '/rest/v1/reactions?page_id=eq.' + PAGE_ID + '&select=emoji',
+      { headers: SB_HEADERS }
+    )
+    .then(function (res) { return res.json(); })
+    .then(function (rows) {
+      if (!Array.isArray(rows)) return;
+      var counts = {};
+      rows.forEach(function (row) {
+        counts[row.emoji] = (counts[row.emoji] || 0) + 1;
+      });
+      KEYS.forEach(function (key) {
+        var el = document.getElementById('rc-' + key);
+        if (el) el.textContent = counts[key] ? String(counts[key]) : '';
+      });
+    })
+    .catch(function () {});
+  }
 
-  // Restore previous reaction highlight (no graying out)
+  /* ── Restore highlight for this visitor's previous reaction ── */
   var prev = localStorage.getItem(storageKey);
   if (prev) {
     var prevBtn = document.getElementById('rbtn-' + prev);
     if (prevBtn) prevBtn.classList.add('active');
   }
 
-  // Handle click
-  document.querySelectorAll('.rbtn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (localStorage.getItem(storageKey)) return; // already reacted — silent ignore
-      var key = this.dataset.key;
+  /* ── Initial count load ── */
+  loadCounts();
+
+  /* ── Wire each button by ID (safe with View Transitions) ── */
+  KEYS.forEach(function (key) {
+    var btn = document.getElementById('rbtn-' + key);
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      if (localStorage.getItem(storageKey)) return; // already reacted — no-op
+
       localStorage.setItem(storageKey, key);
 
-      // Highlight selected, leave others fully visible
-      document.querySelectorAll('.rbtn').forEach(function(b) { b.classList.remove('active'); });
-      this.classList.add('active');
+      /* Highlight chosen button */
+      KEYS.forEach(function (k) {
+        var b = document.getElementById('rbtn-' + k);
+        if (b) b.classList.remove('active');
+      });
+      btn.classList.add('active');
 
-      // Optimistic count update
+      /* Optimistic +1 so the UI feels instant */
       var countEl = document.getElementById('rc-' + key);
-      if (countEl) countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
+      if (countEl) countEl.textContent = String((parseInt(countEl.textContent) || 0) + 1);
 
-      // Save to Supabase
+      /* POST to Supabase, then reload real count to confirm */
       fetch(SB_URL + '/rest/v1/reactions', {
         method: 'POST',
-        headers: {
-          'apikey': SB_KEY,
-          'Authorization': 'Bearer ' + SB_KEY,
+        headers: Object.assign({}, SB_HEADERS, {
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ page_id: PAGE_ID, emoji: key })
-      }).catch(function() {});
+          'Prefer': 'return=minimal',
+        }),
+        body: JSON.stringify({ page_id: PAGE_ID, emoji: key }),
+      })
+      .then(function (res) {
+        if (res.ok) {
+          /* Sync display with real DB count after a brief delay */
+          setTimeout(loadCounts, 600);
+        } else {
+          /* POST failed — revert so user can try again */
+          localStorage.removeItem(storageKey);
+          btn.classList.remove('active');
+          if (countEl) countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent) || 1) - 1));
+        }
+      })
+      .catch(function () {
+        /* Network error — revert */
+        localStorage.removeItem(storageKey);
+        btn.classList.remove('active');
+      });
     });
   });
+})();
 </script>
 
 <!-- ── Share buttons ───────────────────────────────── -->

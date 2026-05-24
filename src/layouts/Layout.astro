@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
 import BaseHead from '../components/BaseHead.astro';
+import ClientRouter from 'astro/components/ClientRouter.astro';
+import MusicPlayer from '../components/MusicPlayer.astro';
 import type { Props as BaseHeadProps } from '../components/BaseHead.astro';
 
 export type Props = BaseHeadProps;
@@ -17,10 +19,12 @@ export type Props = BaseHeadProps;
       gtag('config', 'G-Z7YFSSWY3H');
     </script>
     <BaseHead {...Astro.props} />
+    <ClientRouter />
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <slot />
+    <MusicPlayer />
     <aside class="social-rail" aria-label="Social media links">
       <a href="https://instagram.djvicofficial.com" target="_blank" rel="noopener noreferrer" aria-label="Follow DJ VIC on Instagram">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true">

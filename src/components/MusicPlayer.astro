@@ -1,0 +1,424 @@
+---
+// Persistent music player — fixed bottom bar, survives page navigation via ViewTransitions
+// Listens for `play-track` custom events dispatched by track card play buttons
+---
+
+<div id="vic-player" transition:persist="vic-player" role="region" aria-label="Music player">
+  <img id="vp-cover" src="" alt="" width="72" height="72" />
+
+  <div id="vp-info">
+    <span class="vp-label">NOW PLAYING</span>
+    <span id="vp-title" class="vp-track-title">—</span>
+  </div>
+
+  <div id="vp-controls">
+    <button id="vp-prev" class="vp-btn" aria-label="Previous track" title="Previous">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+      </svg>
+    </button>
+    <button id="vp-play" class="vp-btn vp-btn--play" aria-label="Play">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </button>
+    <button id="vp-next" class="vp-btn" aria-label="Next track" title="Next">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M6 18l8.5-6L6 6v12zm2-12h2v12h-2z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="vp-wave-area">
+    <div id="vp-waveform"></div>
+    <div id="vp-times">
+      <span id="vp-cur">0:00</span>
+      <span class="vp-sep">/</span>
+      <span id="vp-dur">0:00</span>
+    </div>
+  </div>
+
+  <button id="vp-close" class="vp-btn vp-btn--close" aria-label="Close player" title="Close">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  </button>
+</div>
+
+<style>
+  #vic-player {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background: #0a0a0a;
+    border-top: 1px solid rgba(201, 168, 76, 0.2);
+    z-index: 9998;
+    align-items: center;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  #vic-player.vp--visible {
+    display: flex;
+  }
+
+  /* Cover */
+  #vp-cover {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #111;
+  }
+
+  /* Info */
+  #vp-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    padding: 0 1rem;
+    width: 190px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  .vp-label {
+    font-size: 0.48rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: rgba(201, 168, 76, 0.6);
+    text-transform: uppercase;
+  }
+
+  .vp-track-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+  }
+
+  /* Controls */
+  #vp-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    flex-shrink: 0;
+    padding: 0 0.5rem;
+  }
+
+  .vp-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .vp-btn:hover {
+    color: #c9a84c;
+    background: rgba(201, 168, 76, 0.1);
+  }
+
+  .vp-btn--play {
+    background: rgba(201, 168, 76, 0.14);
+    color: #c9a84c;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    margin: 0 0.15rem;
+  }
+
+  .vp-btn--play:hover {
+    background: rgba(201, 168, 76, 0.26);
+    color: #d4b060;
+  }
+
+  .vp-btn--close {
+    margin: 0 0.75rem 0 0.5rem;
+    opacity: 0.35;
+    flex-shrink: 0;
+  }
+
+  .vp-btn--close:hover {
+    opacity: 1;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  /* Waveform area */
+  #vp-wave-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0 0.75rem 0 0.5rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #vp-waveform {
+    height: 42px;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  #vp-times {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.58rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .vp-sep {
+    color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    #vp-info {
+      width: auto;
+      flex: 1;
+      padding: 0 0.75rem;
+    }
+
+    #vp-wave-area {
+      display: none;
+    }
+
+    #vp-controls {
+      padding: 0 0.35rem;
+    }
+
+    .vp-btn--close {
+      margin-right: 0.5rem;
+    }
+  }
+
+  @media (max-width: 400px) {
+    #vp-cover {
+      width: 56px;
+      height: 56px;
+    }
+  }
+</style>
+
+<style is:global>
+  body.has-player {
+    padding-bottom: 72px;
+  }
+
+  @keyframes vp-spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  /* ── Guard: only initialise once across View Transition navigations ── */
+  if (window.__vicPlayerInit) return;
+  window.__vicPlayerInit = true;
+
+  /* ── Track list ── */
+  var TRACKS = [
+    { slug: 'ranjha-qulma-punjabi-afro-mashup',      yt: 'S5yyyjeXWS4', title: 'Ranjha × Qulma (Punjabi Afro House Mashup)' },
+    { slug: 'tu-tu-hai-wahi-afro-mashup',            yt: 'aCZ9DWVoU3A', title: 'Tu Tu Hai Wahi × How Deep Is Your Love (Afro Mashup)' },
+    { slug: 'yeh-ladka-hai-allah-tribute-mashup',    yt: 'eRL1DoX4n2Y', title: 'Yeh Ladka Hai Allah × Quit Playing Games (Tribute Mashup)' },
+    { slug: 'tu-hi-meri-shab-hai-afro-mashup',       yt: 'wHOB8H-HB_Y', title: 'Tu Hi Meri Shab Hai × Say What (Afro Mashup)' },
+    { slug: 'tera-hone-laga-hoon-viva-la-vida',      yt: 'Hgb_g-xBblw', title: 'Tera Hone Laga Hoon × Viva La Vida' },
+    { slug: 'sooraj-ki-baahon-mein-forever',         yt: 'ssFIKwChfHc', title: 'Sooraj Ki Baahon Mein × Forever' },
+    { slug: 'sach-keh-raha-hai-mashup',              yt: 'modKUclnVJY', title: 'Sach Keh Raha Hai × Tujhe Bhula Diya × I Adore You' },
+    { slug: 'dil-luteya-desi-mix',                   yt: 'aN2BIfUNUs4', title: 'Dil Luteya (Desi Mix)' },
+    { slug: 'kesariya-cant-stop-the-feeling',        yt: 'KWUoJJ6xsfk', title: "Kesariya × Can't Stop The Feeling" },
+    { slug: 'oo-antava-afro-mashup',                 yt: 'rcGuVSoki6U', title: 'Oo Antava (Afro Mashup)' },
+    { slug: 'tere-liye-progressive-edit',            yt: 'MXxbN1xYteY', title: 'Tere Liye (Progressive Edit)' },
+    { slug: 'kahin-aag-lage-tech-mix',               yt: 'gf0hYLxr6eo', title: 'Kahin Aag Lage × Rejection (Tech Mix)' },
+    { slug: 'titliaan-progressive-rework',           yt: 'Yx3pD4uhJRE', title: 'Titliaan (Progressive Rework)' },
+    { slug: 'boom-boom-body-funk',                   yt: 'h48i6wSQjso', title: 'Boom Boom × Body Funk' },
+    { slug: 'tamma-tamma-makeba',                    yt: '5oA311R6Wkg', title: 'Tamma Tamma × Makeba' },
+    { slug: 'jimmy-disco-edit',                      yt: 'PxgvwE1nZmw', title: 'Jimmy (VIC Disco Edit)' },
+    { slug: 'ghungroo-sun-n-sand-rework',            yt: '4oTBe25wvE0', title: 'Ghungroo (Sun n Sand Rework)' },
+  ];
+
+  var SB_TRACKS = 'https://jftnhuutttmccmqnnybf.supabase.co/storage/v1/object/public/tracks';
+  var ws       = null;
+  var curIdx   = -1;
+
+  /* ── Helpers ── */
+  function $id(id) { return document.getElementById(id); }
+
+  function fmt(secs) {
+    if (!secs || isNaN(secs)) return '0:00';
+    var m = Math.floor(secs / 60);
+    var s = Math.floor(secs % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  var ICON_PLAY    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  var ICON_PAUSE   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+  var ICON_LOADING = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="animation:vp-spin 0.75s linear infinite"><circle cx="12" cy="12" r="9" stroke-opacity="0.18"/><path d="M12 3a9 9 0 0 1 9 9"/></svg>';
+
+  function setPlayState(state) {
+    var btn = $id('vp-play');
+    if (!btn) return;
+    if (state === 'loading') { btn.innerHTML = ICON_LOADING; btn.setAttribute('aria-label', 'Loading…'); }
+    else if (state === 'playing') { btn.innerHTML = ICON_PAUSE; btn.setAttribute('aria-label', 'Pause'); }
+    else { btn.innerHTML = ICON_PLAY; btn.setAttribute('aria-label', 'Play'); }
+  }
+
+  function showPlayer() {
+    var el = $id('vic-player');
+    if (el && !el.classList.contains('vp--visible')) {
+      el.classList.add('vp--visible');
+      document.body.classList.add('has-player');
+    }
+  }
+
+  /* ── Load WaveSurfer from CDN on first use ── */
+  function ensureWS(cb) {
+    if (window.WaveSurfer) { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js';
+    s.onload  = cb;
+    s.onerror = function () { console.warn('[VIC Player] WaveSurfer failed to load'); cb(); };
+    document.head.appendChild(s);
+  }
+
+  /* ── Core: load track at index ── */
+  function loadTrack(idx, autoplay) {
+    if (autoplay === undefined) autoplay = true;
+    var track = TRACKS[idx];
+    if (!track) return;
+    curIdx = idx;
+
+    /* Update metadata in UI */
+    var titleEl = $id('vp-title');
+    var coverEl = $id('vp-cover');
+    var curEl   = $id('vp-cur');
+    var durEl   = $id('vp-dur');
+
+    if (titleEl) titleEl.textContent = track.title;
+    if (coverEl) { coverEl.src = 'https://img.youtube.com/vi/' + track.yt + '/maxresdefault.jpg'; coverEl.alt = track.title; }
+    if (curEl)   curEl.textContent  = '0:00';
+    if (durEl)   durEl.textContent  = '0:00';
+
+    setPlayState('loading');
+    showPlayer();
+
+    /* Tiny rAF delay so player is visible before WS measures container width */
+    requestAnimationFrame(function () {
+      ensureWS(function () {
+        /* Tear down previous instance */
+        if (ws) { try { ws.destroy(); } catch (e) {} ws = null; }
+
+        if (!window.WaveSurfer) {
+          /* Graceful fallback: plain <audio> without waveform */
+          var audio = new Audio(SB_TRACKS + '/' + track.slug + '.mp3');
+          audio.addEventListener('loadedmetadata', function () {
+            if (durEl) durEl.textContent = fmt(audio.duration);
+            setPlayState(autoplay ? 'playing' : 'paused');
+          });
+          audio.addEventListener('timeupdate', function () {
+            if (curEl) curEl.textContent = fmt(audio.currentTime);
+          });
+          audio.addEventListener('ended', nextTrack);
+          audio.addEventListener('play',  function () { setPlayState('playing'); });
+          audio.addEventListener('pause', function () { setPlayState('paused'); });
+          if (autoplay) audio.play().catch(function(){});
+          /* Wrap so the rest of the code can call .playPause() / .destroy() */
+          ws = {
+            _audio: audio,
+            playPause: function () { audio.paused ? audio.play().catch(function(){}) : audio.pause(); },
+            destroy: function ()   { audio.pause(); audio.src = ''; }
+          };
+          return;
+        }
+
+        /* WaveSurfer path */
+        var waveEl = $id('vp-waveform');
+        if (!waveEl) return;
+
+        ws = window.WaveSurfer.create({
+          container:     waveEl,
+          url:           SB_TRACKS + '/' + track.slug + '.mp3',
+          waveColor:     'rgba(201,168,76,0.22)',
+          progressColor: 'rgba(201,168,76,0.82)',
+          cursorColor:   'rgba(201,168,76,0.55)',
+          cursorWidth:   1,
+          barWidth:      2,
+          barGap:        1.5,
+          barRadius:     2,
+          height:        42,
+          normalize:     true,
+          interact:      true,
+          autoplay:      autoplay,
+        });
+
+        ws.on('ready',      function ()  { if (durEl) durEl.textContent = fmt(ws.getDuration()); });
+        ws.on('timeupdate', function (t) { if (curEl) curEl.textContent = fmt(t); });
+        ws.on('play',       function ()  { setPlayState('playing'); });
+        ws.on('pause',      function ()  { setPlayState('paused'); });
+        ws.on('finish',     nextTrack);
+        ws.on('error',      function (e) { console.warn('[VIC Player]', e); setPlayState('paused'); });
+      });
+    });
+  }
+
+  function nextTrack() { loadTrack(curIdx < TRACKS.length - 1 ? curIdx + 1 : 0, true); }
+  function prevTrack() { loadTrack(curIdx > 0 ? curIdx - 1 : TRACKS.length - 1, true); }
+
+  /* ── Button wiring ── */
+  var prevBtn  = $id('vp-prev');
+  var playBtn  = $id('vp-play');
+  var nextBtn  = $id('vp-next');
+  var closeBtn = $id('vp-close');
+
+  if (prevBtn)  prevBtn.addEventListener('click',  prevTrack);
+  if (nextBtn)  nextBtn.addEventListener('click',  nextTrack);
+
+  if (playBtn) {
+    playBtn.addEventListener('click', function () {
+      if (curIdx === -1) { loadTrack(0, true); return; }
+      if (ws && ws.playPause) ws.playPause();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () {
+      if (ws) { try { ws.destroy(); } catch (e) {} ws = null; }
+      var el = $id('vic-player');
+      if (el) el.classList.remove('vp--visible');
+      document.body.classList.remove('has-player');
+      curIdx = -1;
+      setPlayState('paused');
+    });
+  }
+
+  /* ── Listen for play-track events from anywhere on the site ── */
+  window.addEventListener('play-track', function (e) {
+    var d = e && e.detail;
+    if (!d || !d.slug) return;
+    var idx = -1;
+    for (var i = 0; i < TRACKS.length; i++) {
+      if (TRACKS[i].slug === d.slug) { idx = i; break; }
+    }
+    if (idx !== -1) loadTrack(idx, true);
+  });
+
+})();
+</script>
