@@ -42,7 +42,7 @@ const remixes = [
   { id: "xg9jLQYg-9k", slug: "945-pon-de-replay",                        title: "9:45 × Pon De Replay" },
   { id: "a7D11ICZ8pA", slug: "kalaastar-taki-taki",                       title: "Kalaastar × Taki Taki" },
   { id: "OtG9AWJn9M4", slug: "jeene-ke-hain-rasputin",                    title: "Jeene Ke Hain × Rasputin" },
-  { id: "3McvnbaEO24", slug: "heeriye-belageddu",                         title: "Heeriye × Belageddu" },
+  { id: "3McvnbaEO24", slug: "heeriye-belageddu",                         title: "Heeriye × Belageddu",       thumb: "hqdefault" },
   { id: "AqfAxxu8R4I", slug: "dil-of-the-tiger",                         title: "Dil of the Tiger" },
   { id: "6Gz6UfDXZU8", slug: "nashe-si-chadh-gayi-hey-ma",              title: "Nashe Si Chadh Gayi × Hey Ma" },
   { id: "KhRCbYQev34", slug: "bewafa-mad-love",                           title: "Bewafa × Mad Love" },
@@ -101,14 +101,13 @@ const platforms = [
       <div class="section-label">Latest Tracks</div>
       <h2>Listen</h2>
       <div class="yt-grid">
-        {remixes.map(({ id, slug, title, detail }) => (
+        {remixes.map(({ id, slug, title, detail, thumb }) => (
           <div class="yt-card">
             <div class="yt-thumb">
               <img
-                src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
+                src={`https://img.youtube.com/vi/${id}/${thumb ?? 'maxresdefault'}.jpg`}
                 alt={title}
                 loading="lazy"
-                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${id}/hqdefault.jpg'`}
               />
               <button
                 class="yt-play-btn"
