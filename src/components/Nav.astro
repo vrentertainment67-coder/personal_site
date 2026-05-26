@@ -79,23 +79,18 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     <span class="bar"></span>
   </button>
   <nav class="mobile-nav">
-    <a href={`${base}/#about`}>About</a>
     <a href={`${base}/weddings/`} aria-current={startsWith('/weddings') ? 'page' : undefined}>Weddings</a>
     <a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a>
-    <a href={`${base}/sangeet/`} aria-current={startsWith('/sangeet') ? 'page' : undefined}>Sangeet</a>
-    <a href={`${base}/nightlife/`} aria-current={startsWith('/nightlife') ? 'page' : undefined}>Club & Nightlife</a>
-    <a href={`${base}/private-events/`} aria-current={startsWith('/private-events') ? 'page' : undefined}>Private Events</a>
-    <a href={`${base}/festivals/`} aria-current={startsWith('/festivals') ? 'page' : undefined}>Festivals</a>
     <a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a>
+    <a href={`${base}/events/`} aria-current={startsWith('/events') ? 'page' : undefined}>Events</a>
     <a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a>
-    <a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Photos</a>
     <a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a>
     <a href={`${base}/#contact`} class="mobile-cta">Book VIC</a>
   </nav>
 </div>
 
 <script>
-  // ── Helpers that query the live DOM each call (safe after View Transitions) ──
+  // ── Helpers ────────────────────────────────────────────────────────────
 
   function closeAllDropdowns() {
     document.querySelectorAll('.has-dropdown.open').forEach((el) => {
@@ -105,25 +100,39 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     });
   }
 
-  // These document-level listeners are added once; they re-query the DOM
-  // each invocation so they work correctly after View Transition swaps.
+  function openMenu() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const mobileMenu   = document.getElementById('mobile-menu');
+    mobileMenu?.classList.add('is-open');
+    hamburgerBtn?.classList.add('is-open');
+    hamburgerBtn?.setAttribute('aria-expanded', 'true');
+    mobileMenu?.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const mobileMenu   = document.getElementById('mobile-menu');
+    mobileMenu?.classList.remove('is-open');
+    hamburgerBtn?.classList.remove('is-open');
+    hamburgerBtn?.setAttribute('aria-expanded', 'false');
+    mobileMenu?.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // ── Global listeners — added once at module load ──────────────────────
+
   document.addEventListener('click', closeAllDropdowns);
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     closeAllDropdowns();
-    const mob = document.getElementById('mobile-menu');
-    if (mob?.classList.contains('is-open')) {
-      mob.classList.remove('is-open');
-      const hbtn = document.getElementById('hamburger-btn');
-      hbtn?.classList.remove('is-open');
-      hbtn?.setAttribute('aria-expanded', 'false');
-      mob.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
+    if (document.getElementById('mobile-menu')?.classList.contains('is-open')) closeMenu();
   });
 
-  // ── Setup: re-runs after every navigation to bind new DOM elements ──
+  // ── Setup: re-runs after every navigation ──────────────────────────────
+  // Guard flags (data-dd-init, data-menu-init, data-nav-init) prevent the
+  // same DOM element from accumulating duplicate listeners across navigations.
 
   let cleanupScroll: (() => void) | null = null;
 
@@ -138,46 +147,40 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
       cleanupScroll = () => window.removeEventListener('scroll', onScroll);
     }
 
-    // Desktop dropdown buttons
-    document.querySelectorAll('.dropdown-trigger').forEach((btn) => {
+    // Desktop dropdown buttons — bind only if not already initialised
+    document.querySelectorAll<HTMLElement>('.dropdown-trigger:not([data-dd-init])').forEach((btn) => {
+      btn.setAttribute('data-dd-init', '1');
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const li = btn.closest('.has-dropdown');
         const isOpen = li?.classList.contains('open');
         closeAllDropdowns();
         if (!isOpen) li?.classList.add('open');
-        (btn as HTMLElement).setAttribute('aria-expanded', String(!isOpen));
+        btn.setAttribute('aria-expanded', String(!isOpen));
       });
     });
 
-    // Mobile hamburger
+    // Hamburger — bind only if not already initialised
     const hamburgerBtn = document.getElementById('hamburger-btn');
-    const mobileMenu   = document.getElementById('mobile-menu');
-    const closeMobBtn  = document.getElementById('mobile-menu-close');
-
-    function openMenu() {
-      mobileMenu?.classList.add('is-open');
-      hamburgerBtn?.classList.add('is-open');
-      hamburgerBtn?.setAttribute('aria-expanded', 'true');
-      mobileMenu?.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
+    if (hamburgerBtn && !hamburgerBtn.dataset.menuInit) {
+      hamburgerBtn.dataset.menuInit = '1';
+      hamburgerBtn.addEventListener('click', () => {
+        document.getElementById('mobile-menu')?.classList.contains('is-open')
+          ? closeMenu()
+          : openMenu();
+      });
     }
 
-    function closeMenu() {
-      mobileMenu?.classList.remove('is-open');
-      hamburgerBtn?.classList.remove('is-open');
-      hamburgerBtn?.setAttribute('aria-expanded', 'false');
-      mobileMenu?.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+    // Close button — bind only if not already initialised
+    const closeMobBtn = document.getElementById('mobile-menu-close');
+    if (closeMobBtn && !closeMobBtn.dataset.menuInit) {
+      closeMobBtn.dataset.menuInit = '1';
+      closeMobBtn.addEventListener('click', closeMenu);
     }
 
-    hamburgerBtn?.addEventListener('click', () => {
-      mobileMenu?.classList.contains('is-open') ? closeMenu() : openMenu();
-    });
-
-    closeMobBtn?.addEventListener('click', closeMenu);
-
-    mobileMenu?.querySelectorAll('a').forEach((link) => {
+    // Mobile nav links — bind only if not already initialised
+    document.querySelectorAll<HTMLAnchorElement>('.mobile-nav a:not([data-nav-init])').forEach((link) => {
+      link.setAttribute('data-nav-init', '1');
       link.addEventListener('click', closeMenu);
     });
   }
@@ -335,19 +338,19 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 28px;
     width: 100%;
     max-width: 320px;
   }
 
   .mobile-nav a {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 0.05em;
+    font-size: 42px;
+    letter-spacing: 0.06em;
     color: #e0dccf;
     text-decoration: none;
     transition: color 0.2s ease;
-    line-height: 1.2;
+    line-height: 1;
     text-align: center;
   }
 
