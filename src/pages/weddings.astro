@@ -75,9 +75,12 @@ const avVideoId = "3FJl0cbpOYY";
          1. HERO
     ══════════════════════════════════════════ -->
     <section id="weddings-hero" class="hero-bg">
-      <h1>Your Love Story,<br/>Our Soundtrack</h1>
-      <p>Wedding stories told through music, moments, and movement.</p>
-      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
+      <div class="hero-inner">
+        <div class="section-label">Wedding DJ · Bangalore</div>
+        <h1>Wedding DJ<br/>in Bangalore</h1>
+        <p class="hero-sub">Your Love Story, Our Soundtrack — 19+ years of unforgettable celebrations across India &amp; beyond.</p>
+        <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
+      </div>
     </section>
 
     <!-- ══════════════════════════════════════════
@@ -328,7 +331,32 @@ const avVideoId = "3FJl0cbpOYY";
 
   </main>
 
+  <a href="/#contact" class="sticky-quote-cta" id="sticky-quote-cta">Get a Quote &rarr;</a>
+
   <Footer />
+
+  <script>
+    // Show sticky CTA only after the hero CTA has scrolled out of view
+    document.addEventListener('astro:page-load', () => {
+      const heroBtn = document.querySelector('#weddings-hero .cta-btn');
+      const stickyBtn = document.getElementById('sticky-quote-cta');
+      if (!heroBtn || !stickyBtn) return;
+      // Only activate sticky behaviour on mobile
+      if (window.matchMedia('(min-width: 601px)').matches) return;
+
+      const show = () => { stickyBtn.style.opacity = '1'; stickyBtn.style.pointerEvents = 'auto'; };
+      const hide = () => { stickyBtn.style.opacity = '0'; stickyBtn.style.pointerEvents = 'none'; };
+
+      // Start hidden; JS controls visibility
+      stickyBtn.style.transition = 'opacity 0.3s';
+      hide();
+
+      const obs = new IntersectionObserver(([entry]) => {
+        entry.isIntersecting ? hide() : show();
+      }, { threshold: 0.1 });
+      obs.observe(heroBtn);
+    });
+  </script>
 </Layout>
 
 <style>
@@ -339,6 +367,49 @@ const avVideoId = "3FJl0cbpOYY";
       linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
       url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=85');
     background-position: center center;
+    /* Pull content into a constrained inner wrapper */
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .hero-inner {
+    padding: 8rem 2.5rem 4rem;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 1rem;
+    max-width: 52ch;
+    margin: 0 0 0.5rem;
+    line-height: 1.6;
+  }
+
+  /* ─── Sticky mobile CTA ────────────────────────── */
+  .sticky-quote-cta {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 85;
+    background: var(--gold);
+    color: #000;
+    text-align: center;
+    padding: 1rem 2rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.5);
+    transition: background 0.2s;
+  }
+  .sticky-quote-cta:hover {
+    background: var(--gold-light);
+    color: #000;
   }
 
   /* ─── Gold CTA button ──────────────────────────── */
@@ -643,6 +714,28 @@ const avVideoId = "3FJl0cbpOYY";
     }
     .testimonial-card {
       flex: 0 1 100%;
+    }
+
+    /* ── Mobile hero: smaller image, adjusted padding ── */
+    #weddings-hero {
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.88) 100%),
+        url('https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=75');
+    }
+    .hero-inner {
+      padding-top: 7rem;
+      padding-bottom: 5rem;
+      padding-inline: 1.25rem;
+    }
+
+    /* Prevent sticky bar from covering last-section content */
+    main {
+      padding-bottom: 3.5rem;
+    }
+
+    /* Show sticky CTA on mobile */
+    .sticky-quote-cta {
+      display: block;
     }
   }
 </style>
