@@ -1,0 +1,424 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout
+  title="Book DJ VIC — Weddings, Corporate, Clubs & More | Bangalore"
+  description="Enquire to book DJ VIC for your wedding, corporate event, club night, sangeet, or festival. Based in Bangalore, available pan-India and internationally."
+  canonical="https://djvicofficial.com/book/"
+  schema={{
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Book DJ VIC",
+    "url": "https://djvicofficial.com/book/",
+    "description": "Booking enquiry page for DJ VIC — weddings, corporate events, clubs, and festivals across India and internationally.",
+    "mainEntity": { "@id": "https://djvicofficial.com/#business" }
+  }}
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <section id="book-hero">
+      <div class="bh-inner">
+        <div class="section-label">Bookings &amp; Enquiries</div>
+        <h1>Book DJ VIC</h1>
+        <p class="bh-sub">
+          VIC takes a limited number of bookings each month to ensure every performance
+          receives full attention. If you have a date in mind, reach out early.
+        </p>
+      </div>
+    </section>
+
+    <section id="book-main">
+      <div class="book-layout">
+
+        <!-- ── Contact Form ───────────────────── -->
+        <div class="book-form-col">
+          <h2>Send an Enquiry</h2>
+          <form id="booking-form" method="POST" action="https://formspree.io/f/xdapzdnw">
+            <input type="hidden" name="_subject" value="New Booking Enquiry — DJ VIC" />
+            <input type="hidden" name="_next" value="https://djvicofficial.com/thanks/" />
+            <input type="text" name="_gotcha" style="display:none" />
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="name">Your Name <span class="req">*</span></label>
+                <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name" />
+              </div>
+              <div class="form-field">
+                <label for="email">Email Address <span class="req">*</span></label>
+                <input id="email" type="email" name="email" required placeholder="your@email.com" autocomplete="email" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="phone">Phone / WhatsApp <span class="req">*</span></label>
+                <input id="phone" type="tel" name="phone" required placeholder="+91 98765 43210" autocomplete="tel" />
+              </div>
+              <div class="form-field">
+                <label for="event_type">Event Type <span class="req">*</span></label>
+                <select id="event_type" name="event_type" required>
+                  <option value="" disabled selected>Select event type</option>
+                  <option value="Wedding">Wedding</option>
+                  <option value="Corporate">Corporate Event</option>
+                  <option value="Sangeet Night">Sangeet Night</option>
+                  <option value="Private Party">Private Party</option>
+                  <option value="Club Night">Club Night</option>
+                  <option value="Festival">Festival</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="event_date">Event Date</label>
+                <input id="event_date" type="date" name="event_date" />
+              </div>
+              <div class="form-field">
+                <label for="city">City / Venue</label>
+                <input id="city" type="text" name="city" placeholder="Bangalore, Mumbai…" />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="message">Tell us more</label>
+              <textarea id="message" name="message" rows="4" placeholder="Brief about your event, guests, vibe…"></textarea>
+            </div>
+
+            <button type="submit">Send Enquiry &rarr;</button>
+          </form>
+        </div>
+
+        <!-- ── Contact Aside ──────────────────── -->
+        <div class="book-aside">
+          <div class="book-wa-block">
+            <p class="book-wa-label">Fastest response</p>
+            <a
+              href="https://wa.me/919611711677"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="book-wa-btn"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              Chat on WhatsApp
+            </a>
+          </div>
+          <div class="book-direct">
+            <a href="mailto:bookings@djvicofficial.com" class="book-email">bookings@djvicofficial.com</a>
+            <a href="tel:+919611711677" class="book-phone">+91 96117 11677</a>
+          </div>
+          <div class="book-services">
+            <p class="bs-label">What VIC performs at</p>
+            <ul>
+              <li><a href={`${base}/weddings/`}>Weddings &amp; Sangeet Nights</a></li>
+              <li><a href={`${base}/corporate/`}>Corporate Events</a></li>
+              <li><a href={`${base}/nightlife/`}>Club &amp; Nightlife</a></li>
+              <li><a href={`${base}/festivals/`}>Festivals &amp; Large Events</a></li>
+              <li><a href={`${base}/private-events/`}>Private Parties</a></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+
+<script>
+  const bookingForm = document.getElementById('booking-form');
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', function () {
+      const name = (document.getElementById('name') as HTMLInputElement)?.value || '';
+      const phone = (document.getElementById('phone') as HTMLInputElement)?.value || '';
+      const eventType = (document.getElementById('event_type') as HTMLSelectElement)?.value || '';
+      const eventDate = (document.getElementById('event_date') as HTMLInputElement)?.value || '';
+      const msg = encodeURIComponent(
+        `🎧 New Booking Enquiry\n\nName: ${name}\nPhone: ${phone}\nEvent: ${eventType}\nDate: ${eventDate}\n\n(Full details sent to email)`
+      );
+      setTimeout(() => {
+        window.open(`https://wa.me/919611711677?text=${msg}`, '_blank');
+      }, 1000);
+    });
+  }
+</script>
+
+</Layout>
+
+<style>
+  /* ─── Hero ─────────────────────────────────────── */
+  #book-hero {
+    background-image:
+      linear-gradient(to bottom, rgba(6,6,6,0.2) 0%, rgba(6,6,6,0.92) 100%),
+      url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1600&q=80');
+    background-size: cover;
+    background-position: center 40%;
+    display: flex;
+    align-items: flex-end;
+    min-height: 38svh;
+    padding: 0;
+  }
+
+  .bh-inner {
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+    padding: 7rem 2.5rem 3.5rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  #book-hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .bh-sub {
+    color: rgba(255,255,255,0.65);
+    max-width: 55ch;
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  /* ─── Book section ─────────────────────────────── */
+  #book-main {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
+  .book-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  /* ─── Form ─────────────────────────────────────── */
+  .book-form-col h2 {
+    font-size: clamp(1.2rem, 2.5vw, 1.75rem);
+    color: var(--white);
+    margin-bottom: 2rem;
+  }
+
+  .book-form-col h2::before { display: none; }
+
+  #booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-field label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .req { color: var(--gold); }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 2px;
+  }
+
+  .form-field input::placeholder,
+  .form-field textarea::placeholder {
+    color: rgba(255,255,255,0.2);
+  }
+
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus {
+    border-color: var(--gold);
+  }
+
+  .form-field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    cursor: pointer;
+  }
+
+  .form-field select option {
+    background: #1a1a1a;
+    color: var(--white);
+  }
+
+  .form-field textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+  }
+
+  #booking-form button[type="submit"] {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 1rem 2.5rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+    align-self: flex-start;
+    margin-top: 0.25rem;
+  }
+
+  #booking-form button[type="submit"]:hover {
+    background: var(--gold-light, #e0c060);
+    transform: translateY(-1px);
+  }
+
+  /* ─── Aside ─────────────────────────────────────── */
+  .book-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-top: 3.75rem; /* align with form below h2 */
+  }
+
+  .book-wa-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 0.75rem;
+  }
+
+  .book-wa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #25D366;
+    color: #000;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.9rem 1.5rem;
+    border-radius: 3px;
+    transition: background 0.2s, transform 0.15s;
+    width: fit-content;
+  }
+
+  .book-wa-btn:hover {
+    background: #20bd5a;
+    transform: translateY(-1px);
+  }
+
+  .book-direct {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 1.5rem;
+  }
+
+  .book-email,
+  .book-phone {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .book-email:hover,
+  .book-phone:hover { color: var(--gold); }
+
+  .book-services {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 1.5rem;
+  }
+
+  .bs-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 0.75rem;
+  }
+
+  .book-services ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .book-services a {
+    font-size: 0.82rem;
+    color: var(--gold);
+    text-decoration: none;
+    transition: opacity 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .book-services a:hover { opacity: 0.7; }
+
+  /* ─── Responsive ────────────────────────────────── */
+  @media (max-width: 800px) {
+    .book-layout {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+    .book-aside { padding-top: 0; }
+    #book-main { padding-inline: 1.25rem; }
+    .form-row { grid-template-columns: 1fr; }
+    #booking-form button[type="submit"] { width: 100%; text-align: center; }
+  }
+
+  @media (max-width: 600px) {
+    .bh-inner { padding-inline: 1.25rem; }
+  }
+</style>
