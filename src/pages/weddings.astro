@@ -79,7 +79,7 @@ const avVideoId = "3FJl0cbpOYY";
         <div class="section-label">Wedding DJ</div>
         <h1>Your Love Story,<br/>Our Soundtrack</h1>
         <p class="hero-sub">Your Love Story, Our Soundtrack — 19+ years of unforgettable celebrations across India &amp; beyond.</p>
-        <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
+        <a href="/book/" class="cta-btn cta-btn--gold">Book DJ Vic for Your Wedding</a>
       </div>
     </section>
 
@@ -333,7 +333,7 @@ const avVideoId = "3FJl0cbpOYY";
             <span>🇬🇧 United Kingdom</span>
             <span>+ More</span>
           </div>
-          <a href="/#contact" class="cta-btn cta-btn--gold destination-cta">
+          <a href="/book/" class="cta-btn cta-btn--gold destination-cta">
             Enquire for Your Destination &rarr;
           </a>
         </div>
@@ -368,17 +368,53 @@ const avVideoId = "3FJl0cbpOYY";
     </section>
 
     <!-- ══════════════════════════════════════════
-         9. CLOSING CTA
+         9. FAQ
+    ══════════════════════════════════════════ -->
+    <section id="weddings-faq">
+      <div class="faq-inner">
+        <div class="section-label">Common Questions</div>
+        <h2>Wedding DJ FAQ</h2>
+        <div class="faq-grid">
+          <details class="faq-item">
+            <summary>How far in advance should we book?</summary>
+            <p>For peak wedding seasons (October–February and April–May), 6–12 months in advance is recommended. DJ VIC takes a limited number of bookings per month, so popular Saturdays fill up quickly. Reach out as soon as you have a date in mind.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Do you cover both sangeet night and the reception?</summary>
+            <p>Yes — DJ VIC performs at all parts of the wedding celebration: sangeet night, cocktail hour, and reception. Each has a different energy and setlist. Packages covering multiple events are available.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can we customise the music?</summary>
+            <p>Completely. The setlist is built around your preferences — Bollywood, international, retro, hip-hop, Punjabi, or any mix. DJ VIC works with each couple to understand their story and translates that into the music.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can you travel for destination weddings?</summary>
+            <p>Yes. DJ VIC has performed at weddings across India and in 18 countries, including Sri Lanka, Australia, and the UK. Travel and logistics are discussed as part of the booking. There is no location that is off the table.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Do you bring your own equipment?</summary>
+            <p>Yes — full professional setup is included. DJ VIC co-ordinates with the venue's sound and AV team before the event to ensure a seamless technical setup. You don't need to arrange separate equipment.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What makes DJ VIC different from other wedding DJs?</summary>
+            <p>The audio-visual format — original music compositions synced with custom visuals, developed since 2007. Combined with 300+ weddings across 19+ years, and a reputation built on couples who trust VIC to be the emotional anchor of their celebration, not just background music.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         10. CLOSING CTA
     ══════════════════════════════════════════ -->
     <section id="weddings-cta" class="cta-section">
       <h2>Ready to Make Your Wedding Unforgettable?</h2>
       <p class="section-sub">Get in touch and let's plan the music for your special day.</p>
-      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ Vic &rarr;</a>
+      <a href="/book/" class="cta-btn cta-btn--gold">Book DJ Vic &rarr;</a>
     </section>
 
   </main>
 
-  <a href="/#contact" class="sticky-quote-cta" id="sticky-quote-cta">Get a Quote &rarr;</a>
+  <a href="/book/" class="sticky-quote-cta" id="sticky-quote-cta">Get a Quote &rarr;</a>
 
   <Footer />
 
@@ -718,6 +754,82 @@ const avVideoId = "3FJl0cbpOYY";
   }
 
   .guide-link:hover { opacity: 0.7; }
+
+  /* ─── FAQ ─────────────────────────────────────── */
+  #weddings-faq {
+    border-top: 1px solid rgba(201,168,76,0.08);
+    background: #060606;
+  }
+
+  #weddings-faq .faq-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
+  #weddings-faq h2 { margin-bottom: 2.5rem; }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    border-right: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .faq-item:nth-child(even) { border-right: none; }
+  .faq-item:nth-last-child(-n+2) { border-bottom: none; }
+
+  .faq-item summary {
+    padding: 1.4rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--white);
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    padding-right: 3rem;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .faq-item summary::-webkit-details-marker { display: none; }
+
+  .faq-item summary::after {
+    content: '+';
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: var(--gold);
+    font-weight: 400;
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+
+  .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+  .faq-item[open] summary { color: var(--gold); }
+
+  .faq-item p {
+    padding: 0 1.5rem 1.4rem;
+    font-size: 0.84rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  @media (max-width: 700px) {
+    .faq-grid { grid-template-columns: 1fr; }
+    .faq-item { border-right: none; }
+    .faq-item:nth-last-child(-n+2) { border-bottom: 1px solid rgba(201,168,76,0.1); }
+    .faq-item:last-child { border-bottom: none; }
+    #weddings-faq .faq-inner { padding-inline: 1.25rem; }
+  }
 
   /* ─── Closing CTA section ─────────────────────── */
   .cta-section {

@@ -30,7 +30,7 @@ import Footer from '../components/Footer.astro';
     <section id="corporate-hero" class="hero-bg">
       <h1>Built for<br/>Big Moments</h1>
       <p>High-energy experiences, delivered with precision and crowd control.</p>
-      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ VIC for Your Event</a>
+      <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC for Your Event</a>
     </section>
 
     <!-- ══════════════════════════════════════════
@@ -83,7 +83,7 @@ import Footer from '../components/Footer.astro';
           <p class="formats-body" style="margin-top:1rem;">
             DJ VIC is also known for his <strong style="color:var(--white);">audio-visual sets</strong> — original music synced with custom visuals, available as an elevated entertainment format for product launches, brand activations, and annual days.
           </p>
-          <a href="/#contact" class="cta-btn cta-btn--gold formats-cta">
+          <a href="/book/" class="cta-btn cta-btn--gold formats-cta">
             Get a Corporate Quote &rarr;
           </a>
         </div>
@@ -170,34 +170,70 @@ import Footer from '../components/Footer.astro';
         to Fortune 500 companies.
       </p>
       <div class="logo-grid">
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/200px-SAP_2011_logo.svg.png" alt="SAP" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/PepsiCo_%282025%2C_wordmark%29.svg/200px-PepsiCo_%282025%2C_wordmark%29.svg.png" alt="PepsiCo" /></div>
-        <div class="logo-item"><img src="https://www.microland.com/assets/images/logo.svg" alt="Microland" /></div>
-        <div class="logo-item"><img src="https://nest-platform-assets.porter.in/porter_logo_v3_0186438e12.svg" alt="Porter" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/KPMG_blue_logo.svg/200px-KPMG_blue_logo.svg.png" alt="KPMG" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Logo_of_JPMorganChase_2024.svg/200px-Logo_of_JPMorganChase_2024.svg.png" alt="JPMorgan Chase" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a0/RitzCarlton.svg/200px-RitzCarlton.svg.png" alt="The Ritz-Carlton" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Infosys_logo.svg/200px-Infosys_logo.svg.png" alt="Infosys" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/200px-Apple_logo_black.svg.png" alt="Apple" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/BHP_2017_logo.svg/200px-BHP_2017_logo.svg.png" alt="BHP" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Decathlon_-_logo_%28France%2C_2024%29.svg/200px-Decathlon_-_logo_%28France%2C_2024%29.svg.png" alt="Decathlon" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/200px-HDFC_Bank_Logo.svg.png" alt="HDFC Bank" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Walmart_logo_%282025%29.svg/200px-Walmart_logo_%282025%29.svg.png" alt="Walmart" /></div>
-        <div class="logo-item"><img src="https://thehouseofrare.com/cdn/shop/files/hor_1_ac34ebd3-4498-4f64-b50b-ae6bd5404df8_250x.png?v=1720351640" alt="Rare Rabbit" /></div>
-        <div class="logo-item"><img src="https://assets.furlenco.com/image/upload/dpr_1.0,f_auto,q_auto/v1/s3-furlenco-images/yoda/furlenco-logo.png" alt="Furlenco" /></div>
-        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Britannia_Industries_logo.svg/200px-Britannia_Industries_logo.svg.png" alt="Britannia" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/200px-SAP_2011_logo.svg.png" alt="SAP" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/PepsiCo_%282025%2C_wordmark%29.svg/200px-PepsiCo_%282025%2C_wordmark%29.svg.png" alt="PepsiCo" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://www.microland.com/assets/images/logo.svg" alt="Microland" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://nest-platform-assets.porter.in/porter_logo_v3_0186438e12.svg" alt="Porter" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/KPMG_blue_logo.svg/200px-KPMG_blue_logo.svg.png" alt="KPMG" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Logo_of_JPMorganChase_2024.svg/200px-Logo_of_JPMorganChase_2024.svg.png" alt="JPMorgan Chase" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a0/RitzCarlton.svg/200px-RitzCarlton.svg.png" alt="The Ritz-Carlton" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Infosys_logo.svg/200px-Infosys_logo.svg.png" alt="Infosys" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/200px-Apple_logo_black.svg.png" alt="Apple" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/BHP_2017_logo.svg/200px-BHP_2017_logo.svg.png" alt="BHP" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Decathlon_-_logo_%28France%2C_2024%29.svg/200px-Decathlon_-_logo_%28France%2C_2024%29.svg.png" alt="Decathlon" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/200px-HDFC_Bank_Logo.svg.png" alt="HDFC Bank" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Walmart_logo_%282025%29.svg/200px-Walmart_logo_%282025%29.svg.png" alt="Walmart" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://thehouseofrare.com/cdn/shop/files/hor_1_ac34ebd3-4498-4f64-b50b-ae6bd5404df8_250x.png?v=1720351640" alt="Rare Rabbit" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://assets.furlenco.com/image/upload/dpr_1.0,f_auto,q_auto/v1/s3-furlenco-images/yoda/furlenco-logo.png" alt="Furlenco" loading="lazy" /></div>
+        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Britannia_Industries_logo.svg/200px-Britannia_Industries_logo.svg.png" alt="Britannia" loading="lazy" /></div>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════
-         6. CLOSING CTA
+         6. FAQ
+    ══════════════════════════════════════════ -->
+    <section id="corporate-faq">
+      <div class="faq-inner">
+        <div class="section-label">Common Questions</div>
+        <h2>Corporate Booking FAQ</h2>
+        <div class="faq-grid">
+          <details class="faq-item">
+            <summary>Do you bring your own equipment?</summary>
+            <p>Yes — full Pioneer CDJ setup with backup hardware. DJ VIC handles his own gear, professionally maintained, and will co-ordinate with the venue's sound team for seamless integration.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What music do you play at corporate events?</summary>
+            <p>Fully tailored to the occasion and brief. Cocktail hours typically get lounge and ambient sets; annual days and brand activations move to high-energy commercial and Bollywood. DJ VIC reads the room in real time and adjusts accordingly.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Do you work with event management agencies?</summary>
+            <p>Yes — a significant share of corporate bookings come through agencies. DJ VIC is comfortable liaising directly with the production team, following AV schedules, and operating within the show-flow.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can you travel outside Bangalore for corporate events?</summary>
+            <p>Absolutely. DJ VIC has performed at corporate events across India and in 18 countries. Travel and accommodation requirements are discussed during the booking process.</p>
+          </details>
+          <details class="faq-item">
+            <summary>How far in advance should we book?</summary>
+            <p>4–6 weeks is the recommended minimum. Peak season (October–February) and large-format events can book up to 3 months in advance. The earlier you confirm, the better the chance of securing your preferred date.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Is the DJ + MC package always with MC Dhanush?</summary>
+            <p>The collaborative DJ + MC format features DJ VIC alongside MC Dhanush for bilingual hosting. It's available as an add-on to the core DJ booking. Get in touch to discuss the right format for your event.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         7. CLOSING CTA
     ══════════════════════════════════════════ -->
     <section id="corporate-cta" class="cta-section">
       <h2>Ready to Elevate Your Next Corporate Event?</h2>
       <p class="section-sub">
         Get in touch and let's build the perfect music experience for your team.
       </p>
-      <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
+      <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
     </section>
 
   </main>
@@ -531,6 +567,85 @@ import Footer from '../components/Footer.astro';
 
   .logo-item:hover img {
     filter: none;
+  }
+
+  /* ─── FAQ ─────────────────────────────────────── */
+  #corporate-faq {
+    border-top: 1px solid rgba(201,168,76,0.08);
+    background: #060606;
+  }
+
+  .faq-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 5rem 2.5rem;
+  }
+
+  .faq-inner h2 { margin-bottom: 2.5rem; }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    border-right: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .faq-item:nth-child(even) { border-right: none; }
+  .faq-item:nth-last-child(-n+2) { border-bottom: none; }
+
+  .faq-item summary {
+    padding: 1.4rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--white);
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    padding-right: 3rem;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .faq-item summary::-webkit-details-marker { display: none; }
+
+  .faq-item summary::after {
+    content: '+';
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: var(--gold);
+    font-weight: 400;
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+
+  .faq-item[open] summary::after {
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .faq-item[open] summary { color: var(--gold); }
+
+  .faq-item p {
+    padding: 0 1.5rem 1.4rem;
+    font-size: 0.84rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  @media (max-width: 700px) {
+    .faq-grid { grid-template-columns: 1fr; }
+    .faq-item { border-right: none; }
+    .faq-item:nth-last-child(-n+2) { border-bottom: 1px solid rgba(201,168,76,0.1); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-inner { padding-inline: 1.25rem; }
   }
 
   /* ─── Closing CTA ─────────────────────────────── */
