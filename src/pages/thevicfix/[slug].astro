@@ -128,7 +128,8 @@ const schemas = [
       <div class="ep-inner">
         <div class="yt-wrap">
           <iframe
-            src={`https://www.youtube.com/embed/${ep.youtubeId}`}
+            id="yt-player"
+            src={`https://www.youtube.com/embed/${ep.youtubeId}?enablejsapi=1&origin=https://djvicofficial.com`}
             title={`${ep.guestName} on The VIC Fix`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
@@ -404,6 +405,84 @@ const schemas = [
       });
     });
   });
+})();
+</script>
+
+<!-- ── YouTube video tracking → GA4 ────────────────── -->
+<script is:inline define:vars={{ videoTitle: `${ep.guestName} — The VIC Fix S${ep.season}E${ep.episode}`, videoUrl: `https://www.youtube.com/watch?v=${ep.youtubeId}` }}>
+(function () {
+  var started   = false;
+  var milestones = { 25: false, 50: false, 75: false };
+  var player;
+
+  function sendEvent(name, params) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', name, Object.assign({
+      video_title:    videoTitle,
+      video_url:      videoUrl,
+      video_provider: 'youtube',
+    }, params || {}));
+  }
+
+  function onPlayerReady() {}
+
+  function onStateChange(event) {
+    // YT.PlayerState: PLAYING=1, PAUSED=2, ENDED=0
+    if (event.data === 1) {
+      if (!started) {
+        started = true;
+        sendEvent('video_start');
+      }
+      // Poll for progress milestones while playing
+      pollProgress();
+    }
+    if (event.data === 0) {
+      sendEvent('video_complete');
+    }
+  }
+
+  var pollTimer = null;
+  function pollProgress() {
+    if (pollTimer) return;
+    pollTimer = setInterval(function () {
+      if (!player || typeof player.getCurrentTime !== 'function') return;
+      var duration = player.getDuration();
+      var current  = player.getCurrentTime();
+      if (!duration) return;
+      var pct = (current / duration) * 100;
+      [25, 50, 75].forEach(function (m) {
+        if (!milestones[m] && pct >= m) {
+          milestones[m] = true;
+          sendEvent('video_progress', { video_percent: m });
+        }
+      });
+      // Stop polling when paused or ended
+      var state = player.getPlayerState();
+      if (state !== 1) { clearInterval(pollTimer); pollTimer = null; }
+    }, 1000);
+  }
+
+  function initPlayer() {
+    player = new YT.Player('yt-player', {
+      events: { onReady: onPlayerReady, onStateChange: onStateChange }
+    });
+  }
+
+  // Load IFrame API if not already present
+  if (window.YT && window.YT.Player) {
+    initPlayer();
+  } else {
+    var prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () {
+      if (prev) prev();
+      initPlayer();
+    };
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      var s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(s);
+    }
+  }
 })();
 </script>
 
