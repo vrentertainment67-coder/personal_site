@@ -25,9 +25,9 @@ const avVideoId = "3FJl0cbpOYY";
 
 <Layout
   title="Wedding DJ in Bangalore — Sangeet, Reception & Destination Weddings | DJ VIC"
-  description="DJ VIC is Bangalore's top wedding DJ. Curated music for sangeet nights, cocktail hours, receptions, and destination weddings across India and abroad. 19+ years experience."
-  ogTitle="DJ VIC — Luxury Wedding DJ · Sangeet, Reception & Destination Weddings"
-  ogDescription="Premium wedding DJ with 19+ years experience across India and internationally. Sangeet nights, cocktail hours, receptions, and destination weddings. Trusted at JW Marriott, Leela, Taj and beyond."
+  description="DJ VIC performs at weddings across India and internationally — sangeet nights, cocktail hours, receptions, and destination weddings. 19+ years. 300+ weddings. Enquire now."
+  ogTitle="DJ VIC — Wedding DJ · Sangeet, Reception & Destination Weddings Across India"
+  ogDescription="Premium wedding DJ for celebrations across India and internationally. Sangeet nights, cocktail hours, receptions, and destination weddings. Trusted at JW Marriott, Leela, Taj and beyond."
   ogImage="https://djvicofficial.com/images/og-weddings.jpg"
   schema={[
     {
@@ -310,7 +310,54 @@ const avVideoId = "3FJl0cbpOYY";
     </section>
 
     <!-- ══════════════════════════════════════════
-         8. DESTINATION GUIDE LINK
+         8. DESTINATION & NRI WEDDINGS
+    ══════════════════════════════════════════ -->
+    <section class="destination-section" aria-labelledby="destination-heading">
+      <div class="destination-inner">
+
+        <div class="destination-text">
+          <p class="section-label">Destination &amp; NRI Weddings</p>
+          <h2 id="destination-heading">
+            Your wedding isn't<br/>in Bangalore?<br/>Neither is the boundary.
+          </h2>
+          <p class="destination-desc">
+            DJ VIC has performed at weddings across India and internationally —
+            from Goa and Udaipur to Sri Lanka, the UK, and Australia. Whether
+            you're planning a destination wedding, an NRI celebration, or a
+            multi-city function, the logistics are handled directly.
+          </p>
+          <div class="destination-locations">
+            <span>🇮🇳 Pan-India</span>
+            <span>🇱🇰 Sri Lanka</span>
+            <span>🇦🇺 Australia</span>
+            <span>🇬🇧 United Kingdom</span>
+            <span>+ More</span>
+          </div>
+          <a href="/#contact" class="cta-btn cta-btn--gold destination-cta">
+            Enquire for Your Destination &rarr;
+          </a>
+        </div>
+
+        <div class="destination-stats">
+          <div class="d-stat">
+            <span class="d-num">18</span>
+            <span class="d-lbl">Countries Performed In</span>
+          </div>
+          <div class="d-stat">
+            <span class="d-num">300+</span>
+            <span class="d-lbl">Weddings Performed</span>
+          </div>
+          <div class="d-stat">
+            <span class="d-num">19+</span>
+            <span class="d-lbl">Years of Experience</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         9. DESTINATION GUIDE LINK
     ══════════════════════════════════════════ -->
     <section id="weddings-guide">
       <div class="guide-inner">
@@ -697,6 +744,96 @@ const avVideoId = "3FJl0cbpOYY";
     margin-top: 2rem;
   }
 
+  /* ─── Destination & NRI section ──────────────── */
+  .destination-section {
+    padding: 5rem 2.5rem;
+    background: #0a0a0a;
+    border-top: 1px solid #1e1e1e;
+    border-bottom: 1px solid #1e1e1e;
+    max-width: 100%;
+  }
+
+  .destination-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 5rem;
+    align-items: center;
+  }
+
+  .destination-section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    color: var(--white);
+    line-height: 1.05;
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.02em;
+    padding-top: 0;
+  }
+
+  .destination-section h2::before { display: none; }
+
+  .destination-desc {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    max-width: 48ch;
+  }
+
+  .destination-locations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .destination-locations span {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--gold);
+    background: #1a1200;
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 0.3rem 0.75rem;
+    border-radius: 2px;
+  }
+
+  .destination-cta {
+    margin-top: 1.75rem;
+  }
+
+  .destination-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    border-left: 1px solid #1e1e1e;
+    padding-left: 3.75rem;
+  }
+
+  .d-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .d-num {
+    font-family: var(--font-display);
+    font-size: 3.5rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .d-lbl {
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
   /* ─── Responsive ──────────────────────────────── */
   @media (max-width: 860px) {
     .testimonial-card {
@@ -707,7 +844,24 @@ const avVideoId = "3FJl0cbpOYY";
     }
   }
 
+  @media (max-width: 768px) {
+    .destination-inner {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    .destination-stats {
+      border-left: none;
+      padding-left: 0;
+      border-top: 1px solid #1e1e1e;
+      padding-top: 2.5rem;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+  }
+
   @media (max-width: 600px) {
+    .destination-section { padding-inline: 1.25rem; }
     .yt-grid--2col,
     .yt-grid--3col {
       grid-template-columns: 1fr;

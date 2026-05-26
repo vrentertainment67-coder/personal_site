@@ -24,6 +24,7 @@ const primaryServices = [
     name: "Weddings",
     href: "/weddings/",
     desc: "From sangeet nights to the last dance — curated music and visuals for every moment of your celebration.",
+    note: "Pan-India & international bookings available",
     bg: `${BASE}fc1c338a80d635c2429d234301f2ba98.jpg`,
   },
   {
@@ -157,6 +158,9 @@ const vicfixEpisodes = [
           International DJ, producer, and remixer.<br />
           Audio-visual performances from Bangalore to the world.
         </p>
+        <p class="hero-availability">
+          Based in Bangalore &nbsp;·&nbsp; Available across India &amp; internationally
+        </p>
         <div class="hc-ctas">
           <a href="/#contact" class="cta-btn-primary">Book VIC</a>
           <a href="/remixes/" class="cta-btn-outline">Watch Remixes</a>
@@ -238,6 +242,7 @@ const vicfixEpisodes = [
             <div class="work-primary-text">
               <span class="work-name">{s.name}</span>
               <p>{s.desc}</p>
+              {s.note && <span class="service-location-note">{s.note}</span>}
               <span class="work-arrow">&rarr;</span>
             </div>
           </a>
@@ -380,8 +385,10 @@ const vicfixEpisodes = [
       <span class="section-label">Bookings</span>
       <h2>Work With VIC</h2>
       <p class="contact-lead">
-        VIC takes on a limited number of bookings each month to ensure every performance
-        is delivered at its highest standard. If you have a date in mind — reach out now.
+        VIC takes a limited number of bookings each month to ensure every performance
+        receives full attention. Based in Bangalore — available for weddings, events,
+        and performances across India and internationally. If you have a date in mind,
+        reach out early.
       </p>
 
       <div class="contact-layout">
@@ -1458,5 +1465,29 @@ const vicfixEpisodes = [
       flex-direction: column;
       align-items: flex-start;
     }
+  }
+
+  /* ── Hero availability note ─────────────────────── */
+  .hero-availability {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #7a6330;
+    margin-top: -16px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.65s;
+  }
+
+  /* ── Service card location note ─────────────────── */
+  .service-location-note {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7a6330;
+    margin-top: 8px;
   }
 </style>
