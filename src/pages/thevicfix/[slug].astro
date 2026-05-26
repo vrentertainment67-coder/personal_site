@@ -207,33 +207,6 @@ const schemas = [
           </a>
         </div>
 
-        <form id="comment-form" class="comment-form" novalidate>
-          <input
-            type="text"
-            id="cf-name"
-            class="cf-input"
-            placeholder="Your name"
-            maxlength="60"
-            autocomplete="off"
-            required
-          />
-          <textarea
-            id="cf-message"
-            class="cf-textarea"
-            placeholder="What did you think?"
-            rows="4"
-            maxlength="1000"
-            required
-          ></textarea>
-          <div class="cf-footer">
-            <button type="submit" class="cf-submit">Post</button>
-            <span id="cf-status" class="cf-status" aria-live="polite"></span>
-          </div>
-        </form>
-
-        <div id="comments-list" class="comments-list" aria-live="polite">
-          <p class="comments-loading" id="comments-loading">Loading comments…</p>
-        </div>
       </div>
     </section>
 
@@ -530,115 +503,6 @@ const schemas = [
   }
 </script>
 
-<!-- ── Comments (Supabase) ────────────────────────── -->
-<script is:inline define:vars={{ commentPageId: `vicfix-${episode.id}` }}>
-  // ── Supabase config — fill these in after setup ──────────────────────
-  var SB_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
-  var SB_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
-  // ─────────────────────────────────────────────────────────────────────
-
-  var PAGE_ID = commentPageId;
-
-  function esc(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function fmtDate(iso) {
-    return new Date(iso).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-  }
-
-  function renderComments(list) {
-    var wrap = document.getElementById('comments-list');
-    var loading = document.getElementById('comments-loading');
-    if (loading) loading.remove();
-    if (!list || !list.length) {
-      wrap.innerHTML = '<p class="no-comments">No comments yet — be the first.</p>';
-      return;
-    }
-    wrap.innerHTML = list.map(function(c) {
-      var initial = esc(c.name.trim().charAt(0).toUpperCase());
-      return (
-        '<div class="comment-item">' +
-          '<div class="ci-avatar">' + initial + '</div>' +
-          '<div class="ci-body">' +
-            '<div class="ci-meta">' +
-              '<span class="ci-name">' + esc(c.name) + '</span>' +
-              '<span class="ci-dot">·</span>' +
-              '<span class="ci-date">' + fmtDate(c.created_at) + '</span>' +
-            '</div>' +
-            '<p class="ci-text">' + esc(c.message) + '</p>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  // Load approved comments
-  function loadComments() {
-    fetch(
-      SB_URL + '/rest/v1/comments?page_id=eq.' + encodeURIComponent(PAGE_ID) +
-      '&approved=eq.true&order=created_at.desc',
-      { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
-    )
-    .then(function(r) { return r.json(); })
-    .then(renderComments)
-    .catch(function() {
-      var l = document.getElementById('comments-loading');
-      if (l) l.textContent = '';
-    });
-  }
-  loadComments();
-
-  // Submit comment
-  var form = document.getElementById('comment-form');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      var name    = document.getElementById('cf-name').value.trim();
-      var message = document.getElementById('cf-message').value.trim();
-      var status  = document.getElementById('cf-status');
-      var btn     = form.querySelector('.cf-submit');
-      if (!name || !message) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Posting…';
-      status.textContent = '';
-
-      fetch(SB_URL + '/rest/v1/comments', {
-        method: 'POST',
-        headers: {
-          'apikey': SB_KEY,
-          'Authorization': 'Bearer ' + SB_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ page_id: PAGE_ID, name: name, message: message, approved: true })
-      })
-      .then(function(r) {
-        btn.disabled = false;
-        btn.textContent = 'Post';
-        if (r.ok) {
-          form.reset();
-          status.textContent = '✓ Comment posted!';
-          loadComments();
-        } else {
-          r.text().then(function(body) {
-            status.textContent = 'Error ' + r.status + ': ' + (body || 'unknown');
-          });
-        }
-      })
-      .catch(function() {
-        btn.disabled = false;
-        btn.textContent = 'Post';
-        status.textContent = 'Could not connect. Try again.';
-      });
-    });
-  }
-</script>
 
 <style>
   /* ─── Breadcrumb ──────────────────────────────── */
@@ -943,7 +807,7 @@ const schemas = [
     color: rgba(255,255,255,0.8);
   }
 
-  /* ─── 4. COMMENTS ────────────────────────────── */
+  /* ─── 4. WHATSAPP LIST CTA ──────────────────── */
   #ep-comments {
     background: #060606;
     padding: 0;
@@ -951,8 +815,8 @@ const schemas = [
   }
 
   .ep-comments-inner {
-    padding-top: 3.5rem;
-    padding-bottom: 4rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   /* ── WhatsApp list CTA ──────────────────────── */
@@ -964,7 +828,6 @@ const schemas = [
     background: rgba(37,211,102,0.05);
     border: 1px solid rgba(37,211,102,0.15);
     border-left: 3px solid #25D366;
-    margin-bottom: 2.5rem;
     flex-wrap: wrap;
   }
 
@@ -1006,97 +869,6 @@ const schemas = [
     background: #25D366;
     color: #000;
     border-color: #25D366;
-  }
-
-  /* Comment form */
-  .comment-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-width: 640px;
-    margin-bottom: 3rem;
-  }
-
-  .cf-input,
-  .cf-textarea {
-    width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.85);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    line-height: 1.6;
-    padding: 0.75rem 1rem;
-    outline: none;
-    resize: vertical;
-    transition: border-color 0.2s;
-    box-sizing: border-box;
-  }
-
-  .cf-input::placeholder,
-  .cf-textarea::placeholder {
-    color: rgba(255,255,255,0.25);
-  }
-
-  .cf-input:focus,
-  .cf-textarea:focus {
-    border-color: rgba(201,168,76,0.45);
-  }
-
-  .cf-textarea {
-    min-height: 100px;
-  }
-
-  .cf-footer {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .cf-submit {
-    font-family: var(--font-body);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #060606;
-    background: var(--gold);
-    border: none;
-    padding: 0.6rem 1.6rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .cf-submit:hover:not(:disabled) {
-    background: var(--gold-light);
-  }
-
-  .cf-submit:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  .cf-status {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.4);
-    font-style: italic;
-  }
-
-  /* Comments list (static container — scoped CSS fine here) */
-  .comments-list {
-    display: flex;
-    flex-direction: column;
-    max-width: 640px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .comments-loading {
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.25);
-    font-style: italic;
-    margin: 0;
-    padding: 1.5rem 0;
   }
 
   /* ─── 5. BIO ─────────────────────────────────── */
@@ -1403,76 +1175,3 @@ const schemas = [
   }
 </style>
 
-<!-- Global styles for dynamically rendered comment elements (JS innerHTML bypasses Astro scoping) -->
-<style is:global>
-  .comment-item {
-    display: flex;
-    gap: 1rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    align-items: flex-start;
-  }
-
-  .ci-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(201,168,76,0.12);
-    border: 1px solid rgba(201,168,76,0.3);
-    color: #c9a84c;
-    font-size: 0.9rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    line-height: 1;
-  }
-
-  .ci-body {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .ci-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin-bottom: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .ci-name {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.88);
-    letter-spacing: 0.02em;
-  }
-
-  .ci-dot {
-    color: rgba(255,255,255,0.2);
-    font-size: 0.65rem;
-  }
-
-  .ci-date {
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.28);
-    letter-spacing: 0.03em;
-  }
-
-  .ci-text {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.7;
-    margin: 0;
-    word-break: break-word;
-  }
-
-  .no-comments {
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.25);
-    font-style: italic;
-    margin: 0;
-    padding: 1.5rem 0;
-  }
-</style>
