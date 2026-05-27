@@ -44,6 +44,8 @@ const episodes = allEpisodes.sort((a, b) => {
         alt=""
         aria-hidden="true"
         class="vicfix-logo"
+        width="1080"
+        height="1080"
       />
       <div class="hero-content">
         <div class="hero-eyebrow">
@@ -98,7 +100,7 @@ const episodes = allEpisodes.sort((a, b) => {
         <!-- Episode grid -->
         <div class="episodes-grid" id="episodes-grid">
           {episodes.map((ep) => {
-            const ytThumb = `https://img.youtube.com/vi/${ep.data.youtubeId}/maxresdefault.jpg`;
+            const ytThumb = `https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg`;
             const imgSrc = ep.data.guestPhoto ? ep.data.guestPhoto : ytThumb;
             return (
               <div
@@ -110,8 +112,10 @@ const episodes = allEpisodes.sort((a, b) => {
                   <div class="card-thumb">
                     <img
                       src={imgSrc}
-                      alt={ep.data.guestName}
+                      alt={`${ep.data.guestName} — The VIC Fix S${ep.data.season}E${ep.data.episode}`}
                       loading="lazy"
+                      width="480"
+                      height="360"
                       onerror={`this.src='https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg'`}
                     />
                     <span class="season-badge">S{ep.data.season} &middot; E{ep.data.episode}</span>

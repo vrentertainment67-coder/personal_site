@@ -105,9 +105,11 @@ const platforms = [
           <div class="yt-card">
             <div class="yt-thumb">
               <img
-                src={`https://img.youtube.com/vi/${id}/${thumb ?? 'maxresdefault'}.jpg`}
+                src={`https://img.youtube.com/vi/${id}/${thumb ?? 'hqdefault'}.jpg`}
                 alt={title}
                 loading="lazy"
+                width="480"
+                height="360"
               />
               <button
                 class="yt-play-btn"

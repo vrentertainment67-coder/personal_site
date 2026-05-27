@@ -6,42 +6,42 @@ import Footer from '../components/Footer.astro';
 const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
 
 const photos = [
-  '07c0f6eab1701c1d508901023512a096.jpg',
-  '298c07a92d4903cbabd91c0b2a16abd6.jpg',
-  '395173e132071fd9ba0a5358c0fcd303.jpg',
-  '5bfd516625730ff7f8fc3183473e2be2.jpg',
-  '8cf00a645bcc4ebe2a282ecaa8ec0ad6.jpg',
-  '9cb31e23751f9a8e7f25f32ea3f0e089.jpg',
-  '22abc12a9a9074841eafc24eae21128f.jpg',
-  '0db7b40ce5a1d0021f56fb8f6484f71f.jpg',
-  'a287f96d3f2b80c7288439de3d1ceedf.jpg',
-  '829ffc472525d115862441b5e012bef0.jpg',
-  'bc00edb8969117ff526ed05cd958b80c.jpg',
-  'ff3d91ead582e8b7a152679931daad5a.jpg',
-  '056fb93002c33eaa1763e4e880c2eecd.jpg',
-  '0ed4bc46f1b6c558d03abac15e3ac199.jpg',
-  'bb614cf2b38f2b212cc415c0cf57deee.jpg',
-  'cd1199f6cfd9a119850b2f34d49a1e9b.jpg',
-  'ce0766bc3ffa73fc87e8dfaf906738a9.jpg',
-  'd222aeef9959bbddd0ef5e8ee8976664.jpg',
-  'fe08c6a572f16d1240f67ba7bfd7db1c.jpg',
-  '126ec1d3128a6ef981a1c441bbf81f60.jpg',
-  '1d6eeb6b40e1892ad04c43cf08ec89a3.jpg',
-  '3c8bf758088e7183b09a03f7fcbfd6a9.jpg',
-  '6b7bdc87a5287ffe665ad959a29301ae.jpg',
-  '83ab4f60989d531b991915ff5eae456b.jpg',
-  'c0199910b1e772b84eea44b34d52c783.jpg',
-  '188a0ef5634fc8e5183570efd933d4cb.jpg',
-  '08c724ec311ec5e595cb366401e0d8ff.jpg',
-  '1f95638535f32016a47b0deacc01ec00.jpg',
-  '87e451f54c478d9a3a09bbc70e6de835.jpg',
-  '8af6dead5831ada33a771ca333ff9400.jpg',
-  '035a62b9d94630a5ac59f8fe1b8f1cc7.jpg',
-  '083fe810983b545beddc2af7c3d1f058.jpg',
-  '21a5b0ba6fdbd10a2f44c432306785db.jpg',
-  '38757946d4f77aa7f52552c06f54812b.jpg',
-  '48b9289351995dc5ce57d99323b5f4b0.jpg',
-  '501a58cd4c0ce74544201712fb90e356.jpg',
+  { src: '07c0f6eab1701c1d508901023512a096.jpg', alt: 'DJ VIC performing at a club night in Bangalore' },
+  { src: '298c07a92d4903cbabd91c0b2a16abd6.jpg', alt: 'DJ VIC behind the Pioneer CDJ decks at a live event' },
+  { src: '395173e132071fd9ba0a5358c0fcd303.jpg', alt: 'DJ VIC on stage at a wedding reception in Bangalore' },
+  { src: '5bfd516625730ff7f8fc3183473e2be2.jpg', alt: 'DJ VIC performing at a premium nightclub event' },
+  { src: '8cf00a645bcc4ebe2a282ecaa8ec0ad6.jpg', alt: 'DJ VIC performing an audio-visual set at a corporate event' },
+  { src: '9cb31e23751f9a8e7f25f32ea3f0e089.jpg', alt: 'DJ VIC with stage lighting at a high-energy club night' },
+  { src: '22abc12a9a9074841eafc24eae21128f.jpg', alt: 'DJ VIC at a rooftop bar event in Bangalore' },
+  { src: '0db7b40ce5a1d0021f56fb8f6484f71f.jpg', alt: 'DJ VIC performing at a sangeet night with colourful lighting' },
+  { src: 'a287f96d3f2b80c7288439de3d1ceedf.jpg', alt: 'DJ VIC behind the decks at a five-star hotel event' },
+  { src: '829ffc472525d115862441b5e012bef0.jpg', alt: 'DJ VIC at a festival stage performance in India' },
+  { src: 'bc00edb8969117ff526ed05cd958b80c.jpg', alt: 'DJ VIC mixing at a private event in Bangalore' },
+  { src: 'ff3d91ead582e8b7a152679931daad5a.jpg', alt: 'DJ VIC performing at a wedding cocktail hour' },
+  { src: '056fb93002c33eaa1763e4e880c2eecd.jpg', alt: 'DJ VIC performing with crowd visible at a club night' },
+  { src: '0ed4bc46f1b6c558d03abac15e3ac199.jpg', alt: 'DJ VIC on stage at a corporate gala evening' },
+  { src: 'bb614cf2b38f2b212cc415c0cf57deee.jpg', alt: 'DJ VIC at a brand activation event in India' },
+  { src: 'cd1199f6cfd9a119850b2f34d49a1e9b.jpg', alt: 'DJ VIC performing at a destination wedding celebration' },
+  { src: 'ce0766bc3ffa73fc87e8dfaf906738a9.jpg', alt: 'DJ VIC behind the decks at a late-night set in Bangalore' },
+  { src: 'd222aeef9959bbddd0ef5e8ee8976664.jpg', alt: 'DJ VIC at a high-energy dance floor event' },
+  { src: 'fe08c6a572f16d1240f67ba7bfd7db1c.jpg', alt: 'DJ VIC mixing at a birthday celebration event in Bangalore' },
+  { src: '126ec1d3128a6ef981a1c441bbf81f60.jpg', alt: 'DJ VIC performing at an award ceremony in Bangalore' },
+  { src: '1d6eeb6b40e1892ad04c43cf08ec89a3.jpg', alt: 'DJ VIC at a product launch event in India' },
+  { src: '3c8bf758088e7183b09a03f7fcbfd6a9.jpg', alt: 'DJ VIC on stage at an outdoor festival performance' },
+  { src: '6b7bdc87a5287ffe665ad959a29301ae.jpg', alt: 'DJ VIC performing at a luxury wedding venue' },
+  { src: '83ab4f60989d531b991915ff5eae456b.jpg', alt: 'DJ VIC at a corporate annual day celebration' },
+  { src: 'c0199910b1e772b84eea44b34d52c783.jpg', alt: 'DJ VIC behind the decks at a themed party event' },
+  { src: '188a0ef5634fc8e5183570efd933d4cb.jpg', alt: 'DJ VIC performing at a Hyatt hotel event in Bangalore' },
+  { src: '08c724ec311ec5e595cb366401e0d8ff.jpg', alt: 'DJ VIC at an anniversary celebration event' },
+  { src: '1f95638535f32016a47b0deacc01ec00.jpg', alt: 'DJ VIC performing at a Goa beach party' },
+  { src: '87e451f54c478d9a3a09bbc70e6de835.jpg', alt: 'DJ VIC at a club night with DJ booth lighting' },
+  { src: '8af6dead5831ada33a771ca333ff9400.jpg', alt: 'DJ VIC mixing at an international venue performance' },
+  { src: '035a62b9d94630a5ac59f8fe1b8f1cc7.jpg', alt: 'DJ VIC at a premium bar event in Bangalore' },
+  { src: '083fe810983b545beddc2af7c3d1f058.jpg', alt: 'DJ VIC performing at a corporate party in India' },
+  { src: '21a5b0ba6fdbd10a2f44c432306785db.jpg', alt: 'DJ VIC on the decks at a wedding sangeet night' },
+  { src: '38757946d4f77aa7f52552c06f54812b.jpg', alt: 'DJ VIC performing at a large-format live event' },
+  { src: '48b9289351995dc5ce57d99323b5f4b0.jpg', alt: 'DJ VIC at a concert stage performance' },
+  { src: '501a58cd4c0ce74544201712fb90e356.jpg', alt: 'DJ VIC at a rooftop event in Bangalore' },
 ];
 ---
 
@@ -63,18 +63,21 @@ const photos = [
 
     <section id="gallery">
       <div class="photo-grid">
-        {photos.map((src) => (
+        {photos.map((photo) => (
           <div
             class="photo-item"
-            data-src={`${BASE}${src}`}
+            data-src={`${BASE}${photo.src}`}
+            data-alt={photo.alt}
             role="button"
             tabindex="0"
-            aria-label="View photo — DJ VIC"
+            aria-label={`View photo — ${photo.alt}`}
           >
             <img
-              src={`${BASE}${src}`}
-              alt="DJ VIC — Live Event"
+              src={`${BASE}${photo.src}`}
+              alt={photo.alt}
               loading="lazy"
+              width="800"
+              height="600"
             />
           </div>
         ))}
@@ -108,7 +111,7 @@ const photos = [
       <button id="lb-prev" aria-label="Previous photo">&#8592;</button>
       <button id="lb-next" aria-label="Next photo">&#8594;</button>
       <div id="lb-img-wrap">
-        <img id="lb-img" src="" alt="" />
+        <img id="lb-img" src="" alt="" width="1200" height="900" />
       </div>
       <div id="lb-counter"></div>
     </div>
@@ -410,7 +413,7 @@ const photos = [
   function show() {
     const item = items[current];
     lbImg.src = item.dataset.src;
-    lbImg.alt = 'DJ VIC — Live Event';
+    lbImg.alt = item.dataset.alt || 'DJ VIC — Live Performance';
     lbCounter.textContent = (current + 1) + ' / ' + items.length;
   }
 

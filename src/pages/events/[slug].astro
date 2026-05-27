@@ -57,8 +57,11 @@ const successUrl  = `https://djvicofficial.com/events/${event.id}/?rsvp=success`
         <div class="event-hero-img">
           <img
             src={event.data.creativeImage}
-            alt={event.data.title}
+            alt={`Event flyer — ${event.data.title} at ${event.data.venue}`}
             class="event-flyer"
+            loading="lazy"
+            width="800"
+            height="800"
           />
         </div>
       )}

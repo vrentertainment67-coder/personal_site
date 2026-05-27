@@ -143,9 +143,11 @@ const schema = {
               <a href={`/remixes/${rel.id}/`} class="related-card">
                 <div class="related-thumb">
                   <img
-                    src={`https://img.youtube.com/vi/${rel.data.youtubeId}/maxresdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${rel.data.youtubeId}/hqdefault.jpg`}
                     alt={rel.data.title}
                     loading="lazy"
+                    width="480"
+                    height="360"
                   />
                   <div class="related-play">
                     <svg viewBox="0 0 68 48" width="40" height="28">
