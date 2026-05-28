@@ -64,15 +64,20 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <article id="blog-post">
 
       <header class="post-header">
-        <a href={`${base}/blog/`} class="back-link">&larr; All Posts</a>
-        <div class="post-meta">
+        <a href={`${base}/blog/`} class="post-back">← ALL POSTS</a>
+        <div class="post-meta-row">
           <span class="post-date">{(post.data.publishDate || new Date(post.data.date!)).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-          {post.data.tags && post.data.tags.map((tag: string) => (
-            <span class="post-tag">{tag}</span>
-          ))}
+          <span class="post-meta-sep">·</span>
+          <span class="post-author">By {post.data.author || 'DJ VIC'}</span>
         </div>
-        <h1>{post.data.title}</h1>
-        <p class="post-byline">By DJ VIC</p>
+        {post.data.tags && post.data.tags.length > 0 && (
+          <div class="post-tags">
+            {post.data.tags.map((tag: string) => (
+              <span class="post-tag">{tag}</span>
+            ))}
+          </div>
+        )}
+        <h1 class="post-title">{post.data.title}</h1>
       </header>
 
       <div class="post-body">
@@ -111,64 +116,84 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     margin-bottom: 3rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
   }
 
+  /* Back link — top of header, small and subtle */
+  .post-back {
+    display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #8A8878;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    transition: color 0.2s;
+  }
+  .post-back:hover { color: #C9A84C; }
+
+  /* Meta row: date · author */
+  .post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: #8A8878;
+  }
+  .post-meta-sep { color: #2a2a2a; }
+  .post-date { color: #8A8878; }
+  .post-author { color: #C9A84C; }
+
+  /* Tags — horizontal pills, wrapping row */
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .post-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: #9A7A32;
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+  }
+
+  /* Title — off-white, correct weight for Bebas Neue */
+  .post-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem, 5.5vw, 3.75rem);
+    font-weight: 400;
+    color: #E8E8E0;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  /* Footer back link — kept separate from header .post-back */
   .back-link {
     font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    font-weight: 400;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.35);
     text-decoration: none;
     transition: color 0.2s;
     display: inline-block;
-    margin-bottom: 2rem;
+    font-family: 'DM Sans', sans-serif;
   }
-
   .back-link:hover { color: var(--gold); }
-
-  .post-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.25rem;
-  }
-
-  .post-date {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-  }
-
-  .post-tag {
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--gold);
-    background: rgba(201,168,76,0.1);
-    padding: 2px 8px;
-    border-radius: 2px;
-  }
-
-  .post-header h1 {
-    font-size: clamp(1.8rem, 4vw, 3rem);
-    color: var(--white);
-    line-height: 1.1;
-    margin-bottom: 0.75rem;
-  }
-
-  .post-byline {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.35);
-    margin: 0;
-    text-transform: uppercase;
-  }
 
   /* Article body typography */
   .post-body {

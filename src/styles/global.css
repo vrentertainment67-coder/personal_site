@@ -72,6 +72,7 @@ ul {
    ============================================================ */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
+  font-weight: 400; /* Bebas Neue is single-weight — prevent synthetic bold */
   letter-spacing: 0.04em;
   line-height: 1.0;
   text-transform: uppercase;
