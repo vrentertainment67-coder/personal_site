@@ -1,0 +1,54 @@
+---
+interface Props {
+  variant?: 'insight' | 'warning' | 'tip';
+  label?: string;
+}
+const { variant = 'insight', label } = Astro.props;
+
+const config = {
+  insight: { accent: '#C9A84C', icon: '◆', bg: 'rgba(201,168,76,0.05)', border: 'rgba(201,168,76,0.25)' },
+  warning: { accent: '#FF3B3B', icon: '▲', bg: 'rgba(255,59,59,0.05)',  border: 'rgba(255,59,59,0.25)' },
+  tip:     { accent: '#4CAF87', icon: '●', bg: 'rgba(76,175,135,0.05)', border: 'rgba(76,175,135,0.25)' },
+};
+const c = config[variant];
+const displayLabel = label ?? variant.toUpperCase();
+---
+
+<div class="callout" style={`background:${c.bg}; border-color:${c.border}; border-left-color:${c.accent};`}>
+  <div class="callout-header" style={`color:${c.accent};`}>
+    <span class="callout-icon">{c.icon}</span>
+    <span class="callout-label">{displayLabel}</span>
+  </div>
+  <div class="callout-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .callout {
+    margin: 28px 0;
+    padding: 20px 24px;
+    border: 1px solid;
+    border-left: 3px solid;
+    border-radius: 2px;
+  }
+  .callout-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .callout-icon { font-size: 10px; }
+  .callout-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+  }
+  .callout-body {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #A8A898;
+  }
+</style>

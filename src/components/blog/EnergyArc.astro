@@ -1,0 +1,79 @@
+---
+interface Phase {
+  label: string;
+  sub: string;
+  energy: number;
+  color: string;
+}
+interface Props { phases: Phase[]; }
+const { phases } = Astro.props;
+---
+
+<div class="energy-arc">
+  <div class="arc-title">SANGEET NIGHT — ENERGY ARC</div>
+  <div class="arc-bars">
+    {phases.map(p => (
+      <div class="arc-bar-wrap">
+        <div class="arc-bar" style={`height:${p.energy}px; background:linear-gradient(to top, ${p.color}CC, ${p.color}44); border-color:${p.color}55;`}>
+          <span class="arc-pct">{p.energy}%</span>
+        </div>
+      </div>
+    ))}
+  </div>
+  <div class="arc-labels">
+    {phases.map(p => (
+      <div class="arc-label">
+        <div style={`color:${p.color}; font-family:'DM Sans',sans-serif; font-weight:600; font-size:10px;`}>{p.label}</div>
+        <div style="font-family:'DM Sans',sans-serif; font-size:9px; color:#8A8878; margin-top:2px;">{p.sub}</div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .energy-arc {
+    margin: 32px 0;
+    padding: 24px;
+    background: #111111;
+    border: 1px solid #1E1E1E;
+    border-radius: 2px;
+  }
+  .arc-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: #8A8878;
+    margin-bottom: 20px;
+  }
+  .arc-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 120px;
+  }
+  .arc-bar-wrap { flex: 1; display: flex; align-items: flex-end; }
+  .arc-bar {
+    width: 100%;
+    border: 1px solid;
+    border-radius: 2px 2px 0 0;
+    position: relative;
+  }
+  .arc-pct {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+  }
+  .arc-labels {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    border-top: 1px solid #1E1E1E;
+    padding-top: 10px;
+    text-align: center;
+  }
+  .arc-label { flex: 1; }
+</style>

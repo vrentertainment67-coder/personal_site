@@ -6,10 +6,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Layout
-  title="Nightlife DJ in Bangalore — Club Nights & Bar Events | DJ VIC"
-  description="DJ VIC is one of Bangalore's top nightlife DJs. Known for high-energy club sets and audio-visual performances spanning Bollywood, hip-hop, EDM, and commercial house."
+  title="Nightlife & Club DJ Bangalore | DJ VIC Performances"
+  description="DJ VIC brings high-energy audio-visual club sets to Bangalore's top venues. Open-format sets spanning Bollywood, hip-hop, EDM, and house. Book now."
   canonical="https://djvicofficial.com/nightlife/"
-  schema={{
+  schema={[{
     "@context": "https://schema.org",
     "@type": "Service",
     "name": "Club & Nightlife DJ Bangalore — DJ VIC",
@@ -18,7 +18,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     "areaServed": ["Bangalore", "India"],
     "description": "High-energy club sets spanning Bollywood, hip-hop, EDM, and commercial house for Bangalore's top bars and clubs.",
     "url": "https://djvicofficial.com/nightlife/"
-  }}
+  }, {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home",            "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Club & Nightlife", "item": "https://djvicofficial.com/nightlife/" }
+    ]
+  }]}
 >
   <Nav />
   <main id="main-content">

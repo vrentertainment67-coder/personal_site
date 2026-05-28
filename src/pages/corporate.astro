@@ -6,19 +6,26 @@ import Footer from '../components/Footer.astro';
 ---
 
 <Layout
-  title="Corporate DJ in Bangalore — Conferences, Product Launches & Annual Days | DJ VIC"
-  description="DJ VIC delivers premium DJ + MC services for corporate events in Bangalore. Trusted by SAP, Infosys, KPMG & more. Book for conferences, product launches, annual days, and brand activations."
+  title="Corporate Event DJ Bangalore | DJ VIC | SAP Apple KPMG"
+  description="Premium corporate DJ in Bangalore trusted by SAP, Apple, KPMG & 100+ brands. Conferences, product launches, annual days, and galas. Get a quote now."
   ogTitle="DJ VIC — Corporate Event DJ · Trusted by 100+ Brands Across India"
   ogDescription="Premium corporate DJ trusted by SAP, Apple, KPMG, JPMorgan and 100+ brands for product launches, annual days, conferences, and gala nights across India."
   ogImage="https://djvicofficial.com/images/og-corporate.jpg"
-  schema={{
+  schema={[{
     "@context": "https://schema.org",
     "@type": "Service",
     "name": "Corporate Event DJ Bangalore",
     "provider": { "@id": "https://djvicofficial.com/#business" },
     "description": "Premium corporate DJ + MC for conferences, product launches, annual days and galas. Trusted by SAP, Apple, KPMG, JPMorgan.",
     "areaServed": "Bangalore, India"
-  }}
+  }, {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home",             "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Corporate Events", "item": "https://djvicofficial.com/corporate/" }
+    ]
+  }]}
 >
   <Nav />
 
@@ -237,6 +244,14 @@ import Footer from '../components/Footer.astro';
       </p>
       <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
     </section>
+
+    <div class="corp-explore-strip">
+      <span class="corp-explore-label">Also available for</span>
+      <a href="/nightlife/">Club &amp; Nightlife &rarr;</a>
+      <a href="/private-events/">Private Events &rarr;</a>
+      <a href="/festivals/">Festivals &rarr;</a>
+      <a href="/weddings/">Weddings &rarr;</a>
+    </div>
 
   </main>
 
@@ -715,4 +730,34 @@ import Footer from '../components/Footer.astro';
       padding: 2.5rem 1.5rem;
     }
   }
+
+  /* ─── Cross-link explore strip ──────────────────── */
+  .corp-explore-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding: 1.75rem var(--side-pad, 2.5rem);
+    border-top: 1px solid rgba(201,168,76,0.08);
+    max-width: var(--max-width);
+    margin-inline: auto;
+  }
+  .corp-explore-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.22);
+    margin-right: 0.5rem;
+  }
+  .corp-explore-strip a {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold, #c9a84c);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .corp-explore-strip a:hover { color: var(--gold-light, #e0c060); }
 </style>

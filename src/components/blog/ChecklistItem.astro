@@ -1,0 +1,35 @@
+---
+---
+<div class="checklist-item">
+  <div class="check-box">
+    <div class="check-inner"></div>
+  </div>
+  <div class="check-text"><slot /></div>
+</div>
+
+<style>
+  .checklist-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #1E1E1E;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #A8A898;
+    line-height: 1.6;
+  }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 1px solid #C9A84C;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .check-inner {
+    width: 8px; height: 8px;
+    background: rgba(201,168,76,0.3);
+  }
+</style>

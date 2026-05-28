@@ -21,6 +21,7 @@ const remixes = [
   { id: "5oA311R6Wkg", slug: "tamma-tamma-makeba",                        title: "Tamma Tamma × Makeba",                                       detail: true },
   { id: "PxgvwE1nZmw", slug: "jimmy-disco-edit",                          title: "Jimmy (VIC Disco Edit)",                                     detail: true },
   { id: "4oTBe25wvE0", slug: "ghungroo-sun-n-sand-rework",               title: "Ghungroo (Sun n Sand Rework)",                               detail: true },
+  { id: "Yx3pD4uhJRE", slug: "titliaan-progressive-rework",              title: "Titliaan (Progressive Rework)",                               detail: true },
   // ── Additional tracks (caption links to YouTube) ──────────────────────────
   { id: "Bw0tMjMYpEw", slug: "uptown-funk-muqabala",                      title: "Uptown Funk × Muqabala" },
   { id: "Ci4CtatRRso", slug: "naina-whistle",                             title: "Naina × Whistle" },
@@ -75,16 +76,26 @@ const platforms = [
 ---
 
 <Layout
-  title="Free DJ Remixes & Mashups Download — DJ VIC | Bangalore"
-  description="Stream and download free DJ mashups and remixes by DJ VIC — Bangalore's leading DJ and Universal Music partner. English-Bollywood fusion mixes on Audiomack, Mixcloud, and Hearthis."
-  schema={{
-    "@context": "https://schema.org",
-    "@type": "MusicPlaylist",
-    "name": "DJ VIC Remixes & Mashups",
-    "description": "Free DJ mashups and remixes by DJ VIC — English-Bollywood fusion mixes.",
-    "url": "https://djvicofficial.com/remixes/",
-    "author": { "@id": "https://djvicofficial.com/#person" }
-  }}
+  title="Bollywood Mashups & Remixes | DJ VIC Official"
+  description="Stream and download free Bollywood mashups and remixes by DJ VIC — Universal Music partner. English-Bollywood fusion mixes on YouTube and Audiomack."
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "MusicPlaylist",
+      "name": "DJ VIC Remixes & Mashups",
+      "description": "Free DJ mashups and remixes by DJ VIC — English-Bollywood fusion mixes.",
+      "url": "https://djvicofficial.com/remixes/",
+      "author": { "@id": "https://djvicofficial.com/#person" }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",    "item": "https://djvicofficial.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Remixes", "item": "https://djvicofficial.com/remixes/" }
+      ]
+    }
+  ]}
 >
   <Nav />
 
@@ -152,6 +163,11 @@ const platforms = [
       <h2>Want DJ VIC at Your Event?</h2>
       <p class="section-sub">Hear what he can do — then book him for your wedding, corporate night, or club event.</p>
       <a href="/#contact" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
+      <div class="remixes-explore">
+        <a href="/weddings/">Wedding DJ Bangalore &rarr;</a>
+        <a href="/thevicfix/">The VIC Fix Podcast &rarr;</a>
+        <a href="/nightlife/">Club &amp; Nightlife DJ &rarr;</a>
+      </div>
     </section>
 
   </main>
@@ -398,6 +414,28 @@ const platforms = [
     color: #000;
     transform: translateY(-1px);
   }
+
+  /* ─── Remixes cross-link explore strip ───────── */
+  .remixes-explore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+  .remixes-explore a {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .remixes-explore a:hover { color: var(--gold, #c9a84c); }
 
   /* ─── Responsive ──────────────────────────────── */
   @media (max-width: 1100px) {

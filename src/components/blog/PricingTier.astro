@@ -1,0 +1,92 @@
+---
+interface Props {
+  tier: 'Budget' | 'Mid' | 'Premium';
+  range: string;
+  tagline: string;
+  includes: string[];
+  highlight?: boolean;
+}
+const { tier, range, tagline, includes, highlight = false } = Astro.props;
+
+const tiers = {
+  Budget:  { accent: '#8A8878', label: 'BUDGET' },
+  Mid:     { accent: '#4a6fa5', label: 'MID-RANGE' },
+  Premium: { accent: '#C9A84C', label: 'PREMIUM' },
+};
+const t = tiers[tier];
+---
+
+<div class={`pricing-tier ${highlight ? 'highlight' : ''}`}
+  style={`border-top-color:${t.accent}; ${highlight ? 'background:rgba(201,168,76,0.06); border-color:rgba(201,168,76,0.35);' : ''}`}>
+  {highlight && <div class="most-booked">MOST BOOKED</div>}
+  <div class="tier-label" style={`color:${t.accent}`}>{t.label}</div>
+  <div class="tier-range">{range}</div>
+  <div class="tier-tagline">{tagline}</div>
+  <ul class="tier-includes">
+    {includes.map(item => (
+      <li style={`color:${t.accent}`}><span>{item}</span></li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .pricing-tier {
+    flex: 1;
+    min-width: 200px;
+    padding: 20px;
+    background: #111111;
+    border: 1px solid #1E1E1E;
+    border-top: 3px solid;
+    border-radius: 2px;
+    position: relative;
+  }
+  .most-booked {
+    position: absolute;
+    top: -1px; right: 16px;
+    background: #C9A84C;
+    color: #0A0A0A;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+  }
+  .tier-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+  .tier-range {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: #E8E8E0;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .tier-tagline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #8A8878;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #1E1E1E;
+    padding-bottom: 14px;
+  }
+  .tier-includes {
+    list-style: none;
+    padding: 0; margin: 0;
+  }
+  .tier-includes li {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .tier-includes li::before {
+    content: '—';
+    flex-shrink: 0;
+  }
+  .tier-includes li span { color: #A8A898; }
+</style>

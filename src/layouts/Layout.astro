@@ -46,11 +46,13 @@ export type Props = BaseHeadProps;
             "latitude": 12.9716,
             "longitude": 77.5946
           },
-          "priceRange": "₹₹₹",
+          "priceRange": "₹₹₹₹",
           "description": "DJ VIC is an international DJ, producer, and remixer based in Bangalore. 19+ years performing across 18 countries at weddings, corporate events, clubs, and festivals.",
           "sameAs": [
-            "https://instagram.djvicofficial.com",
-            "https://www.youtube.com/@thedjvicofficial"
+            "https://www.instagram.com/djvicofficial",
+            "https://www.youtube.com/@thedjvicofficial",
+            "https://www.facebook.com/djvicofficial",
+            "https://audiomack.com/vrentertainment67"
           ]
         },
         {
@@ -59,8 +61,10 @@ export type Props = BaseHeadProps;
           "name": "DJ VIC",
           "url": "https://djvicofficial.com",
           "jobTitle": "DJ, Producer & Remixer",
+          "image": "https://djvicofficial.com/images/og-default.jpg",
+          "description": "International DJ, producer, and remixer based in Bangalore with 19+ years of experience across 18 countries. Universal Music partner.",
           "worksFor": { "@id": "https://djvicofficial.com/#business" },
-          "knowsAbout": ["DJing", "Music Production", "Remixing", "Wedding Entertainment", "Corporate Events", "Nightlife"],
+          "knowsAbout": ["DJing", "Music Production", "Remixing", "Wedding Entertainment", "Corporate Events", "Nightlife", "Podcasting"],
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "Bangalore",
@@ -68,8 +72,10 @@ export type Props = BaseHeadProps;
             "addressCountry": "IN"
           },
           "sameAs": [
-            "https://instagram.djvicofficial.com",
-            "https://www.youtube.com/@thedjvicofficial"
+            "https://www.instagram.com/djvicofficial",
+            "https://www.youtube.com/@thedjvicofficial",
+            "https://www.facebook.com/djvicofficial",
+            "https://audiomack.com/vrentertainment67"
           ]
         }
       ]
@@ -84,7 +90,7 @@ export type Props = BaseHeadProps;
     <!-- Mobile floating CTA bar — WhatsApp primary, Book secondary -->
     <div class="mob-float-bar" id="mob-float-bar" aria-label="Quick booking actions">
       <a
-        href="https://wa.me/919611711677?text=Hi+DJ+VIC%2C+I+saw+your+website+and+would+like+to+enquire+about+a+booking."
+        href="https://wa.me/919611711677?text=Hi+VIC%21+I%27d+like+to+enquire+about+booking+you+for+my+event."
         target="_blank"
         rel="noopener noreferrer"
         class="mfb-wa"
@@ -93,7 +99,8 @@ export type Props = BaseHeadProps;
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
         WhatsApp VIC
       </a>
-      <a href="/book/" class="mfb-book">Book VIC</a>
+      <a href="/book/" id="mfb-book-btn" class="mfb-book">Book Now</a>
+      <button id="mfb-dismiss-btn" class="mfb-dismiss" aria-label="Dismiss booking bar">×</button>
     </div>
 
     <aside class="social-rail" aria-label="Social media links">
@@ -132,12 +139,39 @@ export type Props = BaseHeadProps;
     padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
     gap: 0.6rem;
     align-items: stretch;
+    transform: translateY(110%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   @media (max-width: 768px) {
     .mob-float-bar { display: flex; }
+    .mob-float-bar.is-visible { transform: translateY(0); }
+    .mob-float-bar.is-hidden { display: none !important; }
     body { padding-bottom: 72px; }
   }
+
+  .mfb-dismiss {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    width: 44px;
+    min-width: 44px;
+    align-self: stretch;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: color 0.2s, background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mfb-dismiss:hover,
+  .mfb-dismiss:active { color: #fff; background: rgba(255,255,255,0.06); }
 
   .mfb-wa {
     flex: 1;
@@ -204,3 +238,85 @@ export type Props = BaseHeadProps;
     top: 1rem;
   }
 </style>
+
+<script is:inline>
+  (function () {
+    var _listenersAdded = false;
+
+    function initMobFloatBar() {
+      var bar = document.getElementById('mob-float-bar');
+      if (!bar) return;
+
+      // Cancel any pending show timer from a previous page
+      if (window._mfbTimer) { clearTimeout(window._mfbTimer); window._mfbTimer = null; }
+
+      // Reset classes for this page load
+      bar.classList.remove('is-visible');
+      bar.classList.remove('is-hidden');
+
+      // Hide entirely on the booking page (no redundant CTA)
+      var path = window.location.pathname;
+      if (/\/book\/?$/.test(path)) {
+        bar.classList.add('is-hidden');
+        return;
+      }
+
+      // Honour session-level dismiss
+      try {
+        if (sessionStorage.getItem('mfb-dismissed') === '1') {
+          bar.classList.add('is-hidden');
+          return;
+        }
+      } catch (e) {}
+
+      // Slide up after 3-second delay
+      window._mfbTimer = setTimeout(function () {
+        var b = document.getElementById('mob-float-bar');
+        if (b) b.classList.add('is-visible');
+      }, 3000);
+    }
+
+    function addListeners() {
+      if (_listenersAdded) return;
+      _listenersAdded = true;
+
+      document.addEventListener('click', function (e) {
+        // Walk up the DOM to handle clicks on SVG children etc.
+        var tgt = e.target;
+        while (tgt && tgt !== document.body) {
+          // ── Dismiss ──────────────────────────────────────────────
+          if (tgt.id === 'mfb-dismiss-btn') {
+            var bar = document.getElementById('mob-float-bar');
+            if (bar) {
+              if (window._mfbTimer) { clearTimeout(window._mfbTimer); window._mfbTimer = null; }
+              bar.classList.remove('is-visible');
+              // Wait for slide-down animation before hiding from DOM
+              setTimeout(function () {
+                var b = document.getElementById('mob-float-bar');
+                if (b) b.classList.add('is-hidden');
+              }, 460);
+            }
+            try { sessionStorage.setItem('mfb-dismissed', '1'); } catch (e) {}
+            return;
+          }
+          // ── Book Now — scroll to #contact if available ───────────
+          if (tgt.id === 'mfb-book-btn') {
+            var contact = document.getElementById('contact');
+            if (contact) {
+              e.preventDefault();
+              contact.scrollIntoView({ behavior: 'smooth' });
+            }
+            return;
+          }
+          tgt = tgt.parentElement;
+        }
+      });
+    }
+
+    // astro:page-load fires on initial load AND after every View Transition
+    document.addEventListener('astro:page-load', function () {
+      addListeners();
+      initMobFloatBar();
+    });
+  })();
+</script>
