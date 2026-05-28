@@ -94,6 +94,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 </Layout>
 
 <style>
+  /* Kill the body's green radial gradient on blog post pages */
+  main#main-content {
+    background: #0A0A0A;
+    position: relative;
+    z-index: 0;
+  }
+
   #blog-post {
     max-width: 720px;
     margin-inline: auto;

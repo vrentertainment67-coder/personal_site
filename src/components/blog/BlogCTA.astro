@@ -13,7 +13,7 @@ const { heading, sub, cta, href } = Astro.props;
     <div class="cta-heading">{heading}</div>
     <div class="cta-sub">{sub}</div>
   </div>
-  <a href={href} class="cta-btn">{cta} →</a>
+  <a href={href} class="cta-btn" role="button" aria-label={cta}>{cta} →</a>
 </div>
 
 <style>
@@ -21,7 +21,7 @@ const { heading, sub, cta, href } = Astro.props;
     margin-top: 48px;
     padding: 28px;
     background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, transparent 100%);
-    border: 1px solid rgba(201,168,76,0.2);
+    border: 1px solid rgba(201,168,76,0.35);
     border-radius: 2px;
     display: flex;
     justify-content: space-between;
@@ -29,29 +29,42 @@ const { heading, sub, cta, href } = Astro.props;
     flex-wrap: wrap;
     gap: 16px;
   }
+  .cta-text { flex: 1; }
   .cta-heading {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 22px;
     color: #E8E8E0;
     letter-spacing: 0.03em;
+    line-height: 1.2;
   }
   .cta-sub {
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     color: #8A8878;
-    margin-top: 4px;
+    margin-top: 6px;
   }
   .cta-btn {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 14px;
-    letter-spacing: 0.1em;
-    color: #0A0A0A;
-    background: #C9A84C;
-    padding: 12px 24px;
-    text-decoration: none;
-    border-radius: 2px;
-    white-space: nowrap;
-    transition: background 0.2s;
+    display: inline-block !important;
+    font-family: 'Bebas Neue', sans-serif !important;
+    font-size: 15px !important;
+    letter-spacing: 0.12em !important;
+    color: #0A0A0A !important;
+    background: #C9A84C !important;
+    padding: 14px 28px !important;
+    text-decoration: none !important;
+    border-radius: 2px !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: background 0.2s ease, transform 0.1s ease !important;
   }
-  .cta-btn:hover { background: #d4b45a; }
+  .cta-btn:hover {
+    background: #d4b45a !important;
+    color: #0A0A0A !important;
+    transform: translateY(-1px);
+  }
+  .cta-btn:visited {
+    color: #0A0A0A !important;
+  }
 </style>
