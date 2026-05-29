@@ -239,6 +239,49 @@ export type Props = BaseHeadProps;
   }
 </style>
 
+<!--
+  Formspree → WhatsApp bridge.
+  Mirrors any Formspree form submit to the Supabase Edge Function via sendBeacon,
+  so DJ VIC gets a WhatsApp ping (via CallMeBot) in addition to the Formspree email.
+  - Listens on `document` so it survives Astro view transitions (document persists).
+  - sendBeacon doesn't block the actual form POST to Formspree.
+  - __vicNotifyWired guard prevents re-attaching listeners during view transitions.
+  - The function URL is the same shape for all Supabase Edge Functions:
+      https://<project-ref>.supabase.co/functions/v1/<function-name>
+-->
+<script is:inline>
+  (function () {
+    if (window.__vicNotifyWired) return;
+    window.__vicNotifyWired = true;
+
+    var NOTIFY_URL = 'https://jftnhuutttmccmqnnybf.supabase.co/functions/v1/notify';
+
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (!form || form.tagName !== 'FORM') return;
+      var action = (form.getAttribute('action') || '').toLowerCase();
+      if (action.indexOf('formspree.io') === -1) return;
+
+      try {
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function (value, key) {
+          // Skip Formspree internals and honeypot
+          if (key.charAt(0) === '_') return;
+          data[key] = typeof value === 'string' ? value : String(value);
+        });
+        data._page = location.pathname + location.search;
+        data._title = document.title;
+
+        var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        navigator.sendBeacon(NOTIFY_URL, blob);
+      } catch (err) {
+        // Never block the real submit on a notification failure
+      }
+    }, true); // capture phase — fires before the form's own listeners
+  })();
+</script>
+
 <script is:inline>
   (function () {
     var _listenersAdded = false;
