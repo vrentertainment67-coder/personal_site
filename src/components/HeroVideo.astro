@@ -1,0 +1,450 @@
+---
+// No props needed — all config is inline
+---
+<section class="hero" id="hero-video" aria-label="Hero section">
+  <!-- ── VIDEO BACKGROUND ── -->
+  <div class="hero-bg" aria-hidden="true">
+    <video
+      id="hero-vid"
+      class="hero-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      poster="/hero-poster.webp"
+    >
+      <source src="/hero-video.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <!-- ── UNMUTE TOGGLE ── -->
+  <button
+    class="hero-sound-btn"
+    id="hero-sound-btn"
+    aria-label="Unmute video"
+    aria-pressed="false"
+  >
+    <span class="sound-icon sound-off" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <line x1="23" y1="9" x2="17" y2="15"/>
+        <line x1="17" y1="9" x2="23" y2="15"/>
+      </svg>
+    </span>
+    <span class="sound-icon sound-on" aria-hidden="true" style="display:none">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+    </span>
+  </button>
+
+  <!-- ── HERO CONTENT ── -->
+  <div class="hero-content">
+    <p class="hero-eyebrow">DJ · Producer · Remixer</p>
+    <h1 class="hero-headline">
+      Some nights,<br>the music is<br>the memory.
+    </h1>
+    <p class="hero-sub">
+      International DJ, producer, and remixer.<br>
+      Audio-visual performances from Bangalore to the world.
+    </p>
+    <p class="hero-location">
+      Based in Bangalore · Available across India &amp; internationally
+    </p>
+    <div class="hero-ctas">
+      <a href="#contact" class="btn-primary">Book VIC</a>
+      <a href="/remixes/" class="btn-secondary">Watch Remixes</a>
+    </div>
+  </div>
+
+  <!-- ── SCROLL INDICATOR ── -->
+  <div class="hero-scroll" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+
+  <!-- ── AMBIENT AUDIO (for NOW PLAYING bar) ── -->
+  <audio id="hero-audio" loop preload="none">
+    <source src="/hero-audio.mp3" type="audio/mpeg" />
+  </audio>
+</section>
+
+<!-- ───────────────── STYLES ───────────────── -->
+<style>
+  /* ── Layout ── */
+  /* Note: global.css has a `section { max-width / margin-inline / padding / background-image }`
+     rule that would otherwise constrain the hero into a centered 1100px box. We override all
+     four properties here so the hero spans the full viewport edge-to-edge. */
+  .hero {
+    position: relative;
+    width: 100vw;
+    max-width: none;
+    margin-inline: 0;
+    margin-left: calc(50% - 50vw); /* break out of any parent that's narrower than the viewport */
+    min-height: 70vh;              /* shorter than full-screen — leaves room for content below the fold */
+    min-height: 70svh;             /* svh fallback wins where supported (respects mobile chrome) */
+    display: flex;
+    align-items: flex-end;         /* content sits in lower two-thirds — more cinematic */
+    padding: 0 0 56px;             /* a bit less bottom padding now that the hero is shorter */
+    overflow: hidden;
+    background-image: none;        /* override global section's gold radial gradient */
+  }
+
+  /* ── Video layer ── */
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+    /* Dim the source video so bright/colored frames don't fight white text. */
+    filter: brightness(0.58) saturate(0.92);
+  }
+
+  /* ── Gradient overlay ──
+     Two-layer overlay:
+       1. A vertical gradient that stays dark at top and bottom (text legibility)
+          and lifts in the middle (so the video still feels present).
+       2. A horizontal gradient that darkens the left half — where the
+          headline sits — without pulling the right side down too. */
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.55) 0%,
+        rgba(0, 0, 0, 0.15) 60%,
+        rgba(0, 0, 0, 0.05) 100%
+      ),
+      linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.45) 0%,
+        rgba(0, 0, 0, 0.20) 35%,
+        rgba(0, 0, 0, 0.40) 65%,
+        rgba(0, 0, 0, 0.85) 100%
+      );
+  }
+
+  /* ── Content ── */
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 860px;
+    padding: 0 48px;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .hero-headline {
+    font-size: clamp(42px, 7vw, 88px);
+    font-weight: 300;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    margin-bottom: 24px;
+  }
+
+  .hero-sub {
+    font-size: clamp(15px, 1.8vw, 18px);
+    color: rgba(255, 255, 255, 0.70);
+    line-height: 1.65;
+    margin-bottom: 12px;
+    font-weight: 300;
+  }
+
+  .hero-location {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.40);
+    margin-bottom: 36px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── CTAs ── */
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    height: 52px;
+    padding: 0 32px;
+    background: var(--gold, #c9a84c);
+    color: #0a0a0a;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover {
+    background: var(--gold-light, #e2c475);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    height: 52px;
+    padding: 0 32px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
+    transition: border-color 0.2s, color 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.70);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  /* ── Unmute button — bottom-right of hero ── */
+  .hero-sound-btn {
+    position: absolute;
+    bottom: 32px;
+    right: 48px;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: rgba(255, 255, 255, 0.80);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .hero-sound-btn:hover {
+    background: rgba(0, 0, 0, 0.65);
+    border-color: rgba(255, 255, 255, 0.40);
+    color: #ffffff;
+  }
+
+  /* ── Scroll indicator — bottom-center, between CTAs and unmute btn ── */
+  .hero-scroll {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;          /* don't intercept clicks */
+  }
+  .hero-scroll span {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    writing-mode: vertical-rl;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.20);
+    position: relative;
+    overflow: hidden;
+  }
+  .scroll-line::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.70);
+    animation: scroll-drop 2s ease-in-out infinite;
+  }
+  @keyframes scroll-drop {
+    0%   { top: -100%; }
+    100% { top: 100%; }
+  }
+
+  /* ───── MOBILE ───── */
+  @media (max-width: 768px) {
+    .hero {
+      min-height: 75vh;     /* slightly taller on mobile — text stacks more */
+      min-height: 75svh;
+      padding: 0 0 88px;    /* extra padding clears the sticky bottom CTA bar */
+      align-items: flex-end;
+    }
+    .hero-content {
+      padding: 0 24px;
+    }
+    .hero-headline {
+      font-size: clamp(36px, 11vw, 54px);
+    }
+    .hero-sub {
+      font-size: 15px;
+    }
+    .hero-ctas {
+      gap: 12px;
+    }
+    /* On small screens make both buttons full-width */
+    .btn-primary,
+    .btn-secondary {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+    }
+    /* Lift unmute btn above the sticky bottom CTA bar on mobile */
+    .hero-sound-btn {
+      bottom: 108px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+    }
+    .hero-scroll {
+      display: none;   /* hides on mobile — not needed */
+    }
+  }
+
+  @media (max-width: 380px) {
+    /* Very small phones — stack CTAs */
+    .hero-ctas {
+      flex-direction: column;
+    }
+    .btn-primary,
+    .btn-secondary {
+      flex: unset;
+      width: 100%;
+    }
+  }
+
+  /* ── Reduced-motion: freeze the video, keep content ── */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-video {
+      animation: none;
+    }
+    .scroll-line::after {
+      animation: none;
+    }
+  }
+</style>
+
+<!-- ───────────────── SCRIPT ───────────────── -->
+<script>
+  // ── All DOM refs ──────────────────────────────
+  const video     = document.getElementById('hero-vid')       as HTMLVideoElement  | null;
+  const audio     = document.getElementById('hero-audio')     as HTMLAudioElement  | null;
+  const btn       = document.getElementById('hero-sound-btn') as HTMLButtonElement | null;
+  const iconOff   = btn?.querySelector('.sound-off')          as HTMLElement       | null;
+  const iconOn    = btn?.querySelector('.sound-on')           as HTMLElement       | null;
+
+  // ── Also wire up the existing NOW PLAYING bar ──
+  // (Looks for any element with id="now-playing-audio" in your existing layout)
+  const existingPlayer = document.getElementById('now-playing-audio') as HTMLAudioElement | null;
+
+  let isMuted = true;
+
+  // ── Force autoplay on iOS (needs user gesture workaround) ──
+  document.addEventListener('touchstart', () => {
+    if (video && video.paused) {
+      video.play().catch(() => {});
+    }
+  }, { once: true });
+
+  // ── Unmute toggle ──────────────────────────────
+  btn?.addEventListener('click', () => {
+    isMuted = !isMuted;
+
+    // Video audio
+    if (video) {
+      video.muted = isMuted;
+      if (!isMuted) {
+        video.volume = 0;
+        // Fade video volume up
+        fadeVolume(video, 0, 0.85, 800);
+      }
+    }
+
+    // Ambient audio — plays when unmuted, pauses when muted
+    if (audio) {
+      if (!isMuted) {
+        audio.volume = 0;
+        audio.play().catch(() => {});
+        fadeVolume(audio, 0, 0.45, 800);    // quieter than video — it's ambient
+      } else {
+        fadeVolume(audio, audio.volume, 0, 400, () => audio.pause());
+      }
+    }
+
+    // Update button state
+    btn.setAttribute('aria-pressed', String(!isMuted));
+    btn.setAttribute('aria-label', isMuted ? 'Unmute video' : 'Mute video');
+    if (iconOff) iconOff.style.display = isMuted  ? '' : 'none';
+    if (iconOn)  iconOn.style.display  = !isMuted ? '' : 'none';
+
+    // Tell existing NOW PLAYING bar about the audio source
+    if (existingPlayer && !isMuted) {
+      existingPlayer.src = '/hero-audio.mp3';
+      existingPlayer.play().catch(() => {});
+    }
+  });
+
+  // ── Smooth volume fade util ────────────────────
+  function fadeVolume(
+    el: HTMLMediaElement,
+    from: number,
+    to: number,
+    duration: number,
+    onComplete?: () => void
+  ) {
+    const steps    = 20;
+    const interval = duration / steps;
+    const delta    = (to - from) / steps;
+    let   current  = from;
+    let   count    = 0;
+    el.volume = Math.max(0, Math.min(1, from));
+    const timer = setInterval(() => {
+      current += delta;
+      count++;
+      el.volume = Math.max(0, Math.min(1, current));
+      if (count >= steps) {
+        clearInterval(timer);
+        el.volume = Math.max(0, Math.min(1, to));
+        onComplete?.();
+      }
+    }, interval);
+  }
+
+  // ── Pause video when tab is hidden (battery/performance) ──
+  document.addEventListener('visibilitychange', () => {
+    if (!video) return;
+    document.hidden ? video.pause() : video.play().catch(() => {});
+  });
+</script>
