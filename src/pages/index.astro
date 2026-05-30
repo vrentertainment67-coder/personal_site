@@ -5,7 +5,7 @@ import Footer from '../components/Footer.astro';
 import HeroVideo from '../components/HeroVideo.astro';
 import { getCollection } from 'astro:content';
 
-const BASE = 'https://hosting.renderforestsites.com/19480377/1066059/media/';
+const BASE = '/images/rf/';
 
 const allRemixes = (await getCollection('remixes'))
   .sort((a, b) => new Date(b.data.releaseDate).getTime() - new Date(a.data.releaseDate).getTime());

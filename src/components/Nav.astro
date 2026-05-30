@@ -20,7 +20,7 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
   <nav>
     <a href={`${base}/`} class="logo">
       <img
-        src="https://hosting.renderforestsites.com/19480377/1066059/media/a492fd01e8532f473aa84075c5a1f840.png"
+        src={`${base}/images/logo.png`}
         alt="DJ VIC"
         width="594"
         height="263"
@@ -81,10 +81,13 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     <span class="bar"></span>
   </button>
   <nav class="mobile-nav">
+    <a href={`${base}/#about`}>About</a>
     <a href={`${base}/weddings/`} aria-current={startsWith('/weddings') ? 'page' : undefined}>Weddings</a>
     <a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a>
+    <a href={`${base}/nightlife/`} aria-current={startsWith('/nightlife') ? 'page' : undefined}>Club &amp; Nightlife</a>
     <a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a>
     <a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a>
+    <a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Photos</a>
     <a href={`${base}/blog/`} aria-current={startsWith('/blog') ? 'page' : undefined}>Blog</a>
     <a href={`${base}/book/`} class="mobile-cta">Book VIC</a>
   </nav>

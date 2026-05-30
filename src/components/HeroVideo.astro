@@ -297,8 +297,11 @@
   /* ───── MOBILE ───── */
   @media (max-width: 768px) {
     .hero {
-      min-height: 75vh;     /* slightly taller on mobile — text stacks more */
-      min-height: 75svh;
+      /* Full viewport on mobile — the text stack is ~480px tall and the nav
+         occupies the top ~75px, so anything shorter than this caused the
+         eyebrow to overlap the nav/hamburger on smaller phones. */
+      min-height: 100vh;
+      min-height: 100svh;
       padding: 0 0 88px;    /* extra padding clears the sticky bottom CTA bar */
       align-items: flex-end;
     }
