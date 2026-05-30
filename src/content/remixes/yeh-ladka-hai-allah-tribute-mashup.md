@@ -1,5 +1,5 @@
 ---
-title: "Yeh Ladka Hai Allah × Quit Playing Games (Tribute Mashup)"
+title: "Yeh Ladka Hai Allah × Quit Playing Games"
 youtubeId: "eRL1DoX4n2Y"
 type: "mashup"
 genre: ["Bollywood", "Pop", "Mashup"]
