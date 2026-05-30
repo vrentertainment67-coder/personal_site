@@ -31,19 +31,26 @@ const typeLabel: Record<string, string> = {
   rework: 'Rework',
 };
 
-const schema = {
-  "@context": "https://schema.org",
-  "@type": "MusicRecording",
-  "name": t.title,
-  "description": t.description,
-  "thumbnailUrl": ytThumb,
-  "embedUrl": `https://www.youtube.com/embed/${t.youtubeId}`,
-  "byArtist": {
-    "@type": "Person",
-    "name": "DJ VIC",
-    "url": "https://djvicofficial.com"
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "MusicRecording",
+    "name": t.title,
+    "description": t.description,
+    "thumbnailUrl": ytThumb,
+    "embedUrl": `https://www.youtube.com/embed/${t.youtubeId}`,
+    "byArtist": { "@id": "https://djvicofficial.com/#person" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home",    "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Remixes", "item": "https://djvicofficial.com/remixes/" },
+      { "@type": "ListItem", "position": 3, "name": t.title,   "item": `https://djvicofficial.com/remixes/${track.id}/` }
+    ]
   }
-};
+];
 ---
 
 <Layout

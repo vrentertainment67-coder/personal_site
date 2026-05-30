@@ -31,6 +31,23 @@ const eventsData = allEvents.map(e => ({
   title="Events — DJ VIC Live in Bangalore"
   description="Catch DJ VIC live — view upcoming events, club nights and sets in Bangalore. Click a date to see event details and join the guest list."
   canonical="https://djvicofficial.com/events/"
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "EventSeries",
+      "name": "DJ VIC Live Events — Bangalore",
+      "url": "https://djvicofficial.com/events/",
+      "organizer": { "@id": "https://djvicofficial.com/#person" }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",   "item": "https://djvicofficial.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Events", "item": "https://djvicofficial.com/events/" }
+      ]
+    }
+  ]}
 >
   <Nav />
 
@@ -78,6 +95,31 @@ const eventsData = allEvents.map(e => ({
         No events this month — check back soon.
       </p>
     </section>
+
+    <!-- ── Upcoming Events (static list for search-engine discoverability) ── -->
+    {eventsData.filter(e => !e.isPrivate).length > 0 && (
+      <section id="upcoming-events-list">
+        <div class="upcoming-inner">
+          <div class="uel-label">Upcoming Shows</div>
+          <ul class="events-list" role="list">
+            {eventsData
+              .filter(e => !e.isPrivate)
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .map(e => (
+                <li>
+                  <a href={`${base}/events/${e.slug}/`} class="event-list-item">
+                    <span class="eli-date">{new Date(e.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span class="eli-title">{e.title}</span>
+                    <span class="eli-venue">{e.venue} &middot; {e.city}</span>
+                    {e.guestListAvailable && <span class="eli-badge">Guest List Open</span>}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </section>
+    )}
 
   </main>
 
@@ -730,6 +772,87 @@ const eventsData = allEvents.map(e => ({
     font-size: 14px;
     color: #555550;
     line-height: 1.6;
+  }
+
+  /* ── Upcoming Events List (static / SEO) ─────────── */
+  #upcoming-events-list {
+    padding: 0 1.5rem 5rem;
+  }
+  .upcoming-inner {
+    max-width: 860px;
+    margin-inline: auto;
+  }
+  .uel-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #c9a84c;
+    margin-bottom: 1.25rem;
+  }
+  .events-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .events-list li { display: contents; }
+  .event-list-item {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #111111;
+    border: 1px solid #1e1e1e;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .event-list-item:hover {
+    background: #1a1500;
+    border-color: #2a2000;
+  }
+  .eli-date {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #c9a84c;
+    white-space: nowrap;
+  }
+  .eli-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0dccf;
+  }
+  .eli-venue {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    color: #888880;
+  }
+  .eli-badge {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #060606;
+    background: #c9a84c;
+    padding: 2px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .event-list-item {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
   }
 
   /* ── Animations ───────────────────────────────────── */
