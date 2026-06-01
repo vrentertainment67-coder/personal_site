@@ -148,7 +148,7 @@ export default function App() {
 function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatus, loadingCal, reload, showToast }) {
   const [form, setForm] = useState({
     name: "", contact: "", type: "nightlife", day: null,
-    venue: "", city: "", budget: BUDGETS[1], message: "",
+    venue: "", city: "", budget: BUDGETS[1], message: "", hp: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -162,6 +162,11 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     if (!form.name || !form.contact || !form.day) {
       showToast("Add your name, contact, and pick an available date."); return;
     }
+    // Honeypot: bots fill the hidden field. Fake a success so we don't reveal it.
+    if (form.hp) { showToast(`Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.`); return; }
+    // Light client cooldown (the hard limit is the DB rate-limit trigger).
+    const last = Number(localStorage.getItem("vic_last_book") || 0);
+    if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
     setSubmitting(true);
     const { error } = await supabase.rpc("submit_booking", {
       p_name: form.name, p_contact: form.contact, p_event_type: form.type,
@@ -171,13 +176,14 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     });
     setSubmitting(false);
     if (error) { showToast(error.message || "Could not send request."); return; }
+    localStorage.setItem("vic_last_book", String(Date.now()));
     notifyVic({
       name: form.name, contact: form.contact, type: form.type,
       dateStr: `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}`,
       venue: form.venue, city: form.city, budget: form.budget, message: form.message,
     });
     showToast(`Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.`);
-    setForm({ name: "", contact: "", type: "nightlife", day: null, venue: "", city: "", budget: BUDGETS[1], message: "" });
+    setForm({ name: "", contact: "", type: "nightlife", day: null, venue: "", city: "", budget: BUDGETS[1], message: "", hp: "" });
     reload();
   };
 
@@ -254,6 +260,12 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
           {form.day ? `Holding ${MONTHS[cursor.m]} ${form.day} while we sort the details.` : "Pick a date above, then tell me about the night."}
         </p>
         <div className="form">
+          {/* Honeypot — hidden from humans; bots that fill it are silently dropped. */}
+          <input
+            type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true"
+            value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })}
+            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          />
           <div className="field-row">
             <div className="field"><label>Your name</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name / venue" /></div>

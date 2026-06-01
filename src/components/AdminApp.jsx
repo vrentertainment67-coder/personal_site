@@ -280,7 +280,7 @@ function Overview() {
 function Bookings({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -312,13 +312,29 @@ function Bookings({ showToast }) {
     else window.open(`mailto:${r.contact}?subject=Your booking request&body=${msg}`, "_blank");
   };
 
-  const filtered = rows.filter((r) => (filter === "all" ? true : r.status === filter));
+  const q = query.trim().toLowerCase();
+  const filtered = rows
+    .filter((r) => (filter === "all" ? true : r.status === filter))
+    .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
+
+  const exportCsv = () => {
+    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "message"];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `djvic-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
 
   return (
     <>
       <div className="row-between">
         <h1 className="h1">Bookings</h1>
-        <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log a gig</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+          <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log a gig</button>
+        </div>
       </div>
 
       {adding && <ManualEntry onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
@@ -328,6 +344,7 @@ function Bookings({ showToast }) {
           <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{f}</button>
         ))}
       </div>
+      <input className="search" placeholder="Search name, contact, city…" value={query} onChange={(e) => setQuery(e.target.value)} />
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
         <div className="list">
@@ -517,7 +534,8 @@ function Media({ showToast }) {
       const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
       if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
 
-      await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind });
+      const maxSort = items.filter((m) => m.kind === kind).reduce((mx, m) => Math.max(mx, m.sort || 0), 0);
+      await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind, sort: maxSort + 1 });
       showToast("Uploaded — live on the site."); load();
     } catch (e) { showToast(String(e.message || e)); }
     setBusy(false);
@@ -529,6 +547,20 @@ function Media({ showToast }) {
   };
 
   const shown = items.filter((m) => m.kind === kind);
+
+  // Reorder by re-sequencing sort 1..n (self-heals null/duplicate sorts; only
+  // writes the rows whose sort actually changed).
+  const move = async (m, dir) => {
+    const list = [...shown];
+    const i = list.findIndex((x) => x.id === m.id);
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    await Promise.all(
+      list.map((x, idx) => (x.sort === idx + 1 ? null : supabase.from("media").update({ sort: idx + 1 }).eq("id", x.id))).filter(Boolean)
+    );
+    load();
+  };
   return (
     <>
       <h1 className="h1">Gallery &amp; Media</h1>
@@ -552,6 +584,10 @@ function Media({ showToast }) {
               ? <video src={m.url} muted playsInline preload="metadata" />
               : <img src={m.url} alt={m.caption || ""} />}
             {isVideo(m.url) && <span className="vplay" aria-hidden="true">▶</span>}
+            <div className="media-move">
+              <button onClick={() => move(m, -1)} aria-label="Move earlier">◀</button>
+              <button onClick={() => move(m, 1)} aria-label="Move later">▶</button>
+            </div>
             <button className="media-del" onClick={() => remove(m)}><Trash2 size={14} /></button>
           </div>
         ))}
@@ -738,6 +774,11 @@ function Styles() {
   .rl-bar{height:6px;background:rgba(232,232,224,.08);border-radius:3px;overflow:hidden;}
   .rl-bar span{display:block;height:100%;background:#C9A84C;border-radius:3px;}
   .rl-val{text-align:right;color:var(--grey);}
+  .search{width:100%;background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:9px;padding:10px 14px;color:var(--off);font-family:inherit;font-size:13px;outline:none;margin:14px 0 4px;}
+  .search:focus{border-color:var(--gold);}
+  .media-move{position:absolute;top:6px;left:6px;display:flex;gap:4px;}
+  .media-move button{background:rgba(0,0,0,.55);border:none;color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .media-move button:hover{background:rgba(201,168,76,.85);color:#0a0a0a;}
   .grid2-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .entry{display:flex;flex-direction:column;}
   .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey);margin:6px 0 14px;cursor:pointer;}
