@@ -311,8 +311,16 @@ function CalendarTab({ showToast }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.rpc("public_calendar", { p_from: ymd(cur.y, cur.m, 1), p_to: ymd(cur.y, cur.m, dim) });
-    const m = {}; (data || []).forEach((r) => { m[r.the_date] = r.state; });
+    const from = ymd(cur.y, cur.m, 1), to = ymd(cur.y, cur.m, dim);
+    const [rpc, busy] = await Promise.all([
+      supabase.rpc("public_calendar", { p_from: from, p_to: to }),
+      fetch(`${FN}/calendar-sync?action=availability&from=${from}&to=${to}`).then((r) => r.json()).catch(() => ({ busy: [] })),
+    ]);
+    const m = {};
+    (rpc.data || []).forEach((r) => { m[r.the_date] = r.state; });
+    // Google-busy nights (read-only here — managed in Google Calendar), only where
+    // there isn't already a manual block / hold / booking.
+    (busy.busy || []).forEach((d) => { if (!m[d]) m[d] = "busy"; });
     setMap(m); setLoading(false);
   }, [cur, dim]);
   useEffect(() => { load(); }, [load]);
@@ -320,8 +328,12 @@ function CalendarTab({ showToast }) {
   const toggle = async (day) => {
     const key = ymd(cur.y, cur.m, day); const st = map[key];
     if (st === "booked" || st === "held") return showToast("That night has a booking — manage it in Bookings.");
-    if (st === "blocked") { await supabase.from("availability_blocks").delete().eq("block_date", key); }
-    else { await supabase.from("availability_blocks").insert({ block_date: key, reason: "Manual block" }); }
+    if (st === "busy") return showToast("Busy in your Google Calendar — manage it there.");
+    const { error } = st === "blocked"
+      ? await supabase.from("availability_blocks").delete().eq("block_date", key)
+      : await supabase.from("availability_blocks").insert({ block_date: key, reason: "Manual block" });
+    if (error) return showToast(error.message || "Could not update — availability_blocks write was rejected.");
+    showToast(st === "blocked" ? "Unblocked." : "Blocked.");
     load();
   };
 
@@ -349,6 +361,7 @@ function CalendarTab({ showToast }) {
         <div className="legend">
           <span><i className="dot open" /> Open</span>
           <span><i className="dot blocked" /> Blocked</span>
+          <span><i className="dot busy" /> Busy (Google)</span>
           <span><i className="dot held" /> Held</span>
           <span><i className="dot booked" /> Booked</span>
         </div>
@@ -613,9 +626,10 @@ function Styles() {
   .cc.blocked{background:rgba(232,232,224,.10);color:var(--grey);}
   .cc.held{background:rgba(201,168,76,.14);color:var(--gold);border-color:rgba(201,168,76,.3);cursor:not-allowed;}
   .cc.booked{background:rgba(255,59,59,.10);color:#ff8a8a;border-color:rgba(255,59,59,.28);cursor:not-allowed;}
+  .cc.busy{background:rgba(110,150,230,.14);color:#9bb4ee;border-color:rgba(110,150,230,.3);cursor:not-allowed;}
   .legend{display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--grey);flex-wrap:wrap;}
   .legend span{display:flex;align-items:center;gap:6px;}
-  .dot{width:9px;height:9px;border-radius:3px;}.dot.open{border:1px solid var(--gold);}.dot.blocked{background:rgba(232,232,224,.4);}.dot.held{background:rgba(201,168,76,.5);}.dot.booked{background:rgba(255,59,59,.5);}
+  .dot{width:9px;height:9px;border-radius:3px;}.dot.open{border:1px solid var(--gold);}.dot.blocked{background:rgba(232,232,224,.4);}.dot.held{background:rgba(201,168,76,.5);}.dot.booked{background:rgba(255,59,59,.5);}.dot.busy{background:rgba(110,150,230,.5);}
   .upload-card{display:flex;flex-direction:column;gap:14px;}
   .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
   .media-cell{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);aspect-ratio:1;}
