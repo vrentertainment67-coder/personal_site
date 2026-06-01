@@ -29,7 +29,7 @@ const EVENT_TYPES = [
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const SVC_COPY = {
   sangeet: "Wedding sangeet & receptions — Bollywood, desi house, the family floor-fillers.",
-  nightlife: "Club & lounge nights — house, techno, commercial. Resident-grade energy.",
+  nightlife: "Club & lounge nights — Bollywood, Hip-Hop, House, Commercial. Resident-grade energy.",
   private: "Birthdays, anniversaries, brand parties — read the room, build the arc.",
   festival: "Main-stage and festival slots — big-room, open-format, full production.",
 };
