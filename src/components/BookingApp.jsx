@@ -44,7 +44,7 @@ const typeLabel = (k) => EVENT_TYPES.find((t) => t.key === k)?.label ?? k;
 // /book is standalone (no Layout.astro), so it doesn't inherit the site's Formspree→ntfy
 // bridge. We fire the push here, on a successful booking, in the same style.
 const NTFY_TOPIC = "djvic-bookings-7k9f3hQ2pX8mN5vR";
-function notifyVic({ name, contact, type, dateStr, venue, city, budget, message }) {
+function notifyVic({ name, contact, type, dateStr, venue, city, budget, message, source }) {
   try {
     const title = `New booking request — ${name}`;
     const body =
@@ -52,6 +52,7 @@ function notifyVic({ name, contact, type, dateStr, venue, city, budget, message 
       `Contact: ${contact}\n` +
       `Where: ${[venue, city].filter(Boolean).join(", ") || "—"}\n` +
       `Budget: ${budget || "—"}` +
+      (source ? `\nSource: ${source}` : "") +
       (message ? `\n\n"${message}"` : "");
     const url = `https://ntfy.sh/${NTFY_TOPIC}` +
       `?title=${encodeURIComponent(title)}&priority=4&tags=studio_microphone,headphone`;
@@ -65,6 +66,7 @@ export default function App() {
   // The Booth (the old in-app admin) was retired — the full admin now lives at
   // /admin. Any legacy ?admin / #dashboard link redirects there.
   useEffect(() => {
+    document.getElementById("book-skel")?.remove();
     const params = new URLSearchParams(window.location.search);
     if (params.has("admin") || window.location.hash === "#dashboard") {
       window.location.replace("/admin");
@@ -167,12 +169,14 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     // Light client cooldown (the hard limit is the DB rate-limit trigger).
     const last = Number(localStorage.getItem("vic_last_book") || 0);
     if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
+    const source = localStorage.getItem("vic_source") || "Direct";
     setSubmitting(true);
     const { error } = await supabase.rpc("submit_booking", {
       p_name: form.name, p_contact: form.contact, p_event_type: form.type,
       p_event_date: ymd(cursor.y, cursor.m, form.day),
       p_venue: form.venue || null, p_city: form.city || null,
-      p_budget: form.budget, p_message: form.message || null,
+      p_budget: form.budget,
+      p_message: (form.message ? form.message + "\n\n" : "") + `Source: ${source}`,
     });
     setSubmitting(false);
     if (error) { showToast(error.message || "Could not send request."); return; }
@@ -180,7 +184,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     notifyVic({
       name: form.name, contact: form.contact, type: form.type,
       dateStr: `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}`,
-      venue: form.venue, city: form.city, budget: form.budget, message: form.message,
+      venue: form.venue, city: form.city, budget: form.budget, message: form.message, source,
     });
     showToast(`Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.`);
     setForm({ name: "", contact: "", type: "nightlife", day: null, venue: "", city: "", budget: BUDGETS[1], message: "", hp: "" });

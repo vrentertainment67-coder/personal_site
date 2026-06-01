@@ -517,28 +517,34 @@ function Media({ showToast }) {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const upload = async (file) => {
-    if (!file) return;
+  const upload = async (files) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
     setBusy(true);
-    try {
-      const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
-        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ folder: `djvic/${kind}` }),
-      }).then((r) => r.json());
-      if (sign.error) throw new Error(sign.error);
+    let sort = items.filter((m) => m.kind === kind).reduce((mx, m) => Math.max(mx, m.sort || 0), 0);
+    let ok = 0;
+    for (const file of list) {
+      try {
+        const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+          body: JSON.stringify({ folder: `djvic/${kind}` }),
+        }).then((r) => r.json());
+        if (sign.error) throw new Error(sign.error);
 
-      const fd = new FormData();
-      fd.append("file", file); fd.append("api_key", sign.apiKey);
-      fd.append("timestamp", sign.timestamp); fd.append("signature", sign.signature);
-      fd.append("folder", sign.folder);
-      const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
-      if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
+        const fd = new FormData();
+        fd.append("file", file); fd.append("api_key", sign.apiKey);
+        fd.append("timestamp", sign.timestamp); fd.append("signature", sign.signature);
+        fd.append("folder", sign.folder);
+        const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
+        if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
 
-      const maxSort = items.filter((m) => m.kind === kind).reduce((mx, m) => Math.max(mx, m.sort || 0), 0);
-      await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind, sort: maxSort + 1 });
-      showToast("Uploaded — live on the site."); load();
-    } catch (e) { showToast(String(e.message || e)); }
-    setBusy(false);
+        sort += 1;
+        await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind, sort });
+        ok += 1;
+      } catch (e) { showToast(String(e.message || e)); }
+    }
+    if (ok) showToast(`Uploaded ${ok} file${ok === 1 ? "" : "s"} — live on the site.`);
+    setBusy(false); load();
   };
 
   const remove = async (m) => {
@@ -571,9 +577,9 @@ function Media({ showToast }) {
             <button key={k} className={kind === k ? "chip on" : "chip"} onClick={() => setKind(k)}>{k}</button>
           ))}
         </div>
-        <input ref={fileRef} type="file" accept="image/*,video/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
+        <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => upload(e.target.files)} />
         <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>
-          {busy ? <><Loader2 className="spin" size={16} /> Uploading…</> : <><Upload size={16} /> Upload image / video</>}
+          {busy ? <><Loader2 className="spin" size={16} /> Uploading…</> : <><Upload size={16} /> Upload images / videos</>}
         </button>
         <span className="sub" style={{ margin: 0 }}>{shown.length} in “{kind}”</span>
       </div>

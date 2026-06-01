@@ -20,6 +20,19 @@
     localStorage.setItem(KEY, vid);
   }
 
+  // First-touch traffic source — stored once, used to tag booking requests.
+  if (!localStorage.getItem("vic_source")) {
+    var ref = document.referrer || "";
+    var src = !ref ? "Direct"
+      : /instagram/i.test(ref) ? "Instagram"
+      : /google/i.test(ref) ? "Google"
+      : /wa\.me|whatsapp/i.test(ref) ? "WhatsApp"
+      : /facebook|fb\./i.test(ref) ? "Facebook"
+      : /youtube/i.test(ref) ? "YouTube"
+      : /djvicofficial/i.test(ref) ? "" : "Other";
+    if (src) localStorage.setItem("vic_source", src);
+  }
+
   fetch(SUPABASE_URL + "/rest/v1/rpc/track_pageview", {
     method: "POST",
     headers: {

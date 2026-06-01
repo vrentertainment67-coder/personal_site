@@ -8,6 +8,41 @@ import { getCollection } from 'astro:content';
 
 const BASE = '/images/rf/';
 
+// Build-time: pull reviews for AggregateRating rich snippets (mirrors the homepage strip).
+const FALLBACK_REVIEWS = [
+  { author: 'Kruthi S.', quote: 'VIC made our wedding night truly unforgettable. The transitions were seamless, the energy never dropped, and the audio-visual element left our guests speechless.', rating: 5 },
+  { author: 'Rashmi J.', quote: 'We booked VIC for our annual brand event and he read the room perfectly — from the opening set to the close, it was exactly the tone we needed.', rating: 5 },
+  { author: 'Aryaman & Prerna', quote: 'We wanted our reception to feel cinematic, not just loud. VIC understood exactly what we meant — the music and visuals together were something else.', rating: 5 },
+];
+let reviewExtra = {};
+try {
+  const rr = await fetch(`${import.meta.env.PUBLIC_SUPABASE_URL}/rest/v1/rpc/public_testimonials`, {
+    method: 'POST',
+    headers: {
+      apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  const db = rr.ok ? await rr.json() : [];
+  const reviews = (Array.isArray(db) && db.length ? db : FALLBACK_REVIEWS)
+    .map((r) => ({ author: r.author, quote: r.quote, rating: r.rating || 5 }))
+    .filter((r) => r.author && r.quote);
+  if (reviews.length) {
+    const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+    reviewExtra = {
+      aggregateRating: { '@type': 'AggregateRating', ratingValue: avg.toFixed(1), reviewCount: reviews.length, bestRating: 5, worstRating: 1 },
+      review: reviews.slice(0, 6).map((r) => ({
+        '@type': 'Review',
+        author: { '@type': 'Person', name: r.author },
+        reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+        reviewBody: r.quote,
+      })),
+    };
+  }
+} catch (e) { /* no rich snippets if the fetch fails */ }
+
 const allRemixes = (await getCollection('remixes'))
   .sort((a, b) => new Date(b.data.releaseDate).getTime() - new Date(a.data.releaseDate).getTime());
 
@@ -121,7 +156,8 @@ const vicfixEpisodes = [
           "addressRegion": "Karnataka",
           "addressCountry": "IN"
         },
-        "areaServed": ["Bangalore", "Mumbai", "Delhi", "Chennai", "India"]
+        "areaServed": ["Bangalore", "Mumbai", "Delhi", "Chennai", "India"],
+        ...reviewExtra
       },
       {
         "@type": "BreadcrumbList",
