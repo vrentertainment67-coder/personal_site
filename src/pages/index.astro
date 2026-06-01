@@ -16,14 +16,14 @@ const FALLBACK_REVIEWS = [
 ];
 let reviewExtra = {};
 try {
-  const rr = await fetch(`${import.meta.env.PUBLIC_SUPABASE_URL}/rest/v1/rpc/public_testimonials`, {
+  const rr = await fetch(`${import.meta.env.PUBLIC_SUPABASE_URL}/rest/v1/rpc/public_reviews`, {
     method: 'POST',
     headers: {
       apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
       Authorization: `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: '{}',
+    body: '{"p_category":"home"}',
   });
   const db = rr.ok ? await rr.json() : [];
   const reviews = (Array.isArray(db) && db.length ? db : FALLBACK_REVIEWS)

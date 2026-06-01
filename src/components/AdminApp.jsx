@@ -679,7 +679,7 @@ function PageImages({ showToast }) {
 // ---------------- TESTIMONIALS ----------------
 function Testimonials({ showToast }) {
   const [items, setItems] = useState([]); const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({ author: "", role: "", quote: "", rating: 5 });
+  const [f, setF] = useState({ author: "", role: "", quote: "", rating: 5, category: "home" });
   const [edit, setEdit] = useState(null);
 
   const load = useCallback(async () => {
@@ -694,14 +694,14 @@ function Testimonials({ showToast }) {
     const { error } = await supabase.from("testimonials").insert({ ...f, approved: true });
     setBusy(false);
     if (error) return showToast(error.message);
-    setF({ author: "", role: "", quote: "", rating: 5 }); showToast("Added."); load();
+    setF({ author: "", role: "", quote: "", rating: 5, category: "home" }); showToast("Added."); load();
   };
   const toggle = async (t) => { await supabase.from("testimonials").update({ approved: !t.approved }).eq("id", t.id); load(); };
   const remove = async (t) => { await supabase.from("testimonials").delete().eq("id", t.id); load(); };
   const save = async () => {
     if (!edit.author || !edit.quote) return showToast("Author and quote required.");
     setBusy(true);
-    const { error } = await supabase.from("testimonials").update({ author: edit.author, role: edit.role, quote: edit.quote, rating: edit.rating }).eq("id", edit.id);
+    const { error } = await supabase.from("testimonials").update({ author: edit.author, role: edit.role, quote: edit.quote, rating: edit.rating, category: edit.category }).eq("id", edit.id);
     setBusy(false);
     if (error) return showToast(error.message);
     setEdit(null); showToast("Updated."); load();
@@ -719,6 +719,12 @@ function Testimonials({ showToast }) {
         <div className="field"><label>Rating</label>
           <div className="stars">{[1,2,3,4,5].map((n) => <Star key={n} size={20} onClick={() => setF({ ...f, rating: n })} fill={n <= f.rating ? "#C9A84C" : "none"} color="#C9A84C" style={{ cursor: "pointer" }} />)}</div>
         </div>
+        <div className="field"><label>Shows on</label>
+          <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
+            <option value="home">Homepage</option>
+            <option value="wedding">Weddings page</option>
+          </select>
+        </div>
         <button className="btn" onClick={add} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : <><Plus size={15} /> Add review</>}</button>
       </div>
       <div className="list">
@@ -734,6 +740,12 @@ function Testimonials({ showToast }) {
                 <div className="field"><label>Rating</label>
                   <div className="stars">{[1,2,3,4,5].map((n) => <Star key={n} size={20} onClick={() => setEdit({ ...edit, rating: n })} fill={n <= edit.rating ? "#C9A84C" : "none"} color="#C9A84C" style={{ cursor: "pointer" }} />)}</div>
                 </div>
+                <div className="field"><label>Shows on</label>
+                  <select value={edit.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })}>
+                    <option value="home">Homepage</option>
+                    <option value="wedding">Weddings page</option>
+                  </select>
+                </div>
                 <div className="req-actions">
                   <button className="act wa" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={14} /> : <><CheckCircle2 size={14} /> Save</>}</button>
                   <button className="act decline" onClick={() => setEdit(null)}>Cancel</button>
@@ -745,11 +757,14 @@ function Testimonials({ showToast }) {
                   <div><h3>{t.author} {t.role && <span className="mini">{t.role}</span>}</h3>
                     <div className="stars sm">{Array.from({ length: t.rating || 0 }).map((_, i) => <Star key={i} size={13} fill="#C9A84C" color="#C9A84C" />)}</div>
                   </div>
-                  <span className={`status ${t.approved ? "accepted" : "pending"}`}>{t.approved ? "live" : "hidden"}</span>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span className="mini">{t.category === "wedding" ? "Weddings" : "Home"}</span>
+                    <span className={`status ${t.approved ? "accepted" : "pending"}`}>{t.approved ? "live" : "hidden"}</span>
+                  </div>
                 </div>
                 <p className="req-msg">"{t.quote}"</p>
                 <div className="req-actions">
-                  <button className="act wa" onClick={() => setEdit({ id: t.id, author: t.author, role: t.role || "", quote: t.quote, rating: t.rating || 5 })}><Plus size={14} /> Edit</button>
+                  <button className="act wa" onClick={() => setEdit({ id: t.id, author: t.author, role: t.role || "", quote: t.quote, rating: t.rating || 5, category: t.category || "home" })}><Plus size={14} /> Edit</button>
                   <button className="act wa" onClick={() => toggle(t)}>{t.approved ? <><Ban size={14} /> Hide</> : <><CheckCircle2 size={14} /> Show</>}</button>
                   <button className="act decline" onClick={() => remove(t)}><Trash2 size={14} /> Delete</button>
                 </div>

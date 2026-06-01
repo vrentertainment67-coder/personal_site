@@ -17,11 +17,12 @@ const FALLBACK = [
   { quote: "We wanted our reception to feel cinematic, not just loud. VIC understood exactly what we meant — the music and visuals together were something else.", name: "Aryaman & Prerna", event: "Wedding Reception", rating: 5 },
 ];
 
-export default function TestimonialsStrip() {
-  const [items, setItems] = useState(FALLBACK);
+export default function TestimonialsStrip({ category = "home", fallback }) {
+  const fb = Array.isArray(fallback) && fallback.length ? fallback : FALLBACK;
+  const [items, setItems] = useState(fb);
 
   useEffect(() => {
-    supabase.rpc("public_testimonials")
+    supabase.rpc("public_reviews", { p_category: category })
       .then(({ data }) => {
         if (Array.isArray(data) && data.length) {
           setItems(data.map((t) => ({
@@ -33,7 +34,7 @@ export default function TestimonialsStrip() {
         }
       })
       .catch(() => { /* keep fallback on any error */ });
-  }, []);
+  }, []); // eslint-disable-line
 
   return (
     <div className="rt-grid">

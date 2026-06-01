@@ -2,6 +2,16 @@
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
+
+// Section 7 — Client reviews (fallback until DB-driven; managed in /admin → Reviews)
+const weddingReviews = [
+  { quote: "Vic absolutely nailed our wedding! From the cocktail night to the reception, he read the room perfectly and kept everyone on the dancefloor all night. Couldn't have asked for better energy.", name: "Sarthak", event: "Groom · Dec 2024 · Kochi", rating: 5 },
+  { quote: "VIC played for my special day recently, and rocked our cocktail night! Being a North-South wedding, he chose the perfect energetic tunes to keep our guests going on the floor!", name: "Rashmi Jaiswal", event: "Bride · Jan 2025 · Bangalore", rating: 5 },
+  { quote: "I think no one left the dancefloor while Vic was playing! He executed the perfect blend of English and Bollywood songs for my entire wedding functions and it was spot on!", name: "Aryaman", event: "Groom · July 2025 · Bangalore", rating: 5 },
+  { quote: "VIC was recommended by my cousin and livened up our wedding parties with his music selection and engaging performances. A special mention on the live baraat with dhol performance!!", name: "Kruthi Singar", event: "Bride · Dec 2023 · Bangalore", rating: 5 },
+  { quote: "Working with Vic on multiple weddings has been seamless every time. He's professional, well-prepared, and genuinely elevates the experience. Highly recommended for any event.", name: "Manish Fitkariwala", event: "Wedding Planner · Catapultt", rating: 5 },
+];
 
 // Section 3 — Wedding Vlogs
 const weddingVlogs = [
@@ -253,74 +263,7 @@ const avVideoId = "3FJl0cbpOYY";
       <div class="section-label">Client Reviews</div>
       <h2>Here's What the Clients Have to Say</h2>
       <p class="section-sub">Straight from the couples and planners who trusted DJ VIC with their big day.</p>
-      <div class="testimonial-grid">
-
-        <blockquote class="testimonial-card">
-          <span class="t-quote">&ldquo;</span>
-          <p class="t-body">
-            Vic absolutely nailed our wedding! From the cocktail night to the reception,
-            he read the room perfectly and kept everyone on the dancefloor all night.
-            Couldn't have asked for better energy.
-          </p>
-          <footer class="t-footer">
-            <strong class="t-name">Sarthak</strong>
-            <span class="t-role">Groom &nbsp;·&nbsp; Dec 2024 &nbsp;·&nbsp; Kochi</span>
-          </footer>
-        </blockquote>
-
-        <blockquote class="testimonial-card">
-          <span class="t-quote">&ldquo;</span>
-          <p class="t-body">
-            VIC played for my special day recently, and rocked our cocktail night! Being a
-            North-South wedding, he chose the perfect energetic tunes to keep our guests
-            going on the floor!
-          </p>
-          <footer class="t-footer">
-            <strong class="t-name">Rashmi Jaiswal</strong>
-            <span class="t-role">Bride &nbsp;·&nbsp; Jan 2025 &nbsp;·&nbsp; Bangalore</span>
-          </footer>
-        </blockquote>
-
-        <blockquote class="testimonial-card">
-          <span class="t-quote">&ldquo;</span>
-          <p class="t-body">
-            I think no one left the dancefloor while Vic was playing! He executed the perfect
-            blend of English and Bollywood songs for my entire wedding functions and it was
-            spot on!
-          </p>
-          <footer class="t-footer">
-            <strong class="t-name">Aryaman</strong>
-            <span class="t-role">Groom &nbsp;·&nbsp; July 2025 &nbsp;·&nbsp; Bangalore</span>
-          </footer>
-        </blockquote>
-
-        <blockquote class="testimonial-card">
-          <span class="t-quote">&ldquo;</span>
-          <p class="t-body">
-            VIC was recommended by my cousin and livened up our wedding parties with his
-            music selection and engaging performances. A special mention on the live baraat
-            with dhol performance!!
-          </p>
-          <footer class="t-footer">
-            <strong class="t-name">Kruthi Singar</strong>
-            <span class="t-role">Bride &nbsp;·&nbsp; Dec 2023 &nbsp;·&nbsp; Bangalore</span>
-          </footer>
-        </blockquote>
-
-        <blockquote class="testimonial-card">
-          <span class="t-quote">&ldquo;</span>
-          <p class="t-body">
-            Working with Vic on multiple weddings has been seamless every time. He's
-            professional, well-prepared, and genuinely elevates the experience. Highly
-            recommended for any event.
-          </p>
-          <footer class="t-footer">
-            <strong class="t-name">Manish Fitkariwala</strong>
-            <span class="t-role">Wedding Planner &nbsp;·&nbsp; Catapultt</span>
-          </footer>
-        </blockquote>
-
-      </div>
+      <TestimonialsStrip client:visible category="wedding" fallback={weddingReviews} />
     </section>
 
     <!-- ══════════════════════════════════════════
