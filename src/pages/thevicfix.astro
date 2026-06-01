@@ -350,23 +350,28 @@ const episodes = allEpisodes.sort((a, b) => {
   // ── Filter logic ──────────────────────────────────────
   const cards = document.querySelectorAll('.episode-card');
   const countEl = document.querySelector('.episode-count');
+  const searchInput = document.getElementById('episode-search');
+  const searchClear = document.getElementById('search-clear');
 
   function updateFilters() {
     const activeSeasonBtn = document.querySelector('.season-btn.active');
     const activeCatBtn = document.querySelector('.cat-btn.active');
     const activeSeason = activeSeasonBtn ? activeSeasonBtn.dataset.season : 'all';
     const activeCategory = activeCatBtn ? activeCatBtn.dataset.category : 'all';
+    const q = (searchInput && searchInput.value || '').trim().toLowerCase();
     let visible = 0;
     cards.forEach(card => {
       const matchSeason = activeSeason === 'all' || card.dataset.season === activeSeason;
       const matchCat = activeCategory === 'all' || card.dataset.category === activeCategory;
-      const show = matchSeason && matchCat;
+      const matchSearch = !q || card.textContent.toLowerCase().includes(q);
+      const show = matchSeason && matchCat && matchSearch;
       card.style.display = show ? '' : 'none';
       if (show) visible++;
     });
     if (countEl) {
       countEl.textContent = `Showing ${visible} episode${visible !== 1 ? 's' : ''}`;
     }
+    if (searchClear) searchClear.hidden = !q;
   }
 
   document.querySelectorAll('.season-btn').forEach(btn => {
@@ -383,6 +388,12 @@ const episodes = allEpisodes.sort((a, b) => {
       btn.classList.add('active');
       updateFilters();
     });
+  });
+
+  if (searchInput) searchInput.addEventListener('input', updateFilters);
+  if (searchClear) searchClear.addEventListener('click', () => {
+    if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+    updateFilters();
   });
 
   updateFilters();
