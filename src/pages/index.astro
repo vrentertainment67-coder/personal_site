@@ -63,12 +63,14 @@ const primaryServices = [
     desc: "From sangeet nights to the last dance — curated music and visuals for every moment of your celebration.",
     note: "Pan-India & international bookings available",
     bg: `${BASE}fc1c338a80d635c2429d234301f2ba98.jpg`,
+    slot: "home.weddings-bg",
   },
   {
     name: "Corporate Events",
     href: "/corporate/",
     desc: "Conferences, product launches, annual days — delivered with precision and the right energy for every room.",
     bg: `${BASE}c26853944612fd45df1fe9d9f6d3417f.jpg`,
+    slot: "home.corporate-bg",
   },
 ];
 
@@ -240,6 +242,7 @@ const vicfixEpisodes = [
           <a
             href={s.href}
             class="work-primary"
+            data-img-slot={s.slot}
             style={`background-image: linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.55) 55%, rgba(6,6,6,0.2) 100%), url('${s.bg}'); background-size: cover; background-position: center;`}
           >
             <div class="work-primary-text">

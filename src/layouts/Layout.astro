@@ -123,6 +123,36 @@ export type Props = BaseHeadProps;
 
     <!-- Privacy-friendly pageview tracker (no cookies) — feeds the admin Overview analytics -->
     <script is:inline src="/tracker.js" defer></script>
+
+    <!-- Page image overrides (admin → Page Images): swap uploaded images in live -->
+    <script is:inline>
+      (function () {
+        var SB = "https://jftnhuutttmccmqnnybf.supabase.co";
+        var KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+        var map = null;
+        function apply() {
+          if (!map) return;
+          document.querySelectorAll("[data-img-slot]").forEach(function (el) {
+            var u = map[el.getAttribute("data-img-slot")];
+            if (!u) return;
+            if (el.tagName === "IMG") { if (el.getAttribute("src") !== u) el.setAttribute("src", u); return; }
+            var cs = getComputedStyle(el).backgroundImage;
+            el.style.backgroundImage = (cs && cs.indexOf("url(") > -1)
+              ? cs.replace(/url\([^)]*\)/, 'url("' + u + '")')
+              : 'url("' + u + '")';
+          });
+        }
+        function run() {
+          if (map) { apply(); return; }
+          fetch(SB + "/rest/v1/site_images?select=slot,url", { headers: { apikey: KEY, Authorization: "Bearer " + KEY } })
+            .then(function (r) { return r.json(); })
+            .then(function (rows) { map = {}; (rows || []).forEach(function (r) { map[r.slot] = r.url; }); apply(); })
+            .catch(function () {});
+        }
+        run();
+        document.addEventListener("astro:page-load", run);
+      })();
+    </script>
   </body>
 </html>
 

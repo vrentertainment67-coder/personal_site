@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { createClient } from "@supabase/supabase-js";
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import {
-  LayoutDashboard, CalendarDays, Image as ImageIcon, Quote, TrendingUp, ClipboardList,
+  LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban,
 } from "lucide-react";
+import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
 // ============================================================
 // DJ VIC — Admin (production)
@@ -52,6 +53,7 @@ export default function Admin() {
     ["bookings", "Bookings", ClipboardList],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
+    ["pageimages", "Page Images", Images],
     ["testimonials", "Reviews", Quote],
     ["marketing", "Marketing", TrendingUp],
   ];
@@ -75,6 +77,7 @@ export default function Admin() {
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
+        {tab === "pageimages" && <PageImages showToast={showToast} />}
         {tab === "testimonials" && <Testimonials showToast={showToast} />}
         {tab === "marketing" && <Marketing />}
       </main>
@@ -606,6 +609,70 @@ function Media({ showToast }) {
   );
 }
 
+// ---------------- PAGE IMAGES ----------------
+function PageImages({ showToast }) {
+  const [map, setMap] = useState({}); const [busy, setBusy] = useState(null);
+  const fileRefs = useRef({});
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("site_images").select("*");
+    const m = {}; (data || []).forEach((r) => { m[r.slot] = r; }); setMap(m);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const upload = async (slot, file) => {
+    if (!file) return;
+    setBusy(slot);
+    try {
+      const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ folder: "djvic/site" }),
+      }).then((r) => r.json());
+      if (sign.error) throw new Error(sign.error);
+      const fd = new FormData();
+      fd.append("file", file); fd.append("api_key", sign.apiKey);
+      fd.append("timestamp", sign.timestamp); fd.append("signature", sign.signature);
+      fd.append("folder", sign.folder);
+      const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
+      if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
+      const { error } = await supabase.from("site_images").upsert({ slot, url: up.secure_url, public_id: up.public_id, updated_at: new Date().toISOString() });
+      if (error) throw new Error(error.message);
+      showToast("Updated — live on the site."); load();
+    } catch (e) { showToast(String(e.message || e)); }
+    setBusy(null);
+  };
+
+  const reset = async (slot) => {
+    await supabase.from("site_images").delete().eq("slot", slot);
+    showToast("Reset to the original."); load();
+  };
+
+  return (
+    <>
+      <h1 className="h1">Page Images</h1>
+      <p className="sub">Replace any in-house page image — uploads go live instantly. (Gallery photos &amp; videos are in the Media tab.)</p>
+      <div className="pi-grid">
+        {IMAGE_SLOTS.map((s) => {
+          const cur = map[s.slot];
+          return (
+            <div key={s.slot} className="pi-card">
+              <div className="pi-thumb">{cur ? <img src={cur.url} alt={s.label} /> : <span>Original</span>}</div>
+              <div className="pi-info"><strong>{s.label}</strong><span className="pi-page">{s.page}</span></div>
+              <input type="file" accept="image/*" hidden ref={(el) => (fileRefs.current[s.slot] = el)} onChange={(e) => upload(s.slot, e.target.files?.[0])} />
+              <div className="pi-actions">
+                <button className="btn sm" disabled={busy === s.slot} onClick={() => fileRefs.current[s.slot]?.click()}>
+                  {busy === s.slot ? <Loader2 className="spin" size={13} /> : <Upload size={13} />} Replace
+                </button>
+                {cur && <button className="btn sm ghost" onClick={() => reset(s.slot)}>Reset</button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 // ---------------- TESTIMONIALS ----------------
 function Testimonials({ showToast }) {
   const [items, setItems] = useState([]); const [busy, setBusy] = useState(false);
@@ -818,6 +885,17 @@ function Styles() {
   .media-move{position:absolute;top:6px;left:6px;display:flex;gap:4px;}
   .media-move button{background:rgba(0,0,0,.55);border:none;color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;}
   .media-move button:hover{background:rgba(201,168,76,.85);color:#0a0a0a;}
+  .pi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .pi-card{background:rgba(232,232,224,.03);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+  .pi-thumb{aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;}
+  .pi-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pi-thumb span{font-size:10px;color:var(--grey);letter-spacing:2px;text-transform:uppercase;}
+  .pi-info{padding:10px 12px 0;display:flex;flex-direction:column;gap:2px;}
+  .pi-info strong{font-size:13px;}
+  .pi-page{font-size:11px;color:var(--grey);}
+  .pi-actions{padding:10px 12px 12px;display:flex;gap:8px;margin-top:auto;}
+  .btn.sm.ghost{background:transparent;border:1px solid var(--line);color:var(--grey);}
+  .btn.sm.ghost:hover{border-color:var(--gold);color:var(--gold);}
   .grid2-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .entry{display:flex;flex-direction:column;}
   .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey);margin:6px 0 14px;cursor:pointer;}
