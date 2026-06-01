@@ -16,6 +16,7 @@ const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov
 export default function Gallery({ fallback = [], base = "/images/rf/" }) {
   const curated = fallback.map((p) => ({ src: base + p.src, alt: p.alt, video: false }));
   const [photos, setPhotos] = useState(curated);
+  const [filter, setFilter] = useState("all"); // all | photo | video
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
 
@@ -36,29 +37,40 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
       .catch(() => { /* keep curated fallback on error */ });
   }, []); // eslint-disable-line
 
-  const show = useCallback((i) => { setIdx(i); setOpen(true); document.body.style.overflow = "hidden"; }, []);
-  const close = useCallback(() => { setOpen(false); document.body.style.overflow = ""; }, []);
-  const prev = useCallback(() => setIdx((i) => (i - 1 + photos.length) % photos.length), [photos.length]);
-  const next = useCallback(() => setIdx((i) => (i + 1) % photos.length), [photos.length]);
+  const hasVideo = photos.some((p) => p.video);
+  const visible = photos.filter((p) => (filter === "all" ? true : filter === "video" ? p.video : !p.video));
+
+  const show = (i) => { setIdx(i); setOpen(true); document.body.style.overflow = "hidden"; };
+  const close = () => { setOpen(false); document.body.style.overflow = ""; };
+  const go = (dir) => setIdx((i) => (i + dir + visible.length) % visible.length);
+  const pickFilter = (f) => { setFilter(f); setOpen(false); };
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") close();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") setIdx((i) => (i - 1 + visible.length) % visible.length);
+      if (e.key === "ArrowRight") setIdx((i) => (i + 1) % visible.length);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, close, prev, next]);
+  }, [open, visible.length]); // eslint-disable-line
 
   let touchX = 0;
+  const cur = visible[idx];
 
   return (
     <div className="vg-wrap">
       <style>{vgStyles}</style>
+      {hasVideo && (
+        <div className="vg-tabs">
+          {[["all", "All"], ["photo", "Photos"], ["video", "Videos"]].map(([k, label]) => (
+            <button key={k} className={filter === k ? "vg-tab on" : "vg-tab"} onClick={() => pickFilter(k)}>{label}</button>
+          ))}
+        </div>
+      )}
       <div className="vg-grid">
-        {photos.map((p, i) => (
+        {visible.map((p, i) => (
           <button className="vg-item" key={i} onClick={() => show(i)} aria-label={`View — ${p.alt}`}>
             {p.video
               ? <video src={p.src} muted playsInline preload="metadata" />
@@ -68,7 +80,7 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
         ))}
       </div>
 
-      {open && (
+      {open && cur && (
         <div
           className="vg-lb open"
           role="dialog"
@@ -76,17 +88,17 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
           aria-label="Photo viewer"
           onClick={(e) => { if (e.target === e.currentTarget) close(); }}
           onTouchStart={(e) => { touchX = e.touches[0].clientX; }}
-          onTouchEnd={(e) => { const d = touchX - e.changedTouches[0].clientX; if (Math.abs(d) > 50) (d > 0 ? next() : prev()); }}
+          onTouchEnd={(e) => { const d = touchX - e.changedTouches[0].clientX; if (Math.abs(d) > 50) go(d > 0 ? 1 : -1); }}
         >
           <button className="vg-close" onClick={close} aria-label="Close">&times;</button>
-          <button className="vg-nav vg-prev" onClick={prev} aria-label="Previous photo">&#8592;</button>
-          <button className="vg-nav vg-next" onClick={next} aria-label="Next photo">&#8594;</button>
+          <button className="vg-nav vg-prev" onClick={() => go(-1)} aria-label="Previous">&#8592;</button>
+          <button className="vg-nav vg-next" onClick={() => go(1)} aria-label="Next">&#8594;</button>
           <div className="vg-img-wrap">
-            {photos[idx]?.video
-              ? <video className="vg-img" src={photos[idx].src} controls autoPlay playsInline />
-              : <img className="vg-img" src={photos[idx]?.src} alt={photos[idx]?.alt} />}
+            {cur.video
+              ? <video className="vg-img" src={cur.src} controls autoPlay playsInline />
+              : <img className="vg-img" src={cur.src} alt={cur.alt} />}
           </div>
-          <div className="vg-counter">{idx + 1} / {photos.length}</div>
+          <div className="vg-counter">{idx + 1} / {visible.length}</div>
         </div>
       )}
     </div>
@@ -94,6 +106,10 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
 }
 
 const vgStyles = `
+.vg-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:1.5rem;}
+.vg-tab{background:transparent;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6);font-family:inherit;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.5rem 1.15rem;border-radius:999px;cursor:pointer;transition:.18s;}
+.vg-tab:hover{border-color:#c9a84c;color:#fff;}
+.vg-tab.on{background:#c9a84c;border-color:#c9a84c;color:#0a0a0a;}
 .vg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
 .vg-item{position:relative;overflow:hidden;aspect-ratio:4/3;background:#111;border:none;padding:0;cursor:zoom-in;display:block;}
 .vg-item img,.vg-item video{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;transition:transform .4s ease;}
