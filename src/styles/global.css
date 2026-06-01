@@ -270,6 +270,28 @@ nav ul li a[aria-current="page"]::after {
   font-size: clamp(3rem, 8vw, 7rem);
 }
 
+/* The remaining sub-heroes were never wired into the override above, so they
+   stayed boxed at the 1100px section cap (green gradient showing on the sides)
+   and Festivals fell back to the oversized global h1. Make them full-bleed and
+   cap the h1. Pages with their own scoped hero h1 keep it (higher specificity). */
+#festivals-hero,
+#sangeet-hero,
+#nightlife-hero,
+#private-hero,
+#ps-hero,
+#remixes-hero {
+  max-width: 100%;
+}
+
+#festivals-hero h1,
+#sangeet-hero h1,
+#nightlife-hero h1,
+#private-hero h1,
+#ps-hero h1,
+#remixes-hero h1 {
+  font-size: clamp(3rem, 8vw, 7rem);
+}
+
 .tagline {
   font-family: var(--font-display);
   font-size: clamp(1rem, 2.5vw, 1.5rem);
