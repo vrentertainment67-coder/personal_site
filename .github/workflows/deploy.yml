@@ -33,6 +33,11 @@ jobs:
 
       - name: Build site
         run: npm run build
+        env:
+          # Public Supabase client config (publishable key — safe to expose).
+          # .env is gitignored, so the production build needs these injected here.
+          PUBLIC_SUPABASE_URL: https://jftnhuutttmccmqnnybf.supabase.co
+          PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
