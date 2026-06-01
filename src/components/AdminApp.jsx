@@ -42,6 +42,9 @@ export default function Admin() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Flag this browser so the visitor tracker never counts Vic's own visits.
+  useEffect(() => { if (session) { try { localStorage.setItem("vic_notrack", "1"); } catch (e) {} } }, [session]);
+
   if (!session) return <><Styles /><Login showToast={showToast} /></>;
 
   const TABS = [
@@ -682,28 +685,58 @@ function Marketing() {
     </>
   );
 
+  const t = data.totals || {};
+  const pct = (n) => `${((n || 0) * 100).toFixed(1)}%`;
+  const stripDomain = (u) => (u || "").replace(/^https?:\/\/[^/]+/, "") || "/";
+  // Quick wins: queries ranking page-1-bottom / page-2 with real impressions.
+  const opps = [...(data.queries || [])]
+    .filter((r) => r.position >= 4 && r.position <= 15 && (r.impressions || 0) > 0)
+    .sort((a, b) => b.impressions - a.impressions).slice(0, 6);
+
   return (
     <>
       <h1 className="h1">Marketing</h1>
       <p className="sub">Search Console · {data.range.from} → {data.range.to}</p>
+      <div className="cards">
+        <Stat label="Clicks · 28d" value={t.clicks ?? 0} />
+        <Stat label="Impressions" value={(t.impressions ?? 0).toLocaleString()} />
+        <Stat label="Avg CTR" value={pct(t.ctr)} />
+        <Stat label="Avg position" value={(t.position ?? 0).toFixed(1)} />
+      </div>
+
+      {opps.length > 0 && (
+        <div className="card">
+          <h3 className="card-h">Quick-win keywords · ranking 4–15 with traffic</h3>
+          <table className="seo">
+            <thead><tr><th>Query</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Pos.</th></tr></thead>
+            <tbody>
+              {opps.map((r, i) => (
+                <tr key={i}><td className="ellip">{r.key}</td><td>{r.impressions}</td><td>{r.clicks}</td><td>{pct(r.ctr)}</td><td>{r.position?.toFixed(1)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="grid2-wide">
         <SeoTable title="Top queries" rows={data.queries} keyLabel="Query" />
-        <SeoTable title="Top pages" rows={data.pages} keyLabel="Page" />
+        <SeoTable title="Top pages" rows={data.pages} keyLabel="Page" transform={stripDomain} />
       </div>
     </>
   );
 }
-function SeoTable({ title, rows, keyLabel }) {
+function SeoTable({ title, rows, keyLabel, transform }) {
+  const pct = (n) => `${((n || 0) * 100).toFixed(1)}%`;
   return (
     <div className="card">
       <h3 className="card-h">{title}</h3>
       <table className="seo">
-        <thead><tr><th>{keyLabel}</th><th>Clicks</th><th>Impr.</th><th>Pos.</th></tr></thead>
+        <thead><tr><th>{keyLabel}</th><th>Clicks</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
         <tbody>
           {(rows || []).map((r, i) => (
-            <tr key={i}><td className="ellip">{r.key}</td><td>{r.clicks}</td><td>{r.impressions}</td><td>{r.position?.toFixed(1)}</td></tr>
+            <tr key={i}><td className="ellip">{transform ? transform(r.key) : r.key}</td><td>{r.clicks}</td><td>{r.impressions}</td><td>{pct(r.ctr)}</td><td>{r.position?.toFixed(1)}</td></tr>
           ))}
-          {(!rows || rows.length === 0) && <tr><td colSpan={4} className="empty">No data.</td></tr>}
+          {(!rows || rows.length === 0) && <tr><td colSpan={5} className="empty">No data.</td></tr>}
         </tbody>
       </table>
     </div>

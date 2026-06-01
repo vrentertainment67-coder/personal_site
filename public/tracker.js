@@ -8,6 +8,14 @@
    Set the two constants below to your Supabase project values.
    ============================================================ */
 (function () {
+  // Never track dev/localhost (preview loads) or flagged-out browsers (Vic's own).
+  // Visiting any page with ?notrack flags that browser permanently.
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  try {
+    if (location.search.indexOf("notrack") > -1) localStorage.setItem("vic_notrack", "1");
+    if (localStorage.getItem("vic_notrack")) return;
+  } catch (e) { /* localStorage blocked — carry on */ }
+
   var SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
 

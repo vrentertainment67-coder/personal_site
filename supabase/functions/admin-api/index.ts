@@ -88,27 +88,34 @@ async function seoStats() {
   const start = new Date(); start.setDate(end.getDate() - 28);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-  async function query(dimension: string) {
+  async function run(body: Record<string, unknown>) {
     const res = await fetch(
       `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE)}/searchAnalytics/query`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: [dimension], rowLimit: 10 }),
+        body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), ...body }),
       },
     );
-    const d = await res.json();
-    if (d.error) return { error: d.error.message };
-    return (d.rows ?? []).map((r: any) => ({
-      key: r.keys?.[0], clicks: r.clicks, impressions: r.impressions,
-      ctr: r.ctr, position: r.position,
-    }));
+    return await res.json();
   }
+  const map = (rows: any[]) => (rows ?? []).map((r: any) => ({
+    key: r.keys?.[0], clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position,
+  }));
 
-  const [queries, pages] = await Promise.all([query("query"), query("page")]);
-  if ((queries as any).error)
-    return json({ connected: false, reason: (queries as any).error });
-  return json({ connected: true, range: { from: fmt(start), to: fmt(end) }, queries, pages });
+  const [q, p, t] = await Promise.all([
+    run({ dimensions: ["query"], rowLimit: 25 }),
+    run({ dimensions: ["page"], rowLimit: 25 }),
+    run({ rowLimit: 1 }), // totals (no dimension)
+  ]);
+  if (q.error) return json({ connected: false, reason: q.error.message });
+  const tot = (t.rows ?? [])[0] ?? {};
+  return json({
+    connected: true,
+    range: { from: fmt(start), to: fmt(end) },
+    queries: map(q.rows), pages: map(p.rows),
+    totals: { clicks: tot.clicks ?? 0, impressions: tot.impressions ?? 0, ctr: tot.ctr ?? 0, position: tot.position ?? 0 },
+  });
 }
 
 Deno.serve(async (req) => {
