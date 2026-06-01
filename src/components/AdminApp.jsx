@@ -656,7 +656,10 @@ function PageImages({ showToast }) {
           const cur = map[s.slot];
           return (
             <div key={s.slot} className="pi-card">
-              <div className="pi-thumb">{cur ? <img src={cur.url} alt={s.label} /> : <span>Original</span>}</div>
+              <div className="pi-thumb">
+                <img src={cur ? cur.url : s.default} alt={s.label} loading="lazy" />
+                <span className="pi-tag">{cur ? "Custom" : "Original"}</span>
+              </div>
               <div className="pi-info"><strong>{s.label}</strong><span className="pi-page">{s.page}</span><span className="pi-size">↳ {s.size}</span></div>
               <input type="file" accept="image/*" hidden ref={(el) => (fileRefs.current[s.slot] = el)} onChange={(e) => upload(s.slot, e.target.files?.[0])} />
               <div className="pi-actions">
@@ -887,9 +890,9 @@ function Styles() {
   .media-move button:hover{background:rgba(201,168,76,.85);color:#0a0a0a;}
   .pi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
   .pi-card{background:rgba(232,232,224,.03);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
-  .pi-thumb{aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;}
+  .pi-thumb{position:relative;aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .pi-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .pi-thumb span{font-size:10px;color:var(--grey);letter-spacing:2px;text-transform:uppercase;}
+  .pi-tag{position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.62);color:#fff;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;}
   .pi-info{padding:10px 12px 0;display:flex;flex-direction:column;gap:2px;}
   .pi-info strong{font-size:13px;}
   .pi-page{font-size:11px;color:var(--grey);}
