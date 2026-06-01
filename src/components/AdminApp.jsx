@@ -657,7 +657,7 @@ function PageImages({ showToast }) {
           return (
             <div key={s.slot} className="pi-card">
               <div className="pi-thumb">{cur ? <img src={cur.url} alt={s.label} /> : <span>Original</span>}</div>
-              <div className="pi-info"><strong>{s.label}</strong><span className="pi-page">{s.page}</span></div>
+              <div className="pi-info"><strong>{s.label}</strong><span className="pi-page">{s.page}</span><span className="pi-size">↳ {s.size}</span></div>
               <input type="file" accept="image/*" hidden ref={(el) => (fileRefs.current[s.slot] = el)} onChange={(e) => upload(s.slot, e.target.files?.[0])} />
               <div className="pi-actions">
                 <button className="btn sm" disabled={busy === s.slot} onClick={() => fileRefs.current[s.slot]?.click()}>
@@ -893,6 +893,7 @@ function Styles() {
   .pi-info{padding:10px 12px 0;display:flex;flex-direction:column;gap:2px;}
   .pi-info strong{font-size:13px;}
   .pi-page{font-size:11px;color:var(--grey);}
+  .pi-size{font-size:10.5px;color:var(--gold);letter-spacing:.3px;margin-top:1px;}
   .pi-actions{padding:10px 12px 12px;display:flex;gap:8px;margin-top:auto;}
   .btn.sm.ghost{background:transparent;border:1px solid var(--line);color:var(--grey);}
   .btn.sm.ghost:hover{border-color:var(--gold);color:var(--gold);}
