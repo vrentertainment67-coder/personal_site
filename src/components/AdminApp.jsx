@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
@@ -100,58 +100,177 @@ function Login({ showToast }) {
 }
 
 // ---------------- OVERVIEW ----------------
+const BUDGET_MID = { [BUDGETS[0]]: 35000, [BUDGETS[1]]: 75000, [BUDGETS[2]]: 150000, [BUDGETS[3]]: 250000 };
+const PIE = ["#C9A84C", "#E2C475", "#8a7a3c", "#9a9a92", "#5a5a54", "#b8923e", "#3a3a3a"];
+const cap = (s) => (s || "—").charAt(0).toUpperCase() + (s || "—").slice(1);
+const fmtINR = (n) => (n >= 1e7 ? `₹${(n / 1e7).toFixed(1)}Cr` : n >= 1e5 ? `₹${(n / 1e5).toFixed(1)}L` : n >= 1000 ? `₹${Math.round(n / 1000)}k` : `₹${n}`);
+const tipStyle = { background: "#111", border: "1px solid rgba(232,232,224,0.12)", borderRadius: 8, color: "#E8E8E0" };
+
+const Donut = ({ data }) => (!data.length ? <p className="empty" style={{ padding: 16 }}>No data yet.</p> : (
+  <div style={{ height: 180 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie data={data} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2} stroke="none">
+          {data.map((_, i) => <Cell key={i} fill={PIE[i % PIE.length]} />)}
+        </Pie>
+        <Tooltip contentStyle={tipStyle} />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+));
+
+const RankList = ({ rows }) => {
+  if (!rows.length) return <p className="empty" style={{ padding: 16 }}>No data yet.</p>;
+  const top = Math.max(...rows.map((r) => r.value), 1);
+  return (
+    <div className="ranklist">
+      {rows.map((r, i) => (
+        <div className="rankrow" key={i}>
+          <span className="rl-label">{r.label}</span>
+          <span className="rl-bar"><span style={{ width: `${Math.round((r.value / top) * 100)}%` }} /></span>
+          <span className="rl-val">{r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 function Overview() {
   const [vis, setVis] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 13);
-      const f = (d) => ymd(d.getFullYear(), d.getMonth(), d.getDate());
-      const [v, b] = await Promise.all([
+      const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 29);
+      const f = (dt) => ymd(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const [v, b, t] = await Promise.all([
         supabase.rpc("visitor_stats", { p_from: f(from), p_to: f(to) }),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+        supabase.rpc("overview_traffic", { p_from: f(from), p_to: f(to) }).then((r) => r.data).catch(() => null),
       ]);
       setVis((v.data || []).map((r) => ({ ...r, label: `${MONTHS[new Date(r.d).getMonth()]} ${new Date(r.d).getDate()}` })));
       setBookings(b.data || []);
+      setTraffic(t || null);
       setLoading(false);
     })();
   }, []);
 
-  const stats = useMemo(() => {
-    const now = Date.now(); const week = 7 * 864e5;
-    const newWeek = bookings.filter((b) => now - new Date(b.created_at).getTime() < week).length;
-    const pending = bookings.filter((b) => b.status === "pending").length;
-    const confirmed = bookings.filter((b) => b.status === "accepted").length;
+  const d = useMemo(() => {
+    const now = Date.now(); const DAY = 864e5; const WEEK = 7 * DAY;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const views30 = vis.reduce((s, r) => s + (r.views || 0), 0);
     const todayViews = vis.length ? vis[vis.length - 1].views : 0;
-    return { newWeek, pending, confirmed, todayViews };
-  }, [bookings, vis]);
+    const newWeek = bookings.filter((b) => now - new Date(b.created_at).getTime() < WEEK).length;
+    const leads30 = bookings.filter((b) => now - new Date(b.created_at).getTime() < 30 * DAY).length;
+    const pending = bookings.filter((b) => b.status === "pending").length;
+    const accepted = bookings.filter((b) => b.status === "accepted").length;
+    const conv = bookings.length ? Math.round((accepted / bookings.length) * 100) : 0;
+    const pipeline = bookings.filter((b) => b.status === "pending" || b.status === "accepted")
+      .reduce((s, b) => s + (BUDGET_MID[b.budget] || 0), 0);
+
+    const upcoming = bookings.filter((b) => b.status === "accepted" && b.event_date >= todayStr)
+      .sort((a, b) => a.event_date.localeCompare(b.event_date));
+    const next = upcoming[0];
+    const nextDays = next ? Math.max(0, Math.ceil((new Date(next.event_date).getTime() - now) / DAY)) : null;
+    const next90 = upcoming.filter((b) => new Date(b.event_date).getTime() - now < 90 * DAY).length;
+
+    const byKey = (key, lim) => {
+      const m = {}; bookings.forEach((b) => { const k = cap(b[key]); m[k] = (m[k] || 0) + 1; });
+      const arr = Object.entries(m).map(([k, v]) => ({ name: k, label: k, value: v })).sort((a, b) => b.value - a.value);
+      return lim ? arr.slice(0, lim) : arr;
+    };
+
+    const weeks = [];
+    for (let i = 7; i >= 0; i--) {
+      const start = now - (i + 1) * WEEK, end = now - i * WEEK;
+      const c = bookings.filter((b) => { const x = new Date(b.created_at).getTime(); return x >= start && x < end; }).length;
+      const dt = new Date(end - DAY);
+      weeks.push({ label: `${MONTHS[dt.getMonth()]} ${dt.getDate()}`, leads: c });
+    }
+
+    const sources = traffic ? (traffic.top_sources || []).map((s) => ({ name: s.source, label: s.source, value: s.views })) : [];
+    const pages = traffic ? (traffic.top_pages || []).map((p) => ({ label: p.path, value: p.views })) : [];
+    const bookViews = traffic ? (traffic.book_views || 0) : 0;
+    const funnel = bookViews ? Math.round((leads30 / bookViews) * 100) : null;
+
+    return { views30, todayViews, newWeek, leads30, pending, conv, pipeline, next, nextDays, next90,
+      types: byKey("event_type"), cities: byKey("city", 6), weeks, sources, pages, bookViews, funnel, hasTraffic: !!traffic };
+  }, [vis, bookings, traffic]);
 
   if (loading) return <Center><Loader2 className="spin" size={20} /> Loading…</Center>;
+
+  const trafficPlaceholder = <p className="empty" style={{ padding: 16 }}>Run <code>overview_traffic.sql</code> to enable.</p>;
 
   return (
     <>
       <h1 className="h1">Overview</h1>
       <div className="cards">
-        <Stat label="Visitors today" value={stats.todayViews} />
-        <Stat label="New (7 days)" value={stats.newWeek} />
-        <Stat label="Pending" value={stats.pending} />
-        <Stat label="Confirmed" value={stats.confirmed} />
+        <Stat label="Visitors today" value={d.todayViews} />
+        <Stat label="Visitors · 30d" value={d.views30} />
+        <Stat label="New leads · 7d" value={d.newWeek} />
+        <Stat label="Conversion" value={`${d.conv}%`} />
+        <Stat label="Pipeline (est)" value={fmtINR(d.pipeline)} />
+        <Stat label="Pending" value={d.pending} />
       </div>
+
       <div className="card">
-        <h3 className="card-h">Visitors · last 14 days</h3>
-        <div style={{ height: 220 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={vis}>
-              <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} interval={1} />
-              <Tooltip contentStyle={{ background: "#111", border: "1px solid rgba(232,232,224,0.12)", borderRadius: 8, color: "#E8E8E0" }} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
-              <Bar dataKey="views" name="Views" fill="#C9A84C" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="uniques" name="Uniques" fill="#5a5a54" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <h3 className="card-h">Next gig</h3>
+        {d.next ? (
+          <p className="sub" style={{ margin: 0 }}>
+            <strong style={{ color: "#C9A84C" }}>{d.next.name}</strong> · {cap(d.next.event_type)} · {new Date(d.next.event_date).toDateString()} — <strong>{d.nextDays} day{d.nextDays === 1 ? "" : "s"} away</strong> · {d.next90} confirmed in the next 90 days
+          </p>
+        ) : <p className="empty" style={{ padding: 16 }}>No upcoming confirmed gigs.</p>}
+      </div>
+
+      <div className="grid2">
+        <div className="card">
+          <h3 className="card-h">Visitors · last 14 days</h3>
+          <div style={{ height: 200 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={vis.slice(-14)}>
+                <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} interval={1} />
+                <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
+                <Bar dataKey="views" name="Views" fill="#C9A84C" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="uniques" name="Uniques" fill="#5a5a54" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+        <div className="card">
+          <h3 className="card-h">Leads · last 8 weeks</h3>
+          <div style={{ height: 200 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={d.weeks}>
+                <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
+                <Bar dataKey="leads" name="Leads" fill="#C9A84C" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid2">
+        <div className="card"><h3 className="card-h">Event types</h3><Donut data={d.types} /></div>
+        <div className="card"><h3 className="card-h">Top cities</h3><RankList rows={d.cities} /></div>
+      </div>
+
+      <div className="grid2">
+        <div className="card"><h3 className="card-h">Traffic sources · 30d</h3>{d.hasTraffic ? <Donut data={d.sources} /> : trafficPlaceholder}</div>
+        <div className="card"><h3 className="card-h">Top pages · 30d</h3>{d.hasTraffic ? <RankList rows={d.pages} /> : trafficPlaceholder}</div>
+      </div>
+
+      <div className="card">
+        <h3 className="card-h">Booking funnel · 30 days</h3>
+        {d.funnel !== null ? (
+          <p className="sub" style={{ margin: 0 }}>
+            <strong>{d.bookViews}</strong> visits to /book → <strong>{d.leads30}</strong> requests = <strong style={{ color: "#C9A84C" }}>{d.funnel}%</strong> convert
+          </p>
+        ) : (d.hasTraffic ? <p className="empty" style={{ padding: 16 }}>No /book visits in this window yet.</p> : trafficPlaceholder)}
       </div>
     </>
   );
@@ -613,6 +732,12 @@ function Styles() {
   .field input,.field select,.field textarea{background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:9px;padding:11px 13px;color:var(--off);font-family:'Inter';font-size:14px;outline:none;}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .ranklist{display:flex;flex-direction:column;gap:11px;padding:4px 2px;}
+  .rankrow{display:grid;grid-template-columns:1fr 90px 34px;align-items:center;gap:10px;font-size:12px;}
+  .rl-label{color:var(--off);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rl-bar{height:6px;background:rgba(232,232,224,.08);border-radius:3px;overflow:hidden;}
+  .rl-bar span{display:block;height:100%;background:#C9A84C;border-radius:3px;}
+  .rl-val{text-align:right;color:var(--grey);}
   .grid2-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .entry{display:flex;flex-direction:column;}
   .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey);margin:6px 0 14px;cursor:pointer;}
