@@ -62,13 +62,14 @@ function notifyVic({ name, contact, type, dateStr, venue, city, budget, message 
 }
 
 export default function App() {
-  // Admin dashboard is no longer a public toggle — reach it discreetly via
-  // /book?admin (or #dashboard). Public visitors always land on the funnel.
-  const [view, setView] = useState(() => {
-    if (typeof window === "undefined") return "client";
+  // The Booth (the old in-app admin) was retired — the full admin now lives at
+  // /admin. Any legacy ?admin / #dashboard link redirects there.
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.has("admin") || window.location.hash === "#dashboard" ? "admin" : "client";
-  });
+    if (params.has("admin") || window.location.hash === "#dashboard") {
+      window.location.replace("/admin");
+    }
+  }, []);
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [avail, setAvail] = useState({});
@@ -132,17 +133,11 @@ export default function App() {
     <div className="vic-root">
       <style>{styles}</style>
 
-      {view === "client" ? (
-        <ClientFunnel
-          cursor={cursor} shiftMonth={shiftMonth} daysInMonth={daysInMonth}
-          firstWeekday={firstWeekday} dateStatus={dateStatus} loadingCal={loadingCal}
-          reload={() => loadAvailability(cursor.y, cursor.m)} showToast={showToast}
-        />
-      ) : (
-        <AdminDash session={session} showToast={showToast}
-          reloadCal={() => loadAvailability(cursor.y, cursor.m)}
-          onExit={() => setView("client")} />
-      )}
+      <ClientFunnel
+        cursor={cursor} shiftMonth={shiftMonth} daysInMonth={daysInMonth}
+        firstWeekday={firstWeekday} dateStatus={dateStatus} loadingCal={loadingCal}
+        reload={() => loadAvailability(cursor.y, cursor.m)} showToast={showToast}
+      />
 
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -294,17 +289,6 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
         </div>
       </section>
 
-      <footer className="foot">
-        <div className="foot-row">
-          <span className="foot-brand">DJ VIC</span>
-          <div className="foot-links">
-            <a href="https://wa.me/918105363636">WhatsApp</a>
-            <a href="mailto:vrentertainment67@gmail.com">Email</a>
-            <a href="https://djvicofficial.com">djvicofficial.com</a>
-          </div>
-        </div>
-        <p className="foot-fine">VR Entertainment · Bengaluru</p>
-      </footer>
     </main>
   );
 }

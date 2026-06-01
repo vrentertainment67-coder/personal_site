@@ -1,0 +1,632 @@
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+  LayoutDashboard, CalendarDays, Image as ImageIcon, Quote, TrendingUp, ClipboardList,
+  CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
+  MessageCircle, Star, Ban,
+} from "lucide-react";
+
+// ============================================================
+// DJ VIC — Admin (production)
+// Tabs: Overview · Bookings · Calendar · Media · Testimonials · Marketing
+// Env: PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY (Astro)
+// ============================================================
+const SUPABASE_URL = import.meta.env?.PUBLIC_SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env?.PUBLIC_SUPABASE_ANON_KEY || "YOUR_ANON_KEY";
+const FN = `${SUPABASE_URL}/functions/v1`;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const EVENT_TYPES = ["sangeet", "nightlife", "private", "festival"];
+const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const waDigits = (s) => (s || "").replace(/[^0-9]/g, "");
+
+async function authHeader() {
+  const { data } = await supabase.auth.getSession();
+  return { Authorization: `Bearer ${data.session?.access_token}` };
+}
+
+export default function Admin() {
+  const [session, setSession] = useState(null);
+  const [tab, setTab] = useState("overview");
+  const [toast, setToast] = useState(null);
+  const showToast = (m) => { setToast(m); setTimeout(() => setToast(null), 3200); };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (!session) return <><Styles /><Login showToast={showToast} /></>;
+
+  const TABS = [
+    ["overview", "Overview", LayoutDashboard],
+    ["bookings", "Bookings", ClipboardList],
+    ["calendar", "Calendar", CalendarDays],
+    ["media", "Media", ImageIcon],
+    ["testimonials", "Reviews", Quote],
+    ["marketing", "Marketing", TrendingUp],
+  ];
+
+  return (
+    <div className="adm">
+      <Styles />
+      <header className="adm-top">
+        <div className="brand"><span className="bm">VIC</span><span className="bs">ADMIN</span></div>
+        <button className="logout" onClick={() => supabase.auth.signOut()}><LogOut size={14} /> Sign out</button>
+      </header>
+      <nav className="adm-nav">
+        {TABS.map(([k, label, Icon]) => (
+          <button key={k} className={tab === k ? "navb on" : "navb"} onClick={() => setTab(k)}>
+            <Icon size={16} /> {label}
+          </button>
+        ))}
+      </nav>
+      <main className="adm-main">
+        {tab === "overview" && <Overview />}
+        {tab === "bookings" && <Bookings showToast={showToast} />}
+        {tab === "calendar" && <CalendarTab showToast={showToast} />}
+        {tab === "media" && <Media showToast={showToast} />}
+        {tab === "testimonials" && <Testimonials showToast={showToast} />}
+        {tab === "marketing" && <Marketing />}
+      </main>
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+function Login({ showToast }) {
+  const [email, setEmail] = useState(""); const [pwd, setPwd] = useState(""); const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+    setBusy(false); if (error) showToast(error.message);
+  };
+  return (
+    <div className="adm login-wrap">
+      <div className="card login">
+        <div className="brand center"><span className="bm">VIC</span><span className="bs">ADMIN</span></div>
+        <div className="field"><label>Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+        <div className="field"><label>Password</label><input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} /></div>
+        <button className="btn" onClick={go} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : "Sign in"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------- OVERVIEW ----------------
+function Overview() {
+  const [vis, setVis] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 13);
+      const f = (d) => ymd(d.getFullYear(), d.getMonth(), d.getDate());
+      const [v, b] = await Promise.all([
+        supabase.rpc("visitor_stats", { p_from: f(from), p_to: f(to) }),
+        supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      ]);
+      setVis((v.data || []).map((r) => ({ ...r, label: `${MONTHS[new Date(r.d).getMonth()]} ${new Date(r.d).getDate()}` })));
+      setBookings(b.data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const stats = useMemo(() => {
+    const now = Date.now(); const week = 7 * 864e5;
+    const newWeek = bookings.filter((b) => now - new Date(b.created_at).getTime() < week).length;
+    const pending = bookings.filter((b) => b.status === "pending").length;
+    const confirmed = bookings.filter((b) => b.status === "accepted").length;
+    const todayViews = vis.length ? vis[vis.length - 1].views : 0;
+    return { newWeek, pending, confirmed, todayViews };
+  }, [bookings, vis]);
+
+  if (loading) return <Center><Loader2 className="spin" size={20} /> Loading…</Center>;
+
+  return (
+    <>
+      <h1 className="h1">Overview</h1>
+      <div className="cards">
+        <Stat label="Visitors today" value={stats.todayViews} />
+        <Stat label="New (7 days)" value={stats.newWeek} />
+        <Stat label="Pending" value={stats.pending} />
+        <Stat label="Confirmed" value={stats.confirmed} />
+      </div>
+      <div className="card">
+        <h3 className="card-h">Visitors · last 14 days</h3>
+        <div style={{ height: 220 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={vis}>
+              <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} interval={1} />
+              <Tooltip contentStyle={{ background: "#111", border: "1px solid rgba(232,232,224,0.12)", borderRadius: 8, color: "#E8E8E0" }} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
+              <Bar dataKey="views" name="Views" fill="#C9A84C" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="uniques" name="Uniques" fill="#5a5a54" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---------------- BOOKINGS ----------------
+function Bookings({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
+  const [adding, setAdding] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+    setRows(data || []); setLoading(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const decide = async (id, status) => {
+    setActing(id);
+    const res = await fetch(`${FN}/calendar-sync?action=${status === "accepted" ? "confirm" : "release"}`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify({ bookingId: id }),
+    }).then((r) => r.json()).catch(() => ({ error: "Network error" }));
+    setActing(null);
+    if (res.error) return showToast(res.error);
+    showToast(status === "accepted" ? "Confirmed — on your calendar." : "Declined.");
+    load();
+  };
+
+  const saveNote = async (id, notes) => {
+    await supabase.from("bookings").update({ notes }).eq("id", id);
+  };
+
+  const whatsapp = (r) => {
+    const num = waDigits(r.contact);
+    const msg = encodeURIComponent(`Hi ${r.name}, this is Vic — thanks for your booking request for ${r.event_date}. `);
+    if (num.length >= 10) window.open(`https://wa.me/${num}?text=${msg}`, "_blank");
+    else window.open(`mailto:${r.contact}?subject=Your booking request&body=${msg}`, "_blank");
+  };
+
+  const filtered = rows.filter((r) => (filter === "all" ? true : r.status === filter));
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Bookings</h1>
+        <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log a gig</button>
+      </div>
+
+      {adding && <ManualEntry onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
+
+      <div className="chips">
+        {["all", "pending", "accepted", "declined"].map((f) => (
+          <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{f}</button>
+        ))}
+      </div>
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">Nothing here.</p>}
+          {filtered.map((r) => {
+            const d = new Date(r.event_date);
+            return (
+              <div key={r.id} className={`req ${r.status}`}>
+                <div className="req-top">
+                  <div>
+                    <h3>{r.name} {r.source === "manual" && <span className="mini">manual</span>}</h3>
+                    <p className="req-meta">
+                      <span className="tag">{r.event_type}</span>
+                      <span>{MONTHS[d.getMonth()]} {d.getDate()}</span>
+                      <span><MapPin size={12} /> {r.venue || "—"}, {r.city || "—"}</span>
+                      <span className="gold">{r.budget || "—"}</span>
+                    </p>
+                  </div>
+                  <span className={`status ${r.status}`}>{r.status}</span>
+                </div>
+                {r.message && <p className="req-msg">{r.message}</p>}
+                <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
+                <div className="req-actions">
+                  {r.status === "pending" && (
+                    <>
+                      <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>
+                        {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Confirm
+                      </button>
+                      <button className="act decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}>
+                        <XCircle size={15} /> Decline
+                      </button>
+                    </>
+                  )}
+                  <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+function NoteField({ initial, onSave }) {
+  const [val, setVal] = useState(initial); const [dirty, setDirty] = useState(false);
+  return (
+    <div className="note">
+      <input value={val} placeholder="Private note…" onChange={(e) => { setVal(e.target.value); setDirty(true); }} />
+      {dirty && <button className="note-save" onClick={() => { onSave(val); setDirty(false); }}>Save</button>}
+    </div>
+  );
+}
+
+function ManualEntry({ onDone, showToast }) {
+  const [f, setF] = useState({ name: "", contact: "", event_type: "private", event_date: "", venue: "", city: "", budget: BUDGETS[1], confirmed: true });
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!f.name || !f.event_date) return showToast("Name and date required.");
+    setBusy(true);
+    const { data, error } = await supabase.from("bookings").insert({
+      name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
+      venue: f.venue, city: f.city, budget: f.budget, source: "manual",
+      status: f.confirmed ? "accepted" : "pending",
+    }).select().single();
+    if (error) { setBusy(false); return showToast(error.message); }
+    if (f.confirmed && data?.id) {
+      await fetch(`${FN}/calendar-sync?action=confirm`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ bookingId: data.id }),
+      }).catch(() => {});
+    }
+    setBusy(false); showToast("Gig logged."); onDone();
+  };
+  return (
+    <div className="card entry">
+      <div className="grid2">
+        <div className="field"><label>Client / venue</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+        <div className="field"><label>Contact</label><input value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} /></div>
+        <div className="field"><label>Type</label><select value={f.event_type} onChange={(e) => setF({ ...f, event_type: e.target.value })}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
+        <div className="field"><label>Date</label><input type="date" value={f.event_date} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
+        <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
+        <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
+      </div>
+      <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar</label>
+      <button className="btn" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : "Save gig"}</button>
+    </div>
+  );
+}
+
+// ---------------- CALENDAR (block dates) ----------------
+function CalendarTab({ showToast }) {
+  const today = useMemo(() => new Date(), []);
+  const [cur, setCur] = useState({ y: today.getFullYear(), m: today.getMonth() });
+  const [map, setMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const dim = new Date(cur.y, cur.m + 1, 0).getDate();
+  const fw = new Date(cur.y, cur.m, 1).getDay();
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.rpc("public_calendar", { p_from: ymd(cur.y, cur.m, 1), p_to: ymd(cur.y, cur.m, dim) });
+    const m = {}; (data || []).forEach((r) => { m[r.the_date] = r.state; });
+    setMap(m); setLoading(false);
+  }, [cur, dim]);
+  useEffect(() => { load(); }, [load]);
+
+  const toggle = async (day) => {
+    const key = ymd(cur.y, cur.m, day); const st = map[key];
+    if (st === "booked" || st === "held") return showToast("That night has a booking — manage it in Bookings.");
+    if (st === "blocked") { await supabase.from("availability_blocks").delete().eq("block_date", key); }
+    else { await supabase.from("availability_blocks").insert({ block_date: key, reason: "Manual block" }); }
+    load();
+  };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Calendar</h1>
+        <div className="mnav">
+          <button onClick={() => setCur((c) => { const d = new Date(c.y, c.m - 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; })}>‹</button>
+          <span>{MONTHS[cur.m]} {cur.y}</span>
+          <button onClick={() => setCur((c) => { const d = new Date(c.y, c.m + 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; })}>›</button>
+        </div>
+      </div>
+      <p className="sub">Tap a night to block / unblock it. Booked & held nights are managed in Bookings.</p>
+      <div className="card">
+        {loading && <Center><Loader2 className="spin" size={16} /></Center>}
+        <div className="cal-head">{["S","M","T","W","T","F","S"].map((d, i) => <span key={i}>{d}</span>)}</div>
+        <div className="cal-grid">
+          {Array.from({ length: fw }).map((_, i) => <span key={`b${i}`} className="cc empty" />)}
+          {Array.from({ length: dim }).map((_, i) => {
+            const day = i + 1; const st = map[ymd(cur.y, cur.m, day)] || "open";
+            return <button key={day} className={`cc ${st}`} onClick={() => toggle(day)}>{day}</button>;
+          })}
+        </div>
+        <div className="legend">
+          <span><i className="dot open" /> Open</span>
+          <span><i className="dot blocked" /> Blocked</span>
+          <span><i className="dot held" /> Held</span>
+          <span><i className="dot booked" /> Booked</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---------------- MEDIA ----------------
+function Media({ showToast }) {
+  const [items, setItems] = useState([]); const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState("gallery"); const fileRef = useRef();
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("media").select("*").order("sort").order("created_at", { ascending: false });
+    setItems(data || []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const upload = async (file) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ folder: `djvic/${kind}` }),
+      }).then((r) => r.json());
+      if (sign.error) throw new Error(sign.error);
+
+      const fd = new FormData();
+      fd.append("file", file); fd.append("api_key", sign.apiKey);
+      fd.append("timestamp", sign.timestamp); fd.append("signature", sign.signature);
+      fd.append("folder", sign.folder);
+      const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
+      if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
+
+      await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind });
+      showToast("Uploaded — live on the site."); load();
+    } catch (e) { showToast(String(e.message || e)); }
+    setBusy(false);
+  };
+
+  const remove = async (m) => {
+    await supabase.from("media").delete().eq("id", m.id);
+    showToast("Removed."); load();
+  };
+
+  return (
+    <>
+      <h1 className="h1">Media</h1>
+      <p className="sub">Uploads go to Cloudinary and appear in your live gallery island. Pick a kind, then upload.</p>
+      <div className="card upload-card">
+        <div className="chips">
+          {["gallery", "press", "logo"].map((k) => (
+            <button key={k} className={kind === k ? "chip on" : "chip"} onClick={() => setKind(k)}>{k}</button>
+          ))}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
+        <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>
+          {busy ? <><Loader2 className="spin" size={16} /> Uploading…</> : <><Upload size={16} /> Upload image</>}
+        </button>
+      </div>
+      <div className="media-grid">
+        {items.map((m) => (
+          <div key={m.id} className="media-cell">
+            <img src={m.url} alt={m.caption || ""} />
+            <span className="media-kind">{m.kind}</span>
+            <button className="media-del" onClick={() => remove(m)}><Trash2 size={14} /></button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="empty">No images yet.</p>}
+      </div>
+    </>
+  );
+}
+
+// ---------------- TESTIMONIALS ----------------
+function Testimonials({ showToast }) {
+  const [items, setItems] = useState([]); const [busy, setBusy] = useState(false);
+  const [f, setF] = useState({ author: "", role: "", quote: "", rating: 5 });
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("testimonials").select("*").order("sort").order("created_at", { ascending: false });
+    setItems(data || []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const add = async () => {
+    if (!f.author || !f.quote) return showToast("Author and quote required.");
+    setBusy(true);
+    const { error } = await supabase.from("testimonials").insert({ ...f, approved: true });
+    setBusy(false);
+    if (error) return showToast(error.message);
+    setF({ author: "", role: "", quote: "", rating: 5 }); showToast("Added."); load();
+  };
+  const toggle = async (t) => { await supabase.from("testimonials").update({ approved: !t.approved }).eq("id", t.id); load(); };
+  const remove = async (t) => { await supabase.from("testimonials").delete().eq("id", t.id); load(); };
+
+  return (
+    <>
+      <h1 className="h1">Reviews</h1>
+      <div className="card entry">
+        <div className="grid2">
+          <div className="field"><label>Author</label><input value={f.author} onChange={(e) => setF({ ...f, author: e.target.value })} /></div>
+          <div className="field"><label>Role</label><input value={f.role} placeholder="Bride / Skyline Lounge…" onChange={(e) => setF({ ...f, role: e.target.value })} /></div>
+        </div>
+        <div className="field"><label>Quote</label><textarea rows={2} value={f.quote} onChange={(e) => setF({ ...f, quote: e.target.value })} /></div>
+        <div className="field"><label>Rating</label>
+          <div className="stars">{[1,2,3,4,5].map((n) => <Star key={n} size={20} onClick={() => setF({ ...f, rating: n })} fill={n <= f.rating ? "#C9A84C" : "none"} color="#C9A84C" style={{ cursor: "pointer" }} />)}</div>
+        </div>
+        <button className="btn" onClick={add} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : <><Plus size={15} /> Add review</>}</button>
+      </div>
+      <div className="list">
+        {items.map((t) => (
+          <div key={t.id} className={`req ${t.approved ? "accepted" : ""}`}>
+            <div className="req-top">
+              <div><h3>{t.author} {t.role && <span className="mini">{t.role}</span>}</h3>
+                <div className="stars sm">{Array.from({ length: t.rating || 0 }).map((_, i) => <Star key={i} size={13} fill="#C9A84C" color="#C9A84C" />)}</div>
+              </div>
+              <span className={`status ${t.approved ? "accepted" : "pending"}`}>{t.approved ? "live" : "hidden"}</span>
+            </div>
+            <p className="req-msg">"{t.quote}"</p>
+            <div className="req-actions">
+              <button className="act wa" onClick={() => toggle(t)}>{t.approved ? <><Ban size={14} /> Hide</> : <><CheckCircle2 size={14} /> Show</>}</button>
+              <button className="act decline" onClick={() => remove(t)}><Trash2 size={14} /> Delete</button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <p className="empty">No reviews yet.</p>}
+      </div>
+    </>
+  );
+}
+
+// ---------------- MARKETING (GSC) ----------------
+function Marketing() {
+  const [data, setData] = useState(null); const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const res = await fetch(`${FN}/admin-api?action=seo-stats`, { method: "POST", headers: await authHeader() })
+        .then((r) => r.json()).catch(() => ({ connected: false, reason: "Network error" }));
+      setData(res); setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <Center><Loader2 className="spin" size={20} /> Pulling Search Console…</Center>;
+  if (!data?.connected) return (
+    <>
+      <h1 className="h1">Marketing</h1>
+      <div className="card">
+        <p className="sub" style={{ margin: 0 }}>Search Console isn't wired up yet{data?.reason ? ` (${data.reason})` : ""}. Once djvicofficial.com is verified in GSC and the admin-api has the webmasters scope, your top queries and pages show here.</p>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <h1 className="h1">Marketing</h1>
+      <p className="sub">Search Console · {data.range.from} → {data.range.to}</p>
+      <div className="grid2-wide">
+        <SeoTable title="Top queries" rows={data.queries} keyLabel="Query" />
+        <SeoTable title="Top pages" rows={data.pages} keyLabel="Page" />
+      </div>
+    </>
+  );
+}
+function SeoTable({ title, rows, keyLabel }) {
+  return (
+    <div className="card">
+      <h3 className="card-h">{title}</h3>
+      <table className="seo">
+        <thead><tr><th>{keyLabel}</th><th>Clicks</th><th>Impr.</th><th>Pos.</th></tr></thead>
+        <tbody>
+          {(rows || []).map((r, i) => (
+            <tr key={i}><td className="ellip">{r.key}</td><td>{r.clicks}</td><td>{r.impressions}</td><td>{r.position?.toFixed(1)}</td></tr>
+          ))}
+          {(!rows || rows.length === 0) && <tr><td colSpan={4} className="empty">No data.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---------------- shared bits ----------------
+const Stat = ({ label, value }) => (<div className="card stat"><strong>{value}</strong><span>{label}</span></div>);
+const Center = ({ children }) => (<div className="center">{children}</div>);
+
+function Styles() {
+  return <style>{`
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap');
+  .adm{--black:#0A0A0A;--off:#E8E8E0;--gold:#C9A84C;--red:#FF3B3B;--grey:#9a9a92;--line:rgba(232,232,224,0.10);--panel:rgba(232,232,224,0.03);
+    background:var(--black);color:var(--off);font-family:'Inter',sans-serif;min-height:100vh;}
+  .adm *{box-sizing:border-box;}
+  .adm-top{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,10,10,.9);backdrop-filter:blur(10px);z-index:20;}
+  .brand{display:flex;flex-direction:column;line-height:.95;}.brand.center{align-items:center;margin-bottom:22px;}
+  .bm{font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;}.bs{font-size:9px;letter-spacing:3px;color:var(--grey);}
+  .logout{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}
+  .logout:hover{border-color:var(--red);color:#ff8a8a;}
+  .adm-nav{display:flex;gap:6px;padding:14px 22px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .navb{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);color:var(--grey);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s;}
+  .navb:hover{color:var(--off);border-color:var(--gold);}
+  .navb.on{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:600;}
+  .adm-main{max-width:920px;margin:0 auto;padding:30px 22px 80px;}
+  .h1{font-family:'Bebas Neue';font-size:42px;letter-spacing:1px;margin:0 0 20px;}
+  .sub{color:var(--grey);font-size:13px;margin:0 0 20px;}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
+  .card-h{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--grey);margin:0 0 16px;}
+  .stat{display:flex;flex-direction:column;gap:6px;padding:18px;}
+  .stat strong{font-family:'Bebas Neue';font-size:38px;line-height:1;}
+  .stat span{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);}
+  .center{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--grey);padding:50px;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .chip{background:transparent;border:1px solid var(--line);border-radius:999px;color:var(--grey);font-size:12px;padding:7px 14px;cursor:pointer;text-transform:capitalize;}
+  .chip.on{background:var(--gold);border-color:var(--gold);color:var(--black);font-weight:600;}
+  .list{display:flex;flex-direction:column;gap:12px;}
+  .req{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .req.accepted{border-color:rgba(201,168,76,.28);}
+  .req-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .req-top h3{margin:0 0 8px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .mini{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--grey);background:rgba(232,232,224,.06);padding:2px 7px;border-radius:5px;}
+  .req-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0;font-size:12px;color:var(--grey);}
+  .req-meta span{display:flex;align-items:center;gap:4px;}.gold{color:var(--gold);font-weight:600;}
+  .tag{background:rgba(201,168,76,.12);color:var(--gold);padding:2px 9px;border-radius:999px;text-transform:capitalize;}
+  .status{font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .status.pending{background:rgba(201,168,76,.12);color:var(--gold);}
+  .status.accepted{background:rgba(60,200,120,.12);color:#5fd99a;}
+  .status.declined{background:rgba(255,59,59,.12);color:#ff8a8a;}
+  .req-msg{color:var(--off);font-size:13px;line-height:1.5;margin:12px 0;opacity:.85;}
+  .note{display:flex;gap:8px;margin:10px 0;}
+  .note input{flex:1;background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--off);font-size:12px;outline:none;}
+  .note-save{background:var(--gold);color:#000;border:none;border-radius:8px;padding:0 14px;font-size:12px;font-weight:600;cursor:pointer;}
+  .req-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .act{display:flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:9px 15px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter';}
+  .act:disabled{opacity:.6;}
+  .act.accept{background:var(--gold);color:#000;}
+  .act.decline{background:transparent;border:1px solid var(--line);color:var(--grey);}
+  .act.decline:hover{border-color:var(--red);color:#ff8a8a;}
+  .act.wa{background:rgba(60,200,120,.12);color:#5fd99a;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#000;border:none;border-radius:9px;padding:13px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter';}
+  .btn:disabled{opacity:.6;}.btn.sm{padding:9px 15px;font-size:13px;}
+  .field{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+  .field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);}
+  .field input,.field select,.field textarea{background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:9px;padding:11px 13px;color:var(--off);font-family:'Inter';font-size:14px;outline:none;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid2-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .entry{display:flex;flex-direction:column;}
+  .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey);margin:6px 0 14px;cursor:pointer;}
+  .mnav{display:flex;align-items:center;gap:10px;font-weight:600;}
+  .mnav button{background:var(--panel);border:1px solid var(--line);color:var(--off);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;}
+  .cal-head,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-head span{text-align:center;font-size:11px;color:var(--grey);padding-bottom:6px;}
+  .cc{aspect-ratio:1;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--off);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
+  .cc.empty{border:none;cursor:default;}
+  .cc.open:hover{border-color:var(--gold);color:var(--gold);}
+  .cc.blocked{background:rgba(232,232,224,.10);color:var(--grey);}
+  .cc.held{background:rgba(201,168,76,.14);color:var(--gold);border-color:rgba(201,168,76,.3);cursor:not-allowed;}
+  .cc.booked{background:rgba(255,59,59,.10);color:#ff8a8a;border-color:rgba(255,59,59,.28);cursor:not-allowed;}
+  .legend{display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--grey);flex-wrap:wrap;}
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:3px;}.dot.open{border:1px solid var(--gold);}.dot.blocked{background:rgba(232,232,224,.4);}.dot.held{background:rgba(201,168,76,.5);}.dot.booked{background:rgba(255,59,59,.5);}
+  .upload-card{display:flex;flex-direction:column;gap:14px;}
+  .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+  .media-cell{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);aspect-ratio:1;}
+  .media-cell img{width:100%;height:100%;object-fit:cover;display:block;}
+  .media-kind{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:var(--off);font-size:10px;padding:2px 8px;border-radius:5px;text-transform:capitalize;}
+  .media-del{position:absolute;top:8px;right:8px;background:rgba(255,59,59,.85);color:#fff;border:none;border-radius:6px;padding:5px;cursor:pointer;display:flex;}
+  .stars{display:flex;gap:4px;}.stars.sm{gap:2px;}
+  .seo{width:100%;border-collapse:collapse;font-size:13px;}
+  .seo th{text-align:left;color:var(--grey);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line);}
+  .seo td{padding:8px;border-bottom:1px solid rgba(232,232,224,.05);}
+  .seo td.ellip{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .empty{color:var(--grey);font-size:13px;text-align:center;padding:30px;}
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:22px;}
+  .login{width:100%;max-width:360px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-weight:600;font-size:13px;padding:12px 20px;border-radius:10px;z-index:90;max-width:90vw;text-align:center;}
+  .spin{animation:sp 1s linear infinite;}@keyframes sp{to{transform:rotate(360deg);}}
+  @media(max-width:620px){.cards{grid-template-columns:repeat(2,1fr);}.grid2,.grid2-wide{grid-template-columns:1fr;}}
+  `}</style>;
+}

@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import HeroVideo from '../components/HeroVideo.astro';
+import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
 import { getCollection } from 'astro:content';
 
 const BASE = '/images/rf/';
@@ -61,24 +62,6 @@ const secondaryServices = [
     name: "Private Sessions",
     href: "/private-sessions/",
     desc: "One-on-one craft sessions for those who want to master the art of the room. By enquiry only.",
-  },
-];
-
-const testimonials = [
-  {
-    quote: "VIC made our wedding night truly unforgettable. The transitions were seamless, the energy never dropped, and the audio-visual element left our guests speechless.",
-    name: "Kruthi S.",
-    event: "Wedding, Bangalore",
-  },
-  {
-    quote: "We booked VIC for our annual brand event and he read the room perfectly — from the opening set to the close, it was exactly the tone we needed.",
-    name: "Rashmi J.",
-    event: "Corporate Event",
-  },
-  {
-    quote: "We wanted our reception to feel cinematic, not just loud. VIC understood exactly what we meant — the music and visuals together were something else.",
-    name: "Aryaman & Prerna",
-    event: "Wedding Reception",
   },
 ];
 
@@ -250,18 +233,7 @@ const vicfixEpisodes = [
     <section id="testimonials">
       <span class="section-label">Client Voices</span>
       <h2>What they say</h2>
-      <div class="testi-grid">
-        {testimonials.map((t) => (
-          <div class="testi-item">
-            <div class="testi-quote-mark">&ldquo;</div>
-            <p class="testi-text">{t.quote}</p>
-            <div class="testi-attr">
-              <strong>{t.name}</strong>
-              <span>{t.event}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <TestimonialsStrip client:visible />
     </section>
 
     <!-- ════════════════════════════════ MUSIC ════════════════════════════════ -->
@@ -368,119 +340,10 @@ const vicfixEpisodes = [
       </div>
     </section>
 
-    <!-- ════════════════════════════════ CONTACT ════════════════════════════════ -->
-    <section id="contact">
-      <span class="section-label">Bookings</span>
-      <h2>Work With VIC</h2>
-      <p class="contact-lead">
-        VIC takes a limited number of bookings each month to ensure every performance
-        receives full attention. Based in Bangalore — available for weddings, events,
-        and performances across India and internationally. If you have a date in mind,
-        reach out early.
-      </p>
-
-      <div class="contact-layout">
-        <div class="contact-form-col">
-          <form id="booking-form" method="POST" action="https://formspree.io/f/xdapzdnw">
-            <input type="hidden" name="_subject" value="New Booking Enquiry — DJ VIC" />
-            <input type="hidden" name="_next" value="https://djvicofficial.com/thanks/" />
-            <input type="text" name="_gotcha" style="display:none" />
-
-            <div class="form-row">
-              <div class="form-field">
-                <label for="name">Your Name <span>*</span></label>
-                <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name" />
-              </div>
-              <div class="form-field">
-                <label for="email">Email Address <span>*</span></label>
-                <input id="email" type="email" name="email" required placeholder="your@email.com" autocomplete="email" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-field">
-                <label for="phone">Phone / WhatsApp <span>*</span></label>
-                <input id="phone" type="tel" name="phone" required placeholder="+91 98765 43210" autocomplete="tel" />
-              </div>
-              <div class="form-field">
-                <label for="event_type">Event Type <span>*</span></label>
-                <select id="event_type" name="event_type" required>
-                  <option value="" disabled selected>Select event type</option>
-                  <option value="Wedding">Wedding</option>
-                  <option value="Corporate">Corporate Event</option>
-                  <option value="Private Party">Private Party</option>
-                  <option value="Club Night">Club Night</option>
-                  <option value="Festival">Festival</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-field">
-                <label for="event_date">Event Date</label>
-                <input id="event_date" type="date" name="event_date" />
-              </div>
-              <div class="form-field">
-                <label for="city">City / Venue</label>
-                <input id="city" type="text" name="city" placeholder="Bangalore, Mumbai…" />
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label for="message">Tell us more</label>
-              <textarea id="message" name="message" rows="4" placeholder="Brief about your event, guests, vibe…"></textarea>
-            </div>
-
-            <button type="submit">Send Enquiry</button>
-          </form>
-        </div>
-
-        <div class="contact-aside">
-          <div class="contact-wa-block">
-            <p class="contact-wa-label">Fastest response</p>
-            <a
-              href="https://wa.me/919611711677"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="contact-wa-btn"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/>
-              </svg>
-              Chat on WhatsApp
-            </a>
-          </div>
-          <div class="contact-direct">
-            <a href="mailto:bookings@djvicofficial.com" class="contact-email">bookings@djvicofficial.com</a>
-            <a href="tel:+919611711677" class="contact-phone">+91 96117 11677</a>
-          </div>
-        </div>
-      </div>
-    </section>
 
   </main>
 
   <Footer />
-
-<script>
-  // WhatsApp notification on booking form submit
-  const bookingForm = document.getElementById('booking-form');
-  if (bookingForm) {
-    bookingForm.addEventListener('submit', function () {
-      const name = (document.getElementById('name') as HTMLInputElement)?.value || '';
-      const phone = (document.getElementById('phone') as HTMLInputElement)?.value || '';
-      const eventType = (document.getElementById('event_type') as HTMLSelectElement)?.value || '';
-      const eventDate = (document.getElementById('event_date') as HTMLInputElement)?.value || '';
-      const msg = encodeURIComponent(
-        `🎧 New Booking Enquiry\n\nName: ${name}\nPhone: ${phone}\nEvent: ${eventType}\nDate: ${eventDate}\n\n(Full details sent to email)`
-      );
-      setTimeout(() => {
-        window.open(`https://wa.me/919611711677?text=${msg}`, '_blank');
-      }, 1000);
-    });
-  }
-</script>
 
 </Layout>
 

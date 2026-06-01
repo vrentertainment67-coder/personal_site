@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import Gallery from '../components/Gallery.jsx';
 
 const BASE = '/images/rf/';
 
@@ -81,26 +82,7 @@ const photos = [
     </section>
 
     <section id="gallery">
-      <div class="photo-grid">
-        {photos.map((photo) => (
-          <div
-            class="photo-item"
-            data-src={`${BASE}${photo.src}`}
-            data-alt={photo.alt}
-            role="button"
-            tabindex="0"
-            aria-label={`View photo — ${photo.alt}`}
-          >
-            <img
-              src={`${BASE}${photo.src}`}
-              alt={photo.alt}
-              loading="lazy"
-              width="800"
-              height="600"
-            />
-          </div>
-        ))}
-      </div>
+      <Gallery client:visible fallback={photos} base={BASE} />
     </section>
 
     <!-- ── Booking CTA ──────────────────────────── -->
@@ -123,17 +105,6 @@ const photos = [
         </div>
       </div>
     </section>
-
-    <!-- ── Lightbox ─────────────────────────────── -->
-    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
-      <button id="lb-close" aria-label="Close">&times;</button>
-      <button id="lb-prev" aria-label="Previous photo">&#8592;</button>
-      <button id="lb-next" aria-label="Next photo">&#8594;</button>
-      <div id="lb-img-wrap">
-        <img id="lb-img" src="" alt="" width="1200" height="900" />
-      </div>
-      <div id="lb-counter"></div>
-    </div>
 
   </main>
 
@@ -404,79 +375,3 @@ const photos = [
   }
 </style>
 
-<script>
-  const items = Array.from(document.querySelectorAll('.photo-item'));
-  const lightbox = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lb-img');
-  const lbVenue = document.getElementById('lb-caption-venue');
-  const lbTag = document.getElementById('lb-caption-tag');
-  const lbCounter = document.getElementById('lb-counter');
-  const lbClose = document.getElementById('lb-close');
-  const lbPrev = document.getElementById('lb-prev');
-  const lbNext = document.getElementById('lb-next');
-
-  let current = 0;
-
-  function open(index) {
-    current = index;
-    show();
-    lightbox.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function close() {
-    lightbox.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  function show() {
-    const item = items[current];
-    lbImg.src = item.dataset.src;
-    lbImg.alt = item.dataset.alt || 'DJ VIC — Live Performance';
-    lbCounter.textContent = (current + 1) + ' / ' + items.length;
-  }
-
-  function prev() {
-    current = (current - 1 + items.length) % items.length;
-    show();
-  }
-
-  function next() {
-    current = (current + 1) % items.length;
-    show();
-  }
-
-  // Click on photo
-  items.forEach((item, i) => {
-    item.addEventListener('click', () => open(i));
-    item.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(i); }
-    });
-  });
-
-  // Controls
-  lbClose.addEventListener('click', close);
-  lbPrev.addEventListener('click', prev);
-  lbNext.addEventListener('click', next);
-
-  // Click outside image to close
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) close();
-  });
-
-  // Keyboard navigation
-  document.addEventListener('keydown', (e) => {
-    if (!lightbox.classList.contains('open')) return;
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowLeft') prev();
-    if (e.key === 'ArrowRight') next();
-  });
-
-  // Touch swipe support
-  let touchStartX = 0;
-  lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-  lightbox.addEventListener('touchend', (e) => {
-    const diff = touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
-  });
-</script>

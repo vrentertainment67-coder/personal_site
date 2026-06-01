@@ -1,0 +1,29 @@
+---
+// src/pages/admin.astro
+// Private admin console (Supabase login-gated). Standalone, full-bleed: the
+// React app ships its own header/nav, so this page deliberately does NOT use
+// the public site layout/nav. Not linked anywhere; noindex + nofollow.
+//
+// Component: src/components/AdminApp.jsx
+// Env: PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY (same as the booking app)
+import AdminApp from "../components/AdminApp.jsx";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VIC Admin</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #0A0A0A; }
+      :root { color-scheme: dark; }
+    </style>
+  </head>
+  <body>
+    <!-- client:only="react" — fully interactive, auth-gated, no SSR value. -->
+    <AdminApp client:only="react" />
+  </body>
+</html>
