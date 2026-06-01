@@ -11,22 +11,29 @@ const SUPABASE_URL = import.meta.env?.PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env?.PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov|m4v)$/i.test(url || "");
+
 export default function Gallery({ fallback = [], base = "/images/rf/" }) {
-  const curated = fallback.map((p) => ({ src: base + p.src, alt: p.alt }));
+  const curated = fallback.map((p) => ({ src: base + p.src, alt: p.alt, video: false }));
   const [photos, setPhotos] = useState(curated);
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
 
-  // Pull admin-uploaded gallery media and put it in front of the curated set.
+  // Once the media table is seeded it IS the source of truth — render it exactly
+  // so admin deletes/uploads reflect live. Falls back to `curated` only while the
+  // table is empty/unreadable (e.g. before the migration SQL is run).
   useEffect(() => {
     supabase.from("media").select("*").eq("kind", "gallery").order("sort").order("created_at", { ascending: false })
       .then(({ data }) => {
         if (Array.isArray(data) && data.length) {
-          const uploaded = data.map((m) => ({ src: m.url, alt: m.public_id || "DJ VIC — live performance" }));
-          setPhotos([...uploaded, ...curated]);
+          setPhotos(data.map((m) => ({
+            src: m.url,
+            alt: m.caption || "DJ VIC — live performance",
+            video: isVideo(m.url),
+          })));
         }
       })
-      .catch(() => { /* keep curated on error */ });
+      .catch(() => { /* keep curated fallback on error */ });
   }, []); // eslint-disable-line
 
   const show = useCallback((i) => { setIdx(i); setOpen(true); document.body.style.overflow = "hidden"; }, []);
@@ -52,8 +59,11 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
       <style>{vgStyles}</style>
       <div className="vg-grid">
         {photos.map((p, i) => (
-          <button className="vg-item" key={i} onClick={() => show(i)} aria-label={`View photo — ${p.alt}`}>
-            <img src={p.src} alt={p.alt} loading="lazy" width="800" height="600" />
+          <button className="vg-item" key={i} onClick={() => show(i)} aria-label={`View — ${p.alt}`}>
+            {p.video
+              ? <video src={p.src} muted playsInline preload="metadata" />
+              : <img src={p.src} alt={p.alt} loading="lazy" width="800" height="600" />}
+            {p.video && <span className="vg-play" aria-hidden="true">▶</span>}
           </button>
         ))}
       </div>
@@ -72,7 +82,9 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
           <button className="vg-nav vg-prev" onClick={prev} aria-label="Previous photo">&#8592;</button>
           <button className="vg-nav vg-next" onClick={next} aria-label="Next photo">&#8594;</button>
           <div className="vg-img-wrap">
-            <img className="vg-img" src={photos[idx]?.src} alt={photos[idx]?.alt} />
+            {photos[idx]?.video
+              ? <video className="vg-img" src={photos[idx].src} controls autoPlay playsInline />
+              : <img className="vg-img" src={photos[idx]?.src} alt={photos[idx]?.alt} />}
           </div>
           <div className="vg-counter">{idx + 1} / {photos.length}</div>
         </div>
@@ -84,8 +96,9 @@ export default function Gallery({ fallback = [], base = "/images/rf/" }) {
 const vgStyles = `
 .vg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
 .vg-item{position:relative;overflow:hidden;aspect-ratio:4/3;background:#111;border:none;padding:0;cursor:zoom-in;display:block;}
-.vg-item img{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;transition:transform .4s ease;}
-.vg-item:hover img{transform:scale(1.05);}
+.vg-item img,.vg-item video{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;transition:transform .4s ease;}
+.vg-item:hover img,.vg-item:hover video{transform:scale(1.05);}
+.vg-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);pointer-events:none;}
 @media(max-width:900px){.vg-grid{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:600px){.vg-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:380px){.vg-grid{grid-template-columns:1fr;}}

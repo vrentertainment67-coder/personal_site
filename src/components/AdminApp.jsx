@@ -23,6 +23,7 @@ const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
 const waDigits = (s) => (s || "").replace(/[^0-9]/g, "");
+const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov|m4v)$/i.test(url || "");
 
 async function authHeader() {
   const { data } = await supabase.auth.getSession();
@@ -395,30 +396,34 @@ function Media({ showToast }) {
     showToast("Removed."); load();
   };
 
+  const shown = items.filter((m) => m.kind === kind);
   return (
     <>
-      <h1 className="h1">Media</h1>
-      <p className="sub">Uploads go to Cloudinary and appear in your live gallery island. Pick a kind, then upload.</p>
+      <h1 className="h1">Gallery &amp; Media</h1>
+      <p className="sub">A live mirror of the public site. Pick a set, then upload or delete — changes go live instantly.</p>
       <div className="card upload-card">
         <div className="chips">
           {["gallery", "press", "logo"].map((k) => (
             <button key={k} className={kind === k ? "chip on" : "chip"} onClick={() => setKind(k)}>{k}</button>
           ))}
         </div>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
+        <input ref={fileRef} type="file" accept="image/*,video/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
         <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>
-          {busy ? <><Loader2 className="spin" size={16} /> Uploading…</> : <><Upload size={16} /> Upload image</>}
+          {busy ? <><Loader2 className="spin" size={16} /> Uploading…</> : <><Upload size={16} /> Upload image / video</>}
         </button>
+        <span className="sub" style={{ margin: 0 }}>{shown.length} in “{kind}”</span>
       </div>
       <div className="media-grid">
-        {items.map((m) => (
+        {shown.map((m) => (
           <div key={m.id} className="media-cell">
-            <img src={m.url} alt={m.caption || ""} />
-            <span className="media-kind">{m.kind}</span>
+            {isVideo(m.url)
+              ? <video src={m.url} muted playsInline preload="metadata" />
+              : <img src={m.url} alt={m.caption || ""} />}
+            {isVideo(m.url) && <span className="vplay" aria-hidden="true">▶</span>}
             <button className="media-del" onClick={() => remove(m)}><Trash2 size={14} /></button>
           </div>
         ))}
-        {items.length === 0 && <p className="empty">No images yet.</p>}
+        {shown.length === 0 && <p className="empty">Nothing in “{kind}” yet — upload to add.</p>}
       </div>
     </>
   );
@@ -614,7 +619,8 @@ function Styles() {
   .upload-card{display:flex;flex-direction:column;gap:14px;}
   .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
   .media-cell{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);aspect-ratio:1;}
-  .media-cell img{width:100%;height:100%;object-fit:cover;display:block;}
+  .media-cell img,.media-cell video{width:100%;height:100%;object-fit:cover;display:block;}
+  .media-cell .vplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);pointer-events:none;}
   .media-kind{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:var(--off);font-size:10px;padding:2px 8px;border-radius:5px;text-transform:capitalize;}
   .media-del{position:absolute;top:8px;right:8px;background:rgba(255,59,59,.85);color:#fff;border:none;border-radius:6px;padding:5px;cursor:pointer;display:flex;}
   .stars{display:flex;gap:4px;}.stars.sm{gap:2px;}
