@@ -8,6 +8,8 @@ import react from '@astrojs/react';
 export default defineConfig({
   site: 'https://djvicofficial.com',
   integrations: [mdx(), sitemap({
+    // Keep noindex pages out of the sitemap (admin, booking funnel, thank-you).
+    filter: (page) => !/\/(admin|book|thanks)\/?$/.test(page),
     changefreq: 'weekly',
     priority: 0.7,
     lastmod: new Date(),
