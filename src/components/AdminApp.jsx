@@ -698,6 +698,11 @@ function Testimonials({ showToast }) {
   };
   const toggle = async (t) => { await supabase.from("testimonials").update({ approved: !t.approved }).eq("id", t.id); load(); };
   const remove = async (t) => { await supabase.from("testimonials").delete().eq("id", t.id); load(); };
+  const setCategory = async (t, category) => {
+    const { error } = await supabase.from("testimonials").update({ category }).eq("id", t.id);
+    if (error) return showToast(error.message);
+    showToast(category === "wedding" ? "Moved to Weddings page." : "Moved to Homepage."); load();
+  };
   const save = async () => {
     if (!edit.author || !edit.quote) return showToast("Author and quote required.");
     setBusy(true);
@@ -740,12 +745,6 @@ function Testimonials({ showToast }) {
                 <div className="field"><label>Rating</label>
                   <div className="stars">{[1,2,3,4,5].map((n) => <Star key={n} size={20} onClick={() => setEdit({ ...edit, rating: n })} fill={n <= edit.rating ? "#C9A84C" : "none"} color="#C9A84C" style={{ cursor: "pointer" }} />)}</div>
                 </div>
-                <div className="field"><label>Shows on</label>
-                  <select value={edit.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })}>
-                    <option value="home">Homepage</option>
-                    <option value="wedding">Weddings page</option>
-                  </select>
-                </div>
                 <div className="req-actions">
                   <button className="act wa" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={14} /> : <><CheckCircle2 size={14} /> Save</>}</button>
                   <button className="act decline" onClick={() => setEdit(null)}>Cancel</button>
@@ -757,8 +756,11 @@ function Testimonials({ showToast }) {
                   <div><h3>{t.author} {t.role && <span className="mini">{t.role}</span>}</h3>
                     <div className="stars sm">{Array.from({ length: t.rating || 0 }).map((_, i) => <Star key={i} size={13} fill="#C9A84C" color="#C9A84C" />)}</div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <span className="mini">{t.category === "wedding" ? "Weddings" : "Home"}</span>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <select className="mini-sel" value={t.category || "home"} onChange={(e) => setCategory(t, e.target.value)} title="Shows on">
+                      <option value="home">Homepage</option>
+                      <option value="wedding">Weddings page</option>
+                    </select>
                     <span className={`status ${t.approved ? "accepted" : "pending"}`}>{t.approved ? "live" : "hidden"}</span>
                   </div>
                 </div>
@@ -941,6 +943,8 @@ function Styles() {
   .pi-info strong{font-size:13px;}
   .pi-page{font-size:11px;color:var(--grey);}
   .pi-size{font-size:10.5px;color:var(--gold);letter-spacing:.3px;margin-top:1px;}
+  .mini-sel{background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:6px;color:var(--off);font-family:inherit;font-size:11px;padding:4px 8px;cursor:pointer;outline:none;}
+  .mini-sel:focus{border-color:var(--gold);}
   .pi-actions{padding:10px 12px 12px;display:flex;gap:8px;margin-top:auto;}
   .btn.sm.ghost{background:transparent;border:1px solid var(--line);color:var(--grey);}
   .btn.sm.ghost:hover{border-color:var(--gold);color:var(--gold);}
