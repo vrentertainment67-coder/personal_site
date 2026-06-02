@@ -1,0 +1,154 @@
+---
+// ============================================================
+// DJ VIC — global video modal
+// Any element with  data-video="<youtubeId>"  opens an in-page
+// player instead of navigating away. Optional data-video-title.
+// Included once in Layout; the bundled script is delegated so it
+// works across View Transitions.
+// ============================================================
+---
+<div id="video-modal" class="vm" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Video player">
+  <div class="vm-backdrop" data-vm-close></div>
+  <div class="vm-shell">
+    <button class="vm-close" type="button" aria-label="Close video" data-vm-close>&times;</button>
+    <div class="vm-frame" id="vm-frame"></div>
+    <p class="vm-title" id="vm-title"></p>
+  </div>
+</div>
+
+<style>
+  .vm {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 4vmin;
+  }
+  .vm.is-open { display: flex; }
+  .vm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 6, 5, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .vm.is-open .vm-backdrop { opacity: 1; }
+  .vm-shell {
+    position: relative;
+    width: min(1040px, 100%);
+    z-index: 1;
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  }
+  .vm.is-open .vm-shell { transform: none; opacity: 1; }
+  .vm-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    overflow: hidden;
+  }
+  .vm-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .vm-title {
+    margin: 0.9rem 0 0;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+  }
+  .vm-title:empty { display: none; }
+  .vm-close {
+    position: absolute;
+    top: -2.6rem;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 2.2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .vm-close:hover { color: #fff; transform: scale(1.1); }
+  @media (max-width: 600px) {
+    .vm { padding: 0; }
+    .vm-shell { width: 100%; }
+    .vm-frame { border-left: 0; border-right: 0; }
+    .vm-close { top: auto; bottom: -2.8rem; right: 50%; transform: translateX(50%); }
+    .vm-close:hover { transform: translateX(50%) scale(1.1); }
+  }
+</style>
+
+<script>
+  (function () {
+    if (window.__vmWired) return;
+    window.__vmWired = true;
+
+    const modal = () => document.getElementById('video-modal');
+    let lastFocus = null;
+
+    function open(id, title) {
+      const m = modal();
+      if (!m || !id) return;
+      lastFocus = document.activeElement;
+      const frame = document.getElementById('vm-frame');
+      const t = document.getElementById('vm-title');
+      const src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) +
+        '?autoplay=1&rel=0&modestbranding=1';
+      frame.innerHTML = '<iframe src="' + src +
+        '" title="' + (title ? title.replace(/"/g, '&quot;') : 'Video') +
+        '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+      if (t) t.textContent = title || '';
+      m.classList.add('is-open');
+      m.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      const closeBtn = m.querySelector('.vm-close');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function close() {
+      const m = modal();
+      if (!m || !m.classList.contains('is-open')) return;
+      m.classList.remove('is-open');
+      m.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      const frame = document.getElementById('vm-frame');
+      if (frame) frame.innerHTML = ''; // stop playback
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (e) {
+      const trigger = e.target.closest && e.target.closest('[data-video]');
+      if (trigger) {
+        e.preventDefault();
+        open(trigger.getAttribute('data-video'), trigger.getAttribute('data-video-title') || '');
+        return;
+      }
+      if (e.target.closest && e.target.closest('[data-vm-close]')) {
+        e.preventDefault();
+        close();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    // Close if a View Transition navigates away
+    document.addEventListener('astro:before-swap', close);
+  })();
+</script>

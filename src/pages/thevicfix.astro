@@ -152,7 +152,14 @@ const episodes = allEpisodes.sort((a, b) => {
                 </a>
                 <div class="card-footer">
                   <a href={`/thevicfix/${ep.id}/`} class="watch-cta">Read Episode &rarr;</a>
-                  <a href={`https://youtu.be/${ep.data.youtubeId}`} class="yt-cta" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
+                  <a
+                    href={`https://youtu.be/${ep.data.youtubeId}`}
+                    class="yt-cta"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-video={ep.data.youtubeId}
+                    data-video-title={`${ep.data.guestName} — The VIC Fix`}
+                  >&#9654; Play Episode</a>
                 </div>
               </div>
             );

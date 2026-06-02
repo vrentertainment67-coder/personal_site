@@ -17,4 +17,5 @@ export const IMAGE_SLOTS = [
   { slot: "thevicfix.hero", label: "The Vic Fix — hero background", page: "The Vic Fix", size: "1920 × 1080 px · landscape", default: "/images/rf/e94568f5bfc73623b03fccac9a9c7a5d.jpg" },
   { slot: "remixes.hero", label: "Remixes — hero background", page: "Remixes", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=85" },
   { slot: "photos.hero", label: "Gallery — hero background", page: "Gallery", size: "1920 × 1080 px · landscape", default: "/images/rf/cbcb21ad3960fc82de8f296e385e745e.jpg" },
+  { slot: "about.hero", label: "About — hero background", page: "About", size: "1920 × 1080 px · landscape", default: "/images/rf/035a62b9d94630a5ac59f8fe1b8f1cc7.jpg" },
 ];

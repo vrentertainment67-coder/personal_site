@@ -3,6 +3,8 @@ import '../styles/global.css';
 import BaseHead from '../components/BaseHead.astro';
 import ClientRouter from 'astro/components/ClientRouter.astro';
 import MusicPlayer from '../components/MusicPlayer.astro';
+import VideoModal from '../components/VideoModal.astro';
+import SearchOverlay from '../components/SearchOverlay.astro';
 import type { Props as BaseHeadProps } from '../components/BaseHead.astro';
 
 export type Props = BaseHeadProps;
@@ -127,6 +129,8 @@ export type Props = BaseHeadProps;
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <slot />
     <MusicPlayer />
+    <VideoModal />
+    <SearchOverlay />
 
     <!-- Mobile floating CTA bar — WhatsApp primary, Book secondary -->
     <div class="mob-float-bar" id="mob-float-bar" aria-label="Quick booking actions">

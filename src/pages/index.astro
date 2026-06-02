@@ -294,7 +294,7 @@ const vicfixEpisodes = [
                 width="1280"
                 height="720"
               />
-              <div class="lrc-play">
+              <div class="lrc-play" data-video={r.data.youtubeId} data-video-title={r.data.title} aria-label={`Play ${r.data.title}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
@@ -328,7 +328,7 @@ const vicfixEpisodes = [
                 width="320"
                 height="180"
               />
-              <div class="track-play">
+              <div class="track-play" data-video={r.data.youtubeId} data-video-title={r.data.title} aria-label={`Play ${r.data.title}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
@@ -362,7 +362,7 @@ const vicfixEpisodes = [
                 alt={ep.title}
                 loading="lazy"
               />
-              <div class="vf-play">
+              <div class="vf-play" data-video={ep.id} data-video-title={ep.title} aria-label={`Play ${ep.title}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
                   <path d="M8 5v14l11-7z"/>
                 </svg>

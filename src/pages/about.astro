@@ -1,0 +1,265 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import EmailCapture from '../components/EmailCapture.jsx';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const stats = [
+  { num: '2005', label: 'Performing Since', count: false },
+  { num: '18', label: 'Countries', count: true },
+  { num: '1400+', label: 'Nights Performed', count: true },
+  { num: '50+', label: 'VIC Fix Episodes', count: true },
+];
+
+const journey = [
+  { year: '2005', title: 'The First Booth', body: 'VIC starts spinning across Bangalore’s club circuit — learning to read a room one night at a time.' },
+  { year: '2010s', title: 'Going International', body: 'Residencies and guest sets take the sound across 18 countries, from intimate lounges to open-air stages.' },
+  { year: 'Today', title: 'Audio-Visual Performance', body: 'A signature format that fuses music, light and visuals — built for weddings, brands and festivals alike.' },
+  { year: 'Now', title: 'The VIC Fix', body: 'Long-form conversations with the artists, founders and characters who shaped the scene — 50+ episodes and counting.' },
+];
+---
+
+<Layout
+  title="About DJ VIC | International DJ, Producer & Remixer — Bangalore"
+  description="The story of DJ VIC — 19+ years, 18 countries, 1400+ performances. International DJ, producer and Universal Music partner based in Bangalore, known for audio-visual performances."
+  schema={[
+    {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "About DJ VIC",
+      "url": "https://djvicofficial.com/about/",
+      "mainEntity": { "@id": "https://djvicofficial.com/#person" }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",  "item": "https://djvicofficial.com/" },
+        { "@type": "ListItem", "position": 2, "name": "About", "item": "https://djvicofficial.com/about/" }
+      ]
+    }
+  ]}
+>
+  <Nav />
+  <main id="main-content">
+
+    <section id="about-hero" class="hero-bg" data-img-slot="about.hero">
+      <div class="section-label">The Story</div>
+      <h1 class="fx-split">Some nights become the memory.</h1>
+      <p class="tagline">DJ · Producer · Remixer</p>
+      <p class="about-hero-sub">
+        Nineteen years on stage. Eighteen countries. Over fourteen hundred nights —
+        and a signature audio-visual format that turns a set into a performance.
+      </p>
+      <a href={`${base}/book/`} class="cta-btn cta-btn--gold magnetic" data-mag="0.25">Book DJ VIC &rarr;</a>
+    </section>
+
+    <section id="about-stats">
+      <div class="stats-grid">
+        {stats.map((s) => (
+          <div class="stat-card fx-reveal">
+            <span class="stat-num">{s.count ? <strong data-count>{s.num}</strong> : s.num}</span>
+            <span class="stat-label">{s.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section id="about-bio">
+      <div class="section-label fx-reveal">Who He Is</div>
+      <h2 class="fx-reveal" data-fx-delay="1">More than a DJ set.</h2>
+      <div class="bio-grid">
+        <div class="bio-copy fx-reveal" data-fx-delay="1">
+          <p>
+            VIC is an international DJ, producer and remixer based in Bangalore — a Universal Music
+            partner whose work spans Bollywood, house, hip-hop and commercial dance. Since 2005 he has
+            performed across 18 countries and more than 1,400 nights, building a reputation for sets that
+            read the room and never let the energy drop.
+          </p>
+          <p>
+            What sets him apart is the format. VIC doesn’t just play music — he stages an
+            <strong> audio-visual performance</strong>, weaving sound, lighting and visuals into a single
+            moment. It’s the reason couples, brands and festival programmers keep coming back: the night
+            doesn’t just sound good, it feels cinematic.
+          </p>
+          <p>
+            Off the decks, he hosts <a href={`${base}/thevicfix/`}>The VIC Fix</a> — a long-form podcast of
+            candid conversations with the people who shaped India’s music and nightlife scene.
+          </p>
+        </div>
+        <aside class="bio-card fx-reveal" data-fx-delay="2">
+          <span class="bio-card-tag">At a glance</span>
+          <ul>
+            <li><strong>Based in</strong> Bangalore, India</li>
+            <li><strong>Available</strong> across India &amp; internationally</li>
+            <li><strong>Genres</strong> Bollywood, Hip-Hop, House, Commercial</li>
+            <li><strong>Partner</strong> Universal Music</li>
+            <li><strong>Signature</strong> Audio-visual performance</li>
+          </ul>
+          <a href={`${base}/book/`} class="bio-card-cta">Check a date &rarr;</a>
+        </aside>
+      </div>
+    </section>
+
+    <section id="about-journey" class="section-alt">
+      <div class="section-label fx-reveal">The Journey</div>
+      <h2 class="fx-reveal" data-fx-delay="1">Two decades, one through-line.</h2>
+      <div class="journey-grid">
+        {journey.map((j, i) => (
+          <div class="journey-item fx-reveal" data-fx-delay={(i % 4) + 1}>
+            <span class="journey-year">{j.year}</span>
+            <h3>{j.title}</h3>
+            <p>{j.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section id="about-news">
+      <div class="news-wrap fx-reveal">
+        <EmailCapture
+          client:visible
+          source="about"
+          variant="card"
+          heading="Follow the journey"
+          sub="New mixes, VIC Fix episodes and event drops — straight to your inbox."
+          cta="Subscribe"
+        />
+      </div>
+    </section>
+
+    <section id="about-cta" class="cta-section">
+      <h2 class="fx-reveal">Let’s make your night the memory.</h2>
+      <p class="section-sub fx-reveal" data-fx-delay="1">
+        Weddings, corporate events, festivals and private parties — across India and internationally.
+      </p>
+      <a href={`${base}/book/`} class="cta-btn cta-btn--gold magnetic" data-mag="0.25">Book DJ VIC &rarr;</a>
+    </section>
+
+    <section id="about-links">
+      <div class="internal-links">
+        <span class="links-label">Also explore</span>
+        <a href={`${base}/weddings/`}>Weddings &rarr;</a>
+        <a href={`${base}/thevicfix/`}>The VIC Fix &rarr;</a>
+        <a href={`${base}/remixes/`}>Remixes &rarr;</a>
+        <a href={`${base}/photos/`}>Gallery &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  /* ── Hero ── */
+  #about-hero {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.9) 28%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.2) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.78) 100%),
+      url('/images/rf/035a62b9d94630a5ac59f8fe1b8f1cc7.jpg');
+    background-size: cover;
+    background-position: center center;
+    min-height: 70svh;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 9rem 2.5rem 4rem;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  #about-hero h1 {
+    color: var(--white);
+    font-size: clamp(2.6rem, 7vw, 6rem);
+    line-height: 1.04;
+    max-width: 16ch;
+  }
+  .about-hero-sub {
+    color: rgba(255,255,255,0.72);
+    max-width: 60ch;
+    margin: 1.25rem 0 2rem;
+    line-height: 1.7;
+  }
+
+  .section-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+  }
+  h2 { color: var(--white); }
+  .section-sub { color: rgba(255,255,255,0.65); max-width: 680px; margin: 0.5rem 0 2rem; }
+  .section-alt { background: rgba(0,0,0,0.25); }
+
+  /* ── CTA buttons (page-local, matches service pages) ── */
+  .cta-btn {
+    display: inline-block; padding: 0.9rem 1.75rem; font-family: var(--font-body);
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    border-radius: 4px; transition: background 0.2s, transform 0.15s; text-decoration: none;
+  }
+  .cta-btn--gold { background: var(--gold); color: #000; border: 1px solid var(--gold); }
+  .cta-btn--gold:hover { background: var(--gold-light); color: #000; transform: translateY(-1px); }
+
+  /* ── Stats ── */
+  #about-stats { padding-top: 3rem; padding-bottom: 3rem; }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.12);
+  }
+  .stat-card {
+    background: #0d0d0d; padding: 2.25rem 1.5rem; display: flex; flex-direction: column;
+    gap: 0.4rem; text-align: center; align-items: center;
+  }
+  .stat-num, .stat-num strong {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(2.2rem, 4.5vw, 3.6rem); color: var(--gold); line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: rgba(255,255,255,0.45);
+  }
+
+  /* ── Bio ── */
+  .bio-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 2.5rem; margin-top: 2rem; align-items: start; }
+  .bio-copy p { color: rgba(255,255,255,0.72); line-height: 1.85; margin-bottom: 1.25rem; }
+  .bio-copy strong { color: #fff; }
+  .bio-card {
+    background: #111; border: 1px solid rgba(201,168,76,0.2); border-left: 3px solid var(--gold);
+    padding: 1.75rem; position: sticky; top: 6rem;
+  }
+  .bio-card-tag {
+    display: inline-block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 1rem;
+  }
+  .bio-card ul { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+  .bio-card li { font-size: 0.85rem; color: rgba(255,255,255,0.6); padding: 0.5rem 0; border-bottom: 1px solid #1c1c1c; }
+  .bio-card li strong { color: #fff; display: inline-block; min-width: 6.5rem; }
+  .bio-card-cta { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--gold); }
+
+  /* ── Journey ── */
+  .journey-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 2rem; }
+  .journey-item { background: #111; border: 1px solid rgba(201,168,76,0.12); border-top: 3px solid var(--gold); padding: 1.5rem; }
+  .journey-year { display: block; font-family: var(--font-display); font-size: 1.6rem; color: var(--gold); line-height: 1; margin-bottom: 0.6rem; }
+  .journey-item h3 { color: #fff; font-size: 1rem; margin: 0 0 0.5rem; }
+  .journey-item p { font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.7; margin: 0; }
+
+  /* ── Newsletter + CTA ── */
+  .news-wrap { max-width: 640px; }
+  .cta-section { text-align: center; }
+  .cta-section .section-sub { margin-inline: auto; }
+
+  .internal-links { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; }
+  .links-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .internal-links a { font-size: 0.85rem; color: var(--gold); }
+
+  /* ── Mobile ── */
+  @media (max-width: 860px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .bio-grid { grid-template-columns: 1fr; }
+    .bio-card { position: static; }
+    .journey-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 540px) {
+    #about-hero { padding: 7rem 1.5rem 3rem; }
+    .journey-grid { grid-template-columns: 1fr; }
+  }
+</style>
