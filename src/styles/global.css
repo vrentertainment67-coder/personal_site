@@ -939,3 +939,48 @@ footer {
     padding: 2rem 1.25rem;
   }
 }
+
+/* ============================================================
+   MOTION LAYER — reveal scaffold + reduced-motion safety
+   (premium on desktop, light on mobile; degrades to no-JS)
+   ============================================================ */
+
+/* Reveal elements are only hidden once the motion script has booted
+   (html.fx-ready). If JS never runs, content stays fully visible. */
+html.fx-ready .fx-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  will-change: opacity, transform;
+}
+html.fx-ready .fx-reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Stagger helpers for grids */
+html.fx-ready .fx-reveal[data-fx-delay="1"].is-in { transition-delay: 0.08s; }
+html.fx-ready .fx-reveal[data-fx-delay="2"].is-in { transition-delay: 0.16s; }
+html.fx-ready .fx-reveal[data-fx-delay="3"].is-in { transition-delay: 0.24s; }
+html.fx-ready .fx-reveal[data-fx-delay="4"].is-in { transition-delay: 0.32s; }
+
+/* Custom cursor + magnetic only exist on premium (desktop, fine pointer). */
+.cursor-dot,
+.cursor-ring { display: none; }
+
+/* ── Reduced motion: honour the OS setting, kill everything kinetic ── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  html.fx-ready .fx-reveal,
+  html.fx-ready .fx-reveal.is-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .cursor-dot, .cursor-ring { display: none !important; }
+}

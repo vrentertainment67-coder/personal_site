@@ -77,9 +77,43 @@ export type Props = BaseHeadProps;
             "https://www.facebook.com/djvicofficial",
             "https://audiomack.com/vrentertainment67"
           ]
+        },
+        {
+          "@type": "MusicGroup",
+          "@id": "https://djvicofficial.com/#artist",
+          "name": "DJ VIC",
+          "url": "https://djvicofficial.com",
+          "image": "https://djvicofficial.com/images/og-default.jpg",
+          "genre": ["Bollywood", "Hip-Hop", "House", "Commercial", "Electronic Dance Music"],
+          "description": "DJ VIC is an international DJ, producer, and remixer from Bangalore — Universal Music partner with releases and remixes spanning Bollywood, house, and commercial dance.",
+          "member": { "@id": "https://djvicofficial.com/#person" },
+          "sameAs": [
+            "https://www.instagram.com/djvicofficial",
+            "https://www.youtube.com/@thedjvicofficial",
+            "https://www.facebook.com/djvicofficial",
+            "https://audiomack.com/vrentertainment67"
+          ]
         }
       ]
     }
+    </script>
+    <!-- Motion + pointer capability flags — set on <html> before paint so CSS
+         and the motion layer can branch without a flash (premium desktop, light mobile). -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        try {
+          var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var fine = window.matchMedia("(pointer: fine)").matches;
+          var wide = window.matchMedia("(min-width: 1025px)").matches;
+          d.classList.add(reduce ? "motion-reduce" : "motion-ok");
+          d.classList.add(fine ? "pointer-fine" : "pointer-coarse");
+          // "premium" = desktop-class device that wants the full motion treatment
+          if (!reduce && fine && wide) d.classList.add("fx-premium");
+        } catch (e) {
+          d.classList.add("motion-ok", "pointer-coarse");
+        }
+      })();
     </script>
   </head>
   <body>
