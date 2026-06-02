@@ -145,7 +145,18 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') close();
+      const m = modal();
+      if (!m || !m.classList.contains('is-open')) return;
+      if (e.key === 'Escape') { close(); return; }
+      // Focus trap — keep Tab within the modal shell
+      if (e.key === 'Tab') {
+        const focusables = m.querySelectorAll('button, [href], iframe, [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     });
 
     // Close if a View Transition navigates away

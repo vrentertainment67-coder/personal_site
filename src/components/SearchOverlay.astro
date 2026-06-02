@@ -142,6 +142,17 @@
         const t = e.target;
         const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
         if (!typing) { e.preventDefault(); open(); }
+        return;
+      }
+      // Focus trap while open
+      if (e.key === 'Tab' && isOpen) {
+        const f = o.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+        const visible = Array.prototype.filter.call(f, (el) => el.offsetParent !== null);
+        if (!visible.length) return;
+        const first = visible[0];
+        const last = visible[visible.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     });
 
