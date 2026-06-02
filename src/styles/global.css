@@ -984,3 +984,128 @@ html.fx-ready .fx-reveal[data-fx-delay="4"].is-in { transition-delay: 0.32s; }
   }
   .cursor-dot, .cursor-ring { display: none !important; }
 }
+
+/* ============================================================
+   PREMIUM MOTION — custom cursor, magnetic, split-text, preloader
+   (only active under html.fx-premium; never on touch/reduced)
+   ============================================================ */
+
+/* ── Custom cursor ─────────────────────────────────────────── */
+html.fx-premium .cursor-dot,
+html.fx-premium .cursor-ring {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10000;
+  border-radius: 50%;
+  mix-blend-mode: difference;
+}
+html.fx-premium .cursor-dot {
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: #fff;
+}
+html.fx-premium .cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: width 0.25s ease, height 0.25s ease, margin 0.25s ease, background 0.25s ease;
+}
+html.fx-premium .cursor-ring.is-hover {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  background: rgba(201, 168, 76, 0.12);
+}
+/* Hide native cursor only once the custom one is live */
+html.fx-premium body.cursor-on,
+html.fx-premium body.cursor-on a,
+html.fx-premium body.cursor-on button,
+html.fx-premium body.cursor-on .magnetic { cursor: none; }
+html.fx-premium body.cursor-on input,
+html.fx-premium body.cursor-on textarea,
+html.fx-premium body.cursor-on select { cursor: text; }
+
+/* ── Magnetic buttons — smooth return ──────────────────────── */
+html.fx-premium .magnetic {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* ── Kinetic split-text ────────────────────────────────────── */
+/* On premium, hide the headline until JS splits + animates it.
+   The fallback animation reveals it after 2.6s even if JS fails. */
+html.fx-premium .fx-split {
+  opacity: 0;
+  animation: fxSplitFallback 0.01s linear 2.6s forwards;
+}
+@keyframes fxSplitFallback { to { opacity: 1; } }
+.fx-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.fx-word-i {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ── Preloader (first visit only; gated by html.preload-on) ── */
+#preloader { display: none; }
+html.preload-on #preloader {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #050a08;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.4rem;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+html.preload-on #preloader.is-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+html.preload-on body { overflow: hidden; }
+.preloader-logo {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 9vw, 5rem);
+  letter-spacing: 0.06em;
+  color: #fff;
+  opacity: 0;
+  animation: preFade 0.6s ease forwards;
+}
+.preloader-logo span { color: var(--gold); }
+.preloader-bar {
+  width: min(180px, 50vw);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.preloader-bar::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--gold);
+  transform: translateX(-100%);
+  animation: preBar 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes preFade { to { opacity: 1; } }
+@keyframes preBar { to { transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html.preload-on #preloader { display: none !important; }
+  html.preload-on body { overflow: auto !important; }
+  html.fx-premium .cursor-dot,
+  html.fx-premium .cursor-ring { display: none !important; }
+}

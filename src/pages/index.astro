@@ -180,7 +180,7 @@ const vicfixEpisodes = [
     <!-- ══════════════════════════ SIGNATURE STATEMENT ══════════════════════════ -->
     <div id="signature">
       <div class="sig-inner">
-        <p class="sig-text">
+        <p class="sig-text fx-reveal">
           Not a DJ set.<br />
           An audio-visual performance.
         </p>
@@ -190,7 +190,7 @@ const vicfixEpisodes = [
 
     <!-- ════════════════════════════════ STATS ════════════════════════════════ -->
     <section id="about">
-      <p class="stats-lead">
+      <p class="stats-lead fx-reveal">
         Active since 2005 — two decades on stage, eighteen countries performed in,
         over 1,400 nights of live sets. Here's what that looks like in numbers.
       </p>
@@ -200,11 +200,11 @@ const vicfixEpisodes = [
           <span>In the Industry</span>
         </div>
         <div class="stat-item">
-          <strong>18</strong>
+          <strong data-count>18</strong>
           <span>Countries</span>
         </div>
         <div class="stat-item">
-          <strong>1400+</strong>
+          <strong data-count>1400+</strong>
           <span>Nights Performed</span>
         </div>
         <div class="stat-item">
@@ -212,19 +212,19 @@ const vicfixEpisodes = [
           <span>Music Partner</span>
         </div>
         <div class="stat-item">
-          <strong>50+</strong>
+          <strong data-count>50+</strong>
           <span>Conversations Published</span>
         </div>
         <div class="stat-item">
-          <strong>150+</strong>
+          <strong data-count>150+</strong>
           <span>Artists Collaborated With</span>
         </div>
         <div class="stat-item">
-          <strong>10M+</strong>
+          <strong data-count>10M+</strong>
           <span>Content Views</span>
         </div>
         <div class="stat-item">
-          <strong>300+</strong>
+          <strong data-count>300+</strong>
           <span>Private &amp; Corporate Events</span>
         </div>
       </div>
@@ -233,15 +233,16 @@ const vicfixEpisodes = [
     <!-- ════════════════════════════ VIC FIX CALLOUT ════════════════════════════ -->
     <!-- ════════════════════════════════ WORK ════════════════════════════════ -->
     <section id="work">
-      <span class="section-label">What VIC Does</span>
-      <h2>Work</h2>
+      <span class="section-label fx-reveal">What VIC Does</span>
+      <h2 class="fx-reveal" data-fx-delay="1">Work</h2>
 
       <!-- Primary: 2 large cards -->
       <div class="work-primary-grid">
-        {primaryServices.map((s) => (
+        {primaryServices.map((s, i) => (
           <a
             href={s.href}
-            class="work-primary"
+            class="work-primary fx-reveal"
+            data-fx-delay={i + 1}
             data-img-slot={s.slot}
             style={`background-image: linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.55) 55%, rgba(6,6,6,0.2) 100%), url('${s.bg}'); background-size: cover; background-position: center;`}
           >
@@ -257,8 +258,8 @@ const vicfixEpisodes = [
 
       <!-- Secondary: 4 compact cards -->
       <div class="work-secondary-grid">
-        {secondaryServices.map((s) => (
-          <a href={s.href} class="work-secondary">
+        {secondaryServices.map((s, i) => (
+          <a href={s.href} class="work-secondary fx-reveal" data-fx-delay={(i % 4) + 1}>
             <div class="work-secondary-border"></div>
             <span class="work-name">{s.name}</span>
             <p>{s.desc}</p>
@@ -270,21 +271,21 @@ const vicfixEpisodes = [
 
     <!-- ════════════════════════════ TESTIMONIALS ════════════════════════════ -->
     <section id="testimonials">
-      <span class="section-label">Client Voices</span>
-      <h2>What they say</h2>
+      <span class="section-label fx-reveal">Client Voices</span>
+      <h2 class="fx-reveal" data-fx-delay="1">What they say</h2>
       <TestimonialsStrip client:visible />
     </section>
 
     <!-- ════════════════════════════════ MUSIC ════════════════════════════════ -->
     <section id="music">
-      <span class="section-label">Remixes &amp; Mashups</span>
-      <h2>The Sound</h2>
-      <p class="music-lead">From the dance floor to your playlist — remixed and reimagined.</p>
+      <span class="section-label fx-reveal">Remixes &amp; Mashups</span>
+      <h2 class="fx-reveal" data-fx-delay="1">The Sound</h2>
+      <p class="music-lead fx-reveal" data-fx-delay="2">From the dance floor to your playlist — remixed and reimagined.</p>
 
       <!-- Latest 3 releases -->
       <div class="latest-remixes-grid">
         {latestRemixes.map((r, i) => (
-          <a href={`/remixes/${r.id}/`} class="lrc">
+          <a href={`/remixes/${r.id}/`} class="lrc fx-reveal" data-fx-delay={(i % 3) + 1}>
             <div class="lrc-thumb">
               <img
                 src={`https://img.youtube.com/vi/${r.data.youtubeId}/maxresdefault.jpg`}
@@ -345,14 +346,15 @@ const vicfixEpisodes = [
 
     <!-- ══════════════════════════════ VIC FIX ══════════════════════════════ -->
     <section id="vicfix-callout">
-      <span class="section-label">The VIC Fix · Podcast</span>
-      <h2>Long-form conversations with the people who shaped the scene.</h2>
+      <span class="section-label fx-reveal">The VIC Fix · Podcast</span>
+      <h2 class="fx-reveal" data-fx-delay="1">Long-form conversations with the people who shaped the scene.</h2>
       <div class="vf-episodes">
-        {vicfixEpisodes.map((ep) => (
+        {vicfixEpisodes.map((ep, i) => (
           <a
             href={ep.slug ? `/thevicfix/${ep.slug}/` : `https://youtu.be/${ep.id}`}
             {...(!ep.slug ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            class="vf-ep"
+            class="vf-ep fx-reveal"
+            data-fx-delay={(i % 3) + 1}
           >
             <div class="vf-thumb">
               <img

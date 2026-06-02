@@ -110,6 +110,9 @@ export type Props = BaseHeadProps;
           d.classList.add(fine ? "pointer-fine" : "pointer-coarse");
           // "premium" = desktop-class device that wants the full motion treatment
           if (!reduce && fine && wide) d.classList.add("fx-premium");
+          // Preloader: first visit of the tab session only, never on reduced motion
+          var seen = sessionStorage.getItem("vic_preloaded");
+          if (!reduce && !seen) { d.classList.add("preload-on"); sessionStorage.setItem("vic_preloaded", "1"); }
         } catch (e) {
           d.classList.add("motion-ok", "pointer-coarse");
         }
@@ -117,6 +120,10 @@ export type Props = BaseHeadProps;
     </script>
   </head>
   <body>
+    <div id="preloader" aria-hidden="true">
+      <div class="preloader-logo">DJ <span>VIC</span></div>
+      <div class="preloader-bar"></div>
+    </div>
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <slot />
     <MusicPlayer />
@@ -157,6 +164,11 @@ export type Props = BaseHeadProps;
 
     <!-- Privacy-friendly pageview tracker (no cookies) — feeds the admin Overview analytics -->
     <script is:inline src="/tracker.js" defer></script>
+
+    <!-- Motion layer (Lenis, GSAP reveals, count-up, cursor, magnetic, preloader) — bundled -->
+    <script>
+      import '../scripts/motion.js';
+    </script>
 
     <!-- Page image overrides (admin → Page Images): swap uploaded images in live -->
     <script is:inline>
