@@ -108,6 +108,20 @@ const schemas = [
         </div>
         <h1 class="ep-name">{ep.guestName}</h1>
         <p class="ep-guest-title">{ep.guestTitle}</p>
+        {ep.guestInstagram && (
+          <a
+            class="ep-guest-ig"
+            href={`https://instagram.com/${ep.guestInstagram.replace(/^@/, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${ep.guestName} on Instagram`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+            <span>@{ep.guestInstagram.replace(/^@/, '')}</span>
+          </a>
+        )}
         <p class="ep-tagline">{ep.tagline}</p>
       </div>
     </section>
@@ -304,7 +318,6 @@ const schemas = [
   var SB_URL     = 'https://jftnhuutttmccmqnnybf.supabase.co';
   var SB_KEY     = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
   var PAGE_ID    = 'vicfix-' + episodeId;
-  var storageKey = 'reacted-' + episodeId;
   var KEYS       = ['fire', 'love', 'clap', 'listen'];
   var SB_HEADERS = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
@@ -329,38 +342,36 @@ const schemas = [
     .catch(function () {});
   }
 
-  /* ── Restore highlight for this visitor's previous reaction ── */
-  var prev = localStorage.getItem(storageKey);
-  if (prev) {
-    var prevBtn = document.getElementById('rbtn-' + prev);
-    if (prevBtn) prevBtn.classList.add('active');
-  }
-
   /* ── Initial count load ── */
   loadCounts();
 
-  /* ── Wire each button by ID (safe with View Transitions) ── */
+  /* ── Debounced reconcile: after a burst of taps settles, pull the real
+        DB total so the display lands on the true count (avoids flicker
+        when someone taps the same button several times quickly). ── */
+  var reconcileTimer = null;
+  function scheduleReconcile() {
+    if (reconcileTimer) clearTimeout(reconcileTimer);
+    reconcileTimer = setTimeout(loadCounts, 1200);
+  }
+
+  /* ── Wire each button by ID (safe with View Transitions).
+        Every tap is another reaction — click as many times as you like. ── */
   KEYS.forEach(function (key) {
     var btn = document.getElementById('rbtn-' + key);
     if (!btn) return;
 
     btn.addEventListener('click', function () {
-      if (localStorage.getItem(storageKey)) return; // already reacted — no-op
-
-      localStorage.setItem(storageKey, key);
-
-      /* Highlight chosen button */
-      KEYS.forEach(function (k) {
-        var b = document.getElementById('rbtn-' + k);
-        if (b) b.classList.remove('active');
-      });
-      btn.classList.add('active');
+      var countEl = document.getElementById('rc-' + key);
 
       /* Optimistic +1 so the UI feels instant */
-      var countEl = document.getElementById('rc-' + key);
       if (countEl) countEl.textContent = String((parseInt(countEl.textContent) || 0) + 1);
 
-      /* POST to Supabase, then reload real count to confirm */
+      /* Quick pop for tap feedback — restart the animation each click */
+      btn.classList.remove('bump');
+      void btn.offsetWidth;
+      btn.classList.add('bump');
+
+      /* POST to Supabase (one row per tap) */
       fetch(SB_URL + '/rest/v1/reactions', {
         method: 'POST',
         headers: Object.assign({}, SB_HEADERS, {
@@ -371,19 +382,13 @@ const schemas = [
       })
       .then(function (res) {
         if (res.ok) {
-          /* Sync display with real DB count after a brief delay */
-          setTimeout(loadCounts, 600);
-        } else {
-          /* POST failed — revert so user can try again */
-          localStorage.removeItem(storageKey);
-          btn.classList.remove('active');
-          if (countEl) countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent) || 1) - 1));
+          scheduleReconcile();           /* sync to the true total once taps settle */
+        } else if (countEl) {
+          countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent) || 1) - 1));
         }
       })
       .catch(function () {
-        /* Network error — revert */
-        localStorage.removeItem(storageKey);
-        btn.classList.remove('active');
+        if (countEl) countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent) || 1) - 1));
       });
     });
   });
@@ -602,6 +607,20 @@ const schemas = [
     margin-bottom: 0.75rem;
   }
 
+  .ep-guest-ig {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    margin-bottom: 0.9rem;
+    transition: color 0.2s;
+  }
+  .ep-guest-ig:hover { color: var(--gold); }
+
   .ep-tagline {
     font-size: clamp(0.875rem, 1.5vw, 1rem);
     color: rgba(255,255,255,0.62);
@@ -707,6 +726,17 @@ const schemas = [
 
   .rbtn:disabled {
     cursor: pointer;
+  }
+
+  /* Tap feedback — quick pop on every click (multi-click friendly) */
+  .rbtn.bump { animation: rbtnBump 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes rbtnBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.22); }
+    100% { transform: scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rbtn.bump { animation: none; }
   }
 
   .rbtn.active {

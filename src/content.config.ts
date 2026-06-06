@@ -58,6 +58,7 @@ const vicfixEpisodes = defineCollection({
     bio: z.string(),
     pullQuote: z.string().optional(),
     guestPhoto: z.string().optional(),
+    guestInstagram: z.string().optional(),
     topics: z.array(z.string()).default([]),
     publishDate: z.string(),
     seoDescription: z.string().optional(),
