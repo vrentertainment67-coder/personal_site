@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieC
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
-  MessageCircle, Star, Ban,
+  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -56,6 +56,7 @@ export default function Admin() {
     ["pageimages", "Page Images", Images],
     ["testimonials", "Reviews", Quote],
     ["marketing", "Marketing", TrendingUp],
+    ["newsletter", "Newsletter", Mail],
   ];
 
   return (
@@ -80,6 +81,7 @@ export default function Admin() {
         {tab === "pageimages" && <PageImages showToast={showToast} />}
         {tab === "testimonials" && <Testimonials showToast={showToast} />}
         {tab === "marketing" && <Marketing />}
+        {tab === "newsletter" && <Newsletter showToast={showToast} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -859,6 +861,339 @@ function SeoTable({ title, rows, keyLabel, transform }) {
   );
 }
 
+// ============================================================
+// Newsletter — Contacts · Compose · History
+// ============================================================
+function Newsletter({ showToast }) {
+  const [sub, setSub] = useState("contacts");
+  const NL_TABS = [
+    ["contacts", "Contacts", Users],
+    ["compose", "Compose", Mail],
+    ["history", "History", History],
+  ];
+  return (
+    <div>
+      <div className="nl-tabs">
+        {NL_TABS.map(([k, label, Icon]) => (
+          <button key={k} className={sub === k ? "nl-tab on" : "nl-tab"} onClick={() => setSub(k)}>
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+      </div>
+      {sub === "contacts" && <NLContacts showToast={showToast} />}
+      {sub === "compose"  && <NLCompose  showToast={showToast} />}
+      {sub === "history"  && <NLHistory  showToast={showToast} />}
+    </div>
+  );
+}
+
+function NLContacts({ showToast }) {
+  const [subs, setSubs]     = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [addEmail, setAddEmail] = useState("");
+  const [addName, setAddName]   = useState("");
+  const [addList, setAddList]   = useState("monthly");
+  const [adding, setAdding]     = useState(false);
+  const [audStatus, setAudStatus] = useState(null);
+  const [initBusy, setInitBusy]   = useState(false);
+
+  async function load(q = "") {
+    setLoading(true);
+    const qs = q ? `?action=contacts&q=${encodeURIComponent(q)}` : "?action=contacts";
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager${qs}`, { headers: h });
+    const d = await r.json();
+    setSubs(d.subscribers ?? []);
+    setLoading(false);
+  }
+
+  async function checkAud() {
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager?action=audiences-status`, { headers: h });
+    setAudStatus(await r.json());
+  }
+
+  useEffect(() => { load(); checkAud(); }, []);
+
+  async function initAudiences() {
+    setInitBusy(true);
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "setup-audiences" }),
+    });
+    const d = await r.json();
+    setInitBusy(false);
+    if (d.ok) { showToast("Audiences created ✓"); checkAud(); }
+    else showToast("Error: " + JSON.stringify(d));
+  }
+
+  async function addContact() {
+    if (!addEmail.trim()) return;
+    setAdding(true);
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add-contact", email: addEmail.trim(), name: addName.trim(), list: addList }),
+    });
+    const d = await r.json();
+    setAdding(false);
+    if (d.ok) { showToast("Contact added ✓"); setAddEmail(""); setAddName(""); load(search); }
+    else showToast("Error: " + (d.error || JSON.stringify(d)));
+  }
+
+  async function removeContact(email) {
+    if (!confirm(`Unsubscribe ${email}?`)) return;
+    const h = await authHeader();
+    await fetch(`${FN}/newsletter-manager`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove-contact", email }),
+    });
+    showToast("Unsubscribed ✓");
+    load(search);
+  }
+
+  const bothOk = audStatus?.monthly && audStatus?.weekly;
+
+  return (
+    <div className="card">
+      <div className="nl-aud-bar">
+        <div className="nl-aud-pills">
+          <span className={`nl-aud-pill ${audStatus?.monthly ? "ok" : "missing"}`}>Monthly {audStatus?.monthly ? "✓" : "✗"}</span>
+          <span className={`nl-aud-pill ${audStatus?.weekly  ? "ok" : "missing"}`}>Weekly {audStatus?.weekly  ? "✓" : "✗"}</span>
+        </div>
+        {!bothOk && (
+          <button className="btn sm" onClick={initAudiences} disabled={initBusy}>
+            {initBusy ? <Loader2 size={13} className="spin" /> : null} Initialize Audiences
+          </button>
+        )}
+      </div>
+
+      <div className="nl-add-row">
+        <input className="nl-inp" placeholder="email@example.com" value={addEmail} onChange={e => setAddEmail(e.target.value)} />
+        <input className="nl-inp" placeholder="Name (optional)" value={addName} onChange={e => setAddName(e.target.value)} />
+        <select className="nl-sel" value={addList} onChange={e => setAddList(e.target.value)}>
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="both">Both</option>
+        </select>
+        <button className="btn sm" onClick={addContact} disabled={adding}>
+          {adding ? <Loader2 size={13} className="spin" /> : <Plus size={13} />} Add
+        </button>
+      </div>
+
+      <div className="nl-search-row">
+        <input className="search" style={{margin:0}} placeholder="Search subscribers…" value={search}
+          onChange={e => { setSearch(e.target.value); load(e.target.value); }} />
+        <span className="nl-count">{subs.length} subscriber{subs.length !== 1 ? "s" : ""}</span>
+      </div>
+
+      {loading ? (
+        <div className="center"><Loader2 size={20} className="spin" /></div>
+      ) : subs.length === 0 ? (
+        <div className="empty">No subscribers found</div>
+      ) : (
+        <div className="nl-table-wrap">
+          <table className="nl-table">
+            <thead><tr>
+              <th>Email</th><th>Name</th><th>List</th><th>Source</th><th>Status</th><th>Joined</th><th></th>
+            </tr></thead>
+            <tbody>
+              {subs.map(s => (
+                <tr key={s.id} className={s.status !== "active" ? "nl-unsub" : ""}>
+                  <td>{s.email}</td>
+                  <td>{s.name || <span style={{color:"var(--grey)"}}>—</span>}</td>
+                  <td><span className="nl-badge">{s.list}</span></td>
+                  <td style={{color:"var(--grey)",fontSize:11}}>{s.source}</td>
+                  <td><span className={`status ${s.status === "active" ? "accepted" : "declined"}`}>{s.status}</span></td>
+                  <td style={{color:"var(--grey)",fontSize:11,whiteSpace:"nowrap"}}>{new Date(s.subscribed_at).toLocaleDateString("en-IN")}</td>
+                  <td>
+                    {s.status === "active" && (
+                      <button className="nl-del" title="Unsubscribe" onClick={() => removeContact(s.email)}>
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NLCompose({ showToast }) {
+  const [audience, setAudience] = useState("monthly");
+  const [subject, setSubject]   = useState("");
+  const [html, setHtml]         = useState("");
+  const [preview, setPreview]   = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [sending, setSending]   = useState(false);
+  const [draft, setDraft]       = useState(null); // { broadcastId, recipientCount }
+  const [confirmSend, setConfirmSend] = useState(false);
+
+  async function createDraft() {
+    if (!subject.trim() || !html.trim()) { showToast("Subject and HTML are required"); return; }
+    setDrafting(true);
+    setDraft(null);
+    setConfirmSend(false);
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "draft", subject: subject.trim(), html: html.trim(), audience }),
+    });
+    const d = await r.json();
+    setDrafting(false);
+    if (d.ok) {
+      setDraft(d);
+      showToast(`Draft created — ${d.recipientCount} recipient${d.recipientCount !== 1 ? "s" : ""}`);
+    } else {
+      showToast("Error: " + (d.error || JSON.stringify(d)));
+    }
+  }
+
+  async function sendNow() {
+    if (!draft?.broadcastId) return;
+    setSending(true);
+    const h = await authHeader();
+    const r = await fetch(`${FN}/newsletter-manager`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "send", broadcastId: draft.broadcastId }),
+    });
+    const d = await r.json();
+    setSending(false);
+    setConfirmSend(false);
+    if (d.ok) {
+      showToast("Newsletter sent ✓");
+      setDraft(null);
+      setSubject(""); setHtml("");
+    } else {
+      showToast("Send error: " + (d.error || JSON.stringify(d)));
+    }
+  }
+
+  return (
+    <div className="card" style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div className="field" style={{marginBottom:0}}>
+        <label>Audience</label>
+        <select className="field select" value={audience} onChange={e => setAudience(e.target.value)}
+          style={{background:"rgba(10,10,10,.6)",border:"1px solid var(--line)",borderRadius:9,padding:"11px 13px",color:"var(--off)",fontFamily:"Inter",fontSize:14,outline:"none"}}>
+          <option value="monthly">Monthly — DJ VIC Newsletter</option>
+          <option value="weekly">Weekly — Vic Fix</option>
+        </select>
+      </div>
+
+      <div className="field" style={{marginBottom:0}}>
+        <label>Subject line</label>
+        <input style={{background:"rgba(10,10,10,.6)",border:"1px solid var(--line)",borderRadius:9,padding:"11px 13px",color:"var(--off)",fontFamily:"Inter",fontSize:14,outline:"none",width:"100%"}}
+          placeholder="e.g. June Mix Drop + Goa Dates Inside 🎧"
+          value={subject} onChange={e => setSubject(e.target.value)} />
+      </div>
+
+      <div className="field" style={{marginBottom:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <label style={{margin:0}}>HTML body</label>
+          <button className="btn sm" style={{background:"transparent",border:"1px solid var(--line)",color:"var(--grey)",padding:"5px 11px",fontSize:12}}
+            onClick={() => setPreview(p => !p)}>
+            {preview ? <><EyeOff size={12}/> Edit</> : <><Eye size={12}/> Preview</>}
+          </button>
+        </div>
+        {!preview ? (
+          <textarea
+            style={{background:"rgba(10,10,10,.6)",border:"1px solid var(--line)",borderRadius:9,padding:"11px 13px",color:"var(--off)",fontFamily:"'Space Mono',monospace",fontSize:12,lineHeight:1.6,outline:"none",width:"100%",minHeight:320,resize:"vertical"}}
+            placeholder="Paste your email HTML here…"
+            value={html} onChange={e => setHtml(e.target.value)} />
+        ) : (
+          <div style={{border:"1px solid var(--line)",borderRadius:9,overflow:"hidden",background:"#fff"}}>
+            <iframe
+              srcDoc={html || "<p style='font-family:sans-serif;padding:24px;color:#555'>Nothing to preview yet.</p>"}
+              title="Email preview"
+              style={{width:"100%",height:420,border:"none",display:"block"}}
+              sandbox="allow-same-origin"
+            />
+          </div>
+        )}
+      </div>
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+        <button className="btn" onClick={createDraft} disabled={drafting || !subject || !html}>
+          {drafting ? <Loader2 size={15} className="spin" /> : <Mail size={15} />}
+          {drafting ? "Creating draft…" : "Create Draft"}
+        </button>
+
+        {draft && !confirmSend && (
+          <button className="btn" style={{background:"rgba(201,168,76,.15)",border:"1px solid var(--gold)",color:"var(--gold)"}}
+            onClick={() => setConfirmSend(true)}>
+            <Send size={15} /> Send to {draft.recipientCount} subscriber{draft.recipientCount !== 1 ? "s" : ""}
+          </button>
+        )}
+
+        {draft && confirmSend && (
+          <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,59,59,.08)",border:"1px solid rgba(255,59,59,.25)",borderRadius:9,padding:"10px 14px"}}>
+            <span style={{fontSize:13,color:"#ff8a8a"}}>Send for real? No undo.</span>
+            <button className="btn sm" style={{background:"var(--red)",color:"#fff"}} onClick={sendNow} disabled={sending}>
+              {sending ? <Loader2 size={13} className="spin" /> : null} {sending ? "Sending…" : "Yes, Send"}
+            </button>
+            <button className="btn sm" style={{background:"transparent",border:"1px solid var(--line)",color:"var(--grey)"}}
+              onClick={() => setConfirmSend(false)}>Cancel</button>
+          </div>
+        )}
+      </div>
+
+      {draft && (
+        <div className="nl-draft-info">
+          ✓ Draft broadcast ID: <code style={{fontFamily:"monospace",fontSize:11,color:"var(--gold)"}}>{draft.broadcastId}</code>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NLHistory({ showToast }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const h = await authHeader();
+      const r = await fetch(`${FN}/newsletter-manager?action=history`, { headers: h });
+      const d = await r.json();
+      setHistory(d.history ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="center"><Loader2 size={20} className="spin" /></div>;
+  if (!history.length) return <div className="empty">No newsletters sent yet</div>;
+
+  return (
+    <div className="card">
+      <div className="nl-table-wrap">
+        <table className="nl-table">
+          <thead><tr>
+            <th>Subject</th><th>Audience</th><th>Status</th><th>Recipients</th><th>Created</th><th>Sent</th>
+          </tr></thead>
+          <tbody>
+            {history.map(n => (
+              <tr key={n.id}>
+                <td style={{maxWidth:240,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.subject}</td>
+                <td><span className="nl-badge">{n.audience}</span></td>
+                <td><span className={`status ${n.status === "sent" ? "accepted" : "pending"}`}>{n.status}</span></td>
+                <td style={{textAlign:"center"}}>{n.recipient_count}</td>
+                <td style={{color:"var(--grey)",fontSize:11,whiteSpace:"nowrap"}}>{new Date(n.created_at).toLocaleDateString("en-IN")}</td>
+                <td style={{color:"var(--grey)",fontSize:11,whiteSpace:"nowrap"}}>{n.sent_at ? new Date(n.sent_at).toLocaleDateString("en-IN") : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ---------------- shared bits ----------------
 const Stat = ({ label, value }) => (<div className="card stat"><strong>{value}</strong><span>{label}</span></div>);
 const Center = ({ children }) => (<div className="center">{children}</div>);
@@ -978,6 +1313,30 @@ function Styles() {
   .seo td{padding:8px;border-bottom:1px solid rgba(232,232,224,.05);}
   .seo td.ellip{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .empty{color:var(--grey);font-size:13px;text-align:center;padding:30px;}
+  .nl-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .nl-tab{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:9px;color:var(--grey);font-size:13px;font-family:inherit;padding:9px 16px;cursor:pointer;}
+  .nl-tab.on{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:var(--gold);}
+  .nl-aud-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .nl-aud-pills{display:flex;gap:8px;}
+  .nl-aud-pill{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600;}
+  .nl-aud-pill.ok{background:rgba(60,200,120,.12);color:#5fd99a;}
+  .nl-aud-pill.missing{background:rgba(255,59,59,.10);color:#ff8a8a;}
+  .nl-add-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .nl-inp{flex:1;min-width:140px;background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--off);font-family:inherit;font-size:13px;outline:none;}
+  .nl-inp:focus{border-color:var(--gold);}
+  .nl-sel{background:rgba(10,10,10,.6);border:1px solid var(--line);border-radius:8px;color:var(--off);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;outline:none;}
+  .nl-sel:focus{border-color:var(--gold);}
+  .nl-search-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .nl-count{font-size:11px;color:var(--grey);white-space:nowrap;}
+  .nl-table-wrap{overflow-x:auto;}
+  .nl-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .nl-table th{text-align:left;color:var(--grey);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--line);}
+  .nl-table td{padding:9px 10px;border-bottom:1px solid rgba(232,232,224,.04);}
+  .nl-table tr.nl-unsub td{opacity:.5;}
+  .nl-badge{background:rgba(201,168,76,.10);color:var(--gold);font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;text-transform:capitalize;}
+  .nl-del{background:transparent;border:none;color:var(--grey);cursor:pointer;padding:4px;border-radius:5px;display:flex;}
+  .nl-del:hover{color:#ff8a8a;}
+  .nl-draft-info{font-size:12px;color:var(--grey);padding:10px 14px;background:rgba(232,232,224,.04);border-radius:9px;border:1px solid var(--line);}
   .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:22px;}
   .login{width:100%;max-width:360px;}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-weight:600;font-size:13px;padding:12px 20px;border-radius:10px;z-index:90;max-width:90vw;text-align:center;}
