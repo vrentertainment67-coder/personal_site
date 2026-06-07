@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Newsletter system
+newsletter/.env
+newsletter/node_modules/
