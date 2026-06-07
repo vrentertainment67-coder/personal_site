@@ -909,9 +909,12 @@ function NLContacts({ showToast }) {
   }
 
   async function checkAud() {
-    const h = await authHeader();
-    const r = await fetch(`${FN}/newsletter-manager?action=audiences-status`, { headers: h });
-    setAudStatus(await r.json());
+    const { data } = await supabase.from("newsletter_config").select("key, value");
+    const cfg = Object.fromEntries((data ?? []).map(r => [r.key, r.value]));
+    setAudStatus({
+      monthly: cfg.resend_audience_monthly ?? null,
+      weekly:  cfg.resend_audience_weekly  ?? null,
+    });
   }
 
   useEffect(() => { load(); checkAud(); }, []);
