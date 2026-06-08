@@ -998,7 +998,7 @@ html.fx-premium .cursor-ring {
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 10000;
+  z-index: 2147483647; /* always the topmost layer — sits above modals/popups so the cursor is never lost */
   border-radius: 50%;
   mix-blend-mode: difference;
 }
