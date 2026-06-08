@@ -51,6 +51,7 @@ export default function Admin() {
   const TABS = [
     ["overview", "Overview", LayoutDashboard],
     ["bookings", "Bookings", ClipboardList],
+    ["guestlist", "Guest List", Users],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
     ["pageimages", "Page Images", Images],
@@ -76,6 +77,7 @@ export default function Admin() {
       <main className="adm-main">
         {tab === "overview" && <Overview />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
+        {tab === "guestlist" && <GuestList showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
@@ -396,6 +398,106 @@ function Bookings({ showToast }) {
     </>
   );
 }
+
+// ── Event guest list (Chamatkar @ Happy Brew) — door list from the homepage popup ──
+const GL_EVENT = "chamatkar-2026-06-13";
+function GuestList({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(""); const [deleting, setDeleting] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("event_rsvps")
+      .select("*")
+      .eq("event", GL_EVENT)
+      .order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load RSVPs — is event_rsvps.sql run?");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const waFor = (r) => {
+    let n = waDigits(r.phone);
+    if (n.length === 10) n = "91" + n;
+    const msg = encodeURIComponent(`Hi ${r.name}! You're on the guest list for Chamatkar @ Happy Brew this Saturday (9 PM). See you there — DJ VIC`);
+    if (n.length >= 11) window.open(`https://wa.me/${n}?text=${msg}`, "_blank");
+    else showToast("No valid phone for this RSVP.");
+  };
+
+  const del = async (id) => {
+    if (!window.confirm("Remove this RSVP from the list?")) return;
+    setDeleting(id);
+    const { error } = await supabase.from("event_rsvps").delete().eq("id", id);
+    setDeleting(null);
+    if (error) return showToast("Delete needs the admin delete grant (see event_rsvps.sql).");
+    showToast("Removed."); load();
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = rows.filter((r) => !q || [r.name, r.phone, r.instagram, r.entry_type].some((v) => (v || "").toLowerCase().includes(q)));
+  const heads = filtered.reduce((s, r) => s + (parseInt(r.guests, 10) || 1), 0);
+
+  const exportCsv = () => {
+    const cols = ["created_at", "name", "phone", "guests", "entry_type", "instagram", "source"];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `chamatkar-guestlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Guest List</h1>
+        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+      </div>
+      <p className="sub">Chamatkar @ Happy Brew · Sat 13 Jun, 9 PM — RSVPs from the homepage popup.</p>
+
+      <div style={{ display: "flex", gap: 10, margin: "0 0 14px" }}>
+        <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>RSVPs</span></div>
+        <div style={glStat}><strong style={glNum}>{heads}</strong><span style={glLbl}>Total heads</span></div>
+      </div>
+
+      <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">No RSVPs yet.</p>}
+          {filtered.map((r) => {
+            const t = new Date(r.created_at);
+            return (
+              <div key={r.id} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3>{r.name} <span className="gold">· {r.guests} {Number(r.guests) === 1 ? "guest" : "guests"}</span></h3>
+                    <p className="req-meta">
+                      {r.entry_type && <span className="tag">{r.entry_type}</span>}
+                      <span>{r.phone}</span>
+                      {r.instagram && <span>{r.instagram}</span>}
+                      <span>{MONTHS[t.getMonth()]} {t.getDate()}, {pad(t.getHours())}:{pad(t.getMinutes())}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="req-actions">
+                  <button className="act wa" onClick={() => waFor(r)}><MessageCircle size={15} /> WhatsApp</button>
+                  <button className="act decline" disabled={deleting === r.id} onClick={() => del(r.id)}>
+                    {deleting === r.id ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />} Remove
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+const glStat = { flex: 1, background: "#111", border: "1px solid rgba(201,168,76,0.18)", borderRadius: 8, padding: "0.9rem 1rem", textAlign: "center" };
+const glNum = { display: "block", fontFamily: "'Bebas Neue',sans-serif", fontSize: "2rem", color: "#c9a84c", lineHeight: 1 };
+const glLbl = { fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" };
 
 function NoteField({ initial, onSave }) {
   const [val, setVal] = useState(initial); const [dirty, setDirty] = useState(false);

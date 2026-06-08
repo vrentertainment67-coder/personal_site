@@ -38,5 +38,12 @@ create policy "rsvp_admin_read" on public.event_rsvps
 grant insert on public.event_rsvps to anon, authenticated;
 grant select on public.event_rsvps to authenticated;
 
+-- Let the logged-in admin remove test/spam RSVPs from the /admin Guest List
+drop policy if exists "rsvp_admin_delete" on public.event_rsvps;
+create policy "rsvp_admin_delete" on public.event_rsvps
+  for delete to authenticated
+  using (true);
+grant delete on public.event_rsvps to authenticated;
+
 -- Helpful index for the admin list (newest first)
 create index if not exists event_rsvps_created_idx on public.event_rsvps (created_at desc);
