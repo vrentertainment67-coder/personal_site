@@ -288,7 +288,28 @@ const styles = `
 @media (max-width:480px){
   .ep-overlay{align-items:flex-end;padding:0;}
   .ep-card{width:100%;max-height:94vh;border-radius:14px 14px 0 0;border-bottom:none;}
+  .ep-banner{aspect-ratio:2/1;}                 /* shorter banner so the CTA stays near the fold */
+  .ep-head{padding:.85rem 1.3rem .75rem;}
+  .ep-meta{gap:.8rem;font-size:.74rem;}
+  .ep-lineup{font-size:1.05rem;margin:.55rem 0 .1rem;}
+  .ep-genre{font-size:.68rem;}
+  .ep-form{padding:.9rem 1.3rem 1.2rem;gap:.5rem;}
+  .ep-field input,.ep-field select{padding:.6rem .7rem;font-size:.9rem;}
+  .ep-fine{margin-top:.35rem;}
   .ep-title{font-size:2.6rem;}
+}
+/* Very short viewports (small phones / landscape): trim aggressively so the
+   CTA stays as close to the fold as possible */
+@media (max-width:480px) and (max-height:720px){
+  .ep-card{max-height:96vh;}
+  .ep-banner{aspect-ratio:5/2;}
+  .ep-head{padding:.6rem 1.3rem .5rem;}
+  .ep-eyebrow{margin-bottom:.3rem;}
+  .ep-venue{margin:.25rem 0 .5rem;}
+  .ep-lineup{margin:.4rem 0 .05rem;font-size:1rem;}
+  .ep-genre{display:none;}
+  .ep-form{gap:.42rem;padding:.7rem 1.3rem 1rem;}
+  .ep-field input,.ep-field select{padding:.5rem .7rem;}
 }
 @media (prefers-reduced-motion: reduce){
   .ep-backdrop,.ep-card{transition:none;}
