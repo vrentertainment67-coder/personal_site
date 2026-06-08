@@ -6,79 +6,326 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="color-scheme" content="dark">
 <title>DJ VIC — The Monthly</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital@1&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<!--[if mso]><style>td,h1,h2,p,a{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=block" rel="stylesheet">
+<!--[if mso]><style>td,p,a,span{font-family:Arial,sans-serif !important;}</style><![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#000000;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">The monthly drop from DJ VIC — new posts, what's moving in the scene, and where to catch a set.</div>
+<body style="margin:0;padding:0;background-color:#050505;">
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#000000;">
-<tr><td align="center" style="padding:24px 12px;">
-  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#0A0A0A;">
+<!-- PREHEADER (hidden preview text) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{MONTH}} — what dropped, what's moving, and what the rooms aren't saying out loud.</div>
 
-    <!-- masthead -->
-    <tr><td style="padding:44px 44px 0 44px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="width:34px;height:2px;background-color:#C9A84C;font-size:0;line-height:0;">&nbsp;</td>
-      </tr></table>
-    </td></tr>
-    <tr><td style="padding:22px 44px 0 44px;">
-      <h1 style="margin:0;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:46px;letter-spacing:4px;color:#E8E8E0;line-height:1;">DJ VIC</h1>
-      <p style="margin:6px 0 0 0;font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:5px;color:#C9A84C;text-transform:uppercase;">THE MONTHLY &nbsp;&middot;&nbsp; {{MONTH}}</p>
-    </td></tr>
-    <tr><td style="padding:20px 44px 0 44px;">
-      <p style="margin:0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:17px;line-height:1.5;color:#E8E8E0;">{{INTRO}}</p>
-    </td></tr>
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OUTER TABLE                                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#050505" style="background-color:#050505;">
+<tr><td align="center" style="padding:24px 12px 56px;">
 
-    <!-- FROM THE BLOG (auto-filled from RSS) -->
-    <tr><td style="padding:40px 44px 0 44px;">
-      <p style="margin:0 0 16px 0;font-family:'Bebas Neue',Impact,sans-serif;font-size:22px;letter-spacing:3px;color:#E8E8E0;">FROM THE BLOG</p>
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+  <!-- ─── GOLD TOP STRIPE ─── -->
+  <tr><td bgcolor="#C9A84C" style="height:5px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <!-- ─── HERO IMAGE + DJ VIC TEXT OVERLAY ─── -->
+  <!-- hero2.jpg: Vic on right, dark left — text sits in left half -->
+  <!-- VML fallback for Outlook (which ignores CSS background-size:cover) -->
+  <!--[if gte mso 9]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0;"><v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:330px;"><v:fill type="frame" src="https://djvicofficial.com/images/hero2.jpg" color="#0A1A1A"/><v:textbox inset="0,0,0,0"><div><![endif]-->
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+         style="width:600px;min-height:330px;
+                background-image:url('https://djvicofficial.com/images/hero2.jpg');
+                background-size:cover;background-position:center top;
+                background-color:#0A1A1A;">
+    <tr>
+      <!-- Left column: DJ VIC text in dark empty space — top-left -->
+      <td width="300" valign="top"
+          style="width:300px;vertical-align:top;padding:36px 0 0 44px;min-height:330px;">
+        <p style="margin:0 0 10px 0;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:72px;letter-spacing:7px;color:#E8E8E0;line-height:1;">DJ VIC</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td bgcolor="#C9A84C" style="background-color:#C9A84C;padding:6px 14px 5px;">
+            <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9px;letter-spacing:5px;color:#000000;text-transform:uppercase;">THE MONTHLY</span>
+          </td>
+          <td style="padding-left:16px;vertical-align:middle;">
+            <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:4px;color:#E8E8E0;text-transform:uppercase;">{{MONTH}}</span>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <!-- Right column: Vic's space — intentionally empty -->
+      <td width="300" style="width:300px;">&nbsp;</td>
+    </tr>
+  </table>
+  <!--[if gte mso 9]></div></v:textbox></v:rect></td></tr></table><![endif]-->
+
+  <!-- ─── GOLD ACCENT LINE ─── -->
+  <tr><td bgcolor="#C9A84C" style="height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <!-- ─── INTRO / LEDE ─── -->
+  <tr><td bgcolor="#0A0A0A" style="background-color:#0A0A0A;padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td bgcolor="#C9A84C" width="5" style="width:5px;font-size:0;line-height:0;">&nbsp;</td>
+      <td style="padding:28px 44px 36px 32px;">
+        <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;line-height:1.75;color:#C8C8BE;">{{INTRO}}</p>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- SECTION 01 — FROM THE BLOG                      -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#111110" style="background-color:#111110;padding:0;">
+
+    <!-- Section label -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height:1px;font-size:0;line-height:0;" bgcolor="#1e1e1a">&nbsp;</td></tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:30px 44px 0 44px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td bgcolor="#C9A84C" width="36" height="36" style="width:36px;height:36px;text-align:center;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;color:#000000;line-height:36px;display:block;">01</span>
+        </td>
+        <td style="padding-left:14px;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9px;letter-spacing:5px;color:#C9A84C;text-transform:uppercase;">FROM THE BLOG</span>
+        </td>
+      </tr>
+      </table>
+    </td></tr>
+    </table>
+
+    <!-- Blog banner image -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:22px 44px 0 44px;font-size:0;line-height:0;">
+      <a href="https://djvicofficial.com/blog" style="display:block;text-decoration:none;border:0;">
+        <img src="https://djvicofficial.com/images/blog/dj-setup-event.jpg"
+             width="512"
+             alt="DJ VIC Blog"
+             style="display:block;width:100%;max-width:512px;height:auto;border:0;outline:0;" />
+      </a>
+    </td></tr>
+    </table>
+
+    <!-- Blog items (injected by send-monthly.mjs) -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:28px 44px 40px 44px;">
       {{BLOG_ITEMS}}
     </td></tr>
+    </table>
 
-    <!-- FROM AFTER DARK (auto-filled from the published sheet) -->
-    <tr><td style="padding:40px 44px 0 44px;">
-      <p style="margin:0 0 6px 0;font-family:'Bebas Neue',Impact,sans-serif;font-size:22px;letter-spacing:3px;color:#E8E8E0;">FROM AFTER DARK</p>
-      <p style="margin:0 0 16px 0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:13px;color:#9a9a92;">This month&rsquo;s take on the scene.</p>
+  </td></tr>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- SECTION 02 — AFTER DARK                         -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#0A0A0A" style="background-color:#0A0A0A;padding:0;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height:1px;font-size:0;line-height:0;" bgcolor="#1e1e1a">&nbsp;</td></tr>
+    </table>
+
+    <!-- Section label -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:30px 44px 0 44px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td bgcolor="#C9A84C" width="36" height="36" style="width:36px;height:36px;text-align:center;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;color:#000000;line-height:36px;display:block;">02</span>
+        </td>
+        <td style="padding-left:14px;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9px;letter-spacing:5px;color:#C9A84C;text-transform:uppercase;">AFTER DARK</span>
+        </td>
+      </tr>
+      </table>
+    </td></tr>
+    </table>
+
+    <!-- Full-width concert atmosphere image -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:22px 0 0 0;font-size:0;line-height:0;">
+      <img src="https://djvicofficial.com/images/blog/concert-crowd-lights.jpg"
+           width="600"
+           alt="After Dark"
+           style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:0;" />
+    </td></tr>
+    </table>
+
+    <!-- After Dark items (injected by send-monthly.mjs) -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:28px 44px 40px 44px;">
       {{AFTERDARK_ITEMS}}
     </td></tr>
+    </table>
 
-    <!-- REMIXES & MASHUPS -->
-    <tr><td style="padding:40px 44px 0 44px;">
-      <p style="margin:0 0 16px 0;font-family:'Bebas Neue',Impact,sans-serif;font-size:22px;letter-spacing:3px;color:#E8E8E0;">REMIXES &amp; MASHUPS</p>
-      <p style="margin:0;font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:16px;color:#E8E8E0;">{{REMIX_TITLE}}</p>
-      <p style="margin:4px 0 10px 0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:14px;line-height:1.5;color:#9a9a92;">{{REMIX_LINE}}</p>
-      <a href="https://djvicofficial.com/remixes/" style="font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">Listen &rarr;</a>
-    </td></tr>
+  </td></tr>
 
-    <!-- ON THE VIC FIX (one highlight) -->
-    <tr><td style="padding:40px 44px 0 44px;">
-      <p style="margin:0 0 16px 0;font-family:'Bebas Neue',Impact,sans-serif;font-size:22px;letter-spacing:3px;color:#E8E8E0;">ON THE VIC FIX</p>
-      <p style="margin:0;font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:16px;color:#E8E8E0;">{{VICFIX_TITLE}}</p>
-      <p style="margin:4px 0 10px 0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:14px;line-height:1.5;color:#9a9a92;">{{VICFIX_HOOK}}</p>
-      <a href="{{VICFIX_URL}}" style="font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">Watch &rarr;</a>
-    </td></tr>
 
-    <!-- BOOK (the only place Signal Red appears) -->
-    <tr><td style="padding:40px 44px 0 44px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td bgcolor="#FF3B3B">
-          <a href="https://djvicofficial.com/book/" target="_blank" style="display:inline-block;padding:15px 32px;font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:13px;letter-spacing:2px;color:#0A0A0A;text-transform:uppercase;text-decoration:none;">BOOK VIC FOR YOUR EVENT</a>
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- SECTION 03 — REMIXES & MASHUPS                  -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#111110" style="background-color:#111110;padding:0;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height:1px;font-size:0;line-height:0;" bgcolor="#1e1e1a">&nbsp;</td></tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:30px 44px 40px 44px;">
+
+      <!-- Section label -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td bgcolor="#C9A84C" width="36" height="36" style="width:36px;height:36px;text-align:center;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;color:#000000;line-height:36px;display:block;">03</span>
         </td>
-      </tr></table>
-    </td></tr>
+        <td style="padding-left:14px;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9px;letter-spacing:5px;color:#C9A84C;text-transform:uppercase;">REMIXES &amp; MASHUPS</span>
+        </td>
+      </tr>
+      </table>
 
-    <!-- footer -->
-    <tr><td align="center" style="padding:44px 44px 40px 44px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="height:1px;background-color:#1c1c1a;font-size:0;line-height:0;">&nbsp;</td></tr></table>
-      <p style="margin:22px 0 0 0;font-family:'Inter',Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:4px;color:#C9A84C;text-transform:uppercase;">@djvicofficial</p>
-      <p style="margin:12px 0 0 0;font-family:'Inter',Arial,sans-serif;font-size:12px;line-height:1.6;color:#7a7a72;">
-        You signed up for updates at djvicofficial.com.<br>
-        <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#7a7a72;text-decoration:underline;">Unsubscribe</a>
+      <div style="height:22px;font-size:0;line-height:22px;">&nbsp;</div>
+
+      <!-- Remix title & line -->
+      <p style="margin:0 0 10px 0;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:28px;letter-spacing:1.5px;color:#E8E8E0;line-height:1.2;">{{REMIX_TITLE}}</p>
+      <p style="margin:0 0 22px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.7;color:#9a9a92;">{{REMIX_LINE}}</p>
+
+      <!-- Listen CTA -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td bgcolor="#C9A84C" style="background-color:#C9A84C;padding:11px 24px 10px;">
+          <a href="https://djvicofficial.com/music" style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:3px;color:#000000;text-decoration:none;text-transform:uppercase;">Listen Now &rarr;</a>
+        </td>
+      </tr>
+      </table>
+
+    </td></tr>
+    </table>
+
+  </td></tr>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- SECTION 04 — THE VIC FIX                        -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#0A0A0A" style="background-color:#0A0A0A;padding:0;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height:1px;font-size:0;line-height:0;" bgcolor="#1e1e1a">&nbsp;</td></tr>
+    </table>
+
+    <!-- Section label -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:30px 44px 0 44px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td bgcolor="#C9A84C" width="36" height="36" style="width:36px;height:36px;text-align:center;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;color:#000000;line-height:36px;display:block;">04</span>
+        </td>
+        <td style="padding-left:14px;vertical-align:middle;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9px;letter-spacing:5px;color:#C9A84C;text-transform:uppercase;">THE VIC FIX</span>
+        </td>
+      </tr>
+      </table>
+    </td></tr>
+    </table>
+
+    <!-- Episode thumbnail (YouTube-style card) — full width under padded header -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:22px 44px 0 44px;font-size:0;line-height:0;">
+      <a href="{{VICFIX_URL}}" style="display:block;text-decoration:none;border:0;">
+        <img src="{{VICFIX_IMG}}"
+             width="512"
+             alt="{{VICFIX_TITLE}}"
+             style="display:block;width:100%;max-width:512px;height:auto;border:0;outline:0;" />
+      </a>
+    </td></tr>
+    </table>
+
+    <!-- Episode meta: title + hook + CTA -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:22px 44px 40px 44px;">
+
+      <!-- Episode title -->
+      <p style="margin:0 0 10px 0;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:27px;letter-spacing:1.5px;color:#E8E8E0;line-height:1.2;">{{VICFIX_TITLE}}</p>
+
+      <!-- Hook / teaser -->
+      <p style="margin:0 0 22px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.7;color:#9a9a92;">{{VICFIX_HOOK}}</p>
+
+      <!-- Watch CTA -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="border-bottom:2px solid #C9A84C;padding-bottom:4px;">
+          <a href="{{VICFIX_URL}}" style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:3px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">Watch Episode &rarr;</a>
+        </td>
+      </tr>
+      </table>
+
+    </td></tr>
+    </table>
+
+  </td></tr>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- BOOKING CTA                                      -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#111110" style="background-color:#111110;padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height:1px;font-size:0;line-height:0;" bgcolor="#1e1e1a">&nbsp;</td></tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="padding:48px 44px;text-align:center;">
+      <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:9px;letter-spacing:5px;color:#9a9a92;text-transform:uppercase;">Weddings &middot; Nightlife &middot; Corporate &middot; Destination</p>
+      <p style="margin:0 0 26px 0;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:40px;letter-spacing:4px;color:#E8E8E0;line-height:1.1;">Book DJ VIC</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+      <tr>
+        <td bgcolor="#C0392B" style="background-color:#C0392B;padding:15px 40px 14px;">
+          <a href="https://djvicofficial.com/bookings" style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11px;letter-spacing:4px;color:#ffffff;text-decoration:none;text-transform:uppercase;">Enquire Now &rarr;</a>
+        </td>
+      </tr>
+      </table>
+    </td></tr>
+    </table>
+  </td></tr>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- FOOTER                                           -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <tr><td bgcolor="#0A0A0A" style="background-color:#0A0A0A;padding:32px 44px 28px;border-top:1px solid #1e1e1a;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="text-align:center;padding-bottom:18px;">
+      <a href="https://www.instagram.com/djvicofficial" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:2px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">Instagram</a>
+      <span style="color:#2e2e2a;padding:0 10px;">/</span>
+      <a href="https://www.youtube.com/@DJVicOfficial" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:2px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">YouTube</a>
+      <span style="color:#2e2e2a;padding:0 10px;">/</span>
+      <a href="https://djvicofficial.com" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:2px;color:#C9A84C;text-decoration:none;text-transform:uppercase;">Website</a>
+    </td></tr>
+    <tr><td style="text-align:center;">
+      <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#3a3a32;line-height:1.6;">DJ VIC &nbsp;&middot;&nbsp; Bangalore, India &nbsp;&middot;&nbsp; vrentertainment67@gmail.com</p>
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#3a3a32;">
+        You're receiving this because you signed up at djvicofficial.com.
+        &nbsp;<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#5a5a52;text-decoration:underline;">Unsubscribe</a>
       </p>
     </td></tr>
+    </table>
+  </td></tr>
 
-  </table>
+  <!-- ─── GOLD BOTTOM STRIPE ─── -->
+  <tr><td bgcolor="#C9A84C" style="height:5px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+</table>
+
 </td></tr>
 </table>
 </body>

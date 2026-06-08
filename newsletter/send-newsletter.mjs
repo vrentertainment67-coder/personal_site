@@ -38,7 +38,7 @@ const HTML_FILE = './vicfix-sahil-s2e15.html';
 const html = readFileSync(new URL(HTML_FILE, import.meta.url), 'utf8');
 
 const { data, error } = await resend.broadcasts.create({
-  segmentId: RESEND_SEGMENT_ID_WEEKLY,
+  audienceId: RESEND_SEGMENT_ID_WEEKLY,
   name: 'Vic Fix — S2E15 Sahil Madaan',
   from: 'The Vic Fix <bookings@djvicofficial.com>',
   replyTo: 'bookings@djvicofficial.com',
