@@ -19,7 +19,7 @@ const EVENT = {
   area: "Koramangala, Bangalore",
   dateLabel: "Saturday, 13 June",
   timeLabel: "9:00 PM onwards",
-  lineup: "DJ VIC  ·  Shaad",
+  lineup: "DJ VIC",
   genre: "Bollywood / Commercial — Audio-Visual Set",
   // Fixed instants in IST (+05:30) so timing is correct regardless of visitor TZ
   rsvpCutoff: Date.parse("2026-06-13T18:00:00+05:30"),
@@ -229,7 +229,10 @@ export default function EventPopup() {
           <div className="ep-closed">
             <p className="ep-closed-lead">Guest-list RSVPs are closed — but the night's on.</p>
             <p className="ep-closed-sub">Doors open 9 PM at {EVENT.venue}, {EVENT.area}. Walk in, or message us to sort entry.</p>
-            <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">Message on WhatsApp</a>
+            <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+              Message on WhatsApp
+            </a>
           </div>
         )}
 
@@ -238,7 +241,10 @@ export default function EventPopup() {
             <div className="ep-tick">✓</div>
             <p className="ep-thanks-lead">You're on the list!</p>
             <p className="ep-thanks-sub">See you Saturday at {EVENT.venue}. Tap below to confirm on WhatsApp so we have you saved.</p>
-            <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">Confirm on WhatsApp</a>
+            <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+              Confirm on WhatsApp
+            </a>
             <button className="ep-dismiss-link" onClick={() => close("done")}>Close</button>
           </div>
         )}
@@ -262,7 +268,7 @@ const styles = `
 .ep-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:.95;letter-spacing:.04em;color:#fff;margin:0;}
 .ep-venue{font-size:.85rem;color:rgba(255,255,255,.7);margin:.35rem 0 .8rem;}
 .ep-meta{display:flex;gap:1.1rem;justify-content:center;flex-wrap:wrap;font-size:.78rem;color:rgba(255,255,255,.78);}
-.ep-lineup{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.06em;color:#e2c475;margin:.9rem 0 .15rem;}
+.ep-lineup{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;color:#e2c475;margin:.9rem 0 .15rem;}
 .ep-genre{font-size:.72rem;letter-spacing:.04em;color:rgba(255,255,255,.5);margin:0;}
 .ep-form{padding:1.2rem 1.6rem 1.6rem;display:flex;flex-direction:column;gap:.7rem;}
 .ep-field{display:flex;flex-direction:column;gap:.3rem;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.55);}
@@ -282,8 +288,9 @@ const styles = `
 .ep-closed-lead,.ep-thanks-lead{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.03em;color:#fff;margin:0;}
 .ep-closed-sub,.ep-thanks-sub{font-size:.85rem;color:rgba(255,255,255,.6);line-height:1.6;margin:0;max-width:34ch;}
 .ep-tick{width:54px;height:54px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.5);color:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:1.6rem;}
-.ep-wa{display:inline-block;margin-top:.5rem;background:#25D366;color:#000;font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;padding:.75rem 1.4rem;border-radius:4px;transition:background .2s;}
-.ep-wa:hover{background:#20bd5a;color:#000;}
+.ep-wa{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.5rem;background:#c9a84c;color:#0a0a0a;font-weight:700;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;text-decoration:none;padding:.8rem 1.5rem;border-radius:5px;transition:background .2s,transform .15s;}
+.ep-wa:hover{background:#e2c475;color:#0a0a0a;transform:translateY(-1px);}
+.ep-wa svg{width:16px;height:16px;flex-shrink:0;}
 .ep-dismiss-link{background:none;border:none;color:rgba(255,255,255,.4);font-size:.75rem;text-decoration:underline;cursor:pointer;margin-top:.2rem;}
 @media (max-width:480px){
   .ep-overlay{align-items:flex-end;padding:0;}
@@ -291,7 +298,7 @@ const styles = `
   .ep-banner{aspect-ratio:2/1;}                 /* shorter banner so the CTA stays near the fold */
   .ep-head{padding:.85rem 1.3rem .75rem;}
   .ep-meta{gap:.8rem;font-size:.74rem;}
-  .ep-lineup{font-size:1.05rem;margin:.55rem 0 .1rem;}
+  .ep-lineup{font-size:1.45rem;margin:.55rem 0 .1rem;}
   .ep-genre{font-size:.68rem;}
   .ep-form{padding:.9rem 1.3rem 1.2rem;gap:.5rem;}
   .ep-field input,.ep-field select{padding:.6rem .7rem;font-size:.9rem;}
@@ -306,7 +313,7 @@ const styles = `
   .ep-head{padding:.6rem 1.3rem .5rem;}
   .ep-eyebrow{margin-bottom:.3rem;}
   .ep-venue{margin:.25rem 0 .5rem;}
-  .ep-lineup{margin:.4rem 0 .05rem;font-size:1rem;}
+  .ep-lineup{margin:.4rem 0 .05rem;font-size:1.35rem;}
   .ep-genre{display:none;}
   .ep-form{gap:.42rem;padding:.7rem 1.3rem 1rem;}
   .ep-field input,.ep-field select{padding:.5rem .7rem;}
