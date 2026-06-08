@@ -40,6 +40,7 @@ export default function EventPopup() {
   const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
+  const [bannerOk, setBannerOk] = useState(true);
   const cardRef = useRef(null);
 
   // ── Decide whether/what to show ───────────────────────────
@@ -149,15 +150,26 @@ export default function EventPopup() {
     );
 
   return (
-    <div className={`ep-overlay${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="ep-title">
+    <div className={`ep-overlay${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-label="Chamatkar — guest list">
       <style>{styles}</style>
       <div className="ep-backdrop" onClick={dismiss} />
       <div className="ep-card" ref={cardRef}>
         <button className="ep-x" onClick={dismiss} aria-label="Close">&times;</button>
 
-        <div className="ep-head">
+        {bannerOk && (
+          <img
+            className="ep-banner"
+            src="/images/chamatkar.jpg"
+            alt="Chamatkar"
+            width="1200"
+            height="800"
+            onError={() => setBannerOk(false)}
+          />
+        )}
+
+        <div className={`ep-head${bannerOk ? "" : " ep-head--noimg"}`}>
           <span className="ep-eyebrow">Guest List · This Saturday</span>
-          <h2 id="ep-title" className="ep-title">{EVENT.title}</h2>
+          {!bannerOk && <h2 className="ep-title">{EVENT.title}</h2>}
           <p className="ep-venue">@ {EVENT.venue} · {EVENT.area}</p>
           <div className="ep-meta">
             <span>🗓 {EVENT.dateLabel}</span>
@@ -241,9 +253,11 @@ const styles = `
 .ep-overlay.is-open .ep-backdrop{opacity:1;}
 .ep-card{position:relative;z-index:1;width:min(440px,100%);max-height:92vh;overflow-y:auto;background:#0c0c0c;border:1px solid rgba(201,168,76,0.35);border-radius:10px;box-shadow:0 30px 90px rgba(0,0,0,0.65);transform:translateY(18px) scale(.98);opacity:0;transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease;}
 .ep-overlay.is-open .ep-card{transform:none;opacity:1;}
-.ep-x{position:absolute;top:.5rem;right:.7rem;background:transparent;border:none;color:rgba(255,255,255,.55);font-size:1.8rem;line-height:1;cursor:pointer;z-index:2;transition:color .2s;}
-.ep-x:hover{color:#fff;}
-.ep-head{padding:1.9rem 1.6rem 1.2rem;text-align:center;background:radial-gradient(ellipse 90% 70% at 50% 0%,rgba(201,168,76,0.16),transparent 70%);border-bottom:1px solid #1c1c1c;}
+.ep-x{position:absolute;top:.6rem;right:.6rem;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);border:none;border-radius:50%;color:rgba(255,255,255,.85);font-size:1.5rem;line-height:1;cursor:pointer;z-index:3;transition:color .2s,background .2s;}
+.ep-x:hover{color:#fff;background:rgba(0,0,0,0.7);}
+.ep-banner{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#0a0a0a;}
+.ep-head{padding:1.2rem 1.6rem 1.1rem;text-align:center;border-bottom:1px solid #1c1c1c;}
+.ep-head--noimg{padding-top:1.9rem;background:radial-gradient(ellipse 90% 70% at 50% 0%,rgba(201,168,76,0.16),transparent 70%);}
 .ep-eyebrow{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#c9a84c;margin-bottom:.6rem;}
 .ep-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:.95;letter-spacing:.04em;color:#fff;margin:0;}
 .ep-venue{font-size:.85rem;color:rgba(255,255,255,.7);margin:.35rem 0 .8rem;}
