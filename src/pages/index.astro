@@ -4,6 +4,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import HeroVideo from '../components/HeroVideo.astro';
 import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
+import EventPopup from '../components/EventPopup.jsx';
 import { getCollection } from 'astro:content';
 
 const BASE = '/images/rf/';
@@ -385,6 +386,9 @@ const vicfixEpisodes = [
   </main>
 
   <Footer />
+
+  <!-- Saturday event guest-list popup (homepage only) -->
+  <EventPopup client:load />
 
 </Layout>
 
