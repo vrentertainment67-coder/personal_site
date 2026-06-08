@@ -16,7 +16,7 @@ const episodes = allEpisodes.sort((a, b) => {
   title="The VIC Fix Podcast | India Nightlife Culture | DJ VIC"
   description="The VIC Fix is DJ VIC's long-form podcast on India's nightlife culture. Unfiltered conversations with DJs, founders, and artists. 2 seasons on YouTube."
   ogTitle="The VIC Fix — India's Nightlife Stories, Unfiltered"
-  ogDescription="38+ long-form conversations with the DJs, founders, venue owners, and artists shaping India's nightlife and music culture. Hosted by DJ VIC. Now in Season 2."
+  ogDescription={`${allEpisodes.length}+ long-form conversations with the DJs, founders, venue owners, and artists shaping India's nightlife and music culture. Hosted by DJ VIC. Now in Season 2.`}
   schema={[
     {
       "@context": "https://schema.org",
@@ -187,7 +187,7 @@ const episodes = allEpisodes.sort((a, b) => {
           <span class="stat-label">Seasons</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">42<span class="stat-plus">+</span></span>
+          <span class="stat-num">{allEpisodes.length}</span>
           <span class="stat-label">Episodes</span>
         </div>
         <div class="stat-item">
