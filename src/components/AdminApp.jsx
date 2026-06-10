@@ -31,6 +31,53 @@ async function authHeader() {
   return { Authorization: `Bearer ${data.session?.access_token}` };
 }
 
+// Upload a file to Cloudinary using the signed payload from admin-api.
+// Small files (images, short clips) go in a single request — the original,
+// working path. Larger files (videos) are sent in 20MB chunks via Cloudinary's
+// chunked-upload protocol, otherwise one giant POST fails with "Failed to fetch".
+async function cloudinaryUpload(file, sign) {
+  const CHUNK = 20 * 1024 * 1024; // 20MB (a multiple of 5MB, as Cloudinary requires)
+  const appendSigned = (fd) => {
+    fd.append("api_key", sign.apiKey);
+    fd.append("timestamp", sign.timestamp);
+    fd.append("signature", sign.signature);
+    fd.append("folder", sign.folder);
+  };
+
+  // Single request for anything that comfortably fits.
+  if (file.size <= CHUNK) {
+    const fd = new FormData();
+    fd.append("file", file);
+    appendSigned(fd);
+    const r = await fetch(sign.uploadUrl, { method: "POST", body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!j.secure_url) throw new Error(j.error?.message || `Upload failed (HTTP ${r.status})`);
+    return j;
+  }
+
+  // Chunked upload for large videos.
+  const uploadId = `vic_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const total = file.size;
+  let start = 0, last = null;
+  while (start < total) {
+    const end = Math.min(start + CHUNK, total);
+    const fd = new FormData();
+    fd.append("file", file.slice(start, end));
+    appendSigned(fd);
+    const r = await fetch(sign.uploadUrl, {
+      method: "POST",
+      headers: { "X-Unique-Upload-Id": uploadId, "Content-Range": `bytes ${start}-${end - 1}/${total}` },
+      body: fd,
+    });
+    const j = await r.json().catch(() => ({}));
+    if (j.error) throw new Error(j.error.message || `Upload failed (HTTP ${r.status})`);
+    last = j;
+    start = end;
+  }
+  if (!last?.secure_url) throw new Error("Upload completed but no URL was returned.");
+  return last;
+}
+
 export default function Admin() {
   const [session, setSession] = useState(null);
   const [tab, setTab] = useState("overview");
@@ -641,17 +688,17 @@ function Media({ showToast }) {
         }).then((r) => r.json());
         if (sign.error) throw new Error(sign.error);
 
-        const fd = new FormData();
-        fd.append("file", file); fd.append("api_key", sign.apiKey);
-        fd.append("timestamp", sign.timestamp); fd.append("signature", sign.signature);
-        fd.append("folder", sign.folder);
-        const up = await fetch(sign.uploadUrl, { method: "POST", body: fd }).then((r) => r.json());
-        if (!up.secure_url) throw new Error(up.error?.message || "Upload failed");
+        const up = await cloudinaryUpload(file, sign);
 
         sort += 1;
         await supabase.from("media").insert({ public_id: up.public_id, url: up.secure_url, kind, sort });
         ok += 1;
-      } catch (e) { showToast(String(e.message || e)); }
+      } catch (e) {
+        const msg = String(e?.message || e);
+        showToast(/failed to fetch/i.test(msg)
+          ? "Upload failed — network issue or the video exceeds your Cloudinary plan limit. Try a smaller/compressed file."
+          : msg);
+      }
     }
     if (ok) showToast(`Uploaded ${ok} file${ok === 1 ? "" : "s"} — live on the site.`);
     setBusy(false); load();
