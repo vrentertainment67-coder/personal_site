@@ -498,7 +498,8 @@ function GuestList({ showToast }) {
   // Open WhatsApp (to Vic's own number) with the list prefilled as "Name - No. of ppl".
   const sendListToWhatsApp = () => {
     if (!filtered.length) return showToast("No RSVPs to send yet.");
-    const lines = filtered.map((r) => `${r.name} - ${parseInt(r.guests, 10) || 1}`);
+    const sorted = [...filtered].sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
+    const lines = sorted.map((r) => `${r.name} - ${parseInt(r.guests, 10) || 1}`);
     const text =
       `*Chamatkar Guest List*\nSat 13 Jun · ${filtered.length} RSVPs · ${heads} heads\n\n` +
       lines.join("\n");
