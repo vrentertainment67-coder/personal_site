@@ -495,11 +495,24 @@ function GuestList({ showToast }) {
     a.click();
   };
 
+  // Open WhatsApp (to Vic's own number) with the list prefilled as "Name - No. of ppl".
+  const sendListToWhatsApp = () => {
+    if (!filtered.length) return showToast("No RSVPs to send yet.");
+    const lines = filtered.map((r) => `${r.name} - ${parseInt(r.guests, 10) || 1}`);
+    const text =
+      `*Chamatkar Guest List*\nSat 13 Jun · ${filtered.length} RSVPs · ${heads} heads\n\n` +
+      lines.join("\n");
+    window.open(`https://wa.me/919611711677?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
   return (
     <>
       <div className="row-between">
         <h1 className="h1">Guest List</h1>
-        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn sm" onClick={sendListToWhatsApp}><MessageCircle size={15} /> WhatsApp list</button>
+          <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+        </div>
       </div>
       <p className="sub">Chamatkar @ Happy Brew · Sat 13 Jun, 9 PM — RSVPs from the homepage popup.</p>
 
