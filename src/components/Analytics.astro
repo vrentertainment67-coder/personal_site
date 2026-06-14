@@ -50,5 +50,20 @@
         track('email_click', { link_url: href, link_location: locationOf(a) });
       }
     }, true);
+
+    // Formspree lead forms (guest-list RSVP, VIC Fix podcast application).
+    // These are full-page POSTs — the submit firing IS the completed submission,
+    // so a scoped listener is safe here (the AJAX booking form is handled via
+    // window.trackLead() and never matches formspree.io, so no double count).
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (!form || form.tagName !== 'FORM') return;
+      if ((form.getAttribute('action') || '').toLowerCase().indexOf('formspree.io') === -1) return;
+      var has = function (n) { return !!form.querySelector('[name="' + n + '"]'); };
+      var loc = 'enquiry', type = 'enquiry';
+      if (has('story') || has('role')) { loc = 'vicfix'; type = 'podcast_guest'; }
+      else if (has('guests') || has('event_venue') || has('event_name')) { loc = 'event_rsvp'; type = 'guest_list'; }
+      track('generate_lead', { event_type: type, form_location: loc, currency: 'INR' });
+    }, true);
   })();
 </script>
