@@ -181,6 +181,8 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     setSubmitting(false);
     if (error) { showToast(error.message || "Could not send request."); return; }
     localStorage.setItem("vic_last_book", String(Date.now()));
+    // GA4 lead conversion — fired only on a real, completed submission (see Analytics.astro)
+    if (typeof window !== "undefined" && typeof window.trackLead === "function") window.trackLead(form.type);
     notifyVic({
       name: form.name, contact: form.contact, type: form.type,
       dateStr: `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}`,

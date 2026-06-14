@@ -1,0 +1,54 @@
+---
+---
+<script>
+  // GA4 conversion tracking — survives Astro View Transitions via document-level delegation.
+  // gtag.js (G-Z7YFSSWY3H) is loaded in the <head>; this only sends events.
+  (function () {
+    if (window.__vicAnalyticsBound) return;     // bind once, even if module re-evaluates
+    window.__vicAnalyticsBound = true;
+
+    function track(name, params) {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params || {});
+      } else {
+        (window.dataLayer = window.dataLayer || []).push(
+          Object.assign({ event: name }, params || {})
+        );
+      }
+    }
+
+    // The booking form submits via fetch (Supabase RPC), so lead tracking is fired
+    // from its SUCCESS callback (BookingApp.jsx) — NOT a submit listener — so we only
+    // count real, completed submissions. See task step 5.
+    window.trackLead = function (eventType) {
+      track('generate_lead', {
+        event_type: eventType || 'unknown',
+        form_location: 'book_page',
+        currency: 'INR'
+      });
+    };
+
+    function locationOf(el) {
+      if (el.dataset && el.dataset.loc) return el.dataset.loc;
+      if (el.closest('[data-sticky-cta]')) return 'sticky_bar';
+      if (el.closest('footer')) return 'footer';
+      if (el.closest('header')) return 'header';
+      if (el.closest('form')) return 'book_form';
+      return 'body';
+    }
+
+    // Outbound + contact link clicks (capture phase so it fires even if other JS stops propagation)
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      if (href.indexOf('wa.me') !== -1 || href.indexOf('api.whatsapp.com') !== -1) {
+        track('whatsapp_click', { link_url: href, link_location: locationOf(a) });
+      } else if (href.indexOf('tel:') === 0) {
+        track('tel_click', { link_url: href, link_location: locationOf(a) });
+      } else if (href.indexOf('mailto:') === 0) {
+        track('email_click', { link_url: href, link_location: locationOf(a) });
+      }
+    }, true);
+  })();
+</script>
