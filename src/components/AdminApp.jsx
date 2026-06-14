@@ -1514,11 +1514,23 @@ function Testimonials({ showToast }) {
 function Marketing() {
   const [data, setData] = useState(null); const [loading, setLoading] = useState(true);
   useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000); // never spin forever
     (async () => {
-      const res = await fetch(`${FN}/admin-api?action=seo-stats`, { method: "POST", headers: await authHeader() })
-        .then((r) => r.json()).catch(() => ({ connected: false, reason: "Network error" }));
-      setData(res); setLoading(false);
+      let res;
+      try {
+        const r = await fetch(`${FN}/admin-api?action=seo-stats`, {
+          method: "POST", headers: await authHeader(), signal: ctrl.signal,
+        });
+        res = await r.json();
+      } catch (e) {
+        res = { connected: false, reason: ctrl.signal.aborted ? "Timed out — Search Console didn't respond" : "Network error" };
+      }
+      clearTimeout(timer);
+      if (!cancelled) { setData(res); setLoading(false); }
     })();
+    return () => { cancelled = true; clearTimeout(timer); ctrl.abort(); };
   }, []);
 
   if (loading) return <Center><Loader2 className="spin" size={20} /> Pulling Search Console…</Center>;
@@ -1542,7 +1554,7 @@ function Marketing() {
   return (
     <>
       <h1 className="h1">Marketing</h1>
-      <p className="sub">Search Console · {data.range.from} → {data.range.to}</p>
+      <p className="sub">Search Console{data.range?.from ? ` · ${data.range.from} → ${data.range.to}` : " · last 28 days"}</p>
       <div className="cards">
         <Stat label="Clicks · 28d" value={t.clicks ?? 0} />
         <Stat label="Impressions" value={(t.impressions ?? 0).toLocaleString()} />
