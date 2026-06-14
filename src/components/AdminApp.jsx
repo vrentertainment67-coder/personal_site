@@ -97,7 +97,6 @@ export default function Admin() {
 
   const TABS = [
     ["overview", "Overview", LayoutDashboard],
-    ["insights", "Insights", Activity],
     ["bookings", "Bookings", ClipboardList],
     ["events", "Events", Star],
     ["guests", "Guests", Users],
@@ -126,7 +125,6 @@ export default function Admin() {
       </nav>
       <main className="adm-main">
         {tab === "overview" && <Overview />}
-        {tab === "insights" && <Insights showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
@@ -135,7 +133,7 @@ export default function Admin() {
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
         {tab === "testimonials" && <Testimonials showToast={showToast} />}
-        {tab === "marketing" && <Marketing />}
+        {tab === "marketing" && <Marketing showToast={showToast} />}
         {tab === "newsletter" && <Newsletter showToast={showToast} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
@@ -218,33 +216,87 @@ function Ranked({ rows, empty }) {
 }
 function fmtDur(s) { s = Number(s) || 0; return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`; }
 
-function Insights({ showToast }) {
+// Combined Marketing tab: one home for traffic (GA4 + our conversion log) and
+// Google search (GSC). The wrapper owns all fetching so the headline can show
+// the funnel across both sources; the two sub-views are presentational.
+function Marketing({ showToast }) {
+  const [sub, setSub] = useState("traffic");
   const [log, setLog] = useState(null);
+  const [logLoading, setLogLoading] = useState(true);
   const [ga, setGa] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [gaLoading, setGaLoading] = useState(true);
+  const [seo, setSeo] = useState(null);
+  const [seoLoading, setSeoLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    // Conversions — our own events_log (last 30 days)
     (async () => {
       const from = new Date(); from.setDate(from.getDate() - 30);
       const { data, error } = await supabase.from("events_log")
         .select("name,location,event_type,device,created_at")
         .gte("created_at", from.toISOString())
         .order("created_at", { ascending: false });
-      if (error) showToast("Couldn't load conversions — is events_log.sql run?");
-      setLog(data || []); setLoading(false);
+      if (error) showToast?.("Couldn't load conversions — is events_log.sql run?");
+      if (!cancelled) { setLog(data || []); setLogLoading(false); }
     })();
+    // GA4 traffic
     (async () => {
+      let r;
       try {
-        const r = await fetch(`${FN}/admin-api?action=ga-stats`, {
+        r = await fetch(`${FN}/admin-api?action=ga-stats`, {
           method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
         }).then((res) => res.json());
-        setGa(r);
-      } catch { setGa({ connected: false, reason: "request failed" }); }
-      setGaLoading(false);
+      } catch { r = { connected: false, reason: "request failed" }; }
+      if (!cancelled) { setGa(r); setGaLoading(false); }
     })();
+    // Search Console — with a hard timeout so it can never spin forever
+    (async () => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      let res;
+      try {
+        const r = await fetch(`${FN}/admin-api?action=seo-stats`, { method: "POST", headers: await authHeader(), signal: ctrl.signal });
+        res = await r.json();
+      } catch {
+        res = { connected: false, reason: ctrl.signal.aborted ? "Timed out — Search Console didn't respond" : "Network error" };
+      }
+      clearTimeout(timer);
+      if (!cancelled) { setSeo(res); setSeoLoading(false); }
+    })();
+    return () => { cancelled = true; };
   }, [showToast]);
 
+  // Shared one-line funnel headline: visitors → from Google search → search clicks
+  const visitors = ga?.connected ? ga.totals?.users : null;
+  const orgSearch = ga?.connected ? ((ga.channels || []).find((x) => /organic search/i.test(x.key))?.value ?? null) : null;
+  const searchClicks = seo?.connected ? seo.totals?.clicks : null;
+  const bits = [];
+  if (visitors != null) bits.push(`${visitors} visitors`);
+  if (orgSearch != null) bits.push(`${orgSearch} from Google search`);
+  if (searchClicks != null) bits.push(`${searchClicks} search clicks`);
+  const headline = bits.length ? `${bits.join(" · ")} · last 28 days` : "Traffic & Google search · last 28 days";
+
+  const SUBS = [["traffic", "Traffic", Activity], ["search", "Search (Google)", TrendingUp]];
+
+  return (
+    <>
+      <h1 className="h1">Marketing</h1>
+      <p className="sub" style={{ marginTop: 2 }}>{headline}</p>
+      <div className="nl-tabs">
+        {SUBS.map(([k, label, Icon]) => (
+          <button key={k} className={sub === k ? "nl-tab on" : "nl-tab"} onClick={() => setSub(k)}>
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+      </div>
+      {sub === "traffic" && <MarketingTraffic log={log} loading={logLoading} ga={ga} gaLoading={gaLoading} />}
+      {sub === "search" && <MarketingSearch data={seo} loading={seoLoading} />}
+    </>
+  );
+}
+
+function MarketingTraffic({ log, loading, ga, gaLoading }) {
   const c = useMemo(() => {
     const rows = log || [];
     const count = (n) => rows.filter((r) => r.name === n).length;
@@ -263,8 +315,6 @@ function Insights({ showToast }) {
 
   return (
     <>
-      <h1 className="h1">Insights</h1>
-
       <p className="sub" style={{ color: "#c9a84c", margin: "2px 0 8px" }}>Conversions · last 30 days (your own log — real-time, not affected by ad-blockers)</p>
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
         <>
@@ -1510,51 +1560,28 @@ function Testimonials({ showToast }) {
   );
 }
 
-// ---------------- MARKETING (GSC) ----------------
-function Marketing() {
-  const [data, setData] = useState(null); const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let cancelled = false;
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 15000); // never spin forever
-    (async () => {
-      let res;
-      try {
-        const r = await fetch(`${FN}/admin-api?action=seo-stats`, {
-          method: "POST", headers: await authHeader(), signal: ctrl.signal,
-        });
-        res = await r.json();
-      } catch (e) {
-        res = { connected: false, reason: ctrl.signal.aborted ? "Timed out — Search Console didn't respond" : "Network error" };
-      }
-      clearTimeout(timer);
-      if (!cancelled) { setData(res); setLoading(false); }
-    })();
-    return () => { cancelled = true; clearTimeout(timer); ctrl.abort(); };
-  }, []);
-
+// ---------------- MARKETING · Search (GSC) sub-view ----------------
+function MarketingSearch({ data, loading }) {
   if (loading) return <Center><Loader2 className="spin" size={20} /> Pulling Search Console…</Center>;
   if (!data?.connected) return (
-    <>
-      <h1 className="h1">Marketing</h1>
-      <div className="card">
-        <p className="sub" style={{ margin: 0 }}>Search Console isn't wired up yet{data?.reason ? ` (${data.reason})` : ""}. Once djvicofficial.com is verified in GSC and the admin-api has the webmasters scope, your top queries and pages show here.</p>
-      </div>
-    </>
+    <div className="card">
+      <p className="sub" style={{ margin: 0 }}>Search Console isn't wired up yet{data?.reason ? ` (${data.reason})` : ""}. Once djvicofficial.com is verified in GSC and the admin-api has the webmasters scope, your top queries and pages show here.</p>
+    </div>
   );
 
   const t = data.totals || {};
   const pct = (n) => `${((n || 0) * 100).toFixed(1)}%`;
   const stripDomain = (u) => (u || "").replace(/^https?:\/\/[^/]+/, "") || "/";
-  // Quick wins: queries ranking page-1-bottom / page-2 with real impressions.
+  // Sort the top tables by impressions (times shown) — at this traffic level
+  // clicks are too sparse to rank meaningfully, so visibility is the better lens.
+  const byImpr = (rows) => [...(rows || [])].sort((a, b) => (b.impressions || 0) - (a.impressions || 0));
+  // Easy wins: queries ranking page-1-bottom / page-2 with real impressions.
   const opps = [...(data.queries || [])]
     .filter((r) => r.position >= 4 && r.position <= 15 && (r.impressions || 0) > 0)
     .sort((a, b) => b.impressions - a.impressions).slice(0, 6);
 
   return (
     <>
-      <h1 className="h1">Marketing</h1>
-      <p className="sub">How your site is doing on Google{data.range?.from ? ` · ${data.range.from} → ${data.range.to}` : " · last 28 days"}</p>
       <div className="cards">
         <Stat label="Visitors from Google" value={t.clicks ?? 0} hint="People who clicked to your site from a Google search" />
         <Stat label="Times you showed up" value={(t.impressions ?? 0).toLocaleString()} hint="How often your site appeared in Google's results" />
@@ -1578,8 +1605,8 @@ function Marketing() {
       )}
 
       <div className="grid2-wide">
-        <SeoTable title="What people searched to find you" rows={data.queries} keyLabel="Search term" />
-        <SeoTable title="Your most-found pages" rows={data.pages} keyLabel="Page" transform={stripDomain} />
+        <SeoTable title="What people searched to find you" rows={byImpr(data.queries)} keyLabel="Search term" />
+        <SeoTable title="Your most-seen pages" rows={byImpr(data.pages)} keyLabel="Page" transform={stripDomain} />
       </div>
     </>
   );
