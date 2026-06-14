@@ -1554,19 +1554,20 @@ function Marketing() {
   return (
     <>
       <h1 className="h1">Marketing</h1>
-      <p className="sub">Search Console{data.range?.from ? ` · ${data.range.from} → ${data.range.to}` : " · last 28 days"}</p>
+      <p className="sub">How your site is doing on Google{data.range?.from ? ` · ${data.range.from} → ${data.range.to}` : " · last 28 days"}</p>
       <div className="cards">
-        <Stat label="Clicks · 28d" value={t.clicks ?? 0} />
-        <Stat label="Impressions" value={(t.impressions ?? 0).toLocaleString()} />
-        <Stat label="Avg CTR" value={pct(t.ctr)} />
-        <Stat label="Avg position" value={(t.position ?? 0).toFixed(1)} />
+        <Stat label="Visitors from Google" value={t.clicks ?? 0} hint="People who clicked to your site from a Google search" />
+        <Stat label="Times you showed up" value={(t.impressions ?? 0).toLocaleString()} hint="How often your site appeared in Google's results" />
+        <Stat label="Click rate" value={pct(t.ctr)} hint="Of everyone who saw you, the % who clicked" />
+        <Stat label="Average ranking" value={(t.position ?? 0).toFixed(1)} hint="Your spot in Google results — 1 is the top. Lower is better." />
       </div>
 
       {opps.length > 0 && (
         <div className="card">
-          <h3 className="card-h">Quick-win keywords · ranking 4–15 with traffic</h3>
+          <h3 className="card-h">Easy wins · searches where you're close to the top</h3>
+          <p className="sub" style={{ marginTop: 0 }}>You already show up for these searches but sit just below the top results. A little attention to these pages could push them up and win more clicks.</p>
           <table className="seo">
-            <thead><tr><th>Query</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Pos.</th></tr></thead>
+            <thead><tr><th>What people searched</th><th>Times shown</th><th>Clicks</th><th>Click rate</th><th>Rank</th></tr></thead>
             <tbody>
               {opps.map((r, i) => (
                 <tr key={i}><td className="ellip">{r.key}</td><td>{r.impressions}</td><td>{r.clicks}</td><td>{pct(r.ctr)}</td><td>{r.position?.toFixed(1)}</td></tr>
@@ -1577,8 +1578,8 @@ function Marketing() {
       )}
 
       <div className="grid2-wide">
-        <SeoTable title="Top queries" rows={data.queries} keyLabel="Query" />
-        <SeoTable title="Top pages" rows={data.pages} keyLabel="Page" transform={stripDomain} />
+        <SeoTable title="What people searched to find you" rows={data.queries} keyLabel="Search term" />
+        <SeoTable title="Your most-found pages" rows={data.pages} keyLabel="Page" transform={stripDomain} />
       </div>
     </>
   );
@@ -1589,7 +1590,7 @@ function SeoTable({ title, rows, keyLabel, transform }) {
     <div className="card">
       <h3 className="card-h">{title}</h3>
       <table className="seo">
-        <thead><tr><th>{keyLabel}</th><th>Clicks</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
+        <thead><tr><th>{keyLabel}</th><th>Clicks</th><th>Times shown</th><th>Click rate</th><th>Rank</th></tr></thead>
         <tbody>
           {(rows || []).map((r, i) => (
             <tr key={i}><td className="ellip">{transform ? transform(r.key) : r.key}</td><td>{r.clicks}</td><td>{r.impressions}</td><td>{pct(r.ctr)}</td><td>{r.position?.toFixed(1)}</td></tr>
@@ -1938,7 +1939,7 @@ function NLHistory({ showToast }) {
 }
 
 // ---------------- shared bits ----------------
-const Stat = ({ label, value }) => (<div className="card stat"><strong>{value}</strong><span>{label}</span></div>);
+const Stat = ({ label, value, hint }) => (<div className="card stat"><strong>{value}</strong><span>{label}</span>{hint && <span style={{ fontSize: "0.7rem", opacity: 0.55, marginTop: 2, lineHeight: 1.3 }}>{hint}</span>}</div>);
 const Center = ({ children }) => (<div className="center">{children}</div>);
 
 function Styles() {
