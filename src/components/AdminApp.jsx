@@ -98,7 +98,8 @@ export default function Admin() {
   const TABS = [
     ["overview", "Overview", LayoutDashboard],
     ["bookings", "Bookings", ClipboardList],
-    ["guestlist", "Guest List", Users],
+    ["events", "Events", Star],
+    ["guests", "Guests", Users],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
     ["pageimages", "Page Images", Images],
@@ -124,7 +125,8 @@ export default function Admin() {
       <main className="adm-main">
         {tab === "overview" && <Overview />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
-        {tab === "guestlist" && <GuestList showToast={showToast} />}
+        {tab === "events" && <EventsAdmin showToast={showToast} />}
+        {tab === "guests" && <Guests showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
@@ -446,34 +448,157 @@ function Bookings({ showToast }) {
   );
 }
 
-// ── Event guest list (Chamatkar @ Happy Brew) — door list from the homepage popup ──
-const GL_EVENT = "chamatkar-2026-06-13";
-function GuestList({ showToast }) {
+// ============================================================
+// EVENTS + GUEST CRM
+// event_rsvps holds every RSVP (tagged by event slug). The `events`
+// table is the registry. Contacts = event_rsvps deduped by phone.
+// ============================================================
+const glStat = { flex: 1, background: "#111", border: "1px solid rgba(201,168,76,0.18)", borderRadius: 8, padding: "0.9rem 1rem", textAlign: "center" };
+const glNum = { display: "block", fontFamily: "'Bebas Neue',sans-serif", fontSize: "2rem", color: "#c9a84c", lineHeight: 1 };
+const glLbl = { fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" };
+const liveTag = { background: "#16331f", color: "#7fe0a0", borderColor: "#225436" };
+
+function phoneKey(p) {
+  let n = (p || "").replace(/\D/g, "");
+  if (n.length === 10) n = "91" + n;   // assume India if 10 digits
+  return n;
+}
+function slugify(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
+// Derive display label + RSVP cutoff (6 PM) + popup expiry (next day 1 AM), all IST, from a YYYY-MM-DD event date.
+function deriveTimes(dateStr) {
+  const date_label = new Date(dateStr + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  const rsvp_cutoff = `${dateStr}T18:00:00+05:30`;
+  const next = new Date(new Date(dateStr + "T00:00:00+05:30").getTime() + 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const expiry = `${next}T01:00:00+05:30`;
+  return { date_label, rsvp_cutoff, expiry };
+}
+
+function Field({ label, children }) {
+  return (
+    <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4, fontSize: ".68rem", letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(255,255,255,.5)" }}>
+      {label}{children}
+    </label>
+  );
+}
+
+// ── Events tab: list + manage events, drill into per-event guest list / invites ──
+function EventsAdmin({ showToast }) {
+  const [events, setEvents] = useState([]); const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // event | "new" | null
+  const [viewing, setViewing] = useState(null); // event whose detail is open
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("events").select("*").order("expiry", { ascending: false, nullsFirst: false });
+    if (error) showToast("Couldn't load events — is events.sql run?");
+    setEvents(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const setLive = async (ev, live) => {
+    if (live) await supabase.from("events").update({ active: false }).neq("id", ev.id);
+    const { error } = await supabase.from("events").update({ active: live }).eq("id", ev.id);
+    if (error) return showToast(error.message);
+    showToast(live ? "Now live on the homepage." : "Taken off the homepage."); load();
+  };
+  const toggleGl = async (ev) => {
+    await supabase.from("events").update({ guestlist_enabled: !ev.guestlist_enabled }).eq("id", ev.id); load();
+  };
+
+  if (editing) return <EventForm event={editing === "new" ? null : editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />;
+  if (viewing) return <EventDetail event={viewing} onBack={() => { setViewing(null); load(); }} showToast={showToast} />;
+
+  const now = Date.now();
+  const upcoming = events.filter((e) => !e.expiry || Date.parse(e.expiry) >= now);
+  const past = events.filter((e) => e.expiry && Date.parse(e.expiry) < now);
+
+  const card = (ev) => (
+    <div key={ev.id} className="req">
+      <div className="req-top">
+        <div>
+          <h3>{ev.title} {ev.active && <span className="tag" style={liveTag}>LIVE</span>}</h3>
+          <p className="req-meta">
+            <span>{ev.date_label || "—"}</span>
+            {ev.venue && <span><MapPin size={12} /> {ev.venue}</span>}
+            <span className="gold">{ev.guestlist_enabled ? "RSVP on" : "RSVP off"}</span>
+          </p>
+        </div>
+      </div>
+      <div className="req-actions">
+        <button className="act" onClick={() => setViewing(ev)}><Users size={15} /> Guest list</button>
+        <button className="act" onClick={() => setEditing(ev)}>Edit</button>
+        <button className="act" onClick={() => toggleGl(ev)}>{ev.guestlist_enabled ? "Disable RSVP" : "Enable RSVP"}</button>
+        <button className={ev.active ? "act decline" : "act accept"} onClick={() => setLive(ev, !ev.active)}>
+          {ev.active ? "Take off site" : "Set live"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Events</h1>
+        <button className="btn sm" onClick={() => setEditing("new")}><Plus size={15} /> New event</button>
+      </div>
+      <p className="sub">Add an event and set it live to show the homepage guest-list popup. Open any event for its list + to invite past guests.</p>
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <>
+          <p className="sub" style={{ margin: "2px 0 6px", color: "#c9a84c" }}>Live &amp; upcoming</p>
+          <div className="list">
+            {upcoming.length === 0 && <p className="empty">No upcoming events — add one.</p>}
+            {upcoming.map(card)}
+          </div>
+          {past.length > 0 && (
+            <>
+              <p className="sub" style={{ margin: "20px 0 6px", color: "#c9a84c" }}>Past events</p>
+              <div className="list">{past.map(card)}</div>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+function EventDetail({ event, onBack, showToast }) {
+  const [tab, setTab] = useState("list");
+  return (
+    <>
+      <button className="btn sm" onClick={onBack} style={{ marginBottom: 12 }}>← All events</button>
+      <h1 className="h1">{event.title}</h1>
+      <p className="sub">{event.date_label || "—"}{event.venue ? " · " + event.venue : ""}</p>
+      <div className="chips">
+        <button className={tab === "list" ? "chip on" : "chip"} onClick={() => setTab("list")}>Guest list</button>
+        <button className={tab === "invite" ? "chip on" : "chip"} onClick={() => setTab("invite")}>Invite past guests</button>
+      </div>
+      {tab === "list"
+        ? <EventGuests event={event} showToast={showToast} />
+        : <InvitePastGuests event={event} showToast={showToast} />}
+    </>
+  );
+}
+
+function EventGuests({ event, showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(""); const [deleting, setDeleting] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("event_rsvps")
-      .select("*")
-      .eq("event", GL_EVENT)
-      .order("created_at", { ascending: false });
-    if (error) showToast("Couldn't load RSVPs — is event_rsvps.sql run?");
+    const { data, error } = await supabase.from("event_rsvps").select("*").eq("event", event.slug).order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load RSVPs.");
     setRows(data || []); setLoading(false);
-  }, [showToast]);
+  }, [event.slug, showToast]);
   useEffect(() => { load(); }, [load]);
 
   const waFor = (r) => {
-    let n = waDigits(r.phone);
-    if (n.length === 10) n = "91" + n;
-    const msg = encodeURIComponent(`Hi ${r.name}! You're on the guest list for Chamatkar @ Happy Brew this Saturday (9 PM). See you there — DJ VIC`);
+    const n = phoneKey(r.phone);
+    const msg = encodeURIComponent(`Hi ${r.name}! You're on the guest list for ${event.title}${event.venue ? " @ " + event.venue : ""}${event.date_label ? " (" + event.date_label + ")" : ""}. See you there — DJ VIC`);
     if (n.length >= 11) window.open(`https://wa.me/${n}?text=${msg}`, "_blank");
     else showToast("No valid phone for this RSVP.");
   };
-
   const del = async (id) => {
-    if (!window.confirm("Remove this RSVP from the list?")) return;
+    if (!window.confirm("Remove this RSVP?")) return;
     setDeleting(id);
     const { error } = await supabase.from("event_rsvps").delete().eq("id", id);
     setDeleting(null);
@@ -491,39 +616,31 @@ function GuestList({ showToast }) {
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = `chamatkar-guestlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `${event.slug}-guestlist-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
-
-  // Open WhatsApp (to Vic's own number) with the list prefilled as "Name - No. of ppl".
   const sendListToWhatsApp = () => {
     if (!filtered.length) return showToast("No RSVPs to send yet.");
     const sorted = [...filtered].sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
     const lines = sorted.map((r) => `${r.name} - ${parseInt(r.guests, 10) || 1}`);
-    const text =
-      `*Chamatkar Guest List*\nSat 13 Jun · ${filtered.length} RSVPs · ${heads} heads\n\n` +
-      lines.join("\n");
+    const text = `*${event.title} Guest List*\n${event.date_label || ""} · ${filtered.length} RSVPs · ${heads} heads\n\n` + lines.join("\n");
     window.open(`https://wa.me/919611711677?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   return (
     <>
       <div className="row-between">
-        <h1 className="h1">Guest List</h1>
+        <p className="sub" style={{ margin: 0 }}>RSVPs from the homepage popup.</p>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn sm" onClick={sendListToWhatsApp}><MessageCircle size={15} /> WhatsApp list</button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
         </div>
       </div>
-      <p className="sub">Chamatkar @ Happy Brew · Sat 13 Jun, 9 PM — RSVPs from the homepage popup.</p>
-
-      <div style={{ display: "flex", gap: 10, margin: "0 0 14px" }}>
+      <div style={{ display: "flex", gap: 10, margin: "12px 0 14px" }}>
         <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>RSVPs</span></div>
         <div style={glStat}><strong style={glNum}>{heads}</strong><span style={glLbl}>Total heads</span></div>
       </div>
-
       <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
-
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
         <div className="list">
           {filtered.length === 0 && <p className="empty">No RSVPs yet.</p>}
@@ -556,9 +673,246 @@ function GuestList({ showToast }) {
     </>
   );
 }
-const glStat = { flex: 1, background: "#111", border: "1px solid rgba(201,168,76,0.18)", borderRadius: 8, padding: "0.9rem 1rem", textAlign: "center" };
-const glNum = { display: "block", fontFamily: "'Bebas Neue',sans-serif", fontSize: "2rem", color: "#c9a84c", lineHeight: 1 };
-const glLbl = { fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" };
+
+// Click-to-chat re-invite: every past guest NOT already on this event, one WhatsApp tap each.
+function InvitePastGuests({ event, showToast }) {
+  const [contacts, setContacts] = useState([]); const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(""); const [, force] = useState(0);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from("event_rsvps").select("name,phone,instagram,event,created_at");
+      if (error) showToast("Couldn't load past guests.");
+      const rows = data || [];
+      const onThis = new Set(rows.filter((r) => r.event === event.slug).map((r) => phoneKey(r.phone)));
+      const byPhone = {};
+      rows.forEach((r) => {
+        const k = phoneKey(r.phone);
+        if (!k || k.length < 11 || onThis.has(k)) return;
+        if (!byPhone[k] || r.created_at > byPhone[k].last) byPhone[k] = { phone: k, name: r.name, instagram: r.instagram, last: r.created_at };
+      });
+      if (on) { setContacts(Object.values(byPhone)); setLoading(false); }
+    })();
+    return () => { on = false; };
+  }, [event.slug, showToast]);
+
+  const lsKey = `vic_invited_${event.slug}`;
+  const messaged = () => { try { return JSON.parse(localStorage.getItem(lsKey) || "{}"); } catch { return {}; } };
+  const invite = (c) => {
+    const msg = encodeURIComponent(
+      `Hi${c.name ? " " + c.name.split(" ")[0] : ""}! DJ VIC here 🎧 You came through for a previous night — we'd love to have you at *${event.title}*${event.venue ? " @ " + event.venue : ""}${event.date_label ? " on " + event.date_label : ""}. Want me to put you on the guest list?`
+    );
+    window.open(`https://wa.me/${c.phone}?text=${msg}`, "_blank");
+    const m = messaged(); m[c.phone] = 1;
+    try { localStorage.setItem(lsKey, JSON.stringify(m)); } catch {}
+    force((x) => x + 1);
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = contacts.filter((c) => !q || [c.name, c.phone, c.instagram].some((v) => (v || "").toLowerCase().includes(q)));
+  const sent = messaged();
+  const sentCount = contacts.filter((c) => sent[c.phone]).length;
+
+  return (
+    <>
+      <p className="sub">{contacts.length} past guests not yet on this list · {sentCount} messaged. One tap opens WhatsApp with the invite prefilled — you hit send.</p>
+      <input className="search" placeholder="Search name, phone…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">No past guests to invite yet.</p>}
+          {filtered.map((c) => (
+            <div key={c.phone} className="req">
+              <div className="req-top">
+                <div>
+                  <h3>{c.name || "Guest"} {sent[c.phone] && <span className="tag" style={liveTag}>messaged</span>}</h3>
+                  <p className="req-meta"><span>+{c.phone}</span>{c.instagram && <span>{c.instagram}</span>}</p>
+                </div>
+              </div>
+              <div className="req-actions">
+                <button className="act wa" onClick={() => invite(c)}><MessageCircle size={15} /> Invite</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Guests tab: the master deduped contact database (CRM) ──
+function Guests({ showToast }) {
+  const [contacts, setContacts] = useState([]); const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from("event_rsvps").select("name,phone,instagram,event,created_at").order("created_at", { ascending: false });
+      if (error) showToast("Couldn't load guests.");
+      const byPhone = {};
+      (data || []).forEach((r) => {
+        const k = phoneKey(r.phone);
+        if (!k) return;
+        if (!byPhone[k]) byPhone[k] = { phone: k, name: r.name, instagram: r.instagram, events: new Set(), visits: 0, last: r.created_at };
+        const c = byPhone[k];
+        c.events.add(r.event); c.visits += 1;
+        if (r.created_at > c.last) { c.last = r.created_at; c.name = r.name || c.name; c.instagram = r.instagram || c.instagram; }
+      });
+      const list = Object.values(byPhone).map((c) => ({ ...c, eventsCount: c.events.size })).sort((a, b) => (b.last || "").localeCompare(a.last || ""));
+      if (on) { setContacts(list); setLoading(false); }
+    })();
+    return () => { on = false; };
+  }, [showToast]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = contacts.filter((c) => !q || [c.name, c.phone, c.instagram].some((v) => (v || "").toLowerCase().includes(q)));
+  const totalRsvps = filtered.reduce((s, c) => s + c.visits, 0);
+
+  const exportCsv = () => {
+    const head = ["name", "phone", "instagram", "events_attended", "total_rsvps", "last_seen"];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [head.join(","), ...filtered.map((c) => [esc(c.name), esc("+" + c.phone), esc(c.instagram), c.eventsCount, c.visits, esc(c.last)].join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `djvic-guests-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+  const waFor = (c) => window.open(`https://wa.me/${c.phone}?text=${encodeURIComponent(`Hi${c.name ? " " + c.name.split(" ")[0] : ""}! DJ VIC here 🎧`)}`, "_blank");
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Guests</h1>
+        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+      </div>
+      <p className="sub">Your master guest database — everyone who's ever RSVP'd, deduplicated by phone. Grows with every event.</p>
+      <div style={{ display: "flex", gap: 10, margin: "0 0 14px" }}>
+        <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>Unique guests</span></div>
+        <div style={glStat}><strong style={glNum}>{totalRsvps}</strong><span style={glLbl}>Total RSVPs</span></div>
+      </div>
+      <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">No guests yet.</p>}
+          {filtered.map((c) => {
+            const t = new Date(c.last);
+            return (
+              <div key={c.phone} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3>{c.name || "Guest"} <span className="gold">· {c.eventsCount} {c.eventsCount === 1 ? "event" : "events"}</span></h3>
+                    <p className="req-meta">
+                      <span>+{c.phone}</span>
+                      {c.instagram && <span>{c.instagram}</span>}
+                      <span>{c.visits} RSVP{c.visits === 1 ? "" : "s"}</span>
+                      <span>last {MONTHS[t.getMonth()]} {t.getDate()}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="req-actions">
+                  <button className="act wa" onClick={() => waFor(c)}><MessageCircle size={15} /> WhatsApp</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+function EventForm({ event, onDone, showToast }) {
+  const isEdit = !!event; const init = event || {};
+  const [f, setF] = useState({
+    title: init.title || "", venue: init.venue || "", area: init.area || "",
+    dateStr: "", time_label: init.time_label || "9:00 PM onwards",
+    lineup: init.lineup || "DJ VIC", genre: init.genre || "",
+    guestlist_enabled: init.guestlist_enabled ?? true, active: init.active ?? false,
+  });
+  const [bannerUrl, setBannerUrl] = useState(init.banner_url || "");
+  const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const uploadBanner = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ folder: "djvic/events" }),
+      }).then((r) => r.json());
+      if (sign.error) throw new Error(sign.error);
+      const up = await cloudinaryUpload(file, sign);
+      setBannerUrl(up.secure_url); showToast("Banner uploaded.");
+    } catch (e) { showToast(String(e.message || e)); }
+    setUploading(false);
+  };
+
+  const save = async () => {
+    if (!f.title.trim()) return showToast("Give the event a title.");
+    if (!isEdit && !f.dateStr) return showToast("Pick the event date.");
+    setBusy(true);
+    const row = {
+      slug: isEdit ? event.slug : `${slugify(f.title)}-${f.dateStr}`,
+      title: f.title.trim(), venue: f.venue.trim() || null, area: f.area.trim() || null,
+      time_label: f.time_label.trim() || null, lineup: f.lineup.trim() || null, genre: f.genre.trim() || null,
+      banner_url: bannerUrl || null, guestlist_enabled: f.guestlist_enabled, active: f.active,
+    };
+    if (f.dateStr) Object.assign(row, deriveTimes(f.dateStr));
+    const res = isEdit
+      ? await supabase.from("events").update(row).eq("id", event.id).select().single()
+      : await supabase.from("events").insert(row).select().single();
+    if (res.error) {
+      setBusy(false);
+      return showToast(/duplicate|unique/i.test(res.error.message) ? "An event with this name + date already exists." : res.error.message);
+    }
+    if (f.active && res.data) await supabase.from("events").update({ active: false }).neq("id", res.data.id);
+    setBusy(false); showToast(isEdit ? "Event updated." : "Event created."); onDone();
+  };
+
+  return (
+    <>
+      <button className="btn sm" onClick={onDone} style={{ marginBottom: 12 }}>← All events</button>
+      <h1 className="h1">{isEdit ? "Edit event" : "New event"}</h1>
+      <div className="card" style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+        <Field label="Title"><input className="search" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Chamatkar" /></Field>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field label="Venue"><input className="search" value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} placeholder="Happy Brew" /></Field>
+          <Field label="Area / City"><input className="search" value={f.area} onChange={(e) => setF({ ...f, area: e.target.value })} placeholder="Koramangala, Bangalore" /></Field>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field label={isEdit ? "Event date (blank = keep)" : "Event date"}><input className="search" type="date" value={f.dateStr} onChange={(e) => setF({ ...f, dateStr: e.target.value })} /></Field>
+          <Field label="Time label"><input className="search" value={f.time_label} onChange={(e) => setF({ ...f, time_label: e.target.value })} placeholder="9:00 PM onwards" /></Field>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field label="Lineup"><input className="search" value={f.lineup} onChange={(e) => setF({ ...f, lineup: e.target.value })} placeholder="DJ VIC" /></Field>
+          <Field label="Genre / tagline"><input className="search" value={f.genre} onChange={(e) => setF({ ...f, genre: e.target.value })} placeholder="Bollywood / Commercial" /></Field>
+        </div>
+        <Field label="Banner image (3:2, optional)">
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {bannerUrl && <img src={bannerUrl} alt="" style={{ width: 90, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #2a2a2a" }} />}
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => uploadBanner(e.target.files?.[0])} />
+            <button className="btn sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              {uploading ? <><Loader2 className="spin" size={14} /> Uploading…</> : <><Upload size={14} /> {bannerUrl ? "Replace" : "Upload"}</>}
+            </button>
+          </div>
+        </Field>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".85rem", color: "rgba(255,255,255,.8)" }}>
+          <input type="checkbox" checked={f.guestlist_enabled} onChange={(e) => setF({ ...f, guestlist_enabled: e.target.checked })} /> Guest-list RSVPs enabled
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".85rem", color: "rgba(255,255,255,.8)" }}>
+          <input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Show on website now (live popup)
+        </label>
+        <button className="btn" disabled={busy} onClick={save}>
+          {busy ? <><Loader2 className="spin" size={16} /> Saving…</> : (isEdit ? "Save changes" : "Create event")}
+        </button>
+      </div>
+    </>
+  );
+}
 
 function NoteField({ initial, onSave }) {
   const [val, setVal] = useState(initial); const [dirty, setDirty] = useState(false);

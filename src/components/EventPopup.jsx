@@ -2,61 +2,61 @@ import React, { useState, useEffect, useRef } from "react";
 
 // ============================================================
 // DJ VIC — event guest-list popup (homepage)
-// Appears 2s after landing, once per visitor (localStorage).
-// RSVP form until the cut-off, then a "doors open" message,
-// then nothing once the event night is over.
+// Loads the live event at runtime from the `events` table (the row
+// where active = true AND guestlist_enabled = true). No live event
+// → nothing renders. Appears 2s after landing, once per visitor
+// per event (localStorage keyed by slug). RSVP form until the
+// cut-off, then a "doors open" message, then nothing once expired.
 //
 // Saves to Supabase `event_rsvps` (anon insert) and pings VIC's
 // phone via the same ntfy topic the booking form uses.
 // Self-contained styles — Astro scopes page CSS away from islands.
 // ============================================================
 
-// ── Event config — change here if details move ──────────────
-const EVENT = {
-  id: "chamatkar-2026-06-13",
-  title: "Chamatkar",
-  venue: "Happy Brew",
-  area: "Koramangala, Bangalore",
-  dateLabel: "Saturday, 13 June",
-  timeLabel: "9:00 PM onwards",
-  lineup: "DJ VIC",
-  genre: "Bollywood / Commercial — Audio-Visual Set",
-  // Fixed instants in IST (+05:30) so timing is correct regardless of visitor TZ
-  rsvpCutoff: Date.parse("2026-06-13T18:00:00+05:30"),
-  expiry:     Date.parse("2026-06-14T01:00:00+05:30"),
-  whatsapp:   "919611711677",
-};
-
 const SUPABASE_URL =
   import.meta.env?.PUBLIC_SUPABASE_URL || "https://jftnhuutttmccmqnnybf.supabase.co";
 const SUPABASE_KEY =
   import.meta.env?.PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
 const NTFY_TOPIC = "djvic-bookings-7k9f3hQ2pX8mN5vR";
-const LS_KEY = "chamatkar_rsvp_v1"; // 'done' | 'dismissed'
+const WHATSAPP = "919611711677";
 
 export default function EventPopup() {
-  const [phase, setPhase] = useState("hidden"); // hidden | form | closed | thanks
-  const [open, setOpen] = useState(false);       // controls entrance animation
+  const [event, setEvent] = useState(null);       // the live event row
+  const [phase, setPhase] = useState("hidden");   // hidden | form | closed | thanks
+  const [open, setOpen] = useState(false);        // controls entrance animation
   const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
   const [bannerOk, setBannerOk] = useState(true);
   const cardRef = useRef(null);
+  const timerRef = useRef(null);
 
-  // ── Decide whether/what to show ───────────────────────────
+  // ── Load the live event, then decide whether/what to show ──
   useEffect(() => {
-    const now = Date.now();
-    if (now >= EVENT.expiry) return;                 // event night over → never
-    let seen = null;
-    try { seen = localStorage.getItem(LS_KEY); } catch {}
-    if (seen) return;                                // already acted → don't nag
-
-    const startPhase = now < EVENT.rsvpCutoff ? "form" : "closed";
-    const t = setTimeout(() => {
-      setPhase(startPhase);
-      requestAnimationFrame(() => setOpen(true));
-    }, 2000);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    fetch(`${SUPABASE_URL}/rest/v1/events?active=eq.true&guestlist_enabled=eq.true&select=*&limit=1`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    })
+      .then((r) => r.json())
+      .then((rows) => {
+        if (cancelled) return;
+        const ev = Array.isArray(rows) ? rows[0] : null;
+        if (!ev) return;
+        const expiry = Date.parse(ev.expiry);
+        if (expiry && Date.now() >= expiry) return;          // event window over
+        let seen = null;
+        try { seen = localStorage.getItem(`vic_rsvp_${ev.slug}`); } catch {}
+        if (seen) return;                                    // already acted → don't nag
+        setEvent(ev);
+        const cutoff = Date.parse(ev.rsvp_cutoff);
+        const startPhase = cutoff && Date.now() >= cutoff ? "closed" : "form";
+        timerRef.current = setTimeout(() => {
+          setPhase(startPhase);
+          requestAnimationFrame(() => setOpen(true));
+        }, 2000);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
   // ── Body scroll lock + ESC + focus while open ─────────────
@@ -71,7 +71,7 @@ export default function EventPopup() {
     return () => { document.body.style.overflow = prevOverflow; document.removeEventListener("keydown", onKey); };
   }, [phase]);
 
-  function remember(v) { try { localStorage.setItem(LS_KEY, v); } catch {} }
+  function remember(v) { try { if (event) localStorage.setItem(`vic_rsvp_${event.slug}`, v); } catch {} }
 
   function close(rememberAs) {
     setOpen(false);
@@ -82,7 +82,7 @@ export default function EventPopup() {
 
   async function submit(e) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || !event) return;
     if (data.company) { close("done"); return; } // honeypot tripped
     const name = data.name.trim();
     const phone = data.phone.trim();
@@ -92,7 +92,7 @@ export default function EventPopup() {
     setSubmitting(true);
 
     const row = {
-      event: EVENT.id,
+      event: event.slug,
       name,
       phone,
       guests: parseInt(data.guests, 10) || 1,
@@ -127,9 +127,9 @@ export default function EventPopup() {
           `Name: ${name}\nPhone: ${phone}\nGuests: ${row.guests}` +
           (row.entry_type ? `\nEntry: ${row.entry_type}` : "") +
           (row.instagram ? `\nInstagram: ${row.instagram}` : "") +
-          `\n\nChamatkar @ Happy Brew · Sat 13 Jun`;
+          `\n\n${event.title} @ ${event.venue || ""}`;
         const url =
-          `https://ntfy.sh/${NTFY_TOPIC}?title=${encodeURIComponent("🎉 Chamatkar RSVP — " + name)}&priority=4&tags=tada,studio_microphone`;
+          `https://ntfy.sh/${NTFY_TOPIC}?title=${encodeURIComponent("🎉 " + event.title + " RSVP — " + name)}&priority=4&tags=tada,studio_microphone`;
         navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
       } catch {}
       remember("done");
@@ -139,44 +139,47 @@ export default function EventPopup() {
     }
   }
 
-  if (phase === "hidden") return null;
+  if (phase === "hidden" || !event) return null;
 
+  const showBanner = bannerOk && !!event.banner_url;
   const waHref =
-    `https://wa.me/${EVENT.whatsapp}?text=` +
+    `https://wa.me/${WHATSAPP}?text=` +
     encodeURIComponent(
-      `Hi VIC! I'd like to be on the guest list for ${EVENT.title} @ ${EVENT.venue} (Sat 13 June).` +
+      `Hi VIC! I'd like to be on the guest list for ${event.title}${event.venue ? " @ " + event.venue : ""}${event.date_label ? " (" + event.date_label + ")" : ""}.` +
       (data.name ? ` Name: ${data.name.trim()}.` : "") +
       (data.guests ? ` Guests: ${data.guests}.` : "")
     );
 
   return (
-    <div className={`ep-overlay${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-label="Chamatkar — guest list">
+    <div className={`ep-overlay${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-label={`${event.title} — guest list`}>
       <style>{styles}</style>
       <div className="ep-backdrop" onClick={dismiss} />
       <div className="ep-card" ref={cardRef}>
         <button className="ep-x" onClick={dismiss} aria-label="Close">&times;</button>
 
-        {bannerOk && (
+        {showBanner && (
           <img
             className="ep-banner"
-            src="/images/chamatkar.jpg"
-            alt="Chamatkar"
+            src={event.banner_url}
+            alt={event.title}
             width="1200"
             height="800"
             onError={() => setBannerOk(false)}
           />
         )}
 
-        <div className={`ep-head${bannerOk ? "" : " ep-head--noimg"}`}>
-          <span className="ep-eyebrow">Guest List · This Saturday</span>
-          {!bannerOk && <h2 className="ep-title">{EVENT.title}</h2>}
-          <p className="ep-venue">@ {EVENT.venue} · {EVENT.area}</p>
+        <div className={`ep-head${showBanner ? "" : " ep-head--noimg"}`}>
+          <span className="ep-eyebrow">Guest List</span>
+          {!showBanner && <h2 className="ep-title">{event.title}</h2>}
+          {(event.venue || event.area) && (
+            <p className="ep-venue">@ {event.venue}{event.area ? " · " + event.area : ""}</p>
+          )}
           <div className="ep-meta">
-            <span>🗓 {EVENT.dateLabel}</span>
-            <span>🕘 {EVENT.timeLabel}</span>
+            {event.date_label && <span>🗓 {event.date_label}</span>}
+            {event.time_label && <span>🕘 {event.time_label}</span>}
           </div>
-          <p className="ep-lineup">{EVENT.lineup}</p>
-          <p className="ep-genre">{EVENT.genre}</p>
+          {event.lineup && <p className="ep-lineup">{event.lineup}</p>}
+          {event.genre && <p className="ep-genre">{event.genre}</p>}
         </div>
 
         {phase === "form" && (
@@ -221,14 +224,16 @@ export default function EventPopup() {
             <button type="submit" className="ep-submit" disabled={submitting}>
               {submitting ? "Adding you…" : "Get on the Guest List →"}
             </button>
-            <p className="ep-fine">RSVPs close Saturday 6 PM. We'll WhatsApp you the details.</p>
+            <p className="ep-fine">We'll WhatsApp you the details before the event.</p>
           </form>
         )}
 
         {phase === "closed" && (
           <div className="ep-closed">
             <p className="ep-closed-lead">Guest-list RSVPs are closed — but the night's on.</p>
-            <p className="ep-closed-sub">Doors open 9 PM at {EVENT.venue}, {EVENT.area}. Walk in, or message us to sort entry.</p>
+            <p className="ep-closed-sub">
+              Doors {event.time_label || "open soon"}{event.venue ? " at " + event.venue : ""}{event.area ? ", " + event.area : ""}. Walk in, or message us to sort entry.
+            </p>
             <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
               Message on WhatsApp
@@ -240,7 +245,7 @@ export default function EventPopup() {
           <div className="ep-thanks">
             <div className="ep-tick">✓</div>
             <p className="ep-thanks-lead">You're on the list!</p>
-            <p className="ep-thanks-sub">See you Saturday at {EVENT.venue}. Tap below to confirm on WhatsApp so we have you saved.</p>
+            <p className="ep-thanks-sub">See you at {event.venue || "the event"}. Tap below to confirm on WhatsApp so we have you saved.</p>
             <a className="ep-wa" href={waHref} target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
               Confirm on WhatsApp
@@ -295,7 +300,7 @@ const styles = `
 @media (max-width:480px){
   .ep-overlay{align-items:flex-end;padding:0;}
   .ep-card{width:100%;max-height:94vh;border-radius:14px 14px 0 0;border-bottom:none;}
-  .ep-banner{aspect-ratio:2/1;}                 /* shorter banner so the CTA stays near the fold */
+  .ep-banner{aspect-ratio:2/1;}
   .ep-head{padding:.85rem 1.3rem .75rem;}
   .ep-meta{gap:.8rem;font-size:.74rem;}
   .ep-lineup{font-size:1.45rem;margin:.55rem 0 .1rem;}
@@ -305,8 +310,6 @@ const styles = `
   .ep-fine{margin-top:.35rem;}
   .ep-title{font-size:2.6rem;}
 }
-/* Very short viewports (small phones / landscape): trim aggressively so the
-   CTA stays as close to the fold as possible */
 @media (max-width:480px) and (max-height:720px){
   .ep-card{max-height:96vh;}
   .ep-banner{aspect-ratio:5/2;}
