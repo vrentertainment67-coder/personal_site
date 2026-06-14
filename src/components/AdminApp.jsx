@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieC
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
-  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff,
+  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -100,6 +100,7 @@ export default function Admin() {
     ["bookings", "Bookings", ClipboardList],
     ["events", "Events", Star],
     ["guests", "Guests", Users],
+    ["podcast", "Podcast", Mic],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
     ["pageimages", "Page Images", Images],
@@ -127,6 +128,7 @@ export default function Admin() {
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
+        {tab === "podcast" && <PodcastApplications showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
@@ -814,6 +816,98 @@ function Guests({ showToast }) {
                 </div>
                 <div className="req-actions">
                   <button className="act wa" onClick={() => waFor(c)}><MessageCircle size={15} /> WhatsApp</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Podcast tab: VIC Fix guest applications (from /thevicfix) ──
+function PodcastApplications({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(""); const [deleting, setDeleting] = useState(null);
+  const [open, setOpen] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("podcast_applications").select("*").order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load applications — is podcast_applications.sql run?");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const reply = (r) => {
+    if (r.phone && waDigits(r.phone).length >= 10) {
+      let n = waDigits(r.phone); if (n.length === 10) n = "91" + n;
+      window.open(`https://wa.me/${n}?text=${encodeURIComponent(`Hi ${r.name}, this is VIC — thanks for applying to The VIC Fix.`)}`, "_blank");
+    } else if (r.email) {
+      window.open(`mailto:${r.email}?subject=The VIC Fix&body=${encodeURIComponent(`Hi ${r.name}, thanks for applying to The VIC Fix.`)}`, "_blank");
+    } else showToast("No contact on file for this application.");
+  };
+  const del = async (id) => {
+    if (!window.confirm("Delete this application?")) return;
+    setDeleting(id);
+    const { error } = await supabase.from("podcast_applications").delete().eq("id", id);
+    setDeleting(null);
+    if (error) return showToast("Delete needs the admin grant (see podcast_applications.sql).");
+    showToast("Deleted."); load();
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = rows.filter((r) => !q || [r.name, r.email, r.phone, r.instagram, r.role, r.story].some((v) => (v || "").toLowerCase().includes(q)));
+
+  const exportCsv = () => {
+    const cols = ["created_at", "name", "email", "phone", "instagram", "role", "story"];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `vicfix-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Podcast</h1>
+        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+      </div>
+      <p className="sub">The VIC Fix guest applications — submitted from /thevicfix.</p>
+      <input className="search" placeholder="Search name, role, story…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">No applications yet.</p>}
+          {filtered.map((r) => {
+            const t = new Date(r.created_at);
+            const expanded = open === r.id;
+            return (
+              <div key={r.id} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3>{r.name} {r.role && <span className="tag">{r.role}</span>}</h3>
+                    <p className="req-meta">
+                      {r.email && <span>{r.email}</span>}
+                      {r.phone && <span>{r.phone}</span>}
+                      {r.instagram && <span>{r.instagram}</span>}
+                      <span>{MONTHS[t.getMonth()]} {t.getDate()}</span>
+                    </p>
+                  </div>
+                </div>
+                {r.story && (
+                  <p className="req-msg" style={expanded ? {} : { maxHeight: 58, overflow: "hidden" }}>{r.story}</p>
+                )}
+                {r.story && r.story.length > 160 && (
+                  <button className="note-save" onClick={() => setOpen(expanded ? null : r.id)}>{expanded ? "Show less" : "Read more"}</button>
+                )}
+                <div className="req-actions">
+                  <button className="act wa" onClick={() => reply(r)}><MessageCircle size={15} /> Reply</button>
+                  <button className="act decline" disabled={deleting === r.id} onClick={() => del(r.id)}>
+                    {deleting === r.id ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />} Delete
+                  </button>
                 </div>
               </div>
             );

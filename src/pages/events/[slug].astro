@@ -20,9 +20,7 @@ const formattedDate = eventDate.toLocaleDateString('en-IN', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 });
 
-const formAction = `https://formspree.io/f/${event.data.guestListFormId || 'xbdqanrk'}`;
-const formSubject = `Guest List RSVP — ${event.data.title} at ${event.data.venue}`;
-const successUrl  = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
+const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
 ---
 
 <Layout
@@ -153,14 +151,14 @@ const successUrl  = `https://djvicofficial.com/events/${event.id}/?rsvp=success`
               <!-- Form -->
               <form
                 class="guestlist-form"
-                action={formAction}
-                method="POST"
+                data-sb-table="event_rsvps"
               >
-                <input type="hidden" name="_subject" value={formSubject} />
-                <input type="hidden" name="_next"    value={successUrl} />
+                <input type="hidden" name="_next"       value={successUrl} />
+                <input type="hidden" name="event"       value={event.id} />
                 <input type="hidden" name="event_name"  value={event.data.title} />
                 <input type="hidden" name="event_date"  value={formattedDate} />
                 <input type="hidden" name="event_venue" value={event.data.venue} />
+                <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true" />
 
                 <div class="form-row">
                   <div class="form-field">

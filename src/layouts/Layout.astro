@@ -328,90 +328,99 @@ export type Props = BaseHeadProps;
 </style>
 
 <!--
-  Formspree → mobile push bridge (via ntfy.sh, no auth, no API key).
-  Every Formspree submit also POSTs to a private ntfy.sh topic so VIC's phone
-  buzzes the moment an enquiry comes in — in addition to the Formspree email.
+  Supabase form bridge — handles the on-site lead forms (podcast application,
+  event guest-list RSVP) with NO third-party form service. On submit it writes
+  to Supabase, pings VIC's phone via ntfy.sh, fires the GA4 generate_lead event,
+  then redirects to the form's _next (or shows an inline thank-you).
 
-  How to receive the notifications:
-    1. Install the ntfy app (Android: Play Store, iOS: App Store, Web: ntfy.sh)
-    2. In the app: + Add subscription → Topic name: djvic-bookings-7k9f3hQ2pX8mN5vR
-    3. Done. Submissions arrive within ~2 seconds.
-
-  - The topic name is an unguessable 24-char random string. Treat it like a
-    password. If you ever leak it, change the TOPIC const below and re-subscribe.
-  - Listens on `document` so it survives Astro view transitions.
-  - sendBeacon doesn't block the actual form POST to Formspree.
-  - __vicNotifyWired guard prevents re-attaching listeners during view transitions.
+  Forms opt in with data-sb-table="podcast_applications" | "event_rsvps".
+  ntfy: install the app and subscribe to topic djvic-bookings-7k9f3hQ2pX8mN5vR
+  (treat the topic name like a password). Listens on `document` so it survives
+  View Transitions; the __vicFormWired guard prevents double-binding.
 -->
 <script is:inline>
   (function () {
-    if (window.__vicNotifyWired) return;
-    window.__vicNotifyWired = true;
+    if (window.__vicFormWired) return;
+    window.__vicFormWired = true;
 
+    var SB = 'https://jftnhuutttmccmqnnybf.supabase.co';
+    var KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
     var TOPIC = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
 
-    function inferFormType(d) {
-      if (d.story || d.role)                            return 'New Podcast Guest';
-      if (d.guests || d.event_venue)                    return 'New Guest-List RSVP';
-      if (d.event_type || d.event_date || d.city)       return 'New Booking Enquiry';
-      return 'New Enquiry';
-    }
+    function val(form, n) { var el = form.querySelector('[name="' + n + '"]'); return el ? String(el.value || '').trim() : ''; }
 
-    function labelize(k) {
-      var map = { event_type: 'Event', event_date: 'Date', event_venue: 'Venue', event_name: 'Event' };
-      if (map[k]) return map[k];
-      return k.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-    }
-
-    function buildMessage(data) {
-      var order = ['name', 'phone', 'email', 'event_type', 'event_date', 'event_name',
-                   'event_venue', 'city', 'guests', 'role', 'instagram', 'message', 'story'];
-      var seen = {};
-      var lines = [];
-      order.forEach(function (k) {
-        if (data[k] != null && data[k] !== '') {
-          lines.push(labelize(k) + ': ' + String(data[k]).trim());
-          seen[k] = true;
-        }
-      });
-      Object.keys(data).forEach(function (k) {
-        if (seen[k] || k.charAt(0) === '_') return;
-        if (data[k] == null || data[k] === '') return;
-        lines.push(labelize(k) + ': ' + String(data[k]).trim());
-      });
-      if (data._page) { lines.push(''); lines.push('Page: ' + data._page); }
-      return lines.join('\n');
+    function finish(form) {
+      var next = form.querySelector('[name="_next"]');
+      if (next && next.value) { setTimeout(function () { window.location.href = next.value; }, 300); return; }
+      var p = document.createElement('p');
+      p.textContent = "Thanks — we've got it. We'll be in touch.";
+      p.style.cssText = 'color:#c9a84c;font-weight:600;padding:1rem 0;';
+      if (form.parentNode) form.parentNode.replaceChild(p, form);
     }
 
     document.addEventListener('submit', function (e) {
       var form = e.target;
-      if (!form || form.tagName !== 'FORM') return;
-      var action = (form.getAttribute('action') || '').toLowerCase();
-      if (action.indexOf('formspree.io') === -1) return;
+      if (!form || form.tagName !== 'FORM' || !form.getAttribute('data-sb-table')) return;
+      e.preventDefault();
 
-      try {
-        var data = {};
-        new FormData(form).forEach(function (value, key) {
-          if (key.charAt(0) === '_') return;
-          data[key] = typeof value === 'string' ? value : String(value);
-        });
-        data._page = location.pathname + location.search;
+      var table = form.getAttribute('data-sb-table');
+      var hp = form.querySelector('[name="_gotcha"]');
+      if (hp && hp.value) { finish(form); return; }   // honeypot tripped — fake success, save nothing
 
-        var title = inferFormType(data);
-        var body  = buildMessage(data);
+      var ua = navigator.userAgent.slice(0, 300);
+      var row, title, body, leadType, leadLoc;
 
-        // ntfy.sh accepts metadata via URL query params; body is the message text.
-        // Priority 4 = high → wakes the phone immediately.
-        var url = 'https://ntfy.sh/' + TOPIC +
-                  '?title=' + encodeURIComponent(title) +
-                  '&priority=4&tags=studio_microphone,headphone';
+      if (table === 'event_rsvps') {
+        row = {
+          event: val(form, 'event') || 'event-page',
+          name: val(form, 'name'), phone: val(form, 'phone'),
+          guests: parseInt(val(form, 'guests'), 10) || 1,
+          instagram: val(form, 'instagram') || null,
+          source: 'event-page', user_agent: ua
+        };
+        leadType = 'guest_list'; leadLoc = 'event_rsvp';
+        title = '🎟️ Guest-list RSVP — ' + row.name;
+        body = 'Name: ' + row.name + '\nPhone: ' + row.phone + '\nGuests: ' + row.guests +
+               (row.instagram ? '\nInstagram: ' + row.instagram : '') +
+               '\n\n' + val(form, 'event_name') + (val(form, 'event_date') ? ' · ' + val(form, 'event_date') : '') +
+               (val(form, 'event_venue') ? ' @ ' + val(form, 'event_venue') : '');
+      } else if (table === 'podcast_applications') {
+        row = {
+          name: val(form, 'name'), email: val(form, 'email') || null,
+          phone: val(form, 'phone') || null, instagram: val(form, 'instagram') || null,
+          role: val(form, 'role') || null, story: val(form, 'story') || null,
+          source: 'vicfix-form', user_agent: ua
+        };
+        leadType = 'podcast_guest'; leadLoc = 'vicfix';
+        title = '🎙️ VIC Fix application — ' + row.name;
+        body = 'Name: ' + row.name + (row.email ? '\nEmail: ' + row.email : '') +
+               (row.phone ? '\nPhone: ' + row.phone : '') + (row.instagram ? '\nInstagram: ' + row.instagram : '') +
+               (row.role ? '\nRole: ' + row.role : '') + '\n\n' + (row.story || '');
+      } else { return; }
 
-        var blob = new Blob([body], { type: 'text/plain' });
-        navigator.sendBeacon(url, blob);
-      } catch (err) {
-        // Never block the real submit on a notification failure
-      }
-    }, true); // capture phase — fires before the form's own listeners
+      if (!row.name || row.name.length < 2) { return; }
+
+      var btn = form.querySelector('[type="submit"]');
+      var btnHtml = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Sending…'; }
+
+      fetch(SB + '/rest/v1/' + table, {
+        method: 'POST',
+        headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(row)
+      }).then(function (r) {
+        if (!r.ok) throw new Error('save failed');
+        try {
+          navigator.sendBeacon('https://ntfy.sh/' + TOPIC + '?title=' + encodeURIComponent(title) + '&priority=4&tags=studio_microphone,headphone',
+            new Blob([body], { type: 'text/plain' }));
+        } catch (err) {}
+        if (typeof window.trackLead === 'function') window.trackLead(leadType, leadLoc);
+        finish(form);
+      }).catch(function () {
+        if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
+        alert("Sorry — that didn't send. Please try again, or WhatsApp us.");
+      });
+    }, true);
   })();
 </script>
 
