@@ -1392,6 +1392,7 @@ function Media({ showToast }) {
 // ---------------- PAGE IMAGES ----------------
 function PageImages({ showToast }) {
   const [map, setMap] = useState({}); const [busy, setBusy] = useState(null);
+  const [blogSlots, setBlogSlots] = useState([]);
   const fileRefs = useRef({});
 
   const load = useCallback(async () => {
@@ -1399,6 +1400,13 @@ function PageImages({ showToast }) {
     const m = {}; (data || []).forEach((r) => { m[r.slot] = r; }); setMap(m);
   }, []);
   useEffect(() => { load(); }, [load]);
+  // Blog posts are dynamic — pull their slots from the build-time JSON so new
+  // posts show up here automatically.
+  useEffect(() => {
+    fetch("/blog-image-slots.json").then((r) => r.json()).then((rows) => setBlogSlots(rows || [])).catch(() => {});
+  }, []);
+
+  const slots = [...IMAGE_SLOTS, ...blogSlots];
 
   const upload = async (slot, file) => {
     if (!file) return;
@@ -1432,7 +1440,7 @@ function PageImages({ showToast }) {
       <h1 className="h1">Page Images</h1>
       <p className="sub">Replace any in-house page image — uploads go live instantly. (Gallery photos &amp; videos are in the Media tab.)</p>
       <div className="pi-grid">
-        {IMAGE_SLOTS.map((s) => {
+        {slots.map((s) => {
           const cur = map[s.slot];
           return (
             <div key={s.slot} className="pi-card">
