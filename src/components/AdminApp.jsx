@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieC
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
-  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic,
+  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -97,6 +97,7 @@ export default function Admin() {
 
   const TABS = [
     ["overview", "Overview", LayoutDashboard],
+    ["insights", "Insights", Activity],
     ["bookings", "Bookings", ClipboardList],
     ["events", "Events", Star],
     ["guests", "Guests", Users],
@@ -125,6 +126,7 @@ export default function Admin() {
       </nav>
       <main className="adm-main">
         {tab === "overview" && <Overview />}
+        {tab === "insights" && <Insights showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
@@ -195,6 +197,121 @@ const RankList = ({ rows }) => {
     </div>
   );
 };
+
+// ── Insights tab: conversions (our events_log) + GA4 traffic ──
+function Ranked({ rows, empty }) {
+  if (!rows || !rows.length) return <p className="empty" style={{ padding: 12 }}>{empty || "No data yet."}</p>;
+  const max = rows.reduce((m, r) => Math.max(m, r.value), 0) || 1;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
+      {rows.map((r) => (
+        <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: ".82rem" }}>
+          <span style={{ flex: "0 0 40%", color: "rgba(255,255,255,.75)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.key}>{r.key}</span>
+          <span style={{ flex: 1, height: 8, background: "#1a1a1a", borderRadius: 4, overflow: "hidden" }}>
+            <span style={{ display: "block", height: "100%", width: `${Math.round((r.value / max) * 100)}%`, background: "#c9a84c" }} />
+          </span>
+          <strong style={{ flex: "0 0 auto", color: "#c9a84c", minWidth: 30, textAlign: "right" }}>{r.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+function fmtDur(s) { s = Number(s) || 0; return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`; }
+
+function Insights({ showToast }) {
+  const [log, setLog] = useState(null);
+  const [ga, setGa] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [gaLoading, setGaLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const from = new Date(); from.setDate(from.getDate() - 30);
+      const { data, error } = await supabase.from("events_log")
+        .select("name,location,event_type,device,created_at")
+        .gte("created_at", from.toISOString())
+        .order("created_at", { ascending: false });
+      if (error) showToast("Couldn't load conversions — is events_log.sql run?");
+      setLog(data || []); setLoading(false);
+    })();
+    (async () => {
+      try {
+        const r = await fetch(`${FN}/admin-api?action=ga-stats`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        }).then((res) => res.json());
+        setGa(r);
+      } catch { setGa({ connected: false, reason: "request failed" }); }
+      setGaLoading(false);
+    })();
+  }, [showToast]);
+
+  const c = useMemo(() => {
+    const rows = log || [];
+    const count = (n) => rows.filter((r) => r.name === n).length;
+    const group = (filterName, field) => {
+      const m = {};
+      rows.filter((r) => !filterName || r.name === filterName).forEach((r) => { const k = r[field] || "(none)"; m[k] = (m[k] || 0) + 1; });
+      return Object.entries(m).map(([key, value]) => ({ key, value })).sort((a, b) => b.value - a.value);
+    };
+    return {
+      leads: count("generate_lead"), wa: count("whatsapp_click"), email: count("email_click"), tel: count("tel_click"),
+      waByLoc: group("whatsapp_click", "location"),
+      leadsByType: group("generate_lead", "event_type"),
+      devices: group(null, "device"),
+    };
+  }, [log]);
+
+  return (
+    <>
+      <h1 className="h1">Insights</h1>
+
+      <p className="sub" style={{ color: "#c9a84c", margin: "2px 0 8px" }}>Conversions · last 30 days (your own log — real-time, not affected by ad-blockers)</p>
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <>
+          <div className="cards">
+            <Stat label="Leads" value={c.leads} />
+            <Stat label="WhatsApp clicks" value={c.wa} />
+            <Stat label="Email clicks" value={c.email} />
+            <Stat label="Call clicks" value={c.tel} />
+          </div>
+          <div className="grid2">
+            <div className="card"><h3 className="card-h">Top WhatsApp placements</h3><Ranked rows={c.waByLoc} empty="No WhatsApp clicks yet." /></div>
+            <div className="card"><h3 className="card-h">Leads by source</h3><Ranked rows={c.leadsByType} empty="No leads yet." /></div>
+          </div>
+          <div className="card"><h3 className="card-h">Device split (all events)</h3><Ranked rows={c.devices} empty="No data yet." /></div>
+        </>
+      )}
+
+      <p className="sub" style={{ color: "#c9a84c", margin: "22px 0 8px" }}>Traffic · GA4 · last 28 days</p>
+      {gaLoading ? <Center><Loader2 className="spin" size={18} /></Center> :
+        (ga && ga.connected) ? (
+          <>
+            <div className="cards">
+              <Stat label="Users" value={ga.totals.users} />
+              <Stat label="Sessions" value={ga.totals.sessions} />
+              <Stat label="Pageviews" value={ga.totals.views} />
+              <Stat label="Avg session" value={fmtDur(ga.totals.avgDuration)} />
+            </div>
+            <div className="grid2">
+              <div className="card"><h3 className="card-h">Channels</h3><Ranked rows={ga.channels} empty="—" /></div>
+              <div className="card"><h3 className="card-h">Top pages</h3><Ranked rows={ga.pages} empty="—" /></div>
+            </div>
+            <div className="grid2">
+              <div className="card"><h3 className="card-h">Cities</h3><Ranked rows={ga.cities} empty="—" /></div>
+              <div className="card"><h3 className="card-h">Devices</h3><Ranked rows={ga.devices} empty="—" /></div>
+            </div>
+          </>
+        ) : (
+          <div className="card">
+            <p className="empty" style={{ padding: 12 }}>
+              GA4 not connected{ga && ga.reason ? ` — ${String(ga.reason).slice(0, 120)}` : ""}. Add the <code>analytics.readonly</code> scope
+              to the Google connection, enable the Analytics Data API, and redeploy <code>admin-api</code>.
+            </p>
+          </div>
+        )}
+    </>
+  );
+}
 
 function Overview() {
   const [vis, setVis] = useState([]);

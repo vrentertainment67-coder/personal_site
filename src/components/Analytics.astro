@@ -7,7 +7,11 @@
     if (window.__vicAnalyticsBound) return;     // bind once, even if module re-evaluates
     window.__vicAnalyticsBound = true;
 
+    var SB_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
+    var SB_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
+
     function track(name, params) {
+      // 1) GA4
       if (typeof window.gtag === 'function') {
         window.gtag('event', name, params || {});
       } else {
@@ -15,6 +19,26 @@
           Object.assign({ event: name }, params || {})
         );
       }
+      // 2) Mirror to our own Supabase (real-time, blocker-proof) — never on Vic's own visits.
+      logEvent(name, params || {});
+    }
+
+    function logEvent(name, p) {
+      try { if (localStorage.getItem('vic_notrack') === '1') return; } catch (e) {}
+      try {
+        var device = (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) ? 'mobile' : 'desktop';
+        fetch(SB_URL + '/rest/v1/events_log', {
+          method: 'POST', keepalive: true,
+          headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            name: name,
+            location: p.link_location || p.form_location || null,
+            event_type: p.event_type || null,
+            device: device,
+            path: location.pathname
+          })
+        }).catch(function () {});
+      } catch (e) {}
     }
 
     // The booking form submits via fetch (Supabase RPC), so lead tracking is fired

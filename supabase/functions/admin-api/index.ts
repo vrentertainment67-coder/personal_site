@@ -7,15 +7,20 @@
 // ACTIONS (all require Vic to be signed in)
 //   action=sign-upload  -> returns a Cloudinary signed-upload payload
 //   action=seo-stats    -> returns top GSC queries/pages (last 28 days)
+//   action=ga-stats     -> returns GA4 traffic (users/sessions/channels/pages/
+//                          devices/cities, last 28 days) via the GA4 Data API
 //
 // SECRETS (supabase secrets set ...)
 //   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 //   GSC_SITE_URL                e.g. "sc-domain:djvicofficial.com"
+//   GA4_PROPERTY_ID             numeric GA4 property id (defaults to 422308749)
 //   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
-//     ^ the refresh token must include the Search Console scope:
-//       https://www.googleapis.com/auth/webmasters.readonly
-//       (re-run the OAuth playground with BOTH calendar + webmasters scopes
-//        and update GOOGLE_REFRESH_TOKEN, so calendar-sync keeps working too)
+//     ^ the refresh token must include ALL of these scopes:
+//       https://www.googleapis.com/auth/webmasters.readonly   (GSC)
+//       https://www.googleapis.com/auth/analytics.readonly     (GA4 ga-stats)
+//       https://www.googleapis.com/auth/calendar               (calendar-sync)
+//       Re-run the OAuth consent with all three and update GOOGLE_REFRESH_TOKEN.
+//       Also enable the "Analytics Data API" in the Google Cloud project.
 //   SUPABASE_URL / SUPABASE_ANON_KEY  (auto)
 // ============================================================
 
@@ -28,6 +33,7 @@ const GSC_SITE = Deno.env.get("GSC_SITE_URL") ?? "";
 const G_ID = Deno.env.get("GOOGLE_CLIENT_ID")!;
 const G_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
 const G_REFRESH = Deno.env.get("GOOGLE_REFRESH_TOKEN")!;
+const GA4_PROP = Deno.env.get("GA4_PROPERTY_ID") ?? "422308749";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
@@ -118,6 +124,49 @@ async function seoStats() {
   });
 }
 
+// GA4 Data API — traffic insight (last 28 days). Needs the refresh token to
+// include scope https://www.googleapis.com/auth/analytics.readonly and the
+// Analytics Data API enabled in the Google Cloud project.
+async function gaStats() {
+  let token: string;
+  try { token = await googleToken(); } catch (e) { return json({ connected: false, reason: String(e) }); }
+  const endpoint = `https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROP}:runReport`;
+  const run = async (body: Record<string, unknown>) => {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  };
+  const dateRanges = [{ startDate: "28daysAgo", endDate: "today" }];
+  const order = (m: string) => [{ metric: { metricName: m }, desc: true }];
+
+  const [totals, channels, pages, devices, cities] = await Promise.all([
+    run({ dateRanges, metrics: [{ name: "activeUsers" }, { name: "sessions" }, { name: "screenPageViews" }, { name: "averageSessionDuration" }] }),
+    run({ dateRanges, dimensions: [{ name: "sessionDefaultChannelGroup" }], metrics: [{ name: "sessions" }], orderBys: order("sessions"), limit: 8 }),
+    run({ dateRanges, dimensions: [{ name: "pagePath" }], metrics: [{ name: "screenPageViews" }], orderBys: order("screenPageViews"), limit: 10 }),
+    run({ dateRanges, dimensions: [{ name: "deviceCategory" }], metrics: [{ name: "sessions" }], orderBys: order("sessions"), limit: 5 }),
+    run({ dateRanges, dimensions: [{ name: "city" }], metrics: [{ name: "activeUsers" }], orderBys: order("activeUsers"), limit: 8 }),
+  ]);
+
+  if (totals.error) return json({ connected: false, reason: totals.error.message || "GA4 Data API error" });
+
+  const t0 = (totals.rows ?? [])[0]?.metricValues ?? [];
+  const num = (i: number) => Number(t0[i]?.value ?? 0);
+  const rowsOf = (rep: any) => (rep?.rows ?? []).map((r: any) => ({ key: r.dimensionValues?.[0]?.value || "(none)", value: Number(r.metricValues?.[0]?.value ?? 0) }));
+
+  return json({
+    connected: true,
+    range: "Last 28 days",
+    totals: { users: num(0), sessions: num(1), views: num(2), avgDuration: Math.round(num(3)) },
+    channels: rowsOf(channels),
+    pages: rowsOf(pages),
+    devices: rowsOf(devices),
+    cities: rowsOf(cities),
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
@@ -130,6 +179,7 @@ Deno.serve(async (req) => {
       return await signUpload(folder || "djvic");
     }
     if (action === "seo-stats") return await seoStats();
+    if (action === "ga-stats") return await gaStats();
 
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
