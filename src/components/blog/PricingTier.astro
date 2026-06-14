@@ -1,6 +1,6 @@
 ---
 interface Props {
-  tier: 'Budget' | 'Mid' | 'Premium';
+  tier: string;
   range: string;
   tagline: string;
   includes: string[];
@@ -8,12 +8,15 @@ interface Props {
 }
 const { tier, range, tagline, includes, highlight = false } = Astro.props;
 
-const tiers = {
-  Budget:  { accent: '#8A8878', label: 'BUDGET' },
-  Mid:     { accent: '#4a6fa5', label: 'MID-RANGE' },
-  Premium: { accent: '#C9A84C', label: 'PREMIUM' },
+const tiers: Record<string, { accent: string; label: string }> = {
+  Budget:      { accent: '#8A8878', label: 'BUDGET' },
+  Mid:         { accent: '#4a6fa5', label: 'MID-RANGE' },
+  Premium:     { accent: '#C9A84C', label: 'PREMIUM' },
+  Entry:       { accent: '#8A8878', label: 'ENTRY · LOCAL' },
+  Established: { accent: '#4a6fa5', label: 'ESTABLISHED' },
+  Celebrity:   { accent: '#7E6BB0', label: 'CELEBRITY' },
 };
-const t = tiers[tier];
+const t = tiers[tier] || { accent: highlight ? '#C9A84C' : '#8A8878', label: String(tier).toUpperCase() };
 ---
 
 <div class={`pricing-tier ${highlight ? 'highlight' : ''}`}
