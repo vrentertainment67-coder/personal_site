@@ -506,16 +506,25 @@ function Overview() {
 
 // ---------------- BOOKINGS ----------------
 function Bookings({ showToast }) {
-  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState([]); const [pays, setPays] = useState({}); const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
-    setRows(data || []); setLoading(false);
+    const [bk, pay] = await Promise.all([
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase.from("gig_payments").select("*").order("paid_on", { ascending: true }), // table may not exist yet → degrades to none
+    ]);
+    setRows(bk.data || []);
+    const byB = {}; (pay.data || []).forEach((p) => { (byB[p.booking_id] = byB[p.booking_id] || []).push(p); });
+    setPays(byB);
+    setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const paidOf = (id) => (pays[id] || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
   const decide = async (id, status) => {
     setActing(id);
@@ -542,13 +551,26 @@ function Bookings({ showToast }) {
 
   const q = query.trim().toLowerCase();
   const filtered = rows
-    .filter((r) => (filter === "all" ? true : r.status === filter))
+    .filter((r) => {
+      if (filter === "all") return true;
+      if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
+      return r.status === filter;
+    })
     .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
 
+  // Money roll-up across confirmed gigs
+  const accepted = rows.filter((r) => r.status === "accepted");
+  const booked = accepted.reduce((s, r) => s + Number(r.agreed_fee || 0), 0);
+  const received = accepted.reduce((s, r) => s + paidOf(r.id), 0);
+
   const exportCsv = () => {
-    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "message"];
+    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "paid", "balance", "message"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const csv = [cols.join(","), ...filtered.map((r) => {
+      const paid = paidOf(r.id);
+      const row = { ...r, paid, balance: Number(r.agreed_fee || 0) - paid };
+      return cols.map((c) => esc(row[c])).join(",");
+    })].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `djvic-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -565,10 +587,16 @@ function Bookings({ showToast }) {
         </div>
       </div>
 
+      <div className="cards" style={{ marginBottom: 6 }}>
+        <Stat label="Booked · confirmed" value={inr(booked)} hint="Agreed fees on confirmed gigs" />
+        <Stat label="Received" value={inr(received)} hint="Payments recorded so far" />
+        <Stat label="Outstanding" value={inr(booked - received)} hint="Still to collect" />
+      </div>
+
       {adding && <ManualEntry onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
 
       <div className="chips">
-        {["all", "pending", "accepted", "declined"].map((f) => (
+        {["all", "pending", "accepted", "owing", "declined"].map((f) => (
           <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{f}</button>
         ))}
       </div>
@@ -594,6 +622,7 @@ function Bookings({ showToast }) {
                   <span className={`status ${r.status}`}>{r.status}</span>
                 </div>
                 {r.message && <p className="req-msg">{r.message}</p>}
+                <GigFinance booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
                 <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
                 <div className="req-actions">
                   {r.status === "pending" && (
@@ -614,6 +643,87 @@ function Bookings({ showToast }) {
         </div>
       )}
     </>
+  );
+}
+
+// ── Per-gig financials: agreed fee + a payments ledger (gig_payments) ──
+function GigFinance({ booking, payments, onChange, showToast }) {
+  const [fee, setFee] = useState(booking.agreed_fee ?? "");
+  const [savingFee, setSavingFee] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [amt, setAmt] = useState(""); const [method, setMethod] = useState("UPI");
+  const [when, setWhen] = useState(new Date().toLocaleDateString("en-CA"));
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setFee(booking.agreed_fee ?? ""); }, [booking.agreed_fee]);
+
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const feeNum = Number(fee || 0);
+  const bal = feeNum - paid;
+  const st = !feeNum ? { t: "no fee set", c: "#9a9a92", bg: "transparent" }
+    : paid >= feeNum ? { t: "paid in full", c: "#7fe0a0", bg: "#16331f" }
+    : paid > 0 ? { t: "advance paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
+    : { t: "unpaid", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" };
+  const sqlHint = (m) => /agreed_fee|gig_payments|column|relation|does not exist/i.test(m || "") ? "Run gig_finance.sql in Supabase first" : m;
+
+  const saveFee = async () => {
+    setSavingFee(true);
+    const { error } = await supabase.from("bookings").update({ agreed_fee: fee === "" ? null : Number(fee) }).eq("id", booking.id);
+    setSavingFee(false);
+    if (error) showToast(sqlHint(error.message)); else { showToast("Fee saved ✓"); onChange(); }
+  };
+  const addPayment = async () => {
+    if (!amt || Number(amt) <= 0) return showToast("Enter an amount");
+    setBusy(true);
+    const { error } = await supabase.from("gig_payments").insert({ booking_id: booking.id, amount: Number(amt), paid_on: when, method });
+    setBusy(false);
+    if (error) return showToast(sqlHint(error.message));
+    setAmt(""); setAdding(false); showToast("Payment recorded ✓"); onChange();
+  };
+  const delPayment = async (id) => { if (!confirm("Remove this payment?")) return; await supabase.from("gig_payments").delete().eq("id", id); onChange(); };
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem", fontFamily: "Inter" };
+
+  return (
+    <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 8, padding: "10px 12px", margin: "8px 0", fontSize: ".82rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }}>Fee ₹</span>
+          <input type="number" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" style={{ ...inp, width: 92 }} />
+          <button className="btn sm" onClick={saveFee} disabled={savingFee || String(fee) === String(booking.agreed_fee ?? "")}>{savingFee ? <Loader2 size={12} className="spin" /> : "Save"}</button>
+        </span>
+        <span style={{ color: "rgba(255,255,255,.7)" }}>Paid <strong style={{ color: "#7fe0a0" }}>{inr(paid)}</strong></span>
+        <span style={{ color: "rgba(255,255,255,.7)" }}>Due <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
+        <span style={{ marginLeft: "auto", color: st.c, background: st.bg, padding: "3px 10px", borderRadius: 20, fontSize: ".64rem", textTransform: "uppercase", letterSpacing: ".06em" }}>{st.t}</span>
+      </div>
+
+      {payments.length > 0 && (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+          {payments.map((p) => (
+            <div key={p.id} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: ".72rem", color: "rgba(255,255,255,.6)" }}>
+              <strong style={{ color: "#7fe0a0" }}>{inr(p.amount)}</strong>
+              <span>{p.method || "—"}</span>
+              <span>{new Date(p.paid_on).toLocaleDateString("en-IN")}</span>
+              <button onClick={() => delPayment(p.id)} title="Remove" style={{ marginLeft: "auto", background: "none", border: "none", color: "#ff8a8a", cursor: "pointer", padding: 0 }}><Trash2 size={12} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adding ? (
+        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+          <input type="number" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="Amount ₹" style={{ ...inp, width: 104 }} />
+          <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}>
+            <option>UPI</option><option>Cash</option><option>Bank</option><option>Card</option><option>Other</option>
+          </select>
+          <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} style={inp} />
+          <button className="btn sm" onClick={addPayment} disabled={busy}>{busy ? <Loader2 size={12} className="spin" /> : "Add"}</button>
+          <button className="btn sm ghost" onClick={() => setAdding(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setAdding(true)}><Plus size={13} /> Record payment</button>
+      )}
+    </div>
   );
 }
 
