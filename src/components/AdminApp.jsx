@@ -19,7 +19,7 @@ const FN = `${SUPABASE_URL}/functions/v1`;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const EVENT_TYPES = ["sangeet", "nightlife", "private", "festival"];
+const EVENT_TYPES = ["sangeet", "nightlife", "private", "festival", "corporate", "dj class", "training"];
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -390,11 +390,14 @@ function Overview() {
     const todayStr = new Date().toISOString().slice(0, 10);
     const views30 = vis.reduce((s, r) => s + (r.views || 0), 0);
     const todayViews = vis.length ? vis[vis.length - 1].views : 0;
-    const newWeek = bookings.filter((b) => now - new Date(b.created_at).getTime() < WEEK).length;
-    const leads30 = bookings.filter((b) => now - new Date(b.created_at).getTime() < 30 * DAY).length;
+    // Funnel/lead metrics count ORGANIC (website) requests only — manually
+    // logged gigs are existing contacts/references, not funnel leads.
+    const organic = bookings.filter((b) => (b.source || "website") !== "manual");
+    const newWeek = organic.filter((b) => now - new Date(b.created_at).getTime() < WEEK).length;
+    const leads30 = organic.filter((b) => now - new Date(b.created_at).getTime() < 30 * DAY).length;
     const pending = bookings.filter((b) => b.status === "pending").length;
-    const accepted = bookings.filter((b) => b.status === "accepted").length;
-    const conv = bookings.length ? Math.round((accepted / bookings.length) * 100) : 0;
+    const acceptedOrganic = organic.filter((b) => b.status === "accepted").length;
+    const conv = organic.length ? Math.round((acceptedOrganic / organic.length) * 100) : 0;
     const pipeline = bookings.filter((b) => b.status === "pending" || b.status === "accepted")
       .reduce((s, b) => s + (BUDGET_MID[b.budget] || 0), 0);
 
@@ -413,7 +416,7 @@ function Overview() {
     const weeks = [];
     for (let i = 7; i >= 0; i--) {
       const start = now - (i + 1) * WEEK, end = now - i * WEEK;
-      const c = bookings.filter((b) => { const x = new Date(b.created_at).getTime(); return x >= start && x < end; }).length;
+      const c = organic.filter((b) => { const x = new Date(b.created_at).getTime(); return x >= start && x < end; }).length;
       const dt = new Date(end - DAY);
       weeks.push({ label: `${MONTHS[dt.getMonth()]} ${dt.getDate()}`, leads: c });
     }
