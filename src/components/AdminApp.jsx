@@ -638,6 +638,11 @@ function Bookings({ showToast }) {
                       </button>
                     </>
                   )}
+                  {r.status === "accepted" && !r.gcal_event_id && (
+                    <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")} title="This gig isn't on your Google Calendar yet">
+                      {acting === r.id ? <Loader2 className="spin" size={15} /> : <CalendarDays size={15} />} Sync to calendar
+                    </button>
+                  )}
                   <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
                 </div>
               </div>
@@ -1310,13 +1315,17 @@ function ManualEntry({ onDone, showToast }) {
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
     if (error) { setBusy(false); return showToast(error.message); }
+    let calErr = null;
     if (f.confirmed && data?.id) {
-      await fetch(`${FN}/calendar-sync?action=confirm`, {
+      const cal = await fetch(`${FN}/calendar-sync?action=confirm`, {
         method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ bookingId: data.id }),
-      }).catch(() => {});
+      }).then((r) => r.json()).catch(() => ({ error: "Network error" }));
+      if (cal?.error) calErr = cal.error;
     }
-    setBusy(false); showToast("Gig logged."); onDone();
+    setBusy(false);
+    showToast(calErr ? `Gig saved — but calendar sync failed: ${calErr}. Use "Sync to calendar".` : "Gig logged.");
+    onDone();
   };
   return (
     <div className="card entry">
