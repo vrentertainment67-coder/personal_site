@@ -1940,7 +1940,8 @@ function NLHistory({ showToast }) {
       const h = await authHeader();
       const r = await fetch(`${FN}/newsletter-manager?action=history`, { headers: h });
       const d = await r.json();
-      setHistory(d.history ?? []);
+      // History = real sends only (hide drafts and any 0-recipient "sent" junk)
+      setHistory((d.history ?? []).filter((n) => n.status === "sent" && (n.recipient_count ?? 0) > 0));
       setLoading(false);
     })();
   }, []);
