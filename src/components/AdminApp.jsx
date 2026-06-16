@@ -626,6 +626,7 @@ function Bookings({ showToast }) {
                 </div>
                 {r.message && <p className="req-msg">{r.message}</p>}
                 <GigFinance booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
+                <GigMailer booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
                 <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
                 <div className="req-actions">
                   {r.status === "pending" && (
@@ -731,6 +732,251 @@ function GigFinance({ booking, payments, onChange, showToast }) {
       ) : (
         <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setAdding(true)}><Plus size={13} /> Record payment</button>
       )}
+    </div>
+  );
+}
+
+// ── One-click gig emails: confirmation / invoice (HTML + PDF) / follow-up ──
+const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
+const rupee = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function invoiceNumber() { const d = new Date(); const p = (x) => String(x).padStart(2, "0"); return `${p(d.getDate())}${p(d.getMonth() + 1)}${d.getFullYear()}`; }
+function addDays(days) { const d = new Date(); d.setDate(d.getDate() + Number(days || 0)); return d; }
+const niceDate = (d) => d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+
+function buildInvoiceHTML({ biller, invNo, dateStr, dueStr, terms, billTo, item, qty, rate, total, paid }) {
+  const bank = biller.bank || {};
+  const notes = [
+    biller.upi ? `UPI: ${biller.upi}` : null,
+    "BANK DETAILS",
+    bank.beneficiary ? `Beneficiary: ${bank.beneficiary}` : null,
+    bank.bank ? `Bank: ${bank.bank}` : null,
+    bank.branch ? `Branch: ${bank.branch}` : null,
+    bank.account ? `A/c No: ${bank.account}` : null,
+    bank.ifsc ? `IFSC: ${bank.ifsc}` : null,
+    biller.pan ? `PAN: ${biller.pan}` : null,
+  ].filter(Boolean);
+  const balance = total - paid;
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2433;width:760px;padding:44px;background:#fff;box-sizing:border-box;">
+    <table style="width:100%;border-collapse:collapse"><tr>
+      <td style="vertical-align:top">
+        <div style="font-size:22px;font-weight:800;letter-spacing:.5px">${biller.name}</div>
+        ${(biller.address || []).map((a) => `<div style="font-size:12px;color:#6b7280;margin-top:3px">${a}</div>`).join("")}
+        <div style="font-size:12px;color:#6b7280">${biller.phone || ""}</div>
+        <div style="font-size:12px;color:#6b7280">${biller.email || ""}</div>
+        ${biller.pan ? `<div style="font-size:12px;color:#6b7280">PAN: ${biller.pan}</div>` : ""}
+      </td>
+      <td style="vertical-align:top;text-align:right">
+        <div style="font-size:34px;font-weight:800;letter-spacing:1px;color:#111827">INVOICE</div>
+        <div style="font-size:14px;color:#9ca3af;margin-top:2px">#${invNo}</div>
+      </td>
+    </tr></table>
+    <div style="border-top:1px solid #e5e7eb;margin:26px 0"></div>
+    <table style="width:100%;border-collapse:collapse"><tr>
+      <td style="vertical-align:top">
+        <div style="font-size:11px;color:#9ca3af;letter-spacing:.06em">BILL TO</div>
+        <div style="font-size:14px;font-weight:700;margin-top:5px">${billTo.company || "—"}</div>
+        ${billTo.gstin ? `<div style="font-size:12px;color:#6b7280">GST no. ${billTo.gstin}</div>` : ""}
+        ${billTo.address ? `<div style="font-size:12px;color:#6b7280;white-space:pre-line;margin-top:2px">${billTo.address}</div>` : ""}
+      </td>
+      <td style="vertical-align:top;text-align:right;font-size:12px;color:#374151">
+        <div><span style="color:#9ca3af">Date</span>&nbsp;&nbsp;&nbsp;${dateStr}</div>
+        <div style="margin-top:7px"><span style="color:#9ca3af">Payment Terms</span>&nbsp;&nbsp;&nbsp;${terms} days</div>
+        <div style="margin-top:7px"><span style="color:#9ca3af">Due Date</span>&nbsp;&nbsp;&nbsp;${dueStr}</div>
+      </td>
+    </tr></table>
+    <table style="width:100%;border-collapse:collapse;margin-top:30px">
+      <thead><tr style="background:#f9fafb;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb">
+        <th style="text-align:left;padding:11px;font-size:12px;color:#6b7280">Item</th>
+        <th style="text-align:right;padding:11px;font-size:12px;color:#6b7280">Qty</th>
+        <th style="text-align:right;padding:11px;font-size:12px;color:#6b7280">Rate</th>
+        <th style="text-align:right;padding:11px;font-size:12px;color:#6b7280">Amount</th>
+      </tr></thead>
+      <tbody><tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:15px 11px;font-size:13px">${item}</td>
+        <td style="padding:15px 11px;font-size:13px;text-align:right">${qty}</td>
+        <td style="padding:15px 11px;font-size:13px;text-align:right">${rupee(rate)}</td>
+        <td style="padding:15px 11px;font-size:13px;text-align:right">${rupee(rate * qty)}</td>
+      </tr></tbody>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-top:6px"><tr><td></td><td style="width:280px">
+      <table style="width:100%;font-size:13px">
+        <tr><td style="padding:6px 11px;color:#6b7280;text-align:right">Subtotal</td><td style="padding:6px 11px;text-align:right">${rupee(total)}</td></tr>
+        <tr><td style="padding:8px 11px;text-align:right;font-weight:700;border-top:1px solid #e5e7eb">Total</td><td style="padding:8px 11px;text-align:right;font-weight:700;border-top:1px solid #e5e7eb">${rupee(total)}</td></tr>
+        ${paid > 0 ? `<tr><td style="padding:6px 11px;color:#6b7280;text-align:right">Paid</td><td style="padding:6px 11px;text-align:right">−${rupee(paid)}</td></tr>` : ""}
+        <tr><td style="padding:9px 11px;text-align:right;font-weight:800;font-size:15px">Balance Due</td><td style="padding:9px 11px;text-align:right;font-weight:800;font-size:15px">${rupee(balance)}</td></tr>
+      </table>
+    </td></tr></table>
+    <div style="margin-top:34px">
+      <div style="font-size:11px;color:#9ca3af;letter-spacing:.06em">NOTES</div>
+      ${notes.map((l) => `<div style="font-size:12px;color:#374151;margin-top:3px">${l}</div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function plainEmailHTML(title, bodyLines) {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2433;max-width:560px;margin:0 auto;padding:8px 4px">
+    <div style="height:4px;background:#C9A84C"></div>
+    <div style="padding:24px 4px">
+      <div style="font-size:18px;font-weight:800;letter-spacing:.5px;margin-bottom:14px">${title}</div>
+      ${bodyLines.map((l) => `<p style="font-size:14px;line-height:1.6;color:#374151;margin:0 0 12px">${l}</p>`).join("")}
+      <p style="font-size:14px;color:#374151;margin:18px 0 0">— DJ VIC</p>
+    </div>
+  </div>`;
+}
+
+function GigMailer({ booking, payments, onChange, showToast }) {
+  const [open, setOpen] = useState(false);
+  const [billers, setBillers] = useState(null);
+  const [mode, setMode] = useState("invoice");
+  const [email, setEmail] = useState(booking.client_email || (isEmail(booking.contact) ? booking.contact : ""));
+  const [billerKey, setBillerKey] = useState("vic");
+  const [company, setCompany] = useState(booking.client_company || booking.name || "");
+  const [gstin, setGstin] = useState(booking.client_gstin || "");
+  const [address, setAddress] = useState(booking.client_address || "");
+  const [desc, setDesc] = useState(`DJ services — ${booking.event_type || "event"}${booking.venue ? ` at ${booking.venue}` : ""}`);
+  const [terms, setTerms] = useState(7);
+  const [busy, setBusy] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const nodeRef = useRef(null);
+
+  useEffect(() => {
+    if (!open || billers) return;
+    (async () => {
+      const r = await fetch(`${FN}/gig-mailer?action=billers`, { method: "POST", headers: await authHeader() }).then((x) => x.json()).catch(() => null);
+      if (r && !r.error && (r.vic || r.vr)) setBillers(r);
+      else showToast("gig-mailer isn't deployed / BILLERS_JSON not set yet");
+    })();
+  }, [open]);
+
+  const total = Number(booking.agreed_fee || 0);
+  const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const invNo = invoiceNumber();
+  const dueStr = niceDate(addDays(terms));
+  const dateStr = niceDate(new Date());
+  const biller = billers ? (billers[billerKey] || billers.vic || billers.vr) : null;
+
+  const invHTML = biller ? buildInvoiceHTML({
+    biller, invNo, dateStr, dueStr, terms,
+    billTo: { company, gstin, address }, item: desc, qty: 1, rate: total, total, paid,
+  }) : "";
+
+  const persist = () => supabase.from("bookings").update({
+    client_email: email || null, client_company: company || null, client_gstin: gstin || null, client_address: address || null,
+  }).eq("id", booking.id).then(() => onChange && onChange());
+
+  async function send() {
+    if (!isEmail(email)) return showToast("Add a valid client email");
+    if (mode === "invoice" && !biller) return showToast("Billers not loaded — deploy gig-mailer first");
+    setBusy(true);
+    try {
+      let subject, html, attachments;
+      if (mode === "invoice") {
+        const html2pdf = (await import("https://esm.sh/html2pdf.js@0.10.2")).default;
+        const dataUri = await html2pdf().set({
+          margin: 0, image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "pt", format: "a4", orientation: "portrait" },
+        }).from(nodeRef.current).outputPdf("datauristring");
+        const b64 = dataUri.split(",")[1];
+        subject = `Invoice #${invNo} — ${biller.name}`;
+        html = plainEmailHTML(`Invoice from ${biller.name}`, [
+          `Hi ${booking.name || "there"},`,
+          `Please find attached the invoice for <strong>${desc}</strong>.`,
+          `<strong>Balance due: ${rupee(total - paid)}</strong> · Payment terms: ${terms} days (due ${dueStr}).`,
+          biller.upi ? `You can pay via UPI to <strong>${biller.upi}</strong>, or by bank transfer (details on the invoice).` : `Bank transfer details are on the invoice.`,
+          `Thank you!`,
+        ]);
+        attachments = [{ filename: `Invoice-${invNo}.pdf`, contentBase64: b64 }];
+      } else if (mode === "confirmation") {
+        subject = `Your booking with DJ VIC is confirmed — ${booking.event_date}`;
+        html = plainEmailHTML("Booking confirmed", [
+          `Hi ${booking.name || "there"},`,
+          `Your booking is confirmed for <strong>${booking.event_date}</strong>${booking.venue ? ` at <strong>${booking.venue}</strong>` : ""}.`,
+          total ? `Agreed fee: <strong>${rupee(total)}</strong>${paid > 0 ? ` · Advance received: ${rupee(paid)} · Balance: ${rupee(total - paid)}` : ""}.` : `Looking forward to it!`,
+          `I'll be in touch with the run-of-show closer to the date. Reply here anytime.`,
+        ]);
+      } else {
+        subject = `Following up — your event with DJ VIC`;
+        html = plainEmailHTML("Quick follow-up", [
+          `Hi ${booking.name || "there"},`,
+          `Just following up regarding your ${booking.event_type || "event"}${booking.event_date ? ` on ${booking.event_date}` : ""}.`,
+          total - paid > 0 ? `A balance of <strong>${rupee(total - paid)}</strong> is outstanding — happy to share payment details whenever convenient.` : `Let me know if there's anything you need from my side.`,
+          `Thanks!`,
+        ]);
+      }
+
+      const res = await fetch(`${FN}/gig-mailer?action=send`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({
+          bookingId: booking.id, kind: mode, biller: mode === "invoice" ? billerKey : null,
+          invoiceNo: mode === "invoice" ? invNo : null, amount: total,
+          to: email, fromName: mode === "invoice" ? biller.name : "DJ VIC",
+          replyTo: mode === "invoice" ? biller.email : "bookings@djvicofficial.com",
+          subject, html, attachments,
+        }),
+      }).then((x) => x.json()).catch(() => ({ error: "Network error" }));
+      if (res.error) showToast("Send failed: " + JSON.stringify(res.error).slice(0, 140));
+      else { showToast(`${mode === "invoice" ? "Invoice" : mode === "confirmation" ? "Confirmation" : "Follow-up"} sent ✓`); persist(); }
+    } catch (e) { showToast("Error: " + String(e.message || e)); }
+    setBusy(false);
+  }
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem", fontFamily: "Inter", width: "100%" };
+  const lbl = { fontSize: ".62rem", letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(255,255,255,.45)", marginBottom: 3, display: "block" };
+
+  if (!open) return (
+    <button className="btn sm" style={{ margin: "4px 0 0" }} onClick={() => setOpen(true)}><Mail size={13} /> Email / Invoice</button>
+  );
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--line)", borderRadius: 8, padding: 12, margin: "8px 0" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+        {[["invoice", "Invoice"], ["confirmation", "Confirmation"], ["followup", "Follow-up"]].map(([k, l]) => (
+          <button key={k} className={mode === k ? "chip on" : "chip"} onClick={() => setMode(k)}>{l}</button>
+        ))}
+        <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={() => setOpen(false)}>Close</button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div><span style={lbl}>Client email</span><input style={inp} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@email.com" /></div>
+        {mode === "invoice" && <div><span style={lbl}>Invoice from</span>
+          <select style={inp} value={billerKey} onChange={(e) => setBillerKey(e.target.value)}>
+            <option value="vic">VIC</option><option value="vr">VR Entertainment</option>
+          </select></div>}
+      </div>
+
+      {mode === "invoice" && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+            <div><span style={lbl}>Bill to (company)</span><input style={inp} value={company} onChange={(e) => setCompany(e.target.value)} /></div>
+            <div><span style={lbl}>Client GST (optional)</span><input style={inp} value={gstin} onChange={(e) => setGstin(e.target.value)} /></div>
+          </div>
+          <div style={{ marginTop: 8 }}><span style={lbl}>Bill-to address</span><textarea style={{ ...inp, minHeight: 48, resize: "vertical" }} value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+          <div style={{ marginTop: 8 }}><span style={lbl}>Line description</span><input style={inp} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 8, marginTop: 8, alignItems: "end" }}>
+            <div><span style={lbl}>Terms (days)</span><input type="number" style={inp} value={terms} onChange={(e) => setTerms(e.target.value)} /></div>
+            <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.6)", paddingBottom: 6 }}>Fee {rupee(total)} · Paid {rupee(paid)} · <strong style={{ color: "#ffb3b3" }}>Due {rupee(total - paid)}</strong></div>
+          </div>
+          {total <= 0 && <p style={{ fontSize: ".72rem", color: "#ffb3b3", margin: "6px 0 0" }}>Set the gig Fee above first — the invoice total is ₹0.</p>}
+
+          {billers && (
+            <div style={{ marginTop: 10 }}>
+              <button className="btn sm" onClick={() => setShowPreview((v) => !v)}>{showPreview ? <><EyeOff size={12} /> Hide preview</> : <><Eye size={12} /> Preview invoice</>}</button>
+              {showPreview && (
+                <div style={{ marginTop: 8, maxHeight: 420, overflow: "auto", borderRadius: 6, border: "1px solid var(--line)" }}>
+                  <div style={{ transform: "scale(0.62)", transformOrigin: "top left", width: "161%" }} dangerouslySetInnerHTML={{ __html: invHTML }} />
+                </div>
+              )}
+            </div>
+          )}
+          {/* hidden full-size node used for crisp PDF rendering */}
+          <div style={{ position: "fixed", left: -10000, top: 0 }}><div ref={nodeRef} dangerouslySetInnerHTML={{ __html: invHTML }} /></div>
+        </>
+      )}
+
+      <button className="btn" style={{ marginTop: 12 }} onClick={send} disabled={busy || !isEmail(email) || (mode === "invoice" && !biller)}>
+        {busy ? <Loader2 size={15} className="spin" /> : <Send size={15} />} Send {mode === "invoice" ? "invoice" : mode} to client
+      </button>
     </div>
   );
 }
