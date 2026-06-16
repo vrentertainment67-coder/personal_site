@@ -113,7 +113,7 @@ async function confirm(bookingId: string) {
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
   const { data: bk, error } = await admin
     .from("bookings").select("*").eq("id", bookingId).single();
-  if (error || !bk) return json({ error: "Booking not found." }, 404);
+  if (error || !bk) return json({ error: "Booking not found.", detail: error?.message ?? null, bookingId }, 404);
   if (bk.status === "accepted" && bk.gcal_event_id)
     return json({ ok: true, alreadyConfirmed: true });
 
