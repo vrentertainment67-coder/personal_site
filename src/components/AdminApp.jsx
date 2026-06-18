@@ -871,13 +871,23 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     try {
       let subject, html, attachments;
       if (mode === "invoice") {
-        const html2pdf = (await import("https://esm.sh/html2pdf.js@0.10.2")).default;
-        const dataUri = await html2pdf().set({
-          margin: 0, image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "pt", format: "a4", orientation: "portrait" },
-        }).from(nodeRef.current).outputPdf("datauristring");
-        const b64 = dataUri.split(",")[1];
+        const [jspdfMod, h2cMod] = await Promise.all([
+          import("https://esm.sh/jspdf@2.5.2"),
+          import("https://esm.sh/html2canvas@1.4.1"),
+        ]);
+        const JsPDF = jspdfMod.jsPDF || jspdfMod.default;
+        const html2canvas = h2cMod.default || h2cMod;
+        const canvas = await html2canvas(nodeRef.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgH = (canvas.height * pageW) / canvas.width;
+        let heightLeft = imgH, position = 0;
+        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) { position -= pageH; pdf.addPage(); pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH); heightLeft -= pageH; }
+        const b64 = pdf.output("datauristring").split(",")[1];
         subject = `Invoice #${invNo} — ${biller.name}`;
         html = plainEmailHTML(`Invoice from ${biller.name}`, [
           `Hi ${booking.name || "there"},`,
