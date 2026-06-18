@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieC
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
-  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity,
+  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -864,6 +864,45 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     client_email: email || null, client_company: company || null, client_gstin: gstin || null, client_address: address || null,
   }).eq("id", booking.id).then(() => onChange && onChange());
 
+  const fileName = `Invoice-${invNo}-${(company || "client").replace(/[^a-z0-9]+/gi, "-").slice(0, 28)}.pdf`;
+
+  // Build the invoice PDF from bundled jsPDF + html2canvas (no CDN at runtime).
+  async function makePdf() {
+    const [{ jsPDF: JsPDF }, h2c] = await Promise.all([import("jspdf"), import("html2canvas")]);
+    const html2canvas = h2c.default || h2c;
+    const holder = document.createElement("div");
+    holder.style.cssText = "position:fixed;left:-10000px;top:0;background:#fff";
+    holder.innerHTML = invHTML;
+    document.body.appendChild(holder);
+    let canvas;
+    try { canvas = await html2canvas(holder.firstElementChild || holder, { scale: 2, backgroundColor: "#ffffff", useCORS: true }); }
+    finally { document.body.removeChild(holder); }
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+    const imgH = (canvas.height * pageW) / canvas.width;
+    let heightLeft = imgH, position = 0;
+    pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH); heightLeft -= pageH;
+    while (heightLeft > 0) { position -= pageH; pdf.addPage(); pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH); heightLeft -= pageH; }
+    return pdf;
+  }
+
+  async function downloadInvoice() {
+    if (!biller) return showToast("Pick a biller first");
+    if (total <= 0) return showToast("Set the gig Fee first — invoice is ₹0");
+    setBusy(true);
+    try { (await makePdf()).save(fileName); persist(); showToast("Invoice downloaded ✓"); }
+    catch (e) { showToast("Couldn't build PDF: " + String(e.message || e)); }
+    setBusy(false);
+  }
+
+  async function whatsappInvoice() {
+    await downloadInvoice();
+    const num = waDigits(booking.contact || "");
+    const msg = encodeURIComponent(`Hi ${booking.name || "there"}, please find attached the invoice for ${desc}. Balance due: ${rupee(total - paid)}. Thank you!`);
+    window.open(num.length >= 10 ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
+  }
+
   async function send() {
     if (!isEmail(email)) return showToast("Add a valid client email");
     if (mode === "invoice" && !biller) return showToast("Billers not loaded — deploy gig-mailer first");
@@ -871,30 +910,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     try {
       let subject, html, attachments;
       if (mode === "invoice") {
-        const [jspdfMod, h2cMod] = await Promise.all([
-          import("https://esm.sh/jspdf@2.5.2"),
-          import("https://esm.sh/html2canvas@1.4.1"),
-        ]);
-        const JsPDF = jspdfMod.jsPDF || jspdfMod.default;
-        const html2canvas = h2cMod.default || h2cMod;
-        // Build the invoice node on demand (not kept rendered on every keystroke)
-        const holder = document.createElement("div");
-        holder.style.cssText = "position:fixed;left:-10000px;top:0;background:#fff";
-        holder.innerHTML = invHTML;
-        document.body.appendChild(holder);
-        let canvas;
-        try { canvas = await html2canvas(holder.firstElementChild || holder, { scale: 2, backgroundColor: "#ffffff", useCORS: true }); }
-        finally { document.body.removeChild(holder); }
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
-        const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const imgH = (canvas.height * pageW) / canvas.width;
-        let heightLeft = imgH, position = 0;
-        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
-        heightLeft -= pageH;
-        while (heightLeft > 0) { position -= pageH; pdf.addPage(); pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH); heightLeft -= pageH; }
-        const b64 = pdf.output("datauristring").split(",")[1];
+        const b64 = (await makePdf()).output("datauristring").split(",")[1];
         subject = `Invoice #${invNo} — ${biller.name}`;
         html = plainEmailHTML(`Invoice from ${biller.name}`, [
           `Hi ${booking.name || "there"},`,
@@ -978,7 +994,11 @@ function GigMailer({ booking, payments, onChange, showToast }) {
 
           {billers && (
             <div style={{ marginTop: 10 }}>
-              <button className="btn sm" onClick={() => setShowPreview((v) => !v)}>{showPreview ? <><EyeOff size={12} /> Hide preview</> : <><Eye size={12} /> Preview invoice</>}</button>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button className="btn sm" onClick={() => setShowPreview((v) => !v)}>{showPreview ? <><EyeOff size={12} /> Hide preview</> : <><Eye size={12} /> Preview invoice</>}</button>
+                <button className="btn sm" onClick={downloadInvoice} disabled={busy}>{busy ? <Loader2 size={12} className="spin" /> : <Download size={12} />} Download</button>
+                <button className="btn sm" onClick={whatsappInvoice} disabled={busy}><MessageCircle size={12} /> Download + WhatsApp</button>
+              </div>
               {showPreview && (
                 <div style={{ marginTop: 8, maxHeight: 420, overflow: "auto", borderRadius: 6, border: "1px solid var(--line)" }}>
                   <div style={{ transform: "scale(0.62)", transformOrigin: "top left", width: "161%" }} dangerouslySetInnerHTML={{ __html: invHTML }} />
