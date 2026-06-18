@@ -837,7 +837,6 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   const [terms, setTerms] = useState(7);
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const nodeRef = useRef(null);
 
   useEffect(() => {
     if (!open || billers) return;
@@ -855,10 +854,11 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   const dateStr = niceDate(new Date());
   const biller = billers ? (billers[billerKey] || billers.vic || billers.vr) : null;
 
-  const invHTML = biller ? buildInvoiceHTML({
+  // Only recompute when invoice-relevant fields change (not on every keystroke in e.g. email)
+  const invHTML = useMemo(() => biller ? buildInvoiceHTML({
     biller, invNo, dateStr, dueStr, terms,
     billTo: { company, gstin, address }, item: desc, qty: 1, rate: total, total, paid,
-  }) : "";
+  }) : "", [biller, invNo, dateStr, dueStr, terms, company, gstin, address, desc, total, paid]);
 
   const persist = () => supabase.from("bookings").update({
     client_email: email || null, client_company: company || null, client_gstin: gstin || null, client_address: address || null,
@@ -877,7 +877,14 @@ function GigMailer({ booking, payments, onChange, showToast }) {
         ]);
         const JsPDF = jspdfMod.jsPDF || jspdfMod.default;
         const html2canvas = h2cMod.default || h2cMod;
-        const canvas = await html2canvas(nodeRef.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        // Build the invoice node on demand (not kept rendered on every keystroke)
+        const holder = document.createElement("div");
+        holder.style.cssText = "position:fixed;left:-10000px;top:0;background:#fff";
+        holder.innerHTML = invHTML;
+        document.body.appendChild(holder);
+        let canvas;
+        try { canvas = await html2canvas(holder.firstElementChild || holder, { scale: 2, backgroundColor: "#ffffff", useCORS: true }); }
+        finally { document.body.removeChild(holder); }
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
         const pageW = pdf.internal.pageSize.getWidth();
@@ -979,8 +986,6 @@ function GigMailer({ booking, payments, onChange, showToast }) {
               )}
             </div>
           )}
-          {/* hidden full-size node used for crisp PDF rendering */}
-          <div style={{ position: "fixed", left: -10000, top: 0 }}><div ref={nodeRef} dangerouslySetInnerHTML={{ __html: invHTML }} /></div>
         </>
       )}
 
