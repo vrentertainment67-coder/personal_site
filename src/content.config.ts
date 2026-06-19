@@ -60,6 +60,7 @@ const vicfixEpisodes = defineCollection({
     guestPhoto: z.string().optional(),
     guestInstagram: z.string().optional(),
     topics: z.array(z.string()).default([]),
+    duration: z.string().optional().default(''),
     publishDate: z.string(),
     seoDescription: z.string().optional(),
     viewCount: z.string().default(''),

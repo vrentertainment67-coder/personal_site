@@ -2,58 +2,27 @@
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
-import { getCollection } from 'astro:content';
+import { getEpisodes, buildTopicSet, getFlagshipTopics, CATEGORIES, PERSON, initials, dueto } from '../../lib/vicfix.js';
 
-// ── Real episode collection → archive catalogue ──────────────────────────
-const CATEGORIES = [
-  { key: 'behind-the-decks',     label: 'Behind the Decks',     desc: 'The DJs.' },
-  { key: 'room-makers',          label: 'The Room Makers',      desc: 'The venue owners.' },
-  { key: 'architects',           label: 'The Architects',       desc: 'The founders & builders.' },
-  { key: 'other-side-of-the-bar',label: 'Other Side of the Bar',desc: 'The bartenders.' },
-  { key: 'bigger-picture',       label: 'The Bigger Picture',   desc: 'Industry, scene & culture.' },
-];
-const catLabel = (k) => (CATEGORIES.find((c) => c.key === k) || {}).label || k;
-// Until guest_type is backfilled, derive a rough person-type from the editorial category.
-const TYPE_FROM_CAT = { 'behind-the-decks': 'dj', 'room-makers': 'venue', 'architects': 'founder', 'other-side-of-the-bar': 'bartender', 'bigger-picture': 'voice' };
-const PERSON = [
-  { key: 'dj', label: 'DJs', sub: 'Selectors, residents & headliners.' },
-  { key: 'founder', label: 'Founders', sub: 'The ones who started it.' },
-  { key: 'venue', label: 'Venue Owners', sub: 'The room makers.' },
-  { key: 'bartender', label: 'Bartenders', sub: 'The other side of the bar.' },
-  { key: 'voice', label: 'Voices & Artists', sub: 'Hosts, artists, the wider scene.' },
-];
+// ── Real episode collection → archive catalogue (shared lib) ─────────────
+const eps = await getEpisodes();
 
-const all = (await getCollection('vicfixEpisodes')).sort((a, b) => (a.data.season !== b.data.season ? b.data.season - a.data.season : b.data.episode - a.data.episode));
+const RAIL_CAP = 12; // every rail caps here; the overflow lives on its /collection/ page.
 
-const eps = all.map((e) => ({
-  n: e.data.episode, s: e.data.season,
-  name: e.data.guestName, role: e.data.guestTitle,
-  slug: `/thevicfix/${e.id}/`,
-  cat: e.data.category, catLabel: e.data.categoryLabel || catLabel(e.data.category),
-  topics: e.data.topics || [],
-  hook: e.data.tagline || '',
-  pop: parseInt(e.data.viewCount, 10) || 0,
-  type: TYPE_FROM_CAT[e.data.category] || 'voice',
-  thumb: e.data.guestPhoto || (e.data.youtubeId ? `https://img.youtube.com/vi/${e.data.youtubeId}/hqdefault.jpg` : ''),
-  featured: !!e.data.featured,
-  yt: e.data.youtubeId || '',
-}));
-
-const initials = (name) => name.split(/[\s&.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-const dueto = (name) => { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; const a = 20 + (h % 14), b = 28 + ((h >> 4) % 18); return `background:radial-gradient(120% 130% at 78% 18%, hsl(42,40%,${10 + (h % 5)}%), transparent 55%),linear-gradient(150deg,hsl(${a},22%,9%),hsl(${b},30%,15%))`; };
-
-// Rails (SSR) — every card is a real <a href>, the SEO spine.
+// Rails (SSR) — every card is a real <a href>, the SEO spine. `more` points
+// to a dedicated, crawlable collection page that lists the full set.
 const featured = [...eps].sort((a, b) => (b.featured - a.featured) || (b.pop - a.pop)).slice(0, 6);
 const FLAGS = ['Start Here', 'Most Watched', "Editor's Pick", 'Most Talked About', "If You're New", 'Deep Cut'];
+const seasons = [...new Set(eps.map((e) => e.s))].sort((a, b) => b - a);
 const rails = [
-  { title: 'Latest Episodes', desc: 'Freshest from the cutting room.', eps: eps.slice(0, 12) },
-  { title: 'Most Watched', desc: 'What the scene keeps coming back to.', eps: [...eps].sort((a, b) => b.pop - a.pop).slice(0, 12) },
-  ...CATEGORIES.map((c) => ({ title: c.label, desc: c.desc, eps: eps.filter((e) => e.cat === c.key) })).filter((r) => r.eps.length),
-  { title: 'Season 2', desc: 'The current chapter.', eps: eps.filter((e) => e.s === 2) },
-  { title: 'Season 1', desc: 'Where it started.', eps: eps.filter((e) => e.s === 1) },
-].filter((r) => r.eps.length);
+  { title: 'Latest Episodes', desc: 'Freshest from the cutting room.', list: eps, more: '/thevicfix/' },
+  { title: 'Most Watched', desc: 'What the scene keeps coming back to.', list: [...eps].sort((a, b) => b.pop - a.pop), more: '/thevicfix/' },
+  ...CATEGORIES.map((c) => ({ title: c.label, desc: c.desc, list: eps.filter((e) => e.cat === c.key), more: `/thevicfix/collection/strand-${c.key}/` })).filter((r) => r.list.length),
+  ...seasons.map((s) => ({ title: `Season ${s}`, desc: s === seasons[0] ? 'The current chapter.' : 'Where it started.', list: eps.filter((e) => e.s === s), more: `/thevicfix/collection/season-${s}/` })),
+].filter((r) => r.list.length).map((r) => ({ title: r.title, desc: r.desc, eps: r.list.slice(0, RAIL_CAP), total: r.list.length, more: r.more }));
 
-const topicSet = [...new Set(eps.flatMap((e) => e.topics))].map((t) => ({ key: t, label: t, count: eps.filter((e) => e.topics.includes(t)).length })).sort((a, b) => b.count - a.count);
+const topicSet = buildTopicSet(eps);
+const flagshipTopics = getFlagshipTopics(topicSet); // tight curated set, NOT all 164
 const topStats = { episodes: eps.length, seasons: new Set(eps.map((e) => e.s)).size, categories: CATEGORIES.filter((c) => eps.some((e) => e.cat === c.key)).length, topics: topicSet.length };
 
 const itemList = {
@@ -134,7 +103,9 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
             <span class="num">{String(ri + 1).padStart(2, '0')}</span>
             <h2>{rail.title}</h2>
             <span class="vf-desc">{rail.desc}</span>
-            <span class="vf-count">{rail.eps.length} {rail.eps.length === 1 ? 'film' : 'films'}</span>
+            {rail.total > rail.eps.length
+              ? <a class="vf-count vf-viewall" href={rail.more}>View all {rail.total} →</a>
+              : <span class="vf-count">{rail.total} {rail.total === 1 ? 'film' : 'films'}</span>}
             <span class="vf-arrows"><button aria-label="Scroll left" data-dir="-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button><button aria-label="Scroll right" data-dir="1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button></span>
           </div>
           <div class="vf-hair"></div>
@@ -144,6 +115,7 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
                 <a class="vf-cardlink" href={e.slug}>
                   <div class="vf-cstill" style={e.thumb ? `background-image:url('${e.thumb}')` : dueto(e.name)}>
                     {!e.thumb && <span class="vf-initials">{initials(e.name)}</span>}
+                    {e.duration && <span class="vf-dur">{e.duration}</span>}
                     <span class="vf-ghost">{e.n}</span>
                     <span class="vf-epline">EP {e.n} · S{e.s}</span>
                   </div>
@@ -154,8 +126,8 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
                   </div>
                 </a>
                 <div class="vf-actions">
-                  {e.yt && <a class="vf-watch" href={`https://youtu.be/${e.yt}`} target="_blank" rel="noopener noreferrer">▶ Watch</a>}
-                  <a class="vf-read" href={e.slug}>Read</a>
+                  {e.yt && <a class="vf-watch" href={`${e.slug}#ep-video`}>▶ Watch</a>}
+                  <a class="vf-read" href={`${e.slug}#ep-bio`}>Read</a>
                 </div>
               </article>
             ))}
@@ -170,10 +142,17 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
         <div class="vf-modegrid" id="vfModeGrid"></div>
       </section>
 
-      <!-- ── COLLECTIONS ── -->
+      <!-- ── COLLECTIONS (flagship threads — real crawlable links) ── -->
       <section class="vf-collections">
-        <div class="vf-bandhead"><div><h2>Topic Collections</h2><span class="vf-desc">Threads that run across seasons.</span></div><span class="vf-idx">{String(topicSet.length).padStart(2, '0')} threads</span></div>
-        <div class="vf-colgrid" id="vfColGrid"></div>
+        <div class="vf-bandhead"><div><h2>Topic Collections</h2><span class="vf-desc">The threads that run across seasons. All {topicSet.length} topics are searchable above.</span></div><span class="vf-idx">{flagshipTopics.length} flagship</span></div>
+        <div class="vf-colgrid">
+          {flagshipTopics.map((t) => (
+            <a class="vf-col" href={`/thevicfix/collection/topic-${t.key}/`}>
+              <h3>{t.label}</h3>
+              <span class="n">{t.count} episodes →</span>
+            </a>
+          ))}
+        </div>
       </section>
 
     </div>
@@ -245,6 +224,8 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
   .vf-railhead .num { font-family:var(--font-display); font-size:.9rem; color:var(--gold); letter-spacing:.1em; opacity:.85; }
   .vf-railhead h2 { font-family:var(--font-display); font-weight:400; font-size:clamp(1.2rem,2.2vw,1.6rem); color:var(--head); text-transform:uppercase; letter-spacing:.05em; line-height:1; }
   .vf-railhead .vf-count { margin-left:auto; font-family:var(--font-display); font-size:.72rem; letter-spacing:.22em; color:var(--bd); text-transform:uppercase; white-space:nowrap; }
+  a.vf-viewall { color:var(--gold); transition:color .2s, letter-spacing .2s; }
+  a.vf-viewall:hover { color:var(--gold-br); letter-spacing:.26em; }
   .vf-arrows { display:flex; gap:6px; }
   .vf-arrows button { width:30px; height:30px; border:1px solid var(--line); border-radius:2px; display:grid; place-items:center; color:var(--head); cursor:pointer; transition:.2s; background:none; }
   .vf-arrows button:hover { border-color:var(--gold); color:var(--gold); }
@@ -258,6 +239,7 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
   .vf-cstill { position:relative; aspect-ratio:4/3; overflow:hidden; background-size:cover; background-position:center; }
   .vf-ghost { position:absolute; right:8px; bottom:-14px; font-family:var(--font-display); font-size:88px; line-height:1; color:rgba(255,255,255,.08); }
   .vf-initials { position:absolute; left:16px; top:12px; font-family:var(--font-display); font-size:2rem; color:rgba(232,220,207,.85); }
+  .vf-dur { position:absolute; right:10px; top:10px; font-family:var(--font-display); font-size:.72rem; letter-spacing:.1em; color:var(--head); background:rgba(8,8,8,.82); border:1px solid rgba(201,168,76,.35); padding:3px 7px; border-radius:2px; }
   .vf-epline { position:absolute; left:14px; bottom:10px; font-family:var(--font-display); font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); text-shadow:0 1px 6px rgba(0,0,0,.8); }
   .vf-cbody { padding:14px 15px 15px; }
   .vf-name { font-family:var(--font-display); font-size:1.15rem; color:var(--head); text-transform:uppercase; letter-spacing:.02em; line-height:1.05; }
@@ -334,7 +316,7 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
     const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
     const initials = (n) => n.split(/[\s&.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
     const dueto = (name) => { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; const a = 20 + (h % 14), b = 28 + ((h >> 4) % 18); return `background:radial-gradient(120% 130% at 78% 18%, hsl(42,40%,${10 + (h % 5)}%), transparent 55%),linear-gradient(150deg,hsl(${a},22%,9%),hsl(${b},30%,15%))`; };
-    const card = (e) => `<article class="vf-card"><a class="vf-cardlink" href="${e.slug}"><div class="vf-cstill" style="${e.thumb ? `background-image:url('${e.thumb}')` : dueto(e.name)}">${e.thumb ? '' : `<span class="vf-initials">${initials(e.name)}</span>`}<span class="vf-ghost">${e.n}</span><span class="vf-epline">EP ${e.n} · S${e.s}</span></div><div class="vf-cbody"><div class="vf-name">${e.name}</div><div class="vf-role">${e.role}</div><div class="vf-hook">${e.hook || ''}</div></div></a><div class="vf-actions">${e.yt ? `<a class="vf-watch" href="https://youtu.be/${e.yt}" target="_blank" rel="noopener">▶ Watch</a>` : ''}<a class="vf-read" href="${e.slug}">Read</a></div></article>`;
+    const card = (e) => `<article class="vf-card"><a class="vf-cardlink" href="${e.slug}#ep-bio"><div class="vf-cstill" style="${e.thumb ? `background-image:url('${e.thumb}')` : dueto(e.name)}">${e.thumb ? '' : `<span class="vf-initials">${initials(e.name)}</span>`}${e.duration ? `<span class="vf-dur">${e.duration}</span>` : ''}<span class="vf-ghost">${e.n}</span><span class="vf-epline">EP ${e.n} · S${e.s}</span></div><div class="vf-cbody"><div class="vf-name">${e.name}</div><div class="vf-role">${e.role}</div><div class="vf-hook">${e.hook || ''}</div></div></a><div class="vf-actions">${e.yt ? `<a class="vf-watch" href="${e.slug}#ep-video">▶ Watch</a>` : ''}<a class="vf-read" href="${e.slug}#ep-bio">Read</a></div></article>`;
 
     function showResults(title, list) {
       $('#vfResTitle').textContent = `${title} · ${list.length}`;
@@ -369,16 +351,14 @@ const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList'
         return `<button class="vf-modecell" data-mode="${mode}" data-key="${d.key}" data-k="${d.label}"><div class="vf-mctop"><span class="k">${d.label}</span><span class="c">${c}</span></div><div class="vf-mcsub">${d.sub}</div></button>`;
       }).join('');
       $$('#vfModeGrid .vf-modecell').forEach((cell) => cell.addEventListener('click', () => {
-        const k = cell.dataset.key, m = cell.dataset.mode;
-        const list = EP.filter((e) => (m === 'person' ? e.type === k : (e.topics || []).includes(k)));
+        const m = cell.dataset.mode;
+        // person filters by derived type (slug); story filters by the raw topic label.
+        const list = m === 'person' ? EP.filter((e) => e.type === cell.dataset.key) : EP.filter((e) => (e.topics || []).includes(cell.dataset.k));
         showResults(cell.dataset.k, list);
       }));
     }
     $$('.vf-modetabs button').forEach((b) => b.addEventListener('click', () => { $$('.vf-modetabs button').forEach((x) => x.classList.remove('on')); b.classList.add('on'); buildModes(b.dataset.mode); }));
     buildModes('person');
-    // collections
-    $('#vfColGrid').innerHTML = TOPICS.map((t) => `<button class="vf-col" data-key="${t.key}"><h3>${t.label}</h3><span class="n">${t.count} episodes →</span></button>`).join('');
-    $$('#vfColGrid .vf-col').forEach((col) => col.addEventListener('click', () => showResults(col.querySelector('h3').textContent, EP.filter((e) => (e.topics || []).includes(col.dataset.key)))));
     // rail arrows
     $$('.vf-rail').forEach((rail) => { const track = rail.querySelector('.vf-track'); rail.querySelectorAll('.vf-arrows button').forEach((btn) => btn.addEventListener('click', () => { const w = track.querySelector('.vf-card')?.offsetWidth || 260; track.scrollBy({ left: (+btn.dataset.dir) * (w + 16) * 2, behavior: 'smooth' }); })); });
     // filter drawer
