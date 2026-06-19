@@ -1130,6 +1130,8 @@ function EventsAdmin({ showToast }) {
   const [events, setEvents] = useState([]); const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // event | "new" | null
   const [viewing, setViewing] = useState(null); // event whose detail is open
+  const [recurFor, setRecurFor] = useState(null); // event id being re-scheduled
+  const [recurDate, setRecurDate] = useState(""); const [recurBusy, setRecurBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1147,6 +1149,39 @@ function EventsAdmin({ showToast }) {
   };
   const toggleGl = async (ev) => {
     await supabase.from("events").update({ guestlist_enabled: !ev.guestlist_enabled }).eq("id", ev.id); load();
+  };
+
+  // Recurring: clone this event to the next date, set it live with RSVP on,
+  // log it as a gig + push to Google Calendar, then open its re-invite screen.
+  const createNext = async (ev) => {
+    if (!recurDate) return showToast("Pick the next date first");
+    setRecurBusy(true);
+    try {
+      const times = deriveTimes(recurDate);
+      const { data: newEv, error } = await supabase.from("events").insert({
+        slug: slugify(ev.title) + "-" + recurDate, title: ev.title, venue: ev.venue, area: ev.area,
+        time_label: ev.time_label, lineup: ev.lineup, genre: ev.genre, banner_url: ev.banner_url,
+        ...times, guestlist_enabled: true, active: true,
+      }).select().single();
+      if (error) { setRecurBusy(false); return showToast(/duplicate|unique/i.test(error.message) ? "An event for that date already exists." : error.message); }
+      await supabase.from("events").update({ active: false }).neq("id", newEv.id); // one live popup at a time
+      // log as a gig + push to Google Calendar (graceful if calendar sync fails)
+      let calNote = "";
+      const { data: bk } = await supabase.from("bookings").insert({
+        name: ev.title, contact: "—", event_type: "nightlife", event_date: recurDate,
+        venue: ev.venue, city: ev.area, source: "manual", status: "accepted",
+      }).select().single();
+      if (bk?.id) {
+        const cal = await fetch(`${FN}/calendar-sync?action=confirm`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+          body: JSON.stringify({ bookingId: bk.id }),
+        }).then((r) => r.json()).catch(() => ({ error: "network" }));
+        calNote = cal?.error ? ` — calendar didn't sync; use "Sync to calendar" in Bookings` : " · on your calendar";
+      }
+      setRecurBusy(false); setRecurFor(null); setRecurDate("");
+      showToast(`Next ${ev.title} is live${calNote}.`);
+      setViewing({ ...newEv, _tab: "invite" }); // drop into re-invite screen
+    } catch (e) { setRecurBusy(false); showToast(String(e.message || e)); }
   };
 
   if (editing) return <EventForm event={editing === "new" ? null : editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />;
@@ -1172,10 +1207,19 @@ function EventsAdmin({ showToast }) {
         <button className="act" onClick={() => setViewing(ev)}><Users size={15} /> Guest list</button>
         <button className="act" onClick={() => setEditing(ev)}>Edit</button>
         <button className="act" onClick={() => toggleGl(ev)}>{ev.guestlist_enabled ? "Disable RSVP" : "Enable RSVP"}</button>
-        <button className={ev.active ? "act decline" : "act accept"} onClick={() => setLive(ev, !ev.active)}>
+        <button className="act accept" onClick={() => { setRecurFor(recurFor === ev.id ? null : ev.id); setRecurDate(""); }}><CalendarDays size={15} /> Schedule next</button>
+        <button className={ev.active ? "act decline" : "act"} onClick={() => setLive(ev, !ev.active)}>
           {ev.active ? "Take off site" : "Set live"}
         </button>
       </div>
+      {recurFor === ev.id && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, flexWrap: "wrap", background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 8, padding: "8px 10px" }}>
+          <span style={{ fontSize: ".72rem", color: "rgba(255,255,255,.65)" }}>Next <strong>{ev.title}</strong> on:</span>
+          <input type="date" value={recurDate} onChange={(e) => setRecurDate(e.target.value)} style={{ background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem", fontFamily: "Inter" }} />
+          <button className="btn sm" onClick={() => createNext(ev)} disabled={recurBusy || !recurDate}>{recurBusy ? <Loader2 size={12} className="spin" /> : "Create + invite past guests →"}</button>
+          <button className="btn sm ghost" onClick={() => setRecurFor(null)}>Cancel</button>
+        </div>
+      )}
     </div>
   );
 
@@ -1206,7 +1250,7 @@ function EventsAdmin({ showToast }) {
 }
 
 function EventDetail({ event, onBack, showToast }) {
-  const [tab, setTab] = useState("list");
+  const [tab, setTab] = useState(event._tab || "list");
   return (
     <>
       <button className="btn sm" onClick={onBack} style={{ marginBottom: 12 }}>← All events</button>
