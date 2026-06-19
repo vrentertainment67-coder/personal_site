@@ -6,12 +6,13 @@ episode: 16
 youtubeId: ""
 category: "bigger-picture"
 categoryLabel: "The Bigger Picture"
-tagline: "One man, a thousand voices — the RJ and voice artist who can sound like anyone, and the craft of becoming everyone but yourself."
-bio: "Some people have one voice. RJ Tuhin has a thousand.\n\nThe full story drops this Sunday on The VIC Fix — Episode 16, Season 2."
+tagline: "Seventeen years being everyone except himself. On the voices we borrow, the ones we lose, and the one he finally decided to use."
+bio: "For seventeen years, Tuhinanshu Chaturvedi was the voice in your car, the friend in the dark, the man who made the drive home bearable. He trained as a lawyer, then chose a microphone instead — and went on to become Amitabh Bachchan, Farhan Akhtar, and fifty others before breakfast. He built radio shows across Delhi, Mumbai and Dubai, watched more than one collapse under his feet, and kept going.\n\nIn this episode of The VIC Fix, RJ Tuhin opens up about the craft of becoming anyone, why he believes radio isn't dying — \"you're killing it\" — and the bravest thing a performer can do: taking his own name off the shelf and putting it on the door. This is a conversation about voice — the ones we borrow, the ones we lose, and the one we finally decide to use."
+pullQuote: "The voice was never the job. The voice was just the way in."
 guestPhoto: "/images/vicfix/rj-tuhin.jpg"
-topics: ["Radio", "Voice Acting", "Mimicry", "Storytelling"]
+topics: ["Radio", "Voice Acting", "Mimicry", "Reinvention", "Amitabh Bachchan", "Storytelling"]
 publishDate: "2026-06-21"
-seoDescription: "RJ Tuhin — the man behind a thousand voices. Radio jockey and voice artist on The VIC Fix with DJ VIC. Episode 16, Season 2 — premiering this Sunday."
+seoDescription: "RJ Tuhin (Tuhinanshu Chaturvedi) — the man behind a thousand voices. From lawyer to radio across Delhi, Mumbai & Dubai, becoming Amitabh Bachchan, Farhan Akhtar and fifty others. On voice, reinvention, and why radio isn't dead. The VIC Fix S2E16."
 viewCount: "0"
 featured: false
 ---
