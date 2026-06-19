@@ -15,8 +15,9 @@ export async function getStaticPaths() {
 const { episode } = Astro.props;
 const { data: ep } = episode;
 
-const ytThumb = `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg`;
-const ogImage = ep.guestPhoto || ytThumb;
+const hasVideo = !!ep.youtubeId;
+const ytThumb = hasVideo ? `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg` : '';
+const ogImage = ep.guestPhoto || ytThumb || 'https://djvicofficial.com/images/og-default.jpg';
 const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
 
 const rawDesc = `${ep.guestName} on The VIC Fix S${ep.season}E${ep.episode} — ${ep.tagline} Hosted by DJ VIC.`;
@@ -59,10 +60,7 @@ const schemas = [
       "name": "The VIC Fix",
       "url": "https://djvicofficial.com/thevicfix/"
     },
-    "associatedMedia": {
-      "@type": "MediaObject",
-      "contentUrl": `https://www.youtube.com/watch?v=${ep.youtubeId}`
-    }
+    ...(hasVideo ? { "associatedMedia": { "@type": "MediaObject", "contentUrl": `https://www.youtube.com/watch?v=${ep.youtubeId}` } } : {})
   },
   {
     "@context": "https://schema.org",
@@ -141,14 +139,22 @@ const schemas = [
     <section id="ep-video">
       <div class="ep-inner">
         <div class="yt-wrap">
-          <iframe
-            id="yt-player"
-            src={`https://www.youtube.com/embed/${ep.youtubeId}?enablejsapi=1&origin=https://djvicofficial.com`}
-            title={`${ep.guestName} on The VIC Fix`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            loading="lazy"
-          ></iframe>
+          {hasVideo ? (
+            <iframe
+              id="yt-player"
+              src={`https://www.youtube.com/embed/${ep.youtubeId}?enablejsapi=1&origin=https://djvicofficial.com`}
+              title={`${ep.guestName} on The VIC Fix`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              loading="lazy"
+            ></iframe>
+          ) : (
+            <div class="ep-soon" style={ep.guestPhoto ? `background-image:linear-gradient(to bottom,rgba(0,0,0,.25),rgba(0,0,0,.8)),url('${ep.guestPhoto}')` : ''}>
+              <span class="ep-soon-badge">Premiering this Sunday</span>
+              <span class="ep-soon-title">{ep.guestName} — “{ep.tagline.split('.')[0]}”</span>
+              <span class="ep-soon-sub">The VIC Fix · S{ep.season}E{ep.episode} · drops Sunday on YouTube</span>
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -455,19 +461,22 @@ const schemas = [
     });
   }
 
-  // Load IFrame API if not already present
-  if (window.YT && window.YT.Player) {
-    initPlayer();
-  } else {
-    var prev = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = function () {
-      if (prev) prev();
+  // Load IFrame API only when the embed actually exists (skipped for the
+  // "premiering soon" placeholder so it doesn't error with no player).
+  if (document.getElementById('yt-player')) {
+    if (window.YT && window.YT.Player) {
       initPlayer();
-    };
-    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      var s = document.createElement('script');
-      s.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(s);
+    } else {
+      var prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () {
+        if (prev) prev();
+        initPlayer();
+      };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        var s = document.createElement('script');
+        s.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(s);
+      }
     }
   }
 })();
@@ -667,6 +676,46 @@ const schemas = [
     width: 100%;
     height: 100%;
     border: none;
+  }
+
+  /* "Premiering Sunday" placeholder (shown until the YouTube link is added) */
+  .ep-soon {
+    position: absolute;
+    inset: 0;
+    background-color: #0c0a08;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.6rem;
+    padding: 1.5rem;
+  }
+  .ep-soon-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #0a0a0a;
+    background: #C9A84C;
+    padding: 0.35rem 1rem;
+    border-radius: 2px;
+  }
+  .ep-soon-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+    line-height: 1.1;
+    color: #fff;
+    max-width: 80%;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.7);
+  }
+  .ep-soon-sub {
+    font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
   }
 
   /* ─── 2. REACTIONS ───────────────────────────── */

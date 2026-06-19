@@ -51,7 +51,7 @@ const vicfixEpisodes = defineCollection({
     guestTitle: z.string(),
     season: z.number(),
     episode: z.number(),
-    youtubeId: z.string(),
+    youtubeId: z.string().optional().default(''),
     category: z.enum(['behind-the-decks', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture']),
     categoryLabel: z.string(),
     tagline: z.string(),
