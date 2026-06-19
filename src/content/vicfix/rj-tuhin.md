@@ -3,7 +3,7 @@ guestName: "RJ Tuhin"
 guestTitle: "Radio Jockey & Voice Artist"
 season: 2
 episode: 16
-youtubeId: ""
+youtubeId: "euP2i9P2ZZ8"
 category: "bigger-picture"
 categoryLabel: "The Bigger Picture"
 tagline: "Seventeen years being everyone except himself. On the voices we borrow, the ones we lose, and the one he finally decided to use."

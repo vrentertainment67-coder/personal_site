@@ -62,6 +62,19 @@ const schemas = [
     },
     ...(hasVideo ? { "associatedMedia": { "@type": "MediaObject", "contentUrl": `https://www.youtube.com/watch?v=${ep.youtubeId}` } } : {})
   },
+  // VideoObject — makes THIS page (not just YouTube) eligible for Google video
+  // rich results, reinforcing the on-site player / watch-time strategy.
+  ...(hasVideo ? [{
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": `${ep.guestName} — The VIC Fix S${ep.season}E${ep.episode}`,
+    "description": metaDescription,
+    "thumbnailUrl": [ytThumb],
+    "uploadDate": ep.publishDate,
+    "contentUrl": `https://www.youtube.com/watch?v=${ep.youtubeId}`,
+    "embedUrl": `https://www.youtube.com/embed/${ep.youtubeId}`,
+    "publisher": { "@type": "Organization", "name": "DJ VIC", "url": "https://djvicofficial.com/" }
+  }] : []),
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
