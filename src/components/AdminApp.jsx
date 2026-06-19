@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieC
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
-  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download,
+  MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -97,6 +97,7 @@ export default function Admin() {
 
   const TABS = [
     ["overview", "Overview", LayoutDashboard],
+    ["today", "Today", Zap],
     ["bookings", "Bookings", ClipboardList],
     ["events", "Events", Star],
     ["guests", "Guests", Users],
@@ -125,6 +126,7 @@ export default function Admin() {
       </nav>
       <main className="adm-main">
         {tab === "overview" && <Overview />}
+        {tab === "today" && <Today showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
@@ -359,6 +361,80 @@ function MarketingTraffic({ log, loading, ga, gaLoading }) {
             </p>
           </div>
         )}
+    </>
+  );
+}
+
+// ── "Today" — the action feed: CRM segments as a plain-English to-do list ──
+function Today({ showToast }) {
+  const [segs, setSegs] = useState(null);
+  useEffect(() => {
+    (async () => {
+      const [unpaid, stale, rebook, loyal, invite] = await Promise.all([
+        supabase.from("seg_unpaid_soon").select("*"),
+        supabase.rpc("seg_stale_leads", { days: 7 }),
+        supabase.from("seg_past_clients").select("*"),
+        supabase.from("seg_repeat_guests").select("*"),
+        supabase.from("seg_invite_candidates").select("*"),
+      ]);
+      const firstErr = [unpaid, stale, rebook, loyal, invite].map((r) => r.error).find(Boolean);
+      if (firstErr) showToast?.("CRM segments not reachable — is crm_unify.sql run?");
+      setSegs({ unpaid: unpaid.data || [], stale: stale.data || [], rebook: rebook.data || [], loyal: loyal.data || [], invite: invite.data || [] });
+    })();
+  }, [showToast]);
+
+  if (!segs) return <Center><Loader2 className="spin" size={20} /> &nbsp;Reading your contacts…</Center>;
+
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const nm = (c) => c.name || (c.email ? c.email.split("@")[0] : "there");
+  const groups = [
+    { key: "unpaid", title: "Money to collect", color: "#ff8a8a", rows: segs.unpaid, action: "Chase payment",
+      msg: (c) => `Hi ${nm(c)}, hope the event went brilliantly! Just a gentle reminder about the pending balance of ${inr(c.balance)} — happy to share UPI / bank details whenever convenient. Thank you!` },
+    { key: "stale", title: "Leads waiting on you", color: "#c9a84c", rows: segs.stale, action: "Follow up",
+      msg: (c) => `Hi ${nm(c)}, following up on your enquiry with DJ VIC — still keen to make your event special. Shall we lock in the details?` },
+    { key: "rebook", title: "Past clients — win them back", color: "#7fe0a0", rows: segs.rebook, action: "Reach out",
+      msg: (c) => `Hi ${nm(c)}, it was a pleasure playing your event! I'd love to be part of your next one — anything coming up?` },
+    { key: "loyal", title: "Loyal guests — invite to book", color: "#9bb8ff", rows: segs.loyal, action: "Invite",
+      msg: (c) => `Hi ${nm(c)}, loved having you on the dancefloor! If you're ever planning an event, I'd love to play it for you.` },
+    { key: "invite", title: "Grow the newsletter (ask first)", color: "#cda8ff", rows: segs.invite, action: "Ask to subscribe",
+      msg: (c) => `Hi ${nm(c)}, I send out an occasional newsletter with new mixes & upcoming dates — want me to add you? Totally optional!` },
+  ];
+  const total = groups.reduce((s, g) => s + g.rows.length, 0);
+  const outstanding = segs.unpaid.reduce((s, c) => s + Number(c.balance || 0), 0);
+
+  return (
+    <>
+      <h1 className="h1">Today</h1>
+      <p className="sub">{total ? `${total} thing${total !== 1 ? "s" : ""} worth doing — in plain English.` : "All clear — nothing needs chasing right now. 🎉"}</p>
+      {outstanding > 0 && <p className="sub" style={{ color: "#ff8a8a", marginTop: -6 }}><strong>{inr(outstanding)}</strong> outstanding to collect.</p>}
+
+      {groups.map((g) => (
+        <div key={g.key} style={{ marginTop: 18 }}>
+          <h3 className="card-h" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: g.color, display: "inline-block" }} />
+            {g.title} <span style={{ color: "rgba(255,255,255,.4)", fontWeight: 400 }}>· {g.rows.length}</span>
+          </h3>
+          {g.rows.length === 0 ? <p className="empty" style={{ padding: "4px 0" }}>Nothing here.</p> : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {g.rows.map((c) => {
+                const wa = (c.phone || "").replace(/\D/g, "");
+                return (
+                  <div key={c.id} className="card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+                      <div><strong>{c.name || c.email || c.phone || "Unknown"}</strong></div>
+                      <div style={{ color: g.color, fontWeight: 700, fontSize: ".82rem" }}>{c.display_label}</div>
+                      <div style={{ color: "rgba(255,255,255,.6)", fontSize: ".8rem" }}>{c.display_line}{c.balance ? ` · ${inr(c.balance)} due` : ""}</div>
+                    </div>
+                    {wa.length >= 10
+                      ? <a className="act wa" href={`https://wa.me/${wa}?text=${encodeURIComponent(g.msg(c))}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}><MessageCircle size={15} /> {g.action}</a>
+                      : <span style={{ fontSize: ".72rem", color: "rgba(255,255,255,.4)" }}>No phone{c.email ? ` · ${c.email}` : ""}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
     </>
   );
 }

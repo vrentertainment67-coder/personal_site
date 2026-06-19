@@ -90,42 +90,48 @@ create or replace function crm_resync() returns void language plpgsql as $$
 declare r record; cid uuid;
 begin
   for r in select * from event_rsvps loop
-    cid := crm_get_contact(r.name, r.phone, null, r.instagram);
+    select contact_id into cid from contact_relationships where ref_table='event_rsvps' and ref_id=r.id;
+    if cid is null then cid := crm_get_contact(r.name, r.phone, null, r.instagram); end if;
     insert into contact_relationships(contact_id, kind, source, ref_table, ref_id, meta, created_at)
     values (cid,'club_guest', coalesce(nullif(r.source,''),'rsvp'),'event_rsvps', r.id,
             jsonb_build_object('event_slug', r.event, 'guests', r.guests), r.created_at)
-    on conflict (ref_table, ref_id) do update set contact_id=excluded.contact_id, kind=excluded.kind, source=excluded.source, meta=excluded.meta;
+    on conflict (ref_table, ref_id) do update set kind=excluded.kind, source=excluded.source, meta=excluded.meta;
   end loop;
 
   for r in select * from bookings loop
-    cid := crm_get_contact(r.name, r.contact, r.client_email, null);
+    select contact_id into cid from contact_relationships where ref_table='bookings' and ref_id=r.id;
+    if cid is null then cid := crm_get_contact(r.name, r.contact, r.client_email, null); end if;
     insert into contact_relationships(contact_id, kind, source, ref_table, ref_id, meta, created_at)
     values (cid, case when r.status='accepted' then 'client' else 'lead' end,
             case r.source when 'funnel' then 'web_booking' when 'manual' then 'manual_whatsapp' else coalesce(nullif(r.source,''),'web_booking') end,
             'bookings', r.id,
             jsonb_build_object('event_type', r.event_type, 'event_date', r.event_date, 'status', r.status, 'fee', r.agreed_fee, 'venue', r.venue, 'city', r.city), r.created_at)
-    on conflict (ref_table, ref_id) do update set contact_id=excluded.contact_id, kind=excluded.kind, source=excluded.source, meta=excluded.meta;
+    on conflict (ref_table, ref_id) do update set kind=excluded.kind, source=excluded.source, meta=excluded.meta;
   end loop;
 
   for r in select * from podcast_applications loop
-    cid := crm_get_contact(r.name, r.phone, r.email, r.instagram);
+    select contact_id into cid from contact_relationships where ref_table='podcast_applications' and ref_id=r.id;
+    if cid is null then cid := crm_get_contact(r.name, r.phone, r.email, r.instagram); end if;
     insert into contact_relationships(contact_id, kind, source, ref_table, ref_id, meta, created_at)
     values (cid,'podcast','podcast_form','podcast_applications', r.id,
             jsonb_build_object('role', r.role), r.created_at)
-    on conflict (ref_table, ref_id) do update set contact_id=excluded.contact_id, kind=excluded.kind, meta=excluded.meta;
+    on conflict (ref_table, ref_id) do update set kind=excluded.kind, meta=excluded.meta;
   end loop;
 
   -- subscriber mirror: only ACTIVE Resend subscribers earn the relationship
   for r in select * from subscribers where status='active' loop
-    cid := crm_get_contact(r.name, null, r.email, null);
+    select contact_id into cid from contact_relationships where ref_table='subscribers' and ref_id=r.id;
+    if cid is null then cid := crm_get_contact(r.name, null, r.email, null); end if;
     insert into contact_relationships(contact_id, kind, source, ref_table, ref_id, meta, created_at)
     values (cid,'subscriber','resend_import','subscribers', r.id,
             jsonb_build_object('status', r.status,'list', r.list,'sub_source', r.source,'subscribed_at', r.subscribed_at), r.subscribed_at)
-    on conflict (ref_table, ref_id) do update set contact_id=excluded.contact_id, meta=excluded.meta;
+    on conflict (ref_table, ref_id) do update set meta=excluded.meta;
   end loop;
-  -- drop subscriber relationships that are no longer active in Resend mirror (consent stays accurate)
+  -- drop subscriber relationships no longer active in the Resend mirror (consent stays accurate)
   delete from contact_relationships cr where cr.kind='subscriber'
     and not exists (select 1 from subscribers s where s.id = cr.ref_id and s.status='active');
+  -- self-heal: remove orphan contacts (e.g. from earlier non-idempotent runs)
+  delete from contacts c where not exists (select 1 from contact_relationships cr where cr.contact_id=c.id);
 end $$;
 
 -- ---------- plain-English display line (top-precedence relationship) ----------
