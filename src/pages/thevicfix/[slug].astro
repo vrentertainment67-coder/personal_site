@@ -124,8 +124,8 @@ const schemas = [
       </div>
     </section>
 
-    <!-- ── Guest Photo (conditional) ─────────────── -->
-    {ep.guestPhoto && (
+    <!-- ── Guest Photo (only with a video; the placeholder already shows it otherwise) ── -->
+    {hasVideo && ep.guestPhoto && (
       <section id="ep-photo">
         <div class="ep-inner">
           <div class="guest-photo-wrap">
