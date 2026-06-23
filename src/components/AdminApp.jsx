@@ -52,6 +52,18 @@ async function mailApi(params) {
   return r.json().catch(() => ({ error: "Couldn't reach mail." }));
 }
 const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<.*>/); return (m && m[1].trim()) || (from || "").replace(/<.*>/, "").trim() || from; };
+// Booking status → [label, colour]. "pending" reads as "Enquiry" for the owner.
+const BK_STATUS = { pending: ["Enquiry", "#e0b13c"], accepted: ["Confirmed", "#4ea765"], declined: ["Declined", "#9a9a8a"] };
+// Render a single date or a multi-day range, e.g. "Sep 22–23" or "Sep 30 – Oct 1".
+function fmtRange(s, e) {
+  if (!s) return "—";
+  const sd = new Date(s + "T00:00:00");
+  const sm = `${MONTHS[sd.getMonth()]} ${sd.getDate()}`;
+  if (!e || e === s) return sm;
+  const ed = new Date(e + "T00:00:00");
+  if (sd.getMonth() === ed.getMonth() && sd.getFullYear() === ed.getFullYear()) return `${MONTHS[sd.getMonth()]} ${sd.getDate()}–${ed.getDate()}`;
+  return `${sm} – ${MONTHS[ed.getMonth()]} ${ed.getDate()}`;
+}
 const mailDate = (s) => { const d = new Date(s); if (isNaN(d)) return s; const now = new Date(); const sameDay = d.toDateString() === now.toDateString(); return sameDay ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
 const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov|m4v)$/i.test(url || "");
 
@@ -619,6 +631,7 @@ function Bookings({ showToast }) {
   const [rows, setRows] = useState([]); const [pays, setPays] = useState({}); const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -687,13 +700,75 @@ function Bookings({ showToast }) {
     a.click();
   };
 
+  // ── Detail view (rich per-gig: finance, mailer, notes, actions) ──
+  if (openId) {
+    const r = rows.find((x) => x.id === openId);
+    if (!r) return <Center><Loader2 className="spin" size={18} /></Center>;
+    const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
+    return (
+      <>
+        <div className="row-between">
+          <button className="note-save" onClick={() => setOpenId(null)}>← Back to bookings</button>
+          <span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span>
+        </div>
+        <h1 className="h1" style={{ marginTop: 10 }}>{r.name} {r.source === "manual" && <span className="mini">manual</span>}</h1>
+        <p className="req-meta">
+          <span className="tag">{r.event_type}</span>
+          <span>{fmtRange(r.event_date, r.event_end_date)}</span>
+          <span><MapPin size={12} /> {r.venue || "—"}, {r.city || "—"}</span>
+          {r.budget && <span className="gold">{r.budget}</span>}
+          {r.contact && r.contact !== "—" && <span>{r.contact}</span>}
+        </p>
+        {r.message && <p className="req-msg">{r.message}</p>}
+        <GigFinance booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
+        <GigMailer booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
+        <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
+        <div className="req-actions">
+          {r.status === "pending" && (
+            <>
+              <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>
+                {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Confirm
+              </button>
+              <button className="act decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}>
+                <XCircle size={15} /> Decline
+              </button>
+            </>
+          )}
+          {r.status === "accepted" && !r.gcal_event_id && (
+            <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")} title="This gig isn't on your Google Calendar yet">
+              {acting === r.id ? <Loader2 className="spin" size={15} /> : <CalendarDays size={15} />} Sync to calendar
+            </button>
+          )}
+          <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
+      <style>{`
+        .bk-wrap { overflow-x: auto; margin-top: 8px; }
+        .bk-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .bk-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
+        .bk-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; }
+        .bk-table tbody tr:hover td { background: #141414; }
+        .bk-name { font-weight: 600; color: #e8e8e0; }
+        .bk-sub { color: #8a8878; font-size: 12px; }
+        .bk-st { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; display: inline-block; }
+        .bk-actions { white-space: nowrap; text-align: right; }
+        .bk-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; margin-left: 4px; line-height: 0; }
+        .bk-ic:hover { border-color: #c9a84c; color: #c9a84c; }
+        .bk-ic.green:hover { border-color: #4ea765; color: #4ea765; }
+        .bk-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
+        .bk-ic:disabled { opacity: .5; cursor: default; }
+        @media (max-width: 720px) { .bk-table { min-width: 720px; } }
+      `}</style>
       <div className="row-between">
         <h1 className="h1">Bookings</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
-          <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log a gig</button>
+          <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log enquiry</button>
         </div>
       </div>
 
@@ -706,56 +781,48 @@ function Bookings({ showToast }) {
       {adding && <ManualEntry onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
 
       <div className="chips">
-        {["all", "pending", "accepted", "owing", "declined"].map((f) => (
-          <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{f}</button>
+        {[["all", "All"], ["pending", "Enquiries"], ["accepted", "Confirmed"], ["owing", "Owing"], ["declined", "Declined"]].map(([f, l]) => (
+          <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{l}</button>
         ))}
       </div>
       <input className="search" placeholder="Search name, contact, city…" value={query} onChange={(e) => setQuery(e.target.value)} />
 
-      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
-        <div className="list">
-          {filtered.length === 0 && <p className="empty">Nothing here.</p>}
-          {filtered.map((r) => {
-            const d = new Date(r.event_date);
-            return (
-              <div key={r.id} className={`req ${r.status}`}>
-                <div className="req-top">
-                  <div>
-                    <h3>{r.name} {r.source === "manual" && <span className="mini">manual</span>}</h3>
-                    <p className="req-meta">
-                      <span className="tag">{r.event_type}</span>
-                      <span>{MONTHS[d.getMonth()]} {d.getDate()}</span>
-                      <span><MapPin size={12} /> {r.venue || "—"}, {r.city || "—"}</span>
-                      <span className="gold">{r.budget || "—"}</span>
-                    </p>
-                  </div>
-                  <span className={`status ${r.status}`}>{r.status}</span>
-                </div>
-                {r.message && <p className="req-msg">{r.message}</p>}
-                <GigFinance booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
-                <GigMailer booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
-                <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
-                <div className="req-actions">
-                  {r.status === "pending" && (
-                    <>
-                      <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>
-                        {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Confirm
-                      </button>
-                      <button className="act decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}>
-                        <XCircle size={15} /> Decline
-                      </button>
-                    </>
-                  )}
-                  {r.status === "accepted" && !r.gcal_event_id && (
-                    <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")} title="This gig isn't on your Google Calendar yet">
-                      {acting === r.id ? <Loader2 className="spin" size={15} /> : <CalendarDays size={15} />} Sync to calendar
-                    </button>
-                  )}
-                  <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
-                </div>
-              </div>
-            );
-          })}
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
+        <p className="empty">Nothing here.</p>
+      ) : (
+        <div className="bk-wrap">
+          <table className="bk-table">
+            <thead><tr><th>Client</th><th>Type</th><th>Date(s)</th><th>Value</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {filtered.map((r) => {
+                const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
+                const owing = r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
+                const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
+                return (
+                  <tr key={r.id} style={{ cursor: "pointer" }} title={r.message || ""} onClick={() => setOpenId(r.id)}>
+                    <td>
+                      <div className="bk-name">{r.name} {r.source === "manual" && <span className="mini">manual</span>}</div>
+                      <div className="bk-sub">{[r.venue, r.city].filter(Boolean).join(", ") || "—"}</div>
+                    </td>
+                    <td><span className="tag">{r.event_type}</span></td>
+                    <td style={{ whiteSpace: "nowrap" }}>{fmtRange(r.event_date, r.event_end_date)}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{value}{owing && <div className="bk-sub" style={{ color: "#e0b13c" }}>owing</div>}</td>
+                    <td><span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span></td>
+                    <td className="bk-actions" onClick={(e) => e.stopPropagation()}>
+                      {r.status === "pending" && (
+                        <>
+                          <button className="bk-ic green" title="Confirm" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>{acting === r.id ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />}</button>
+                          <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}><XCircle size={14} /></button>
+                        </>
+                      )}
+                      <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
+                      <button className="bk-ic" title="Open" onClick={() => setOpenId(r.id)}><Eye size={14} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </>
@@ -2115,13 +2182,15 @@ function NoteField({ initial, onSave }) {
 }
 
 function ManualEntry({ onDone, showToast }) {
-  const [f, setF] = useState({ name: "", contact: "", event_type: "private", event_date: "", venue: "", city: "", budget: BUDGETS[1], confirmed: true });
+  const [f, setF] = useState({ name: "", contact: "", event_type: "private", event_date: "", event_end_date: "", venue: "", city: "", budget: BUDGETS[1], confirmed: false });
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!f.name || !f.event_date) return showToast("Name and date required.");
+    if (f.event_end_date && f.event_end_date < f.event_date) return showToast("End date can't be before the start date.");
     setBusy(true);
     const { data, error } = await supabase.from("bookings").insert({
       name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
+      event_end_date: f.event_end_date || null,
       venue: f.venue, city: f.city, budget: f.budget, source: "manual",
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
@@ -2135,7 +2204,7 @@ function ManualEntry({ onDone, showToast }) {
       if (cal?.error) calErr = cal.error;
     }
     setBusy(false);
-    showToast(calErr ? `Gig saved — but calendar sync failed: ${calErr}. Use "Sync to calendar".` : "Gig logged.");
+    showToast(calErr ? `Saved — but calendar sync failed: ${calErr}. Use "Sync to calendar".` : (f.confirmed ? "Gig logged & confirmed." : "Enquiry logged."));
     onDone();
   };
   return (
@@ -2144,12 +2213,14 @@ function ManualEntry({ onDone, showToast }) {
         <div className="field"><label>Client / venue</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
         <div className="field"><label>Contact</label><input value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} /></div>
         <div className="field"><label>Type</label><select value={f.event_type} onChange={(e) => setF({ ...f, event_type: e.target.value })}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
-        <div className="field"><label>Date</label><input type="date" value={f.event_date} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
+        <div className="field"><label>Budget</label><select value={f.budget} onChange={(e) => setF({ ...f, budget: e.target.value })}>{BUDGETS.map((b) => <option key={b}>{b}</option>)}</select></div>
+        <div className="field"><label>Date (from)</label><input type="date" value={f.event_date} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
+        <div className="field"><label>To (optional — multi-day)</label><input type="date" value={f.event_end_date} min={f.event_date || undefined} onChange={(e) => setF({ ...f, event_end_date: e.target.value })} /></div>
         <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
         <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
       </div>
-      <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar</label>
-      <button className="btn" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : "Save gig"}</button>
+      <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar (leave off to log as an enquiry)</label>
+      <button className="btn" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : (f.confirmed ? "Save gig" : "Log enquiry")}</button>
     </div>
   );
 }
