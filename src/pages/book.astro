@@ -12,7 +12,7 @@ import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import BookingApp from "../components/BookingApp.jsx";
 
-const title = "Book DJ Vic — Live Availability & Booking | VR Entertainment";
+const title = "Book DJ VIC — Live Availability & Booking";
 const description =
   "Check DJ Vic's live availability and send a booking request for your sangeet, nightlife, private event, or festival. 20+ years, 18 countries, Universal Music partner.";
 ---
@@ -29,15 +29,58 @@ const description =
     calendar fetches, browser APIs), nothing useful to server-render.
   -->
   <main id="main-content">
-    <!-- Server-rendered skeleton: shows instantly, removed by the app on mount -->
-    <div id="book-skel" aria-hidden="true"><span class="bs-spin"></span></div>
+    <!-- Server-rendered intro — visible instantly, even without JS / on slow connections -->
+    <section id="book-intro">
+      <p class="bi-eyebrow">Live availability · Custom quote within 24 hours</p>
+      <h1 class="bi-title">Check VIC's availability for your date</h1>
+      <p class="bi-sub">VIC personally handles a limited number of events each month, so every booking gets full attention. Pick your date below and send a request — or message directly on WhatsApp.</p>
+      <div class="bi-actions">
+        <a class="bi-wa" href="https://wa.me/919611711677?text=Hi+VIC%2C+I%27d+like+to+check+your+availability+for+my+event." target="_blank" rel="noopener noreferrer" data-loc="book_intro">Message on WhatsApp &rarr;</a>
+      </div>
+      <blockquote class="bi-quote">“VIC made our wedding night truly unforgettable — the transitions were seamless and the energy never dropped.” <cite>— Kruthi S.</cite></blockquote>
+    </section>
+
+    <!-- Booking funnel — loads progressively beneath the intro -->
+    <div id="book-skel"><span class="bs-spin"></span><span class="bs-cap">Loading live availability…</span></div>
     <BookingApp client:only="react" />
   </main>
   <Footer />
 </Layout>
 
 <style is:global>
-  #book-skel { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: #0A0A0A; }
+  #book-intro {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 6.5rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  #book-intro .bi-eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #C9A84C; margin: 0 0 0.9rem;
+  }
+  #book-intro .bi-title {
+    font-family: 'Bebas Neue', sans-serif; font-weight: 400;
+    font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.02; color: #fff;
+    text-transform: uppercase; letter-spacing: 0.01em; margin: 0;
+  }
+  #book-intro .bi-sub {
+    font-size: clamp(0.95rem, 2vw, 1.08rem); line-height: 1.65;
+    color: rgba(255,255,255,0.66); max-width: 56ch; margin: 1rem auto 1.4rem;
+  }
+  #book-intro .bi-wa {
+    display: inline-flex; align-items: center; height: 48px; padding: 0 26px;
+    background: #25D366; color: #07210f; font-weight: 700; font-size: 0.92rem;
+    border-radius: 4px; text-decoration: none; transition: transform 0.15s, filter 0.2s;
+  }
+  #book-intro .bi-wa:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  #book-intro .bi-quote {
+    margin: 1.8rem auto 0; max-width: 52ch; font-style: italic;
+    font-size: 0.95rem; line-height: 1.6; color: rgba(255,255,255,0.55); border: 0;
+  }
+  #book-intro .bi-quote cite { display: block; margin-top: 0.5rem; font-style: normal; color: #C9A84C; font-size: 0.82rem; }
+
+  #book-skel { min-height: 46vh; display: flex; flex-direction: column; gap: 0.9rem; align-items: center; justify-content: center; background: #0A0A0A; }
   .bs-spin { width: 34px; height: 34px; border: 3px solid rgba(201,168,76,0.25); border-top-color: #C9A84C; border-radius: 50%; animation: bsspin 0.8s linear infinite; }
+  .bs-cap { font-size: 0.78rem; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); }
   @keyframes bsspin { to { transform: rotate(360deg); } }
 </style>

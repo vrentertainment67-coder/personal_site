@@ -10,6 +10,10 @@ const episodes = allEpisodes.sort((a, b) => {
   if (a.data.season !== b.data.season) return b.data.season - a.data.season;
   return b.data.episode - a.data.episode;
 });
+
+// "Start here" — 3 hand-picked episodes for first-time visitors.
+const FEATURED_SLUGS = ['carlton-braganza', 'dj-xirex', 'manish-fitkariwala'];
+const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).filter(Boolean);
 ---
 
 <Layout
@@ -78,6 +82,48 @@ const episodes = allEpisodes.sort((a, b) => {
         </div>
       </div>
     </section>
+
+    <!-- ══════════════════════════════════════════
+         1b. START HERE — featured for new visitors
+    ══════════════════════════════════════════ -->
+    {featured.length > 0 && (
+      <section id="vicfix-featured">
+        <div class="featured-inner">
+          <div class="featured-head">
+            <h2>New here? Start with these.</h2>
+            <p>Three conversations that capture what The VIC Fix is about.</p>
+          </div>
+          <div class="episodes-grid featured-grid">
+            {featured.map((ep) => {
+              const ytThumb = `https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg`;
+              const imgSrc = ep.data.guestPhoto ? ep.data.guestPhoto : ytThumb;
+              return (
+                <div class="episode-card">
+                  <a href={`/thevicfix/${ep.id}/`} class="ep-card-inner">
+                    <div class="card-thumb">
+                      <img src={imgSrc} alt={`${ep.data.guestName} — The VIC Fix`} loading="lazy" width="480" height="360"
+                        onerror={`this.src='https://img.youtube.com/vi/${ep.data.youtubeId}/hqdefault.jpg'`} />
+                      <span class="season-badge">S{ep.data.season} &middot; E{ep.data.episode}</span>
+                      <span class="category-tag">{ep.data.categoryLabel}</span>
+                    </div>
+                    <div class="card-body">
+                      <h3>{ep.data.guestName}</h3>
+                      <p class="guest-title-ep">{ep.data.guestTitle}</p>
+                      <p class="ep-tagline">{ep.data.tagline}</p>
+                    </div>
+                  </a>
+                  <div class="card-footer">
+                    <a href={`/thevicfix/${ep.id}/`} class="watch-cta">Read Episode &rarr;</a>
+                    <a href={`https://youtu.be/${ep.data.youtubeId}`} class="yt-cta" target="_blank" rel="noopener noreferrer"
+                      data-video={ep.data.youtubeId} data-video-title={`${ep.data.guestName} — The VIC Fix`}>&#9654; Play Episode</a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- ══════════════════════════════════════════
          2. FILTERS + EPISODE GRID
@@ -530,6 +576,28 @@ const episodes = allEpisodes.sort((a, b) => {
   }
 
   /* ─── Episode Listing Section ─────────────────── */
+  /* ─── Start here (featured) ───────────────────── */
+  #vicfix-featured {
+    background: linear-gradient(180deg, rgba(201,168,76,0.05), transparent 70%);
+    border-top: 1px solid #111;
+  }
+  .featured-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding: 3.5rem 2.5rem 1rem;
+  }
+  .featured-head { text-align: center; margin-bottom: 2rem; }
+  .featured-head h2 {
+    font-family: var(--font-display, 'Bebas Neue'), sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: #fff;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  .featured-head p { color: var(--gold, #c9a84c); font-size: 0.95rem; margin: 0.4rem 0 0; }
+  .featured-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  @media (max-width: 860px) { .featured-grid { grid-template-columns: 1fr !important; } }
+
   #episode-listing {
     background: #050505;
     max-width: 100%;
