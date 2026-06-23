@@ -5,6 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
+  AtSign, RefreshCw, Film, Pencil,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -24,6 +25,18 @@ const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
 const waDigits = (s) => (s || "").replace(/[^0-9]/g, "");
+
+// ── Guest Pipeline helpers ──
+const STATUSES = [["lead", "Lead"], ["contacted", "Contacted"], ["confirmed", "Confirmed"]];
+const STATUS_COLOR = { lead: "#9a9a8a", contacted: "#e0b13c", confirmed: "#4ea765" };
+const INDUSTRIES = ["Music / DJ", "Nightlife", "Hospitality", "Bartending", "Comedy", "Radio / Voice", "Film / TV", "Fashion", "Fitness", "Business / Founder", "Sports", "Content Creator", "Art", "Food", "Other"];
+const fmtFollowers = (n) => (n == null || n === "" ? "—" : Number(n) >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M" : Number(n) >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1) + "K" : String(n));
+const fmtDate = (s) => { if (!s) return ""; const d = new Date(s + "T00:00:00"); return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; };
+function popTier(n) { if (n == null || n === "") return null; n = Number(n); if (n >= 1e6) return { label: "Mega", stars: 5 }; if (n >= 5e5) return { label: "Macro", stars: 4 }; if (n >= 1e5) return { label: "Mid", stars: 3 }; if (n >= 1e4) return { label: "Micro", stars: 2 }; return { label: "Nano", stars: 1 }; }
+async function fetchIgStats(handle) {
+  const r = await fetch(`${FN}/instagram-stats`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ handle }) });
+  return r.json().catch(() => ({ error: "Couldn't reach the Instagram service." }));
+}
 const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov|m4v)$/i.test(url || "");
 
 async function authHeader() {
@@ -130,7 +143,7 @@ export default function Admin() {
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
-        {tab === "podcast" && <PodcastApplications showToast={showToast} />}
+        {tab === "podcast" && <Podcast showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
@@ -1599,6 +1612,214 @@ function PodcastApplications({ showToast }) {
             );
           })}
         </div>
+      )}
+    </>
+  );
+}
+
+// ── Podcast tab wrapper: Guest Pipeline + Applications ──
+function Podcast({ showToast }) {
+  const [sub, setSub] = useState("pipeline");
+  const PC_TABS = [["pipeline", "Guest Pipeline", Film], ["applications", "Applications", Mic]];
+  return (
+    <div>
+      <div className="nl-tabs">
+        {PC_TABS.map(([k, label, Icon]) => (
+          <button key={k} className={sub === k ? "nl-tab on" : "nl-tab"} onClick={() => setSub(k)}>
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+      </div>
+      {sub === "pipeline" && <GuestPipeline showToast={showToast} />}
+      {sub === "applications" && <PodcastApplications showToast={showToast} />}
+    </div>
+  );
+}
+
+// ── Add / edit a prospective guest ──
+function GuestForm({ guest, onDone, showToast }) {
+  const isEdit = !!guest; const init = guest || {};
+  const [f, setF] = useState({
+    name: init.name || "", industry: init.industry || "", instagram: init.instagram || "",
+    planned_date: init.planned_date || "", status: init.status || "lead", notes: init.notes || "",
+    ig_followers: init.ig_followers ?? null, ig_verified: init.ig_verified ?? null,
+  });
+  const [busy, setBusy] = useState(false); const [igBusy, setIgBusy] = useState(false);
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+
+  const fetchIg = async () => {
+    if (!f.instagram.trim()) return showToast("Enter an Instagram handle first.");
+    setIgBusy(true);
+    const d = await fetchIgStats(f.instagram.trim());
+    setIgBusy(false);
+    if (d.error) return showToast(d.error);
+    setF((s) => ({ ...s, ig_followers: d.followers, ig_verified: d.verified, instagram: d.username || s.instagram }));
+    showToast(`@${d.username}: ${fmtFollowers(d.followers)} followers${d.verified ? " · verified" : ""}`);
+  };
+
+  const save = async () => {
+    if (!f.name.trim()) return showToast("Name is required.");
+    setBusy(true);
+    const hasF = f.ig_followers != null && f.ig_followers !== "";
+    const row = {
+      name: f.name.trim(), industry: f.industry.trim() || null, instagram: f.instagram.trim() || null,
+      planned_date: f.planned_date || null, status: f.status, notes: f.notes.trim() || null,
+      ig_followers: hasF ? Number(f.ig_followers) : null, ig_verified: f.ig_verified ?? null,
+      ig_checked_at: hasF ? new Date().toISOString() : (init.ig_checked_at || null),
+    };
+    const q = isEdit
+      ? supabase.from("guest_pipeline").update(row).eq("id", guest.id)
+      : supabase.from("guest_pipeline").insert(row);
+    const { error } = await q;
+    setBusy(false);
+    if (error) return showToast("Save failed — is guest_pipeline.sql run? " + error.message);
+    showToast(isEdit ? "Updated." : "Guest added."); onDone();
+  };
+
+  const tier = popTier(f.ig_followers);
+  const ico = { width: 150, flex: "1 1 150px" };
+  return (
+    <div className="req" style={{ borderColor: "#c9a84c" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <input className="search" placeholder="Guest name *" value={f.name} onChange={(e) => set("name", e.target.value)} />
+        <input className="search" placeholder="Industry (e.g. Nightlife, Comedy, Radio)" list="gp-industries" value={f.industry} onChange={(e) => set("industry", e.target.value)} />
+        <datalist id="gp-industries">{INDUSTRIES.map((i) => <option key={i} value={i} />)}</datalist>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input className="search" style={{ flex: "2 1 200px" }} placeholder="Instagram handle" value={f.instagram} onChange={(e) => set("instagram", e.target.value)} />
+          <button className="btn sm" disabled={igBusy} onClick={fetchIg}>{igBusy ? <Loader2 className="spin" size={14} /> : <AtSign size={14} />} Fetch followers</button>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input className="search" style={ico} type="number" placeholder="Followers" value={f.ig_followers ?? ""} onChange={(e) => set("ig_followers", e.target.value === "" ? null : e.target.value)} />
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#cfcabf" }}>
+            <input type="checkbox" checked={!!f.ig_verified} onChange={(e) => set("ig_verified", e.target.checked)} /> Verified
+          </label>
+          {tier && <span style={{ color: "#c9a84c", fontSize: 13 }}>{"★".repeat(tier.stars)}{"☆".repeat(5 - tier.stars)} {tier.label} · {fmtFollowers(f.ig_followers)}</span>}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Planned date<input type="date" className="search" value={f.planned_date || ""} onChange={(e) => set("planned_date", e.target.value)} /></label>
+          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Status<select className="search" value={f.status} onChange={(e) => set("status", e.target.value)}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        </div>
+        <textarea className="search" rows={2} placeholder="Notes (optional)" value={f.notes} onChange={(e) => set("notes", e.target.value)} />
+        <div className="req-actions">
+          <button className="act wa" disabled={busy} onClick={save}>{busy ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} {isEdit ? "Save" : "Add guest"}</button>
+          <button className="act" onClick={onDone}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── The VIC Fix · prospective guest tracker ──
+function GuestPipeline({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false); const [editing, setEditing] = useState(null);
+  const [showArchived, setShowArchived] = useState(false); const [igBusyId, setIgBusyId] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("guest_pipeline").select("*")
+      .order("planned_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load pipeline — is guest_pipeline.sql run?");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const active = rows.filter((r) => !r.shot);
+  const archived = rows.filter((r) => r.shot);
+  const list = showArchived ? archived : active;
+
+  const setStatus = async (r, status) => {
+    const { error } = await supabase.from("guest_pipeline").update({ status }).eq("id", r.id);
+    if (error) return showToast("Update failed.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, status } : x)));
+  };
+  const markShot = async (r) => {
+    if (!window.confirm(`Mark "${r.name}" as shot? They move to the archive and drop off the active list.`)) return;
+    const { error } = await supabase.from("guest_pipeline").update({ shot: true }).eq("id", r.id);
+    if (error) return showToast("Update failed.");
+    showToast(`${r.name} archived — shooting done.`); load();
+  };
+  const restore = async (r) => {
+    const { error } = await supabase.from("guest_pipeline").update({ shot: false }).eq("id", r.id);
+    if (error) return showToast("Update failed."); load();
+  };
+  const del = async (r) => {
+    if (!window.confirm(`Delete "${r.name}" permanently?`)) return;
+    const { error } = await supabase.from("guest_pipeline").delete().eq("id", r.id);
+    if (error) return showToast("Delete failed."); load();
+  };
+  const refreshIg = async (r) => {
+    if (!r.instagram) return showToast("No handle on file.");
+    setIgBusyId(r.id);
+    const d = await fetchIgStats(r.instagram);
+    setIgBusyId(null);
+    if (d.error) return showToast(d.error);
+    const upd = { ig_followers: d.followers, ig_verified: d.verified, ig_checked_at: new Date().toISOString() };
+    const { error } = await supabase.from("guest_pipeline").update(upd).eq("id", r.id);
+    if (error) return showToast("Pulled IG but couldn't save.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, ...upd } : x)));
+    showToast(`@${d.username || r.instagram}: ${fmtFollowers(d.followers)} followers`);
+  };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Guest Pipeline</h1>
+        {!adding && !editing && <button className="btn sm" onClick={() => setAdding(true)}><Plus size={14} /> Add guest</button>}
+      </div>
+      <p className="sub">Prospective VIC Fix guests. Mark a guest “shot” once filmed — they move to the archive and off the active list.</p>
+
+      {adding && <GuestForm onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
+      {editing && <GuestForm guest={editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />}
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {list.length === 0 && <p className="empty">{showArchived ? "No archived guests yet." : "No guests in the pipeline yet."}</p>}
+          {list.map((r) => {
+            const tier = popTier(r.ig_followers);
+            const st = STATUSES.find(([v]) => v === r.status);
+            return (
+              <div key={r.id} className="req" style={r.shot ? { opacity: 0.62 } : {}}>
+                <div className="req-top">
+                  <div>
+                    <h3>{r.name} {r.industry && <span className="tag">{r.industry}</span>}</h3>
+                    <p className="req-meta">
+                      {r.instagram && <span>@{r.instagram.replace(/^@/, "")}</span>}
+                      {r.ig_followers != null && <span>{fmtFollowers(r.ig_followers)} followers{r.ig_verified ? " ✓" : ""}</span>}
+                      {tier && <span style={{ color: "#c9a84c" }}>{"★".repeat(tier.stars)}{"☆".repeat(5 - tier.stars)} {tier.label}</span>}
+                      {r.planned_date && <span><Clock size={12} /> {fmtDate(r.planned_date)}</span>}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 99, color: "#161616", background: STATUS_COLOR[r.status] || "#9a9a8a", whiteSpace: "nowrap" }}>{st ? st[1] : r.status}</span>
+                </div>
+                {r.notes && <p className="req-msg">{r.notes}</p>}
+                {!r.shot ? (
+                  <div className="req-actions" style={{ alignItems: "center" }}>
+                    <select className="search" style={{ width: "auto", padding: "7px 10px" }} value={r.status} onChange={(e) => setStatus(r, e.target.value)}>
+                      {STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                    {r.instagram && <button className="act" disabled={igBusyId === r.id} onClick={() => refreshIg(r)}>{igBusyId === r.id ? <Loader2 className="spin" size={15} /> : <RefreshCw size={15} />} IG</button>}
+                    <button className="act" onClick={() => setEditing(r)}><Pencil size={15} /> Edit</button>
+                    <button className="act wa" onClick={() => markShot(r)}><Film size={15} /> Mark shot</button>
+                    <button className="act decline" onClick={() => del(r)}><Trash2 size={15} /></button>
+                  </div>
+                ) : (
+                  <div className="req-actions">
+                    <button className="act" onClick={() => restore(r)}><RefreshCw size={15} /> Restore</button>
+                    <button className="act decline" onClick={() => del(r)}><Trash2 size={15} /> Delete</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {(active.length > 0 || archived.length > 0) && (
+        <button className="note-save" style={{ marginTop: 12 }} onClick={() => setShowArchived((s) => !s)}>
+          {showArchived ? `← Back to active pipeline (${active.length})` : `View archived / shot (${archived.length})`}
+        </button>
       )}
     </>
   );
