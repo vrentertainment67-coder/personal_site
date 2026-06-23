@@ -201,7 +201,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
           <p className="kicker fade" style={{ animationDelay: ".05s" }}>International DJ · Based in Bangalore</p>
           <h1 className="hero-title fade" style={{ animationDelay: ".15s" }}>BOOK<br /><span className="hero-title-gold">DJ VIC</span></h1>
           <p className="hero-line fade" style={{ animationDelay: ".28s" }}>
-            <em>Nineteen years behind the decks.</em> Eighteen countries.<br />
+            <em>Twenty years behind the decks.</em> Eighteen countries.<br />
             One booking away from your dancefloor.
           </p>
           <div className="hero-cta fade" style={{ animationDelay: ".4s" }}>
