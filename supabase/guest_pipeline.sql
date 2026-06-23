@@ -12,14 +12,21 @@ create table if not exists public.guest_pipeline (
   ig_followers  bigint,                     -- cached follower count
   ig_verified   boolean,                    -- blue tick
   ig_checked_at timestamptz,                -- last time we pulled from Apify
-  planned_date  date,                       -- planned interview/shoot date
+  shoot_date    date,                       -- planned interview/shoot date (any day)
+  release_date  date,                       -- planned premiere date (a Sunday)
   status        text not null default 'lead',  -- lead | contacted | confirmed
   shot          boolean not null default false, -- shooting done → archived
   notes         text,
   created_at    timestamptz not null default now()
 );
 
-create index if not exists guest_pipeline_active_idx on public.guest_pipeline (shot, planned_date);
+create index if not exists guest_pipeline_active_idx on public.guest_pipeline (shot, shoot_date);
+
+-- Migration for tables created before the shoot/release split (idempotent):
+--   do $$ begin if exists (select 1 from information_schema.columns
+--     where table_name='guest_pipeline' and column_name='planned_date')
+--   then alter table public.guest_pipeline rename column planned_date to shoot_date; end if; end $$;
+--   alter table public.guest_pipeline add column if not exists release_date date;
 
 alter table public.guest_pipeline enable row level security;
 

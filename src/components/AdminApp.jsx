@@ -32,6 +32,15 @@ const STATUS_COLOR = { lead: "#9a9a8a", contacted: "#e0b13c", confirmed: "#4ea76
 const INDUSTRIES = ["Music / DJ", "Nightlife", "Hospitality", "Bartending", "Comedy", "Radio / Voice", "Film / TV", "Fashion", "Fitness", "Business / Founder", "Sports", "Content Creator", "Art", "Food", "Other"];
 const fmtFollowers = (n) => (n == null || n === "" ? "—" : Number(n) >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M" : Number(n) >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1) + "K" : String(n));
 const fmtDate = (s) => { if (!s) return ""; const d = new Date(s + "T00:00:00"); return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; };
+const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const isSunday = (s) => !!s && new Date(s + "T00:00:00").getDay() === 0;
+// The next `count` Sundays (release slots), starting with this week's, as YYYY-MM-DD.
+function upcomingSundays(count = 12) {
+  const out = []; const d = new Date(); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // jump to the coming Sunday (today if it is one)
+  for (let i = 0; i < count; i++) { out.push(ymdLocal(d)); d.setDate(d.getDate() + 7); }
+  return out;
+}
 function popTier(n) { if (n == null || n === "") return null; n = Number(n); if (n >= 1e6) return { label: "Mega", stars: 5 }; if (n >= 5e5) return { label: "Macro", stars: 4 }; if (n >= 1e5) return { label: "Mid", stars: 3 }; if (n >= 1e4) return { label: "Micro", stars: 2 }; return { label: "Nano", stars: 1 }; }
 async function fetchIgStats(handle) {
   const r = await fetch(`${FN}/instagram-stats`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ handle }) });
@@ -1650,7 +1659,7 @@ function GuestForm({ guest, onDone, showToast }) {
   const isEdit = !!guest; const init = guest || {};
   const [f, setF] = useState({
     name: init.name || "", industry: init.industry || "", instagram: init.instagram || "",
-    planned_date: init.planned_date || "", status: init.status || "lead", notes: init.notes || "",
+    shoot_date: init.shoot_date || "", release_date: init.release_date || "", status: init.status || "lead", notes: init.notes || "",
     ig_followers: init.ig_followers ?? null, ig_verified: init.ig_verified ?? null,
   });
   const [busy, setBusy] = useState(false); const [igBusy, setIgBusy] = useState(false);
@@ -1672,7 +1681,7 @@ function GuestForm({ guest, onDone, showToast }) {
     const hasF = f.ig_followers != null && f.ig_followers !== "";
     const row = {
       name: f.name.trim(), industry: f.industry.trim() || null, instagram: f.instagram.trim() || null,
-      planned_date: f.planned_date || null, status: f.status, notes: f.notes.trim() || null,
+      shoot_date: f.shoot_date || null, release_date: f.release_date || null, status: f.status, notes: f.notes.trim() || null,
       ig_followers: hasF ? Number(f.ig_followers) : null, ig_verified: f.ig_verified ?? null,
       ig_checked_at: hasF ? new Date().toISOString() : (init.ig_checked_at || null),
     };
@@ -1687,6 +1696,7 @@ function GuestForm({ guest, onDone, showToast }) {
 
   const tier = popTier(f.ig_followers);
   const ico = { width: 150, flex: "1 1 150px" };
+  const relSundays = upcomingSundays(16);
   return (
     <div className="req" style={{ borderColor: "#c9a84c" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1705,7 +1715,14 @@ function GuestForm({ guest, onDone, showToast }) {
           {tier && <span style={{ color: "#c9a84c", fontSize: 13 }}>{"★".repeat(tier.stars)}{"☆".repeat(5 - tier.stars)} {tier.label} · {fmtFollowers(f.ig_followers)}</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Planned date (optional — leave blank for TBD)<input type="date" className="search" value={f.planned_date || ""} onChange={(e) => set("planned_date", e.target.value)} /></label>
+          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Shoot date (optional)<input type="date" className="search" value={f.shoot_date || ""} onChange={(e) => set("shoot_date", e.target.value)} /></label>
+          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Release Sunday (optional)
+            <select className="search" value={f.release_date || ""} onChange={(e) => set("release_date", e.target.value)}>
+              <option value="">— TBD —</option>
+              {f.release_date && !relSundays.includes(f.release_date) && <option value={f.release_date}>{fmtDate(f.release_date)}{isSunday(f.release_date) ? "" : " (not a Sunday)"}</option>}
+              {relSundays.map((s) => <option key={s} value={s}>{fmtDate(s)}</option>)}
+            </select>
+          </label>
           <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Status<select className="search" value={f.status} onChange={(e) => set("status", e.target.value)}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         </div>
         <textarea className="search" rows={2} placeholder="Notes (optional)" value={f.notes} onChange={(e) => set("notes", e.target.value)} />
@@ -1727,7 +1744,8 @@ function GuestPipeline({ showToast }) {
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase.from("guest_pipeline").select("*")
-      .order("planned_date", { ascending: true, nullsFirst: false })
+      .order("release_date", { ascending: true, nullsFirst: false })
+      .order("shoot_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (error) showToast("Couldn't load pipeline — is guest_pipeline.sql run?");
     setRows(data || []); setLoading(false);
@@ -1737,6 +1755,12 @@ function GuestPipeline({ showToast }) {
   const active = rows.filter((r) => !r.shot);
   const archived = rows.filter((r) => r.shot);
   const list = showArchived ? archived : active;
+
+  // Release-Sunday planner: map every scheduled release (filmed or not) to its
+  // Sunday so the strip shows who's premiering when, and which slots are open.
+  const sundays = upcomingSundays(12);
+  const byRelease = {};
+  rows.forEach((r) => { if (r.release_date) (byRelease[r.release_date] = byRelease[r.release_date] || []).push(r); });
 
   const setStatus = async (r, status) => {
     const { error } = await supabase.from("guest_pipeline").update({ status }).eq("id", r.id);
@@ -1777,7 +1801,7 @@ function GuestPipeline({ showToast }) {
         <h1 className="h1">Guest Pipeline</h1>
         {!adding && !editing && <button className="btn sm" onClick={() => setAdding(true)}><Plus size={14} /> Add guest</button>}
       </div>
-      <p className="sub">Prospective VIC Fix guests. Mark a guest “shot” once filmed — they move to the archive and off the active list.</p>
+      <p className="sub">Prospective VIC Fix guests — plan the shoot and the Sunday release. Mark a guest “shot” once filmed; they move to the archive and off the active list (still shown on the release calendar).</p>
 
       {adding && <GuestForm onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
       {editing && <GuestForm guest={editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />}
@@ -1796,14 +1820,44 @@ function GuestPipeline({ showToast }) {
         .gp-ic:hover { border-color: #c9a84c; color: #c9a84c; }
         .gp-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
         .gp-ic:disabled { opacity: .5; cursor: default; }
-        @media (max-width: 720px) { .gp-table { min-width: 660px; } }
+        @media (max-width: 720px) { .gp-table { min-width: 740px; } }
+        .gp-sunwrap { margin: 6px 0 18px; }
+        .gp-sunhead { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8a8878; font-weight: 600; margin-bottom: 8px; }
+        .gp-suns { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+        .gp-sun { flex: 0 0 116px; border: 1px solid #242424; border-radius: 8px; padding: 9px 10px; background: #131313; }
+        .gp-sun.full { border-color: #c9a84c; background: linear-gradient(180deg, rgba(201,168,76,.08), transparent); }
+        .gp-sun-d { display: flex; align-items: baseline; gap: 5px; }
+        .gp-sun-d .m { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #8a8878; }
+        .gp-sun-d .n { font-size: 19px; font-weight: 700; color: #e8e8e0; }
+        .gp-sun-g { margin-top: 5px; font-size: 12px; color: #cfcabf; line-height: 1.35; }
+        .gp-sun.full .gp-sun-g { color: #e6c768; }
       `}</style>
+
+      {!showArchived && !loading && (
+        <div className="gp-sunwrap">
+          <div className="gp-sunhead">Release Sundays · hover a date for who &amp; what</div>
+          <div className="gp-suns">
+            {sundays.map((s) => {
+              const gs = byRelease[s] || [];
+              const d = new Date(s + "T00:00:00");
+              const tip = gs.length ? gs.map((g) => `${g.name}${g.industry ? ` — ${g.industry}` : ""}${g.shot ? " (filmed)" : ""}`).join("\n") : "Open slot";
+              return (
+                <div key={s} className={gs.length ? "gp-sun full" : "gp-sun"} title={tip}>
+                  <div className="gp-sun-d"><span className="m">{MONTHS[d.getMonth()]}</span><span className="n">{d.getDate()}</span></div>
+                  <div className="gp-sun-g">{gs.length ? gs.map((g) => g.name).join(", ") : <span className="gp-sub">Open</span>}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : list.length === 0 ? (
         <p className="empty">{showArchived ? "No archived guests yet." : "No guests in the pipeline yet."}</p>
       ) : (
         <div className="gp-wrap">
           <table className="gp-table">
-            <thead><tr><th>Guest</th><th>Instagram</th><th>Date</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Guest</th><th>Instagram</th><th>Shoot</th><th>Release</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {list.map((r) => {
                 const tier = popTier(r.ig_followers);
@@ -1824,7 +1878,8 @@ function GuestPipeline({ showToast }) {
                         </>
                       ) : <span className="gp-sub">—</span>}
                     </td>
-                    <td>{r.planned_date ? fmtDate(r.planned_date) : <span className="gp-sub">TBD</span>}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{r.shoot_date ? fmtDate(r.shoot_date) : <span className="gp-sub">TBD</span>}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{r.release_date ? <span style={{ color: "#c9a84c" }}>{fmtDate(r.release_date)}</span> : <span className="gp-sub">TBD</span>}</td>
                     <td>
                       {!r.shot
                         ? <select className="gp-statussel" style={{ borderLeft: `3px solid ${STATUS_COLOR[r.status] || "#9a9a8a"}` }} value={r.status} onChange={(e) => setStatus(r, e.target.value)}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
