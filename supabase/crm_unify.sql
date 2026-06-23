@@ -60,8 +60,12 @@ create index if not exists cr_contact_idx on contact_relationships(contact_id);
 create index if not exists cr_kind_idx    on contact_relationships(kind);
 
 -- ---------- dedupe resolver (phone, then email; enrich on match) ----------
+-- SECURITY DEFINER so the resync trigger can maintain the locked-down CRM
+-- tables when fired by a non-owner role (e.g. an authenticated admin inserting
+-- a booking). Without it the insert fails "permission denied for table
+-- contact_relationships" (42501) — authenticated has no write grant there.
 create or replace function crm_get_contact(p_name text, p_phone text, p_email text, p_ig text) returns uuid
-language plpgsql as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_phone text := crm_norm_phone(p_phone);
   v_email text := lower(nullif(trim(coalesce(p_email,'')),''));
@@ -86,7 +90,7 @@ begin
 end $$;
 
 -- ---------- idempotent backfill / ongoing sync ----------
-create or replace function crm_resync() returns void language plpgsql as $$
+create or replace function crm_resync() returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare r record; cid uuid;
 begin
   for r in select * from event_rsvps loop
