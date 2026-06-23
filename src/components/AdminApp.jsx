@@ -1705,7 +1705,7 @@ function GuestForm({ guest, onDone, showToast }) {
           {tier && <span style={{ color: "#c9a84c", fontSize: 13 }}>{"★".repeat(tier.stars)}{"☆".repeat(5 - tier.stars)} {tier.label} · {fmtFollowers(f.ig_followers)}</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Planned date<input type="date" className="search" value={f.planned_date || ""} onChange={(e) => set("planned_date", e.target.value)} /></label>
+          <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Planned date (optional — leave blank for TBD)<input type="date" className="search" value={f.planned_date || ""} onChange={(e) => set("planned_date", e.target.value)} /></label>
           <label style={{ ...ico, fontSize: 12, color: "#9a9a8a" }}>Status<select className="search" value={f.status} onChange={(e) => set("status", e.target.value)}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         </div>
         <textarea className="search" rows={2} placeholder="Notes (optional)" value={f.notes} onChange={(e) => set("notes", e.target.value)} />
@@ -1782,46 +1782,74 @@ function GuestPipeline({ showToast }) {
       {adding && <GuestForm onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
       {editing && <GuestForm guest={editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />}
 
-      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
-        <div className="list">
-          {list.length === 0 && <p className="empty">{showArchived ? "No archived guests yet." : "No guests in the pipeline yet."}</p>}
-          {list.map((r) => {
-            const tier = popTier(r.ig_followers);
-            const st = STATUSES.find(([v]) => v === r.status);
-            return (
-              <div key={r.id} className="req" style={r.shot ? { opacity: 0.62 } : {}}>
-                <div className="req-top">
-                  <div>
-                    <h3>{r.name} {r.industry && <span className="tag">{r.industry}</span>}</h3>
-                    <p className="req-meta">
-                      {r.instagram && <span>@{r.instagram.replace(/^@/, "")}</span>}
-                      {r.ig_followers != null && <span>{fmtFollowers(r.ig_followers)} followers{r.ig_verified ? " ✓" : ""}</span>}
-                      {tier && <span style={{ color: "#c9a84c" }}>{"★".repeat(tier.stars)}{"☆".repeat(5 - tier.stars)} {tier.label}</span>}
-                      {r.planned_date && <span><Clock size={12} /> {fmtDate(r.planned_date)}</span>}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 99, color: "#161616", background: STATUS_COLOR[r.status] || "#9a9a8a", whiteSpace: "nowrap" }}>{st ? st[1] : r.status}</span>
-                </div>
-                {r.notes && <p className="req-msg">{r.notes}</p>}
-                {!r.shot ? (
-                  <div className="req-actions" style={{ alignItems: "center" }}>
-                    <select className="search" style={{ width: "auto", padding: "7px 10px" }} value={r.status} onChange={(e) => setStatus(r, e.target.value)}>
-                      {STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                    {r.instagram && <button className="act" disabled={igBusyId === r.id} onClick={() => refreshIg(r)}>{igBusyId === r.id ? <Loader2 className="spin" size={15} /> : <RefreshCw size={15} />} IG</button>}
-                    <button className="act" onClick={() => setEditing(r)}><Pencil size={15} /> Edit</button>
-                    <button className="act wa" onClick={() => markShot(r)}><Film size={15} /> Mark shot</button>
-                    <button className="act decline" onClick={() => del(r)}><Trash2 size={15} /></button>
-                  </div>
-                ) : (
-                  <div className="req-actions">
-                    <button className="act" onClick={() => restore(r)}><RefreshCw size={15} /> Restore</button>
-                    <button className="act decline" onClick={() => del(r)}><Trash2 size={15} /> Delete</button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      <style>{`
+        .gp-wrap { overflow-x: auto; margin-top: 6px; }
+        .gp-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .gp-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
+        .gp-table td { padding: 9px 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; }
+        .gp-table tr:hover td { background: #141414; }
+        .gp-name { font-weight: 600; color: #e8e8e0; }
+        .gp-sub { color: #8a8878; font-size: 12px; }
+        .gp-statussel { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 5px 8px; color: #e8e8e0; font-size: 12.5px; cursor: pointer; }
+        .gp-actions-cell { white-space: nowrap; text-align: right; }
+        .gp-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; margin-left: 4px; line-height: 0; }
+        .gp-ic:hover { border-color: #c9a84c; color: #c9a84c; }
+        .gp-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
+        .gp-ic:disabled { opacity: .5; cursor: default; }
+        @media (max-width: 720px) { .gp-table { min-width: 660px; } }
+      `}</style>
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : list.length === 0 ? (
+        <p className="empty">{showArchived ? "No archived guests yet." : "No guests in the pipeline yet."}</p>
+      ) : (
+        <div className="gp-wrap">
+          <table className="gp-table">
+            <thead><tr><th>Guest</th><th>Instagram</th><th>Date</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {list.map((r) => {
+                const tier = popTier(r.ig_followers);
+                const ig = (r.instagram || "").replace(/^@/, "");
+                return (
+                  <tr key={r.id} style={r.shot ? { opacity: 0.6 } : {}} title={r.notes || ""}>
+                    <td>
+                      <div className="gp-name">{r.name}</div>
+                      {r.industry && <div className="gp-sub">{r.industry}</div>}
+                    </td>
+                    <td>
+                      {ig ? (
+                        <>
+                          <div><a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a>{r.ig_verified ? " ✓" : ""}</div>
+                          {r.ig_followers != null
+                            ? <div className="gp-sub" style={{ color: "#c9a84c" }}>{fmtFollowers(r.ig_followers)}{tier ? ` · ${tier.label}` : ""}</div>
+                            : <div className="gp-sub">no count yet</div>}
+                        </>
+                      ) : <span className="gp-sub">—</span>}
+                    </td>
+                    <td>{r.planned_date ? fmtDate(r.planned_date) : <span className="gp-sub">TBD</span>}</td>
+                    <td>
+                      {!r.shot
+                        ? <select className="gp-statussel" style={{ borderLeft: `3px solid ${STATUS_COLOR[r.status] || "#9a9a8a"}` }} value={r.status} onChange={(e) => setStatus(r, e.target.value)}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                        : <span className="gp-sub">shot</span>}
+                    </td>
+                    <td className="gp-actions-cell">
+                      {!r.shot ? (
+                        <>
+                          {ig && <button className="gp-ic" title="Refresh followers" disabled={igBusyId === r.id} onClick={() => refreshIg(r)}>{igBusyId === r.id ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />}</button>}
+                          <button className="gp-ic" title="Edit" onClick={() => setEditing(r)}><Pencil size={14} /></button>
+                          <button className="gp-ic" title="Mark shot (filmed)" onClick={() => markShot(r)}><Film size={14} /></button>
+                          <button className="gp-ic danger" title="Delete" onClick={() => del(r)}><Trash2 size={14} /></button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="gp-ic" title="Restore to pipeline" onClick={() => restore(r)}><RefreshCw size={14} /></button>
+                          <button className="gp-ic danger" title="Delete" onClick={() => del(r)}><Trash2 size={14} /></button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
