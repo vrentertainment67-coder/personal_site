@@ -20,7 +20,6 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const EVENT_TYPES = ["sangeet", "wedding", "nightlife", "private", "festival", "corporate", "dj class", "training"];
-const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +50,7 @@ const TOOL = {
       event_end_date: { type: "string", description: "End date YYYY-MM-DD for multi-day events (e.g. 'Sep 22-23'). Empty if single-day." },
       venue: { type: "string", description: "Venue / hotel / location name, else empty." },
       city: { type: "string", description: "City, else empty." },
-      budget: { type: "string", enum: ["", ...BUDGETS], description: "Closest budget bracket if an amount is mentioned, else empty." },
+      amount: { type: "number", description: "The fee/budget in Indian rupees as a plain integer if any amount is mentioned: '1.5L'/'1.5 lakh' → 150000, '50k' → 50000, '2 lakhs' → 200000, '₹1,20,000' → 120000. Omit entirely if no amount is mentioned." },
     },
     required: ["name", "event_type"],
   },
@@ -100,7 +99,7 @@ Deno.serve(async (req) => {
       event_end_date: /^\d{4}-\d{2}-\d{2}$/.test(f.event_end_date || "") ? f.event_end_date : "",
       venue: f.venue || "",
       city: f.city || "",
-      budget: BUDGETS.includes(f.budget) ? f.budget : "",
+      amount: Number.isFinite(f.amount) && f.amount > 0 ? Math.round(f.amount) : "",
       message: text,
     });
   } catch (e) {

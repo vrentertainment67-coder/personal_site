@@ -2209,7 +2209,7 @@ function NoteField({ initial, onSave }) {
 
 function ManualEntry({ onDone, showToast, initial }) {
   const i = initial || {};
-  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", budget: i.budget || BUDGETS[1], message: i.message || "", confirmed: false });
+  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", amount: i.amount ?? "", message: i.message || "", confirmed: false });
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!f.name || !f.event_date) return showToast("Name and date required.");
@@ -2218,7 +2218,7 @@ function ManualEntry({ onDone, showToast, initial }) {
     const { data, error } = await supabase.from("bookings").insert({
       name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
       event_end_date: f.event_end_date || null,
-      venue: f.venue, city: f.city, budget: f.budget, message: f.message || null, source: "manual",
+      venue: f.venue, city: f.city, agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount), message: f.message || null, source: "manual",
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
     if (error) { setBusy(false); return showToast(error.message); }
@@ -2240,7 +2240,7 @@ function ManualEntry({ onDone, showToast, initial }) {
         <div className="field"><label>Client / venue</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
         <div className="field"><label>Contact</label><input value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} /></div>
         <div className="field"><label>Type</label><select value={f.event_type} onChange={(e) => setF({ ...f, event_type: e.target.value })}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
-        <div className="field"><label>Budget</label><select value={f.budget} onChange={(e) => setF({ ...f, budget: e.target.value })}>{BUDGETS.map((b) => <option key={b}>{b}</option>)}</select></div>
+        <div className="field"><label>Amount (₹)</label><input type="number" min="0" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} placeholder="e.g. 150000" /></div>
         <div className="field"><label>Date (from)</label><input type="date" value={f.event_date} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
         <div className="field"><label>To (optional — multi-day)</label><input type="date" value={f.event_end_date} min={f.event_date || undefined} onChange={(e) => setF({ ...f, event_end_date: e.target.value })} /></div>
         <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
