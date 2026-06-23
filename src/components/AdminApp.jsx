@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
-  AtSign, RefreshCw, Film, Pencil, Inbox,
+  AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -20,7 +20,7 @@ const FN = `${SUPABASE_URL}/functions/v1`;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const EVENT_TYPES = ["sangeet", "nightlife", "private", "festival", "corporate", "dj class", "training"];
+const EVENT_TYPES = ["sangeet", "wedding", "nightlife", "private", "festival", "corporate", "dj class", "training"];
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -50,6 +50,10 @@ async function mailApi(params) {
   const qs = new URLSearchParams(params).toString();
   const r = await fetch(`${FN}/mail-api?${qs}`, { headers: { ...(await authHeader()) } });
   return r.json().catch(() => ({ error: "Couldn't reach mail." }));
+}
+async function parseEnquiry(text) {
+  const r = await fetch(`${FN}/parse-enquiry`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ text, today: ymdLocal(new Date()) }) });
+  return r.json().catch(() => ({ error: "Couldn't reach the parser." }));
 }
 const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<.*>/); return (m && m[1].trim()) || (from || "").replace(/<.*>/, "").trim() || from; };
 // Booking status → [label, colour]. "pending" reads as "Enquiry" for the owner.
@@ -632,6 +636,20 @@ function Bookings({ showToast }) {
   const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null);
+  const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
+  const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
+
+  const runCapture = async () => {
+    const text = cap.trim();
+    if (!text) return;
+    setCapBusy(true);
+    const d = await parseEnquiry(text);
+    setCapBusy(false);
+    if (d.error) return showToast(d.error);
+    setPrefill(d); setAdding(true); setFormKey((k) => k + 1); setCap("");
+    showToast("Pulled the details — check and save.");
+  };
+  const openBlankForm = () => { setPrefill(null); setFormKey((k) => k + 1); setAdding((v) => !v); };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -768,8 +786,16 @@ function Bookings({ showToast }) {
         <h1 className="h1">Bookings</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
-          <button className="btn sm" onClick={() => setAdding((v) => !v)}><Plus size={15} /> Log enquiry</button>
+          <button className="btn sm" onClick={openBlankForm}><Plus size={15} /> Log enquiry</button>
         </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "2px 0 12px" }}>
+        <input className="search" style={{ flex: "1 1 260px", margin: 0 }} placeholder="Quick-log — type or 🎤 dictate the enquiry, then Auto-fill…"
+          value={cap} onChange={(e) => setCap(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") runCapture(); }} />
+        <button className="btn" disabled={capBusy || !cap.trim()} onClick={runCapture}>
+          {capBusy ? <><Loader2 className="spin" size={15} /> Reading…</> : <><Sparkles size={15} /> Auto-fill</>}
+        </button>
       </div>
 
       <div className="cards" style={{ marginBottom: 6 }}>
@@ -778,7 +804,7 @@ function Bookings({ showToast }) {
         <Stat label="Outstanding" value={inr(booked - received)} hint="Still to collect" />
       </div>
 
-      {adding && <ManualEntry onDone={() => { setAdding(false); load(); }} showToast={showToast} />}
+      {adding && <ManualEntry key={formKey} initial={prefill} onDone={() => { setAdding(false); setPrefill(null); load(); }} showToast={showToast} />}
 
       <div className="chips">
         {[["all", "All"], ["pending", "Enquiries"], ["accepted", "Confirmed"], ["owing", "Owing"], ["declined", "Declined"]].map(([f, l]) => (
@@ -2181,8 +2207,9 @@ function NoteField({ initial, onSave }) {
   );
 }
 
-function ManualEntry({ onDone, showToast }) {
-  const [f, setF] = useState({ name: "", contact: "", event_type: "private", event_date: "", event_end_date: "", venue: "", city: "", budget: BUDGETS[1], confirmed: false });
+function ManualEntry({ onDone, showToast, initial }) {
+  const i = initial || {};
+  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", budget: i.budget || BUDGETS[1], message: i.message || "", confirmed: false });
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!f.name || !f.event_date) return showToast("Name and date required.");
@@ -2191,7 +2218,7 @@ function ManualEntry({ onDone, showToast }) {
     const { data, error } = await supabase.from("bookings").insert({
       name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
       event_end_date: f.event_end_date || null,
-      venue: f.venue, city: f.city, budget: f.budget, source: "manual",
+      venue: f.venue, city: f.city, budget: f.budget, message: f.message || null, source: "manual",
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
     if (error) { setBusy(false); return showToast(error.message); }
@@ -2219,6 +2246,7 @@ function ManualEntry({ onDone, showToast }) {
         <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
         <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
       </div>
+      <div className="field"><label>Notes / original message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
       <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar (leave off to log as an enquiry)</label>
       <button className="btn" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : (f.confirmed ? "Save gig" : "Log enquiry")}</button>
     </div>

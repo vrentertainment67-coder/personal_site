@@ -12,7 +12,7 @@ alter table public.bookings add column if not exists event_end_date date;
 alter table public.bookings drop constraint if exists bookings_event_type_check;
 alter table public.bookings add constraint bookings_event_type_check
   check (event_type = any (array[
-    'sangeet','nightlife','private','festival','corporate','dj class','training'
+    'sangeet','wedding','nightlife','private','festival','corporate','dj class','training'
   ]));
 
 notify pgrst, 'reload schema';
