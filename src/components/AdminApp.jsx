@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
-  AtSign, RefreshCw, Film, Pencil,
+  AtSign, RefreshCw, Film, Pencil, Inbox,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -37,6 +37,13 @@ async function fetchIgStats(handle) {
   const r = await fetch(`${FN}/instagram-stats`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ handle }) });
   return r.json().catch(() => ({ error: "Couldn't reach the Instagram service." }));
 }
+async function mailApi(params) {
+  const qs = new URLSearchParams(params).toString();
+  const r = await fetch(`${FN}/mail-api?${qs}`, { headers: { ...(await authHeader()) } });
+  return r.json().catch(() => ({ error: "Couldn't reach mail." }));
+}
+const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<.*>/); return (m && m[1].trim()) || (from || "").replace(/<.*>/, "").trim() || from; };
+const mailDate = (s) => { const d = new Date(s); if (isNaN(d)) return s; const now = new Date(); const sameDay = d.toDateString() === now.toDateString(); return sameDay ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
 const isVideo = (url) => /\/video\/upload\//.test(url || "") || /\.(mp4|webm|mov|m4v)$/i.test(url || "");
 
 async function authHeader() {
@@ -115,6 +122,7 @@ export default function Admin() {
     ["events", "Events", Star],
     ["guests", "Guests", Users],
     ["podcast", "Podcast", Mic],
+    ["mail", "Mail", Inbox],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
     ["pageimages", "Page Images", Images],
@@ -144,6 +152,7 @@ export default function Admin() {
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
         {tab === "podcast" && <Podcast showToast={showToast} />}
+        {tab === "mail" && <MailTab showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
@@ -1820,6 +1829,103 @@ function GuestPipeline({ showToast }) {
         <button className="note-save" style={{ marginTop: 12 }} onClick={() => setShowArchived((s) => !s)}>
           {showArchived ? `← Back to active pipeline (${active.length})` : `View archived / shot (${archived.length})`}
         </button>
+      )}
+    </>
+  );
+}
+
+// ── Mail tab: read-only bookings@ inbox via Gmail (existing Google login) ──
+function MailTab({ showToast }) {
+  const [items, setItems] = useState([]); const [loading, setLoading] = useState(true);
+  const [needScope, setNeedScope] = useState(false); const [err, setErr] = useState(null);
+  const [query, setQuery] = useState(""); const [q, setQ] = useState("");
+  const [openT, setOpenT] = useState(null); const [tLoading, setTLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null); setNeedScope(false);
+    const d = await mailApi(q ? { action: "list", q } : { action: "list" });
+    setLoading(false);
+    if (d.needScope) { setNeedScope(true); return; }
+    if (d.error) { setErr(d.error); return; }
+    setItems(d.items || []);
+  }, [q]);
+  useEffect(() => { load(); }, [load]);
+
+  const openThread = async (it) => {
+    setTLoading(true); setOpenT({ threadId: it.threadId, subject: it.subject, messages: null });
+    const d = await mailApi({ action: "thread", id: it.threadId });
+    setTLoading(false);
+    if (d.error) { showToast(d.error); setOpenT(null); return; }
+    setOpenT({ threadId: it.threadId, subject: it.subject, messages: d.messages || [] });
+  };
+  const gmailUrl = (threadId) => `https://mail.google.com/mail/u/0/#all/${threadId}`;
+
+  // ── Thread view ──
+  if (openT) {
+    return (
+      <>
+        <div className="row-between">
+          <button className="note-save" onClick={() => setOpenT(null)}>← Back to inbox</button>
+          <a className="btn sm" href={gmailUrl(openT.threadId)} target="_blank" rel="noopener noreferrer">Open in Gmail ↗</a>
+        </div>
+        <h1 className="h1" style={{ marginTop: 10 }}>{openT.subject || "(no subject)"}</h1>
+        {tLoading || !openT.messages ? <Center><Loader2 className="spin" size={18} /></Center> : (
+          <div className="list">
+            {openT.messages.map((m) => (
+              <div key={m.id} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3 style={{ fontSize: 15 }}>{mailName(m.from)}</h3>
+                    <p className="req-meta"><span>{m.from}</span>{m.to && <span>→ {m.to}</span>}</p>
+                  </div>
+                  <span className="req-meta" style={{ whiteSpace: "nowrap" }}>{m.date && new Date(m.date).toLocaleString()}</span>
+                </div>
+                <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "inherit", fontSize: 13.5, lineHeight: 1.5, margin: "6px 0 0", color: "#d6d2c6" }}>{m.body || "(no text content)"}</pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Mail</h1>
+        <button className="btn sm" onClick={load} disabled={loading}>{loading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />} Refresh</button>
+      </div>
+      <p className="sub">Everything to and from <b>bookings@djvicofficial.com</b>, read from your Google inbox.</p>
+
+      {needScope ? (
+        <div className="req" style={{ borderColor: "#e0b13c" }}>
+          <h3>One quick setup step</h3>
+          <p className="req-msg">The Mail tab reads your inbox through your existing Google login, but that login doesn't have <b>read-only Gmail</b> permission yet. Re-mint the Google refresh token with the <code>gmail.readonly</code> scope added (keep the existing Calendar / Analytics / Search Console scopes), then update <code>GOOGLE_REFRESH_TOKEN</code>. Ping me and I'll walk you through the exact 5-minute steps — same process as when we set up Search Console.</p>
+        </div>
+      ) : (
+        <>
+          <form onSubmit={(e) => { e.preventDefault(); setQ(query.trim()); }} style={{ display: "flex", gap: 8 }}>
+            <input className="search" placeholder="Search this inbox (name, subject, word)…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            {q && <button type="button" className="btn sm" onClick={() => { setQuery(""); setQ(""); }}>Clear</button>}
+          </form>
+          {err ? <p className="empty">{err}</p> : loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+            <div className="list">
+              {items.length === 0 && <p className="empty">No mail found{q ? " for that search." : "."}</p>}
+              {items.map((m) => (
+                <button key={m.id} className="req" style={{ textAlign: "left", width: "100%", cursor: "pointer", borderLeft: m.unread ? "3px solid #c9a84c" : "3px solid transparent" }} onClick={() => openThread(m)}>
+                  <div className="req-top">
+                    <div>
+                      <h3 style={{ fontSize: 15, fontWeight: m.unread ? 700 : 500 }}>{mailName(m.from)} {m.unread && <span className="tag" style={{ background: "#c9a84c", color: "#161616" }}>New</span>}</h3>
+                      <p className="req-meta" style={{ color: "#cfcabf", fontWeight: m.unread ? 600 : 400 }}>{m.subject || "(no subject)"}</p>
+                    </div>
+                    <span className="req-meta" style={{ whiteSpace: "nowrap" }}>{mailDate(m.date)}</span>
+                  </div>
+                  <p className="req-msg" style={{ maxHeight: 40, overflow: "hidden", opacity: 0.8 }}>{m.snippet}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </>
   );
