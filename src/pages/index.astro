@@ -119,13 +119,14 @@ const vicfixEpisodes = [
     desc: "Sunburn, Supersonic, a global progressive-house co-sign — and a live saxophone almost nobody in India plays.",
     slug: "sahil-madaan",
   },
-  {
-    id: "r7ZKXipivSA",
-    label: "S2 · E14",
-    title: "DJ Xirex — The Boy Who Brought His Phone to a Club",
-    desc: "From a Motorola phone and aux cable to 7M+ views — Pioneer demo artist, Mashup City India founder, and the DJ who gave everything away for free.",
-    slug: "dj-xirex",
-  },
+];
+
+// Home "trusted by" marquee — only logos that read cleanly in colour on a
+// light chip (the white-only SVGs like SAP/Infosys are kept off this strip).
+const trustLogos = [
+  ['apple.svg', 'Apple'], ['jpmorgan.svg', 'JPMorgan Chase'], ['kpmg.svg', 'KPMG'],
+  ['ritz-carlton.svg', 'The Ritz-Carlton'], ['pepsico.svg', 'PepsiCo'], ['decathlon.svg', 'Decathlon'],
+  ['microland.svg', 'Microland'], ['bhp.svg', 'BHP'], ['furlenco.png', 'Furlenco'], ['rare-rabbit.png', 'Rare Rabbit'],
 ];
 ---
 
@@ -188,16 +189,16 @@ const vicfixEpisodes = [
 
     <!-- ══════════════════════════ TRUST / CLIENT LOGOS ══════════════════════════ -->
     <section class="home-logos" aria-label="Trusted by">
-      <span class="home-logos-label">Trusted by teams at</span>
-      <div class="home-logos-row">
-        <img src="/images/clients/kpmg.svg" alt="KPMG" loading="lazy" width="120" height="40" />
-        <img src="/images/clients/sap.svg" alt="SAP" loading="lazy" width="120" height="40" />
-        <img src="/images/clients/jpmorgan.svg" alt="JPMorgan Chase" loading="lazy" width="120" height="40" />
-        <img src="/images/clients/ritz-carlton.svg" alt="The Ritz-Carlton" loading="lazy" width="120" height="40" />
-        <img src="/images/clients/infosys.svg" alt="Infosys" loading="lazy" width="120" height="40" />
-        <img src="/images/clients/apple.svg" alt="Apple" loading="lazy" width="120" height="40" />
+      <span class="home-logos-label">Trusted by teams at — and 300+ couples across India</span>
+      <div class="home-logos-track">
+        {[0, 1].map((dup) => (
+          <div class="home-logos-set" aria-hidden={dup === 1 ? 'true' : undefined}>
+            {trustLogos.map(([file, name]) => (
+              <span class="logo-chip"><img src={`/images/clients/${file}`} alt={name} loading="lazy" /></span>
+            ))}
+          </div>
+        ))}
       </div>
-      <span class="home-logos-note">— and 300+ couples across India</span>
     </section>
 
     <!-- ══════════════════════════ SIGNATURE STATEMENT ══════════════════════════ -->
@@ -442,42 +443,62 @@ const vicfixEpisodes = [
      SIGNATURE STATEMENT
      ══════════════════════════════════════════════ */
   .home-logos {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.7rem 2.2rem;
     background: #0a0a0a;
-    padding: 18px 20px;
+    padding: 20px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
   }
-  .home-logos-label,
-  .home-logos-note {
+  .home-logos-label {
+    display: block;
+    text-align: center;
     font-size: 0.72rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 16px;
+    padding: 0 20px;
   }
-  .home-logos-row {
+  .home-logos-track {
     display: flex;
-    flex-wrap: wrap;
+    width: max-content;
+    animation: home-logos-scroll 42s linear infinite;
+  }
+  .home-logos:hover .home-logos-track { animation-play-state: paused; }
+  .home-logos-set {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    padding-right: 1.4rem;
+    flex-shrink: 0;
+  }
+  .logo-chip {
+    flex: 0 0 auto;
+    height: 56px;
+    min-width: 124px;
+    padding: 0 22px;
+    background: #fff;
+    border-radius: 9px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.4rem 2rem;
   }
-  .home-logos-row img {
-    height: 26px;
+  .logo-chip img {
+    height: 30px;
     width: auto;
+    max-width: 132px;
     object-fit: contain;
-    filter: brightness(0) invert(1);
-    opacity: 0.55;
-    transition: opacity 0.2s;
+    display: block;
   }
-  .home-logos-row img:hover { opacity: 0.9; }
+  @keyframes home-logos-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home-logos-track { animation: none; flex-wrap: wrap; justify-content: center; width: auto; }
+  }
   @media (max-width: 600px) {
-    .home-logos-row { gap: 1rem 1.4rem; }
-    .home-logos-row img { height: 20px; }
-    .home-logos-note { display: none; }
+    .logo-chip { height: 48px; min-width: 100px; padding: 0 16px; }
+    .logo-chip img { height: 24px; }
   }
 
   #signature {
