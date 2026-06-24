@@ -147,6 +147,7 @@ export default function Admin() {
     ["events", "Events", Star],
     ["guests", "Guests", Users],
     ["podcast", "Podcast", Mic],
+    ["collective", "Collective", Activity],
     ["mail", "Mail", Inbox],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
@@ -177,6 +178,7 @@ export default function Admin() {
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
         {tab === "podcast" && <Podcast showToast={showToast} />}
+        {tab === "collective" && <DJCollective showToast={showToast} />}
         {tab === "mail" && <MailTab showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
@@ -2102,6 +2104,99 @@ function MailTab({ showToast }) {
             </div>
           )}
         </>
+      )}
+    </>
+  );
+}
+
+// ── The DJ Collective (Bengaluru) — RSVP counts + attendee list ──
+function DJCollective({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("dj_collective_rsvps").select("*").order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load RSVPs — run dj_collective_rsvps.sql (incl. the admin select policy).");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const sessions = [...new Set(rows.map((r) => r.session || "—"))];
+  const q = query.trim().toLowerCase();
+  const filtered = rows
+    .filter((r) => sess === "all" || (r.session || "—") === sess)
+    .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone].some((v) => (v || "").toLowerCase().includes(q)));
+
+  const waLink = (p) => { let n = waDigits(p); if (n.length === 10) n = "91" + n; return n.length >= 10 ? `https://wa.me/${n}` : null; };
+  const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+
+  const exportCsv = () => {
+    const cols = ["created_at", "session", "name", "dj_name", "genre", "years", "instagram", "phone"];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `dj-collective-rsvps-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  return (
+    <>
+      <style>{`
+        .dca-wrap { overflow-x: auto; margin-top: 8px; }
+        .dca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .dca-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
+        .dca-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; color: #cfcabf; }
+        .dca-table tbody tr:hover td { background: #141414; }
+        .dca-name { font-weight: 600; color: #e8e8e0; }
+        @media (max-width: 720px) { .dca-table { min-width: 720px; } }
+      `}</style>
+      <div className="row-between">
+        <h1 className="h1">The DJ Collective</h1>
+        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+      </div>
+      <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
+
+      <div className="cards" style={{ marginBottom: 6 }}>
+        <Stat label="Total RSVPs" value={rows.length} hint="All editions" />
+        <Stat label="In this view" value={filtered.length} hint={sess === "all" ? "Everyone" : sess} />
+        <Stat label="Editions" value={sessions.length} hint="Distinct sessions" />
+      </div>
+
+      <div className="chips">
+        <button className={sess === "all" ? "chip on" : "chip"} onClick={() => setSess("all")}>All ({rows.length})</button>
+        {sessions.map((s) => (
+          <button key={s} className={sess === s ? "chip on" : "chip"} onClick={() => setSess(s)}>{s} ({rows.filter((r) => (r.session || "—") === s).length})</button>
+        ))}
+      </div>
+      <input className="search" placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
+        <p className="empty">No RSVPs yet.</p>
+      ) : (
+        <div className="dca-wrap">
+          <table className="dca-table">
+            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th></tr></thead>
+            <tbody>
+              {filtered.map((r) => {
+                const ig = (r.instagram || "").replace(/^@/, "");
+                const wl = waLink(r.phone);
+                return (
+                  <tr key={r.id}>
+                    <td className="dca-name">{r.name}</td>
+                    <td>{r.dj_name || "—"}</td>
+                    <td>{r.genre || "—"}</td>
+                    <td>{r.years || "—"}</td>
+                    <td>{ig ? <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a> : "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   );

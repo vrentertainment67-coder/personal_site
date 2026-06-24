@@ -26,6 +26,27 @@ create policy djc_anon_insert on public.dj_collective_rsvps
 -- RLS policy alone isn't enough — the role also needs the base-table GRANT.
 grant insert on public.dj_collective_rsvps to anon, authenticated;
 
+-- Admin (signed-in) can read everything for the admin "Collective" tab.
+drop policy if exists djc_admin_select on public.dj_collective_rsvps;
+create policy djc_admin_select on public.dj_collective_rsvps
+  for select to authenticated using (true);
+grant select on public.dj_collective_rsvps to authenticated;
+
+-- Public social-proof read: total + a few recent display NAMES only (never any
+-- contact info). SECURITY DEFINER so anon can call it without table read access.
+create or replace function public.dj_collective_attendees(p_session text)
+returns json language sql security definer set search_path = public, pg_temp stable as $$
+  select json_build_object(
+    'total', (select count(*) from public.dj_collective_rsvps where session = p_session),
+    'names', coalesce((select json_agg(name) from (
+        select name from public.dj_collective_rsvps
+        where session = p_session and coalesce(trim(name), '') <> ''
+        order by created_at desc limit 4
+      ) t), '[]'::json)
+  );
+$$;
+grant execute on function public.dj_collective_attendees(text) to anon, authenticated;
+
 -- Private count-by-session view (NOT granted to anon → only the owner /
 -- service role can read it, e.g. from the Supabase SQL editor).
 create or replace view public.dj_collective_rsvp_counts as

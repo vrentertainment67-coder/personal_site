@@ -20,6 +20,17 @@ const SESSION = "2026-07-launch";
 const WA_CHANNEL = "https://whatsapp.com/channel/PLACEHOLDER";
 const SEEN_KEY = "djc_rsvp_seen";
 
+// "Martin, Vicky, Shine and Jasmeet + 20 are going" from { total, names }.
+function attLine(att) {
+  if (!att || !att.total) return null;
+  const names = (att.names || []).filter(Boolean);
+  const shown = names.slice(0, 4);
+  let s = shown.length <= 1 ? (shown[0] || "") : shown.slice(0, -1).join(", ") + " and " + shown[shown.length - 1];
+  const extra = att.total - shown.length;
+  if (extra > 0) s += ` + ${extra}`;
+  return s ? `${s} ${att.total === 1 ? "is" : "are"} going` : `${att.total} going`;
+}
+
 export default function DJCollectivePopup() {
   const [shown, setShown] = useState(false);     // mounted in DOM
   const [open, setOpen] = useState(false);        // entrance animation
@@ -27,10 +38,22 @@ export default function DJCollectivePopup() {
   const [data, setData] = useState({ name: "", dj_name: "", genre: "", years: "", instagram: "", phone: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [att, setAtt] = useState(null);            // { total, names } live counter
   const cardRef = useRef(null);
 
   const show = () => { setShown(true); requestAnimationFrame(() => setOpen(true)); };
   const hide = () => { setOpen(false); setTimeout(() => setShown(false), 280); };
+
+  async function fetchAttendees() {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dj_collective_attendees`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_session: SESSION }),
+      });
+      if (r.ok) setAtt(await r.json());
+    } catch {}
+  }
 
   // ── Triggers: [data-djc-open] buttons + auto-open once per visitor ──
   useEffect(() => {
@@ -49,9 +72,10 @@ export default function DJCollectivePopup() {
     return () => { openers.forEach((b) => b.removeEventListener("click", onClick)); if (timer) clearTimeout(timer); };
   }, []);
 
-  // ── Scroll lock + ESC + focus while open ──
+  // ── Scroll lock + ESC + focus + live count while open ──
   useEffect(() => {
     if (!shown) return;
+    fetchAttendees();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e) => { if (e.key === "Escape") hide(); };
@@ -99,7 +123,7 @@ export default function DJCollectivePopup() {
       ok = r.ok;
     } catch {}
     setSubmitting(false);
-    if (ok) { try { localStorage.setItem(SEEN_KEY, "1"); } catch {} setPhase("success"); }
+    if (ok) { try { localStorage.setItem(SEEN_KEY, "1"); } catch {} setPhase("success"); fetchAttendees(); }
     else setErrors({ form: "Couldn't send that — please try again." });
   }
 
@@ -115,11 +139,12 @@ export default function DJCollectivePopup() {
         <div className="djc-head">
           <span className="djc-brand">The DJ Collective</span>
           <span className="djc-city">Bengaluru</span>
+          {attLine(att) && <span className="djc-count">{attLine(att)}</span>}
         </div>
 
         {phase === "form" ? (
           <form className="djc-body" onSubmit={submit} noValidate>
-            <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up. Let us know you're coming.</p>
+            <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
             <input type="text" name="company" className="djc-hp" tabIndex={-1} autoComplete="off" aria-hidden="true"
               value={data.company} onChange={(e) => set("company", e.target.value)} />
 
@@ -145,7 +170,7 @@ export default function DJCollectivePopup() {
 
             <label className="djc-field">
               <span>Phone <em>(WhatsApp)</em> *</span>
-              <input type="tel" inputMode="tel" value={data.phone} autoComplete="tel" onChange={(e) => set("phone", e.target.value)} placeholder="+91 ..." />
+              <input type="tel" inputMode="tel" value={data.phone} autoComplete="tel" onChange={(e) => set("phone", e.target.value.replace(/[^\d+\s()-]/g, ""))} placeholder="+91 ..." />
               {errors.phone && <i className="djc-err">{errors.phone}</i>}
             </label>
 
@@ -156,7 +181,7 @@ export default function DJCollectivePopup() {
           <div className="djc-success">
             <p className="djc-success-line">You're in. See you there.</p>
             <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">Join the channel for date, venue &amp; updates</a>
-            <p className="djc-foot">Drinks at MRP. No agenda. No headliner.</p>
+            <p className="djc-foot">No agenda. No headliner.</p>
           </div>
         )}
       </div>
@@ -176,6 +201,7 @@ const styles = `
 .djc-head{padding:2rem 1.6rem 1.05rem;text-align:center;background:radial-gradient(ellipse 90% 80% at 50% 0%,rgba(201,168,76,0.14),transparent 70%);}
 .djc-brand{display:block;font-family:'Oswald',sans-serif;font-weight:700;font-size:2rem;line-height:1;letter-spacing:.05em;text-transform:uppercase;color:#E0DCCF;}
 .djc-city{display:block;font-family:'Oswald',sans-serif;font-weight:500;font-size:.82rem;letter-spacing:.42em;text-transform:uppercase;color:#C9A84C;margin-top:.5rem;}
+.djc-count{display:block;font-family:'Lora',serif;font-style:italic;font-size:.82rem;line-height:1.4;color:rgba(201,168,76,.92);margin-top:.85rem;padding-top:.7rem;border-top:1px solid rgba(201,168,76,.18);}
 .djc-body{padding:1.05rem 1.6rem 1.7rem;display:flex;flex-direction:column;gap:.7rem;}
 .djc-intro{font-family:'Lora',serif;font-style:italic;font-size:.95rem;line-height:1.55;color:rgba(224,220,207,.78);text-align:center;margin:0 0 .4rem;}
 .djc-field{display:flex;flex-direction:column;gap:.3rem;font-size:.64rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(224,220,207,.5);}
