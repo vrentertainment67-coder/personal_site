@@ -38,8 +38,9 @@ create or replace function public.dj_collective_attendees(p_session text)
 returns json language sql security definer set search_path = public, pg_temp stable as $$
   select json_build_object(
     'total', (select count(*) from public.dj_collective_rsvps where session = p_session),
-    'names', coalesce((select json_agg(name) from (
-        select name from public.dj_collective_rsvps
+    'names', coalesce((select json_agg(disp) from (
+        select coalesce(nullif(trim(dj_name), ''), name) as disp
+        from public.dj_collective_rsvps
         where session = p_session and coalesce(trim(name), '') <> ''
         order by created_at desc limit 4
       ) t), '[]'::json)
