@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import DJCollectivePopup from '../components/DJCollectivePopup.jsx';
 import { getCollection } from 'astro:content';
 
 const allEpisodes = await getCollection('vicfixEpisodes');
@@ -84,7 +83,6 @@ const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).
             WhatsApp List
           </a>
         </div>
-        <button type="button" class="djc-trigger" data-djc-open>&#9679; RSVP — The DJ Collective</button>
       </div>
     </section>
 
@@ -407,8 +405,6 @@ const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).
 
   </main>
 
-  <DJCollectivePopup client:load />
-
   <Footer />
 
 <script>
@@ -534,27 +530,6 @@ const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).
     margin-top: 2rem;
   }
 
-  /* The DJ Collective RSVP trigger — distinct from the podcast platform buttons */
-  .djc-trigger {
-    margin-top: 1.5rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    appearance: none;
-    background: transparent;
-    border: 1px solid rgba(201, 168, 76, 0.55);
-    color: #C9A84C;
-    font-family: var(--font-body);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 0.8rem 1.5rem;
-    border-radius: 2px;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, border-color 0.2s;
-  }
-  .djc-trigger:hover { background: #C9A84C; color: #080808; border-color: #C9A84C; }
 
   /* ─── CTA Buttons ──────────────────────────────── */
   .cta-btn {
