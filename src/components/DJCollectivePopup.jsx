@@ -133,7 +133,7 @@ export default function DJCollectivePopup() {
     <div className={`djc-overlay${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-label="The DJ Collective — RSVP">
       <style>{styles}</style>
       <div className="djc-backdrop" onClick={hide} />
-      <div className="djc-card" ref={cardRef}>
+      <div className="djc-panel" ref={cardRef}>
         <button className="djc-x" onClick={hide} aria-label="Close">&times;</button>
 
         <div className="djc-head">
@@ -163,7 +163,14 @@ export default function DJCollectivePopup() {
 
             <div className="djc-row">
               <label className="djc-field"><span>Years in the scene</span>
-                <input type="text" value={data.years} onChange={(e) => set("years", e.target.value)} placeholder="optional" /></label>
+                <select value={data.years} onChange={(e) => set("years", e.target.value)}>
+                  <option value="">—</option>
+                  <option value="Under 2 years">Under 2 years</option>
+                  <option value="2-5 years">2-5 years</option>
+                  <option value="5-10 years">5-10 years</option>
+                  <option value="10-15 years">10-15 years</option>
+                  <option value="15+ years">15+ years</option>
+                </select></label>
               <label className="djc-field"><span>Instagram</span>
                 <input type="text" value={data.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@handle" /></label>
             </div>
@@ -194,8 +201,8 @@ const styles = `
 .djc-overlay{position:fixed;inset:0;z-index:10060;display:flex;align-items:center;justify-content:center;padding:1rem;font-family:'Inter',sans-serif;}
 .djc-backdrop{position:absolute;inset:0;background:rgba(3,3,3,0.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .28s ease;}
 .djc-overlay.is-open .djc-backdrop{opacity:1;}
-.djc-card{position:relative;z-index:1;width:min(440px,100%);max-height:92vh;overflow-y:auto;background:#080808;color:#E0DCCF;border:1px solid rgba(201,168,76,0.35);border-radius:10px;box-shadow:0 30px 90px rgba(0,0,0,0.7);transform:translateY(18px) scale(.98);opacity:0;transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease;}
-.djc-overlay.is-open .djc-card{transform:none;opacity:1;}
+.djc-panel{position:relative;z-index:1;width:min(440px,100%);max-height:92vh;overflow-y:auto;background:#080808;color:#E0DCCF;border:1px solid rgba(201,168,76,0.35);border-radius:10px;box-shadow:0 30px 90px rgba(0,0,0,0.7);transform:translateY(18px) scale(.98);opacity:0;transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease;}
+.djc-overlay.is-open .djc-panel{transform:none;opacity:1;}
 .djc-x{position:absolute;top:.55rem;right:.6rem;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(224,220,207,.55);font-size:1.6rem;line-height:1;cursor:pointer;z-index:3;transition:color .2s;}
 .djc-x:hover{color:#E0DCCF;}
 .djc-head{padding:2rem 1.6rem 1.05rem;text-align:center;background:radial-gradient(ellipse 90% 80% at 50% 0%,rgba(201,168,76,0.14),transparent 70%);}
@@ -206,29 +213,29 @@ const styles = `
 .djc-intro{font-family:'Lora',serif;font-style:italic;font-size:.95rem;line-height:1.55;color:rgba(224,220,207,.78);text-align:center;margin:0 0 .4rem;}
 .djc-field{display:flex;flex-direction:column;gap:.3rem;font-size:.64rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(224,220,207,.5);}
 .djc-field em{text-transform:none;letter-spacing:0;font-style:italic;font-weight:400;color:rgba(224,220,207,.38);}
-.djc-field input{background:#0e0e0e;border:1px solid #262626;color:#E0DCCF;padding:.7rem .8rem;font-size:.92rem;font-family:'Inter',sans-serif;border-radius:4px;text-transform:none;letter-spacing:normal;font-weight:400;transition:border-color .2s;}
-.djc-field input:focus{outline:none;border-color:#C9A84C;}
+.djc-field input,.djc-field select{background:#0e0e0e;border:1px solid #262626;color:#E0DCCF;padding:.7rem .8rem;font-size:.92rem;font-family:'Inter',sans-serif;border-radius:4px;text-transform:none;letter-spacing:normal;font-weight:400;transition:border-color .2s;}
+.djc-field input:focus,.djc-field select:focus{outline:none;border-color:#C9A84C;}
 .djc-field input::placeholder{color:rgba(224,220,207,.26);}
 .djc-row{display:flex;gap:.7rem;}
 .djc-row .djc-field{flex:1;min-width:0;}
 .djc-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;}
 .djc-err{font-style:normal;font-size:.72rem;font-weight:400;letter-spacing:0;text-transform:none;color:#e89090;margin-top:.1rem;}
 .djc-err--form{text-align:center;}
-.djc-submit{margin-top:.5rem;background:#C9A84C;color:#080808;border:none;padding:.85rem 1rem;font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;transition:filter .2s;}
+.djc-submit{margin-top:.5rem;background:#C9A84C;color:#080808;border:none;padding:.85rem 1rem;font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;text-shadow:none;transition:filter .2s;}
 .djc-submit:hover{filter:brightness(1.08);}
 .djc-submit:disabled{opacity:.55;cursor:default;}
 .djc-success{padding:2.4rem 1.6rem 2.1rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.2rem;}
 .djc-success-line{font-family:'Lora',serif;font-style:italic;font-size:1.5rem;line-height:1.3;color:#C9A84C;margin:0;}
-.djc-wa{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:#C9A84C;color:#080808;font-family:'Oswald',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;padding:.85rem 1.3rem;border-radius:5px;line-height:1.3;transition:filter .2s,transform .15s;}
+.djc-wa{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:#C9A84C;color:#080808;font-family:'Oswald',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;padding:.85rem 1.3rem;border-radius:5px;line-height:1.3;text-shadow:none;transition:filter .2s,transform .15s;}
 .djc-wa:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .djc-foot{font-family:'Lora',serif;font-style:italic;font-size:.82rem;color:rgba(224,220,207,.45);margin:0;}
 @media (max-width:480px){
   .djc-overlay{align-items:flex-end;padding:0;}
-  .djc-card{width:100%;max-height:94vh;border-radius:14px 14px 0 0;border-bottom:none;}
+  .djc-panel{width:100%;max-height:94vh;border-radius:14px 14px 0 0;border-bottom:none;}
   .djc-head{padding:1.6rem 1.3rem .85rem;}
   .djc-brand{font-size:1.7rem;}
   .djc-body{padding:.9rem 1.3rem 1.3rem;}
   .djc-row{flex-direction:column;gap:.7rem;}
 }
-@media (prefers-reduced-motion: reduce){ .djc-backdrop,.djc-card{transition:none;} .djc-card{transform:none;} }
+@media (prefers-reduced-motion: reduce){ .djc-backdrop,.djc-panel{transition:none;} .djc-panel{transform:none;} }
 `;
