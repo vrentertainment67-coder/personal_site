@@ -20,7 +20,7 @@ const FN = `${SUPABASE_URL}/functions/v1`;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const EVENT_TYPES = ["sangeet", "wedding", "nightlife", "private", "festival", "corporate", "dj class", "training"];
+const EVENT_TYPES = ["sangeet", "wedding", "nightlife", "private", "festival", "corporate", "dj class", "training", "other"];
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -637,7 +637,8 @@ function Bookings({ showToast }) {
   const [rows, setRows] = useState([]); const [pays, setPays] = useState({}); const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
+  const [typeFilter, setTypeFilter] = useState("all");
   const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
 
@@ -699,6 +700,7 @@ function Bookings({ showToast }) {
       if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
       return r.status === filter;
     })
+    .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
     .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
 
   // Money roll-up across confirmed gigs
@@ -724,6 +726,9 @@ function Bookings({ showToast }) {
   if (openId) {
     const r = rows.find((x) => x.id === openId);
     if (!r) return <Center><Loader2 className="spin" size={18} /></Center>;
+    if (editing && editing.id === openId) {
+      return <BookingEditForm booking={r} onDone={() => { setEditing(null); load(); }} onCancel={() => setEditing(null)} showToast={showToast} />;
+    }
     const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
     return (
       <>
@@ -759,6 +764,7 @@ function Bookings({ showToast }) {
               {acting === r.id ? <Loader2 className="spin" size={15} /> : <CalendarDays size={15} />} Sync to calendar
             </button>
           )}
+          <button className="act" onClick={() => setEditing(r)}><Pencil size={15} /> Edit</button>
           <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
         </div>
       </>
@@ -813,7 +819,13 @@ function Bookings({ showToast }) {
           <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{l}</button>
         ))}
       </div>
-      <input className="search" placeholder="Search name, contact, city…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <input className="search" style={{ flex: "1 1 220px", margin: 0 }} placeholder="Search name, contact, city…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select className="search" style={{ width: "auto", margin: 0 }} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="all">All types</option>
+          {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">Nothing here.</p>
@@ -2299,6 +2311,57 @@ function NoteField({ initial, onSave }) {
       <input value={val} placeholder="Private note…" onChange={(e) => { setVal(e.target.value); setDirty(true); }} />
       {dirty && <button className="note-save" onClick={() => { onSave(val); setDirty(false); }}>Save</button>}
     </div>
+  );
+}
+
+// ── Edit an already-logged booking ──
+function BookingEditForm({ booking, onDone, onCancel, showToast }) {
+  const b = booking;
+  const [f, setF] = useState({
+    name: b.name || "", contact: b.contact && b.contact !== "—" ? b.contact : "",
+    event_type: b.event_type || "private", event_date: b.event_date || "", event_end_date: b.event_end_date || "",
+    venue: b.venue || "", city: b.city || "", amount: b.agreed_fee ?? "", message: b.message || "",
+  });
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!f.name.trim()) return showToast("Name is required.");
+    if (!f.event_date) return showToast("Pick the date.");
+    if (f.event_end_date && f.event_end_date < f.event_date) return showToast("End date can't be before the start date.");
+    setBusy(true);
+    const { error } = await supabase.from("bookings").update({
+      name: f.name.trim(), contact: f.contact.trim() || "—", event_type: f.event_type,
+      event_date: f.event_date, event_end_date: f.event_end_date || null,
+      venue: f.venue.trim() || null, city: f.city.trim() || null,
+      agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount),
+      message: f.message.trim() || null,
+    }).eq("id", b.id);
+    setBusy(false);
+    if (error) return showToast("Save failed: " + error.message);
+    showToast("Booking updated."); onDone();
+  };
+  return (
+    <>
+      <div className="row-between"><button className="note-save" onClick={onCancel}>← Back</button></div>
+      <h1 className="h1" style={{ marginTop: 10 }}>Edit booking</h1>
+      {b.status === "accepted" && <p className="sub" style={{ color: "#e0b13c" }}>Note: if you change the date of a confirmed gig, re-sync it to your Google Calendar from the booking afterwards.</p>}
+      <div className="card entry">
+        <div className="grid2">
+          <div className="field"><label>Client / venue</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+          <div className="field"><label>Contact</label><input value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} /></div>
+          <div className="field"><label>Type</label><select value={f.event_type} onChange={(e) => setF({ ...f, event_type: e.target.value })}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
+          <div className="field"><label>Amount (₹)</label><input type="number" min="0" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} placeholder="e.g. 150000" /></div>
+          <div className="field"><label>Date (from)</label><input type="date" value={f.event_date} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
+          <div className="field"><label>To (optional — multi-day)</label><input type="date" value={f.event_end_date} min={f.event_date || undefined} onChange={(e) => setF({ ...f, event_end_date: e.target.value })} /></div>
+          <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
+          <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
+        </div>
+        <div className="field"><label>Notes / message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
+        <div className="req-actions">
+          <button className="act wa" disabled={busy} onClick={save}>{busy ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Save changes</button>
+          <button className="act" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </>
   );
 }
 

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Calendar, CheckCircle2, XCircle, Clock, MapPin, Music2, Sparkles,
   Disc3, PartyPopper, ArrowRight, ChevronLeft, ChevronRight, LogOut, Loader2,
+  Briefcase, Music,
 } from "lucide-react";
 
 // ============================================================
@@ -25,6 +26,8 @@ const EVENT_TYPES = [
   { key: "nightlife", label: "Nightlife / Club", icon: Disc3 },
   { key: "private", label: "Private Event", icon: Music2 },
   { key: "festival", label: "Festival", icon: PartyPopper },
+  { key: "corporate", label: "Corporate", icon: Briefcase },
+  { key: "other", label: "Other", icon: Music },
 ];
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const SVC_COPY = {
@@ -32,6 +35,8 @@ const SVC_COPY = {
   nightlife: "Club & lounge nights — Bollywood, Hip-Hop, House, Commercial. Resident-grade energy.",
   private: "Birthdays, anniversaries, brand parties — read the room, build the arc.",
   festival: "Main-stage and festival slots — big-room, open-format, full production.",
+  corporate: "Conferences, product launches, annual days & award nights — polished and on-brief.",
+  other: "Something else in mind? Tell us about it and we'll tailor the set to your event.",
 };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const RANK = { booked: 3, blocked: 2, held: 1 };
