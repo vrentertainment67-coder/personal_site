@@ -57,7 +57,7 @@ async function parseEnquiry(text) {
 }
 const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<.*>/); return (m && m[1].trim()) || (from || "").replace(/<.*>/, "").trim() || from; };
 // Booking status → [label, colour]. "pending" reads as "Enquiry" for the owner.
-const BK_STATUS = { pending: ["Enquiry", "#e0b13c"], accepted: ["Confirmed", "#4ea765"], declined: ["Declined", "#9a9a8a"] };
+const BK_STATUS = { pending: ["Enquiry", "#e0b13c"], accepted: ["Confirmed", "#4ea765"], completed: ["Completed · Paid", "#5a8f8a"], declined: ["Declined", "#9a9a8a"] };
 // Render a single date or a multi-day range, e.g. "Sep 22–23" or "Sep 30 – Oct 1".
 function fmtRange(s, e) {
   if (!s) return "—";
@@ -635,7 +635,7 @@ function Overview() {
 // ---------------- BOOKINGS ----------------
 function Bookings({ showToast }) {
   const [rows, setRows] = useState([]); const [pays, setPays] = useState({}); const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all"); const [acting, setActing] = useState(null);
+  const [filter, setFilter] = useState("active"); const [acting, setActing] = useState(null);
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -686,6 +686,21 @@ function Bookings({ showToast }) {
     await supabase.from("bookings").update({ notes }).eq("id", id);
   };
 
+  const complete = async (r) => {
+    const bal = Number(r.agreed_fee || 0) - paidOf(r.id);
+    if (bal > 0 && !window.confirm(`Outstanding balance is ${inr(bal)}. Mark this gig completed & paid anyway?`)) return;
+    setActing(r.id);
+    const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", r.id);
+    setActing(null);
+    if (error) return showToast("Couldn't update — " + error.message);
+    showToast("Done & paid — moved to Completed."); setOpenId(null); load();
+  };
+  const reopen = async (r) => {
+    const { error } = await supabase.from("bookings").update({ status: "accepted" }).eq("id", r.id);
+    if (error) return showToast("Couldn't update — " + error.message);
+    showToast("Re-opened as confirmed."); load();
+  };
+
   const whatsapp = (r) => {
     const num = waDigits(r.contact);
     const msg = encodeURIComponent(`Hi ${r.name}, this is Vic — thanks for your booking request for ${r.event_date}. `);
@@ -697,16 +712,18 @@ function Bookings({ showToast }) {
   const filtered = rows
     .filter((r) => {
       if (filter === "all") return true;
+      if (filter === "active") return r.status === "pending" || r.status === "accepted";
       if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
       return r.status === filter;
     })
     .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
     .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
 
-  // Money roll-up across confirmed gigs
-  const accepted = rows.filter((r) => r.status === "accepted");
-  const booked = accepted.reduce((s, r) => s + Number(r.agreed_fee || 0), 0);
-  const received = accepted.reduce((s, r) => s + paidOf(r.id), 0);
+  // Money roll-up across confirmed + completed gigs (completed are fully past gigs;
+  // they stay in the financial totals, just out of the working pipeline).
+  const earned = rows.filter((r) => r.status === "accepted" || r.status === "completed");
+  const booked = earned.reduce((s, r) => s + Number(r.agreed_fee || 0), 0);
+  const received = earned.reduce((s, r) => s + paidOf(r.id), 0);
 
   const exportCsv = () => {
     const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "paid", "balance", "message"];
@@ -764,6 +781,14 @@ function Bookings({ showToast }) {
               {acting === r.id ? <Loader2 className="spin" size={15} /> : <CalendarDays size={15} />} Sync to calendar
             </button>
           )}
+          {r.status === "accepted" && (
+            <button className="act accept" disabled={acting === r.id} onClick={() => complete(r)} title="Event done and payment received — archive it">
+              {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Mark done & paid
+            </button>
+          )}
+          {r.status === "completed" && (
+            <button className="act" onClick={() => reopen(r)}><RefreshCw size={15} /> Re-open</button>
+          )}
           <button className="act" onClick={() => setEditing(r)}><Pencil size={15} /> Edit</button>
           <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
         </div>
@@ -815,7 +840,7 @@ function Bookings({ showToast }) {
       {adding && <ManualEntry key={formKey} initial={prefill} onDone={() => { setAdding(false); setPrefill(null); load(); }} showToast={showToast} />}
 
       <div className="chips">
-        {[["all", "All"], ["pending", "Enquiries"], ["accepted", "Confirmed"], ["owing", "Owing"], ["declined", "Declined"]].map(([f, l]) => (
+        {[["active", "Active"], ["pending", "Enquiries"], ["accepted", "Confirmed"], ["owing", "Owing"], ["completed", "Completed"], ["declined", "Declined"], ["all", "All"]].map(([f, l]) => (
           <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{l}</button>
         ))}
       </div>
