@@ -17,7 +17,7 @@ const SUPABASE_KEY =
   import.meta.env?.PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
 
 const SESSION = "2026-07-launch";
-const WA_CHANNEL = "https://whatsapp.com/channel/PLACEHOLDER";
+const WA_CHANNEL = "https://whatsapp.com/channel/0029Vb8ZoHlATRSqaILd683A";
 const SEEN_KEY = "djc_rsvp_seen";
 
 // "Martin, Vicky, Shine and Jasmeet + 20 are going" from { total, names }.
