@@ -2354,9 +2354,28 @@ function CalendarTab({ showToast }) {
   const [cur, setCur] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [map, setMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [checkDate, setCheckDate] = useState("");      // quick "is this date free?" lookup
+  const [checkGigs, setCheckGigs] = useState([]);       // bookings covering checkDate
 
   const dim = new Date(cur.y, cur.m + 1, 0).getDate();
   const fw = new Date(cur.y, cur.m, 1).getDay();
+
+  // Pull the gig(s) on the checked date (handles multi-day ranges too) so we can
+  // show WHO it's booked for, and so a multi-day gig reads as booked on every day.
+  useEffect(() => {
+    if (!checkDate) { setCheckGigs([]); return; }
+    let cancelled = false;
+    supabase.from("bookings")
+      .select("name,event_type,status,event_date,event_end_date")
+      .or(`event_date.eq.${checkDate},and(event_date.lte.${checkDate},event_end_date.gte.${checkDate})`)
+      .then(({ data }) => { if (!cancelled) setCheckGigs((data || []).filter((b) => b.status === "accepted" || b.status === "pending")); });
+    return () => { cancelled = true; };
+  }, [checkDate]);
+
+  const pickDate = (val) => {
+    setCheckDate(val);
+    if (val) { const [y, mo] = val.split("-").map(Number); setCur({ y, m: mo - 1 }); }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2386,8 +2405,42 @@ function CalendarTab({ showToast }) {
     load();
   };
 
+  // Resolve the checked date's status (gigs override the month map so multi-day
+  // ranges and pending holds always read correctly).
+  const accepted = checkGigs.filter((b) => b.status === "accepted");
+  const pending = checkGigs.filter((b) => b.status === "pending");
+  let checkState = checkDate ? (map[checkDate] || "open") : null;
+  if (checkState && accepted.length) checkState = "booked";
+  else if (checkState === "open" && pending.length) checkState = "held";
+  const STAT = {
+    open:    { label: "Available", cls: "free", sub: "This date is free — go for it." },
+    blocked: { label: "Not available", cls: "taken", sub: "You've blocked this night off." },
+    busy:    { label: "Not available", cls: "taken", sub: "Busy in your Google Calendar." },
+    held:    { label: "On hold", cls: "hold", sub: "A pending enquiry is holding this date." },
+    booked:  { label: "Booked", cls: "taken", sub: "You have a confirmed gig this night." },
+  };
+  const stat = checkState ? STAT[checkState] : null;
+  const who = checkGigs.map((b) => `${b.name}${b.event_type ? ` · ${b.event_type}` : ""}`).join("  /  ");
+  const checkLabel = checkDate ? new Date(checkDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+
   return (
     <>
+      <style>{`
+        .cal-check { background: #121214; border: 1px solid #2a2a2a; border-radius: 10px; padding: 14px 16px; margin: 6px 0 16px; }
+        .cal-check > label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8a8878; font-weight: 600; }
+        .cal-check input[type=date] { background: #0e0e0e; border: 1px solid #2a2a2a; color: #e8e8e0; padding: 12px 14px; border-radius: 8px; font-size: 16px; width: 100%; max-width: 280px; }
+        .cal-result { margin-top: 14px; border-radius: 8px; padding: 13px 16px; border: 1px solid; }
+        .cal-result--free { background: rgba(78,167,101,.12); border-color: rgba(78,167,101,.5); }
+        .cal-result--taken { background: rgba(224,87,74,.12); border-color: rgba(224,87,74,.5); }
+        .cal-result--hold { background: rgba(224,177,60,.12); border-color: rgba(224,177,60,.5); }
+        .cr-date { font-size: 13px; color: #cfcabf; }
+        .cr-status { font-size: 22px; font-weight: 700; margin-top: 1px; line-height: 1.1; }
+        .cal-result--free .cr-status { color: #5bbd77; }
+        .cal-result--taken .cr-status { color: #e8736a; }
+        .cal-result--hold .cr-status { color: #e0b13c; }
+        .cr-sub { font-size: 13px; color: #9a9a8a; margin-top: 5px; }
+        .cc.checked { outline: 2px solid #c9a84c; outline-offset: -2px; border-radius: 4px; }
+      `}</style>
       <div className="row-between">
         <h1 className="h1">Calendar</h1>
         <div className="mnav">
@@ -2396,6 +2449,20 @@ function CalendarTab({ showToast }) {
           <button onClick={() => setCur((c) => { const d = new Date(c.y, c.m + 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; })}>›</button>
         </div>
       </div>
+
+      <div className="cal-check">
+        <label>Check a date — am I free?
+          <input type="date" value={checkDate} onChange={(e) => pickDate(e.target.value)} />
+        </label>
+        {stat && (
+          <div className={`cal-result cal-result--${stat.cls}`}>
+            <div className="cr-date">{checkLabel}</div>
+            <div className="cr-status">{stat.cls === "free" ? "✓ " : "● "}{stat.label}</div>
+            <div className="cr-sub">{(checkState === "booked" || checkState === "held") && who ? who : stat.sub}</div>
+          </div>
+        )}
+      </div>
+
       <p className="sub">Tap a night to block / unblock it. Booked & held nights are managed in Bookings.</p>
       <div className="card">
         {loading && <Center><Loader2 className="spin" size={16} /></Center>}
@@ -2403,8 +2470,8 @@ function CalendarTab({ showToast }) {
         <div className="cal-grid">
           {Array.from({ length: fw }).map((_, i) => <span key={`b${i}`} className="cc empty" />)}
           {Array.from({ length: dim }).map((_, i) => {
-            const day = i + 1; const st = map[ymd(cur.y, cur.m, day)] || "open";
-            return <button key={day} className={`cc ${st}`} onClick={() => toggle(day)}>{day}</button>;
+            const day = i + 1; const key = ymd(cur.y, cur.m, day); const st = map[key] || "open";
+            return <button key={day} className={`cc ${st}${key === checkDate ? " checked" : ""}`} onClick={() => toggle(day)}>{day}</button>;
           })}
         </div>
         <div className="legend">
