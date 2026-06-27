@@ -2150,7 +2150,7 @@ function MailTab({ showToast }) {
 function DJCollective({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
-  const [editRow, setEditRow] = useState(null);
+  const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2172,6 +2172,13 @@ function DJCollective({ showToast }) {
   const filtered = rows
     .filter((r) => sess === "all" || (r.session || "—") === sess)
     .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone].some((v) => (v || "").toLowerCase().includes(q)));
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
+    if (sort === "name") return (a.name || "").localeCompare(b.name || "");
+    if (sort === "dj") return (a.dj_name || a.name || "").localeCompare(b.dj_name || b.name || "");
+    if (sort === "genre") return (a.genre || "~").localeCompare(b.genre || "~") || (a.name || "").localeCompare(b.name || "");
+    return new Date(b.created_at) - new Date(a.created_at); // "new" (default)
+  });
 
   const waLink = (p) => { let n = waDigits(p); if (n.length === 10) n = "91" + n; return n.length >= 10 ? `https://wa.me/${n}` : null; };
   const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
@@ -2221,7 +2228,16 @@ function DJCollective({ showToast }) {
           <button key={s} className={sess === s ? "chip on" : "chip"} onClick={() => setSess(s)}>{s} ({rows.filter((r) => (r.session || "—") === s).length})</button>
         ))}
       </div>
-      <input className="search" placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <input className="search" style={{ flex: "1 1 200px", margin: 0 }} placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select className="search" style={{ width: "auto", margin: 0 }} value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="name">Name A–Z</option>
+          <option value="dj">DJ name A–Z</option>
+          <option value="genre">Genre</option>
+        </select>
+      </div>
 
       {editRow && <DJCEditForm row={editRow} onDone={() => { setEditRow(null); load(); }} onCancel={() => setEditRow(null)} showToast={showToast} />}
 
@@ -2229,7 +2245,7 @@ function DJCollective({ showToast }) {
         <p className="empty">No RSVPs yet.</p>
       ) : (
         <div className="dca-list">
-          {filtered.map((r) => {
+          {sorted.map((r) => {
             const ig = (r.instagram || "").replace(/^@/, "");
             const wl = waLink(r.phone);
             const meta = [r.genre, r.years].filter(Boolean);
