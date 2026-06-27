@@ -2189,17 +2189,19 @@ function DJCollective({ showToast }) {
   return (
     <>
       <style>{`
-        .dca-wrap { overflow-x: auto; margin-top: 8px; }
-        .dca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-        .dca-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
-        .dca-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; color: #cfcabf; }
-        .dca-table tbody tr:hover td { background: #141414; }
-        .dca-name { font-weight: 600; color: #e8e8e0; }
-        .dca-actions { white-space: nowrap; text-align: right; }
-        .dca-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; margin-left: 4px; line-height: 0; }
+        .dca-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 8px; margin-top: 10px; }
+        .dca-card { background: #121214; border: 1px solid #232323; border-radius: 8px; padding: 11px 13px; }
+        .dca-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .dca-name { font-weight: 600; color: #e8e8e0; font-size: 14px; line-height: 1.3; min-width: 0; }
+        .dca-dj { color: #c9a84c; font-weight: 500; }
+        .dca-acts { display: flex; gap: 4px; flex-shrink: 0; }
+        .dca-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; margin-top: 6px; font-size: 12.5px; color: #8a8878; }
+        .dca-meta a { color: #cfcabf; }
+        .dca-meta .ph { color: #c9a84c; }
+        .dca-when { margin-left: auto; color: #66665e; font-size: 11.5px; }
+        .dca-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; line-height: 0; }
         .dca-ic:hover { border-color: #c9a84c; color: #c9a84c; }
         .dca-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
-        @media (max-width: 720px) { .dca-table { min-width: 780px; } }
       `}</style>
       <div className="row-between">
         <h1 className="h1">The DJ Collective</h1>
@@ -2226,31 +2228,29 @@ function DJCollective({ showToast }) {
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">No RSVPs yet.</p>
       ) : (
-        <div className="dca-wrap">
-          <table className="dca-table">
-            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
-            <tbody>
-              {filtered.map((r) => {
-                const ig = (r.instagram || "").replace(/^@/, "");
-                const wl = waLink(r.phone);
-                return (
-                  <tr key={r.id}>
-                    <td className="dca-name">{r.name}</td>
-                    <td>{r.dj_name || "—"}</td>
-                    <td>{r.genre || "—"}</td>
-                    <td>{r.years || "—"}</td>
-                    <td>{ig ? <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a> : "—"}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
-                    <td className="dca-actions">
-                      <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
-                      <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="dca-list">
+          {filtered.map((r) => {
+            const ig = (r.instagram || "").replace(/^@/, "");
+            const wl = waLink(r.phone);
+            const meta = [r.genre, r.years].filter(Boolean);
+            return (
+              <div key={r.id} className="dca-card">
+                <div className="dca-top">
+                  <div className="dca-name">{r.name}{r.dj_name ? <span className="dca-dj"> · {r.dj_name}</span> : ""}</div>
+                  <div className="dca-acts">
+                    <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
+                    <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <div className="dca-meta">
+                  {meta.length > 0 && <span>{meta.join(" · ")}</span>}
+                  {ig && <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer">@{ig}</a>}
+                  {wl ? <a className="ph" href={wl} target="_blank" rel="noopener noreferrer">{r.phone}</a> : (r.phone && <span className="ph">{r.phone}</span>)}
+                  <span className="dca-when">{fmtWhen(r.created_at)}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </>
