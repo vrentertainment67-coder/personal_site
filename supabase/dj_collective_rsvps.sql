@@ -54,6 +54,39 @@ returns json language sql security definer set search_path = public, pg_temp sta
 $$;
 grant execute on function public.dj_collective_attendees(text) to anon, authenticated;
 
+-- Insert-or-detect-duplicate. A duplicate = same session with a matching
+-- Instagram handle (normalised) OR matching phone (digits only). The public
+-- form calls this instead of a raw insert. SECURITY DEFINER so anon can run it.
+create or replace function public.djc_rsvp(
+  p_name text, p_phone text, p_session text,
+  p_dj_name text default null, p_genre text default null,
+  p_years text default null, p_instagram text default null
+) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_ig text := nullif(lower(regexp_replace(coalesce(p_instagram,''), '^@|\s', '', 'g')), '');
+  v_phone text := nullif(regexp_replace(coalesce(p_phone,''), '\D', '', 'g'), '');
+  v_dup boolean;
+begin
+  if coalesce(trim(p_name),'') = '' or v_phone is null then
+    return json_build_object('status','error');
+  end if;
+  select exists(
+    select 1 from public.dj_collective_rsvps r
+    where r.session = p_session
+      and (
+        (v_ig is not null and nullif(lower(regexp_replace(coalesce(r.instagram,''),'^@|\s','','g')),'') = v_ig)
+        or regexp_replace(coalesce(r.phone,''),'\D','','g') = v_phone
+      )
+  ) into v_dup;
+  if v_dup then return json_build_object('status','duplicate'); end if;
+  insert into public.dj_collective_rsvps (name, phone, dj_name, genre, years, instagram, session)
+  values (trim(p_name), p_phone, nullif(trim(p_dj_name),''), nullif(trim(p_genre),''),
+          nullif(trim(p_years),''), nullif(trim(p_instagram),''), p_session);
+  return json_build_object('status','ok');
+end;
+$$;
+grant execute on function public.djc_rsvp(text,text,text,text,text,text,text) to anon, authenticated;
+
 -- Private count-by-session view (NOT granted to anon → only the owner /
 -- service role can read it, e.g. from the Supabase SQL editor).
 create or replace view public.dj_collective_rsvp_counts as

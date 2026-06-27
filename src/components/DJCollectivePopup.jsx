@@ -39,6 +39,7 @@ export default function DJCollectivePopup() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [att, setAtt] = useState(null);            // { total, names } live counter
+  const [dup, setDup] = useState(false);           // already-registered (dedup)
   const cardRef = useRef(null);
 
   const show = () => { setShown(true); requestAnimationFrame(() => setOpen(true)); };
@@ -100,31 +101,26 @@ export default function DJCollectivePopup() {
     if (Object.keys(errs).length) return;
 
     setSubmitting(true);
-    const row = {
-      name, phone,
-      dj_name: data.dj_name.trim() || null,
-      genre: data.genre.trim() || null,
-      years: data.years.trim() || null,
-      instagram: data.instagram.trim() || null,
-      session: SESSION,
-    };
-    let ok = false;
+    let status = "error";
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/dj_collective_rsvps`, {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/djc_rsvp`, {
         method: "POST",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify(row),
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          p_name: name, p_phone: phone, p_session: SESSION,
+          p_dj_name: data.dj_name.trim() || null,
+          p_genre: data.genre.trim() || null,
+          p_years: data.years.trim() || null,
+          p_instagram: data.instagram.trim() || null,
+        }),
       });
-      ok = r.ok;
+      if (r.ok) { const d = await r.json(); status = (d && d.status) || "error"; }
     } catch {}
     setSubmitting(false);
-    if (ok) { try { localStorage.setItem(SEEN_KEY, "1"); } catch {} setPhase("success"); fetchAttendees(); }
-    else setErrors({ form: "Couldn't send that — please try again." });
+    if (status === "ok" || status === "duplicate") {
+      try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
+      setDup(status === "duplicate"); setPhase("success"); fetchAttendees();
+    } else setErrors({ form: "Couldn't send that — please try again." });
   }
 
   if (!shown) return null;
@@ -187,7 +183,7 @@ export default function DJCollectivePopup() {
           </form>
         ) : (
           <div className="djc-success">
-            <p className="djc-success-line">You're in. See you there.</p>
+            <p className="djc-success-line">{dup ? "You're already on the list — see you 20 July." : "You're in for 20 July. See you there."}</p>
             <div className="djc-push">
               <span className="djc-push-head">One thing left — don't skip it</span>
               <span className="djc-push-sub">Reminders, the line-up &amp; any last-minute changes go out <strong>only on the WhatsApp channel</strong>. If you're not on it, you'll miss out.</span>
