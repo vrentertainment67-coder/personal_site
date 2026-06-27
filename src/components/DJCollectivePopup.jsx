@@ -145,7 +145,7 @@ export default function DJCollectivePopup() {
         {phase === "form" ? (
           <form className="djc-body" onSubmit={submit} noValidate>
             <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
-            <p className="djc-date">🗓 Date to be announced shortly — watch this space.</p>
+            <p className="djc-date">📍 Watsons, Indiranagar · 9 PM onwards<br /><span className="djc-date-sub">Date to be announced shortly — watch this space.</span></p>
             <input type="text" name="company" className="djc-hp" tabIndex={-1} autoComplete="off" aria-hidden="true"
               value={data.company} onChange={(e) => set("company", e.target.value)} />
 
@@ -212,7 +212,8 @@ const styles = `
 .djc-count{display:block;font-family:'Lora',serif;font-style:italic;font-size:.82rem;line-height:1.4;color:rgba(201,168,76,.92);margin-top:.85rem;padding-top:.7rem;border-top:1px solid rgba(201,168,76,.18);}
 .djc-body{padding:1.05rem 1.6rem 1.7rem;display:flex;flex-direction:column;gap:.7rem;}
 .djc-intro{font-family:'Lora',serif;font-style:italic;font-size:.95rem;line-height:1.55;color:rgba(224,220,207,.78);text-align:center;margin:0 0 .2rem;}
-.djc-date{font-family:'Inter',sans-serif;font-size:.74rem;font-weight:500;letter-spacing:.02em;color:#C9A84C;text-align:center;margin:0 0 .4rem;}
+.djc-date{font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.02em;color:#C9A84C;text-align:center;margin:0 0 .4rem;line-height:1.5;}
+.djc-date-sub{font-weight:400;color:rgba(224,220,207,.5);}
 .djc-field{display:flex;flex-direction:column;gap:.3rem;font-size:.64rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(224,220,207,.5);}
 .djc-field em{text-transform:none;letter-spacing:0;font-style:italic;font-weight:400;color:rgba(224,220,207,.38);}
 .djc-field input,.djc-field select{background:#0e0e0e;border:1px solid #262626;color:#E0DCCF;padding:.7rem .8rem;font-size:.92rem;font-family:'Inter',sans-serif;border-radius:4px;text-transform:none;letter-spacing:normal;font-weight:400;transition:border-color .2s;}
