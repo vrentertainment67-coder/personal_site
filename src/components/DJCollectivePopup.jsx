@@ -145,7 +145,7 @@ export default function DJCollectivePopup() {
         {phase === "form" ? (
           <form className="djc-body" onSubmit={submit} noValidate>
             <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
-            <p className="djc-date">📍 Watsons, Indiranagar · 9 PM onwards<br /><span className="djc-date-sub">Date to be announced shortly — watch this space.</span></p>
+            <p className="djc-date">🗓 Monday, 20 July · 9 PM onwards<br />📍 Watsons, Indiranagar</p>
             <input type="text" name="company" className="djc-hp" tabIndex={-1} autoComplete="off" aria-hidden="true"
               value={data.company} onChange={(e) => set("company", e.target.value)} />
 
@@ -188,7 +188,14 @@ export default function DJCollectivePopup() {
         ) : (
           <div className="djc-success">
             <p className="djc-success-line">You're in. See you there.</p>
-            <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">Join the channel for date, venue &amp; updates</a>
+            <div className="djc-push">
+              <span className="djc-push-head">One thing left — don't skip it</span>
+              <span className="djc-push-sub">Reminders, the line-up &amp; any last-minute changes go out <strong>only on the WhatsApp channel</strong>. If you're not on it, you'll miss out.</span>
+            </div>
+            <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+              Join the WhatsApp channel
+            </a>
             <p className="djc-foot">No agenda. No headliner.</p>
           </div>
         )}
@@ -227,10 +234,17 @@ const styles = `
 .djc-submit{margin-top:.5rem;background:#C9A84C;color:#080808;border:none;padding:.85rem 1rem;font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;text-shadow:none;transition:filter .2s;}
 .djc-submit:hover{filter:brightness(1.08);}
 .djc-submit:disabled{opacity:.55;cursor:default;}
-.djc-success{padding:2.4rem 1.6rem 2.1rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.2rem;}
+.djc-success{padding:2rem 1.6rem 1.9rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.1rem;}
 .djc-success-line{font-family:'Lora',serif;font-style:italic;font-size:1.5rem;line-height:1.3;color:#C9A84C;margin:0;}
-.djc-wa{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:#C9A84C;color:#080808;font-family:'Oswald',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;padding:.85rem 1.3rem;border-radius:5px;line-height:1.3;text-shadow:none;transition:filter .2s,transform .15s;}
-.djc-wa:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.djc-push{width:100%;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.32);border-radius:9px;padding:13px 15px;display:flex;flex-direction:column;gap:6px;text-align:left;}
+.djc-push-head{font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.03em;text-transform:uppercase;color:#E0DCCF;}
+.djc-push-sub{font-family:'Inter',sans-serif;font-size:.82rem;line-height:1.5;color:rgba(224,220,207,.75);}
+.djc-push-sub strong{color:#3ddc84;font-weight:600;}
+.djc-wa{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;width:100%;box-sizing:border-box;background:#25D366;color:#06280f;font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;padding:1rem 1.3rem;border-radius:7px;line-height:1.2;text-shadow:none;transition:filter .2s,transform .15s;animation:djc-pulse 2.2s ease-in-out infinite;}
+.djc-wa:hover{filter:brightness(1.06);transform:translateY(-1px);}
+.djc-wa svg{width:21px;height:21px;flex-shrink:0;}
+@keyframes djc-pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,0);}50%{box-shadow:0 0 0 7px rgba(37,211,102,.15);}}
+@media (prefers-reduced-motion: reduce){ .djc-wa{animation:none;} }
 .djc-foot{font-family:'Lora',serif;font-style:italic;font-size:.82rem;color:rgba(224,220,207,.45);margin:0;}
 @media (max-width:480px){
   .djc-overlay{align-items:flex-end;padding:0;}

@@ -26,11 +26,17 @@ create policy djc_anon_insert on public.dj_collective_rsvps
 -- RLS policy alone isn't enough — the role also needs the base-table GRANT.
 grant insert on public.dj_collective_rsvps to anon, authenticated;
 
--- Admin (signed-in) can read everything for the admin "Collective" tab.
+-- Admin (signed-in) can read / edit / remove RSVPs for the "Collective" tab.
 drop policy if exists djc_admin_select on public.dj_collective_rsvps;
 create policy djc_admin_select on public.dj_collective_rsvps
   for select to authenticated using (true);
-grant select on public.dj_collective_rsvps to authenticated;
+drop policy if exists djc_admin_write on public.dj_collective_rsvps;
+create policy djc_admin_write on public.dj_collective_rsvps
+  for update to authenticated using (true) with check (true);
+drop policy if exists djc_admin_delete on public.dj_collective_rsvps;
+create policy djc_admin_delete on public.dj_collective_rsvps
+  for delete to authenticated using (true);
+grant select, update, delete on public.dj_collective_rsvps to authenticated;
 
 -- Public social-proof read: total + a few recent display NAMES only (never any
 -- contact info). SECURITY DEFINER so anon can call it without table read access.

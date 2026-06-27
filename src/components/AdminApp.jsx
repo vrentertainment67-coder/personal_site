@@ -2150,6 +2150,7 @@ function MailTab({ showToast }) {
 function DJCollective({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
+  const [editRow, setEditRow] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2158,6 +2159,13 @@ function DJCollective({ showToast }) {
     setRows(data || []); setLoading(false);
   }, [showToast]);
   useEffect(() => { load(); }, [load]);
+
+  const del = async (r) => {
+    if (!window.confirm(`Remove ${r.name}'s RSVP?`)) return;
+    const { error } = await supabase.from("dj_collective_rsvps").delete().eq("id", r.id);
+    if (error) return showToast("Delete failed — " + error.message);
+    showToast("Removed."); load();
+  };
 
   const sessions = [...new Set(rows.map((r) => r.session || "—"))];
   const q = query.trim().toLowerCase();
@@ -2187,7 +2195,11 @@ function DJCollective({ showToast }) {
         .dca-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; color: #cfcabf; }
         .dca-table tbody tr:hover td { background: #141414; }
         .dca-name { font-weight: 600; color: #e8e8e0; }
-        @media (max-width: 720px) { .dca-table { min-width: 720px; } }
+        .dca-actions { white-space: nowrap; text-align: right; }
+        .dca-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; margin-left: 4px; line-height: 0; }
+        .dca-ic:hover { border-color: #c9a84c; color: #c9a84c; }
+        .dca-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
+        @media (max-width: 720px) { .dca-table { min-width: 780px; } }
       `}</style>
       <div className="row-between">
         <h1 className="h1">The DJ Collective</h1>
@@ -2209,12 +2221,14 @@ function DJCollective({ showToast }) {
       </div>
       <input className="search" placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
 
+      {editRow && <DJCEditForm row={editRow} onDone={() => { setEditRow(null); load(); }} onCancel={() => setEditRow(null)} showToast={showToast} />}
+
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">No RSVPs yet.</p>
       ) : (
         <div className="dca-wrap">
           <table className="dca-table">
-            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th></tr></thead>
+            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
             <tbody>
               {filtered.map((r) => {
                 const ig = (r.instagram || "").replace(/^@/, "");
@@ -2228,6 +2242,10 @@ function DJCollective({ showToast }) {
                     <td>{ig ? <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a> : "—"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
+                    <td className="dca-actions">
+                      <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
+                      <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                    </td>
                   </tr>
                 );
               })}
@@ -2236,6 +2254,45 @@ function DJCollective({ showToast }) {
         </div>
       )}
     </>
+  );
+}
+
+// ── Edit a single DJ Collective RSVP (fix typos etc.) ──
+function DJCEditForm({ row, onDone, onCancel, showToast }) {
+  const [f, setF] = useState({
+    name: row.name || "", dj_name: row.dj_name || "", genre: row.genre || "",
+    years: row.years || "", instagram: row.instagram || "", phone: row.phone || "",
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+  const save = async () => {
+    if (!f.name.trim()) return showToast("Name is required.");
+    if (!f.phone.trim()) return showToast("Phone is required.");
+    setBusy(true);
+    const { error } = await supabase.from("dj_collective_rsvps").update({
+      name: f.name.trim(), dj_name: f.dj_name.trim() || null, genre: f.genre.trim() || null,
+      years: f.years.trim() || null, instagram: f.instagram.trim() || null, phone: f.phone.trim(),
+    }).eq("id", row.id);
+    setBusy(false);
+    if (error) return showToast("Save failed — " + error.message);
+    showToast("RSVP updated."); onDone();
+  };
+  return (
+    <div className="card entry" style={{ borderColor: "#c9a84c", marginBottom: 12 }}>
+      <h3 style={{ margin: "0 0 10px", color: "#e8e8e0" }}>Edit RSVP</h3>
+      <div className="grid2">
+        <div className="field"><label>Name</label><input value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
+        <div className="field"><label>Phone (WhatsApp)</label><input value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+        <div className="field"><label>DJ / artist name</label><input value={f.dj_name} onChange={(e) => set("dj_name", e.target.value)} /></div>
+        <div className="field"><label>Genre</label><input value={f.genre} onChange={(e) => set("genre", e.target.value)} /></div>
+        <div className="field"><label>Years in the scene</label><input value={f.years} onChange={(e) => set("years", e.target.value)} /></div>
+        <div className="field"><label>Instagram</label><input value={f.instagram} onChange={(e) => set("instagram", e.target.value)} /></div>
+      </div>
+      <div className="req-actions">
+        <button className="act wa" disabled={busy} onClick={save}>{busy ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Save changes</button>
+        <button className="act" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
   );
 }
 
