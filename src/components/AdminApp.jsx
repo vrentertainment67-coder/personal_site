@@ -2151,6 +2151,7 @@ function DJCollective({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
   const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
+  const [view, setView] = useState("cards");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2209,10 +2210,27 @@ function DJCollective({ showToast }) {
         .dca-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; line-height: 0; }
         .dca-ic:hover { border-color: #c9a84c; color: #c9a84c; }
         .dca-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
+        .dca-vt { display: inline-flex; border: 1px solid #2a2a2a; border-radius: 7px; overflow: hidden; }
+        .dca-vt button { background: none; border: 0; color: #8a8878; font-size: 12px; padding: 6px 13px; cursor: pointer; }
+        .dca-vt button.on { background: #c9a84c; color: #161616; font-weight: 600; }
+        .dca-wrap { overflow-x: auto; margin-top: 10px; }
+        .dca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .dca-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
+        .dca-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; color: #cfcabf; }
+        .dca-table tbody tr:hover td { background: #141414; }
+        .dca-tname { font-weight: 600; color: #e8e8e0; }
+        .dca-tact { white-space: nowrap; text-align: right; }
+        @media (max-width: 720px) { .dca-table { min-width: 780px; } }
       `}</style>
       <div className="row-between">
         <h1 className="h1">The DJ Collective</h1>
-        <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="dca-vt">
+            <button className={view === "cards" ? "on" : ""} onClick={() => setView("cards")}>Cards</button>
+            <button className={view === "table" ? "on" : ""} onClick={() => setView("table")}>Table</button>
+          </div>
+          <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+        </div>
       </div>
       <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
 
@@ -2243,6 +2261,33 @@ function DJCollective({ showToast }) {
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">No RSVPs yet.</p>
+      ) : view === "table" ? (
+        <div className="dca-wrap">
+          <table className="dca-table">
+            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
+            <tbody>
+              {sorted.map((r) => {
+                const ig = (r.instagram || "").replace(/^@/, "");
+                const wl = waLink(r.phone);
+                return (
+                  <tr key={r.id}>
+                    <td className="dca-tname">{r.name}</td>
+                    <td>{r.dj_name || "—"}</td>
+                    <td>{r.genre || "—"}</td>
+                    <td>{r.years || "—"}</td>
+                    <td>{ig ? <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a> : "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
+                    <td className="dca-tact">
+                      <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
+                      <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className="dca-list">
           {sorted.map((r) => {
