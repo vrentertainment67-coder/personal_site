@@ -10,10 +10,13 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
-const VIDEO_IDS = [
-  '7Q549DAesvw', // featured / hero
-  'yXA6TarZVXU',
-  // add more set ids here as they come in
+// Each: { id, title? }. The first is the featured / hero set. Title is optional —
+// leave it off and it auto-fetches from YouTube at build (best-effort; YouTube
+// sometimes rate-limits the build, so pin a title here for the ones that matter).
+const VIDEOS = [
+  { id: 'Lzmtei83uvI', title: 'CHAMATKAR | DJ VIC | Bollywood × English Live Set [Part 1]' },
+  { id: 'yXA6TarZVXU', title: 'DJ VIC – LIVE at Sugar Factory | 10-Minute Set (English × Bollywood Mashups)' },
+  // add more sets here: { id: 'YOUTUBE_ID', title: 'optional' },
 ];
 
 async function ytTitle(id) {
@@ -23,7 +26,7 @@ async function ytTitle(id) {
   } catch (e) { /* offline build / rate-limited → fallback below */ }
   return 'Live Set';
 }
-const videos = await Promise.all(VIDEO_IDS.map(async (id) => ({ id, title: await ytTitle(id) })));
+const videos = await Promise.all(VIDEOS.map(async (v) => ({ id: v.id, title: v.title || await ytTitle(v.id) })));
 const hero = videos[0];
 ---
 
