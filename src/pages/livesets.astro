@@ -63,8 +63,8 @@ const hero = videos[0];
       <section class="ls-more">
         <h2>More sets</h2>
         <div class="ls-grid">
-          {videos.map((v, i) => (
-            <button class={`ls-thumb${i === 0 ? ' active' : ''}`} data-id={v.id} data-title={v.title} type="button" aria-label={`Play ${v.title}`}>
+          {videos.slice(1).map((v) => (
+            <button class="ls-thumb" data-id={v.id} data-title={v.title} type="button" aria-label={`Play ${v.title}`}>
               <span class="ls-thumb-img">
                 <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} alt={v.title} loading="lazy" width="480" height="270"
                   onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`} />
