@@ -1,0 +1,129 @@
+---
+// Live Sets — a premiere/showcase page for DJ VIC's YouTube live sets.
+// Standalone for now: NOT linked in the nav and noindex'd, so it only exists
+// for people the link is shared with. One featured player up top, a pickable
+// grid of sets below (click a thumbnail to load it into the main player).
+//
+// To add a set: drop its YouTube id into VIDEO_IDS. The first id is the
+// default/featured set. Titles auto-fill from YouTube at build time.
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const VIDEO_IDS = [
+  '7Q549DAesvw', // featured / hero
+  'yXA6TarZVXU',
+  // add more set ids here as they come in
+];
+
+async function ytTitle(id) {
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?url=https://youtu.be/${id}&format=json`);
+    if (r.ok) { const d = await r.json(); return d.title || 'Live Set'; }
+  } catch (e) { /* offline build / rate-limited → fallback below */ }
+  return 'Live Set';
+}
+const videos = await Promise.all(VIDEO_IDS.map(async (id) => ({ id, title: await ytTitle(id) })));
+const hero = videos[0];
+---
+
+<Layout
+  title="Live Sets — DJ VIC"
+  description="Live sets from DJ VIC — full recordings, the real vibe of the room."
+  canonical="https://djvicofficial.com/livesets/"
+  noindex={true}
+>
+  <Nav />
+
+  <main id="main-content" class="ls">
+    <section class="ls-head">
+      <div class="ls-eyebrow">The full recordings</div>
+      <h1>Live Sets</h1>
+      <p class="ls-sub">Full sets, start to finish — the real read of the room. Pick one and feel the vibe.</p>
+    </section>
+
+    <section class="ls-stage">
+      <div class="ls-player">
+        <iframe
+          id="ls-player"
+          src={`https://www.youtube.com/embed/${hero.id}?rel=0&modestbranding=1`}
+          title="DJ VIC — Live Set"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+      <p class="ls-now"><span class="ls-now-label">Now playing</span><span id="ls-now-title">{hero.title}</span></p>
+    </section>
+
+    {videos.length > 1 && (
+      <section class="ls-more">
+        <h2>More sets</h2>
+        <div class="ls-grid">
+          {videos.map((v, i) => (
+            <button class={`ls-thumb${i === 0 ? ' active' : ''}`} data-id={v.id} data-title={v.title} type="button" aria-label={`Play ${v.title}`}>
+              <span class="ls-thumb-img">
+                <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} alt={v.title} loading="lazy" width="480" height="270"
+                  onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`} />
+                <span class="ls-play"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg></span>
+              </span>
+              <span class="ls-thumb-title">{v.title}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    )}
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .ls { background: #080808; min-height: 70vh; }
+  .ls-head { max-width: 980px; margin: 0 auto; text-align: center; padding: clamp(6.5rem, 11vw, 9rem) clamp(16px, 4vw, 40px) 0; }
+  .ls-eyebrow { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-size: .85rem; letter-spacing: .34em; text-transform: uppercase; color: var(--gold, #c9a84c); }
+  .ls-head h1 { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-weight: 400; color: #fff; font-size: clamp(3rem, 10vw, 6.5rem); line-height: .92; text-transform: uppercase; margin: 1rem 0 0; letter-spacing: .02em; }
+  .ls-sub { font-style: italic; font-size: clamp(.95rem, 2vw, 1.2rem); color: rgba(255,255,255,.62); max-width: 540px; margin: 1rem auto 0; line-height: 1.5; }
+
+  .ls-stage { max-width: 980px; margin: clamp(2rem, 5vw, 3rem) auto 0; padding: 0 clamp(16px, 4vw, 40px); }
+  .ls-player { position: relative; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; border: 1px solid rgba(201,168,76,.3); box-shadow: 0 30px 90px rgba(0,0,0,.6); background: #000; }
+  .ls-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .ls-now { display: flex; align-items: center; gap: .7rem; justify-content: center; margin: 1.1rem 0 0; font-family: var(--font-body, 'Space Grotesk'), sans-serif; color: #e8e8e0; font-size: 1.02rem; text-align: center; flex-wrap: wrap; }
+  .ls-now-label { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gold, #c9a84c); border: 1px solid rgba(201,168,76,.4); padding: 3px 9px; border-radius: 99px; }
+
+  .ls-more { max-width: 1180px; margin: clamp(3rem, 6vw, 4.5rem) auto 0; padding: 0 clamp(16px, 4vw, 40px) clamp(4rem, 8vw, 6rem); }
+  .ls-more h2 { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-weight: 400; color: #fff; font-size: clamp(1.5rem, 3vw, 2rem); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 1.3rem; }
+  .ls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px; }
+  .ls-thumb { display: flex; flex-direction: column; gap: .6rem; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  .ls-thumb-img { position: relative; aspect-ratio: 16/9; border-radius: 6px; overflow: hidden; border: 2px solid transparent; background: #111; transition: border-color .25s, transform .25s; display: block; }
+  .ls-thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ls-thumb:hover .ls-thumb-img { transform: translateY(-3px); border-color: rgba(201,168,76,.5); }
+  .ls-thumb.active .ls-thumb-img { border-color: var(--gold, #c9a84c); }
+  .ls-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; }
+  .ls-thumb:hover .ls-play { opacity: 1; }
+  .ls-play svg { background: rgba(201,168,76,.92); color: #0a0a0a; border-radius: 50%; padding: 12px; width: 44px; height: 44px; box-sizing: content-box; }
+  .ls-thumb-title { font-family: var(--font-body, 'Space Grotesk'), sans-serif; font-size: .88rem; color: rgba(255,255,255,.85); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ls-thumb.active .ls-thumb-title { color: var(--gold, #c9a84c); }
+</style>
+
+<script>
+  function lsInit() {
+    const player = document.getElementById('ls-player');
+    const nowTitle = document.getElementById('ls-now-title');
+    if (!player) return;
+    const thumbs = Array.from(document.querySelectorAll('.ls-thumb'));
+    thumbs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const title = btn.getAttribute('data-title') || 'Live Set';
+        if (!id) return;
+        player.src = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1`;
+        if (nowTitle) nowTitle.textContent = title;
+        thumbs.forEach((t) => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelector('.ls-stage')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', lsInit);
+</script>
