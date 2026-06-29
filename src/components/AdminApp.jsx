@@ -678,7 +678,7 @@ function Bookings({ showToast }) {
       body: JSON.stringify({ bookingId: id }),
     }).then((r) => r.json()).catch(() => ({ error: "Network error" }));
     setActing(null);
-    if (res.error) return showToast(res.error);
+    if (res.error) return showToast(res.detail ? `${res.error} (${res.detail})` : res.error);
     showToast(status === "accepted" ? "Confirmed — on your calendar." : "Declined.");
     load();
   };
