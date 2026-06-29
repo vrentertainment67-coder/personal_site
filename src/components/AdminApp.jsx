@@ -639,6 +639,7 @@ function Bookings({ showToast }) {
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
+  const [showStats, setShowStats] = useState(false);
   const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
 
@@ -724,6 +725,16 @@ function Bookings({ showToast }) {
   const earned = rows.filter((r) => r.status === "accepted" || r.status === "completed");
   const booked = earned.reduce((s, r) => s + Number(r.agreed_fee || 0), 0);
   const received = earned.reduce((s, r) => s + paidOf(r.id), 0);
+
+  // Which sector (event_type) brings in how much — booked fees + received,
+  // across the same confirmed+completed set the totals above use.
+  const sectors = Object.values(earned.reduce((m, r) => {
+    const k = r.event_type || "other";
+    const e = m[k] || (m[k] = { type: k, booked: 0, received: 0, count: 0 });
+    e.booked += Number(r.agreed_fee || 0); e.received += paidOf(r.id); e.count += 1;
+    return m;
+  }, {})).filter((s) => s.booked > 0).sort((a, b) => b.booked - a.booked);
+  const sectorTop = Math.max(...sectors.map((s) => s.booked), 1);
 
   const exportCsv = () => {
     const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "paid", "balance", "message"];
@@ -814,10 +825,22 @@ function Bookings({ showToast }) {
         .bk-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
         .bk-ic:disabled { opacity: .5; cursor: default; }
         @media (max-width: 720px) { .bk-table { min-width: 720px; } }
+        .bk-sectors { background: #121214; border: 1px solid #232323; border-radius: 8px; padding: 12px 14px; margin: 0 0 12px; }
+        .bk-sectors-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+        .bk-sectors-head > span:first-child { color: #8a8878; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; }
+        .bk-sectors-sub { color: #c9a84c; font-size: 12px; font-weight: 600; }
+        .bk-sec { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
+        .bk-sec-label { flex: 0 0 28%; min-width: 92px; color: #cfcabf; font-size: 13px; text-transform: capitalize; display: flex; align-items: center; gap: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bk-sec-n { background: #232323; color: #8a8878; font-size: 10.5px; padding: 1px 6px; border-radius: 99px; flex-shrink: 0; }
+        .bk-sec-bar { flex: 1; height: 9px; background: #1a1a1a; border-radius: 5px; overflow: hidden; }
+        .bk-sec-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #a8842f, #c9a84c); border-radius: 5px; }
+        .bk-sec-val { flex: 0 0 auto; min-width: 92px; text-align: right; color: #e8e8e0; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .bk-sec-pct { color: #8a8878; font-weight: 500; font-size: 11.5px; margin-left: 6px; }
       `}</style>
       <div className="row-between">
         <h1 className="h1">Bookings</h1>
         <div style={{ display: "flex", gap: 8 }}>
+          <button className={showStats ? "btn sm" : "btn sm ghost"} onClick={() => setShowStats((v) => !v)}><TrendingUp size={15} /> Stats</button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
           <button className="btn sm" onClick={openBlankForm}><Plus size={15} /> Log enquiry</button>
         </div>
@@ -831,11 +854,31 @@ function Bookings({ showToast }) {
         </button>
       </div>
 
+      {showStats && (<>
       <div className="cards" style={{ marginBottom: 6 }}>
         <Stat label="Booked · confirmed" value={inr(booked)} hint="Agreed fees on confirmed gigs" />
         <Stat label="Received" value={inr(received)} hint="Payments recorded so far" />
         <Stat label="Outstanding" value={inr(booked - received)} hint="Still to collect" />
       </div>
+
+      {sectors.length > 0 ? (
+        <div className="bk-sectors">
+          <div className="bk-sectors-head">
+            <span>Revenue by sector</span>
+            <span className="bk-sectors-sub">{inr(booked)} booked · confirmed + completed</span>
+          </div>
+          {sectors.map((s) => (
+            <div className="bk-sec" key={s.type} title={`${s.count} gig${s.count > 1 ? "s" : ""} · ${inr(s.received)} received`}>
+              <span className="bk-sec-label">{s.type}<span className="bk-sec-n">{s.count}</span></span>
+              <span className="bk-sec-bar"><span style={{ width: `${Math.round((s.booked / sectorTop) * 100)}%` }} /></span>
+              <span className="bk-sec-val">{inr(s.booked)}<span className="bk-sec-pct">{Math.round((s.booked / booked) * 100)}%</span></span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="empty" style={{ padding: "8px 2px" }}>No sector revenue yet — set agreed fees on confirmed gigs to see the split.</p>
+      )}
+      </>)}
 
       {adding && <ManualEntry key={formKey} initial={prefill} onDone={() => { setAdding(false); setPrefill(null); load(); }} showToast={showToast} />}
 
