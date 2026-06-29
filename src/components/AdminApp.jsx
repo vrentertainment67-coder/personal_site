@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Line } from "recharts";
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
@@ -912,7 +912,12 @@ function GigFinance({ booking, payments, onChange, showToast }) {
     : paid >= feeNum ? { t: "paid in full", c: "#7fe0a0", bg: "#16331f" }
     : paid > 0 ? { t: "advance paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
     : { t: "unpaid", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" };
-  const sqlHint = (m) => /agreed_fee|gig_payments|column|relation|does not exist/i.test(m || "") ? "Run gig_finance.sql in Supabase first" : m;
+  const sqlHint = (m) => {
+    const s = m || "";
+    if (/permission denied/i.test(s)) return "Fee not saved — DB permission issue. Run bookings_fee_grant_fix.sql in Supabase.";
+    if (/agreed_fee|gig_payments|relation|does not exist/i.test(s)) return "Run gig_finance.sql in Supabase first";
+    return s;
+  };
 
   const saveFee = async () => {
     setSavingFee(true);
@@ -2184,6 +2189,21 @@ function DJCollective({ showToast }) {
   const waLink = (p) => { let n = waDigits(p); if (n.length === 10) n = "91" + n; return n.length >= 10 ? `https://wa.me/${n}` : null; };
   const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
 
+  // Signups-by-date for the selected edition: per-day new RSVPs + the running
+  // "collective number" (cumulative total). Search query is intentionally
+  // ignored — this is a momentum view, not a filtered slice.
+  const series = useMemo(() => {
+    const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess);
+    const byDay = {};
+    base.forEach((r) => { const k = new Date(r.created_at).toLocaleDateString("en-CA"); byDay[k] = (byDay[k] || 0) + 1; });
+    let cum = 0;
+    return Object.keys(byDay).sort().map((k) => {
+      cum += byDay[k];
+      const d = new Date(k + "T00:00:00");
+      return { label: `${MONTHS[d.getMonth()]} ${d.getDate()}`, count: byDay[k], total: cum };
+    });
+  }, [rows, sess]);
+
   const exportCsv = () => {
     const cols = ["created_at", "session", "name", "dj_name", "genre", "years", "instagram", "phone"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -2213,6 +2233,10 @@ function DJCollective({ showToast }) {
         .dca-vt { display: inline-flex; border: 1px solid #2a2a2a; border-radius: 7px; overflow: hidden; }
         .dca-vt button { background: none; border: 0; color: #8a8878; font-size: 12px; padding: 6px 13px; cursor: pointer; }
         .dca-vt button.on { background: #c9a84c; color: #161616; font-weight: 600; }
+        .dca-chart { background: #121214; border: 1px solid #232323; border-radius: 8px; padding: 12px 12px 8px; margin: 10px 0 12px; }
+        .dca-chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .dca-chart-head span:first-child { color: #8a8878; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; }
+        .dca-chart-cur { color: #c9a84c; font-weight: 700; font-size: 13px; }
         .dca-wrap { overflow-x: auto; margin-top: 10px; }
         .dca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         .dca-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
@@ -2246,6 +2270,26 @@ function DJCollective({ showToast }) {
           <button key={s} className={sess === s ? "chip on" : "chip"} onClick={() => setSess(s)}>{s} ({rows.filter((r) => (r.session || "—") === s).length})</button>
         ))}
       </div>
+
+      {series.length >= 2 && (
+        <div className="dca-chart">
+          <div className="dca-chart-head">
+            <span>Signups by date</span>
+            <span className="dca-chart-cur">{series[series.length - 1].total} DJs{sess !== "all" ? ` · ${sess}` : ""}</span>
+          </div>
+          <ResponsiveContainer width="100%" height={190}>
+            <ComposedChart data={series} margin={{ top: 6, right: 6, left: -20, bottom: 0 }}>
+              <CartesianGrid stroke="#1e1e1e" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "#2a2a2a" }} interval="preserveStartEnd" minTickGap={18} />
+              <YAxis allowDecimals={false} tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={false} width={30} />
+              <Tooltip contentStyle={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#e8e8e0" }} itemStyle={{ padding: 0 }} formatter={(v, n) => [v, n === "total" ? "Collective total" : "New that day"]} />
+              <Bar dataKey="count" name="count" fill="#3a3320" radius={[3, 3, 0, 0]} barSize={14} />
+              <Line type="monotone" dataKey="total" name="total" stroke="#c9a84c" strokeWidth={2} dot={{ r: 2.5, fill: "#c9a84c", strokeWidth: 0 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input className="search" style={{ flex: "1 1 200px", margin: 0 }} placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
         <select className="search" style={{ width: "auto", margin: 0 }} value={sort} onChange={(e) => setSort(e.target.value)}>
