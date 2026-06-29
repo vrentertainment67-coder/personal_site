@@ -2194,12 +2194,30 @@ function MailTab({ showToast }) {
   );
 }
 
+// Small labelled horizontal-bar list for a categorical breakdown.
+function MiniBars({ title, rows, sub }) {
+  if (!rows || !rows.length) return null;
+  const top = Math.max(...rows.map((r) => r.count), 1);
+  return (
+    <div className="dca-bd">
+      <div className="dca-bd-h"><span>{title}</span>{sub && <span className="dca-bd-sub">{sub}</span>}</div>
+      {rows.map((r) => (
+        <div className="dca-bd-row" key={r.label}>
+          <span className="dca-bd-label" title={r.label}>{r.label}</span>
+          <span className="dca-bd-bar"><span style={{ width: `${Math.round((r.count / top) * 100)}%` }} /></span>
+          <span className="dca-bd-val">{r.count}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── The DJ Collective (Bengaluru) — RSVP counts + attendee list ──
 function DJCollective({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
   const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
-  const [view, setView] = useState("cards");
+  const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2247,6 +2265,31 @@ function DJCollective({ showToast }) {
     });
   }, [rows, sess]);
 
+  // Categorical breakdowns for the selected edition: genre mix, experience
+  // spread, and how reachable the list is (IG handle / valid WhatsApp number).
+  const stats = useMemo(() => {
+    const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess);
+    const n = base.length;
+    const gmap = {};
+    base.forEach((r) => {
+      const raw = (r.genre || "").trim(); if (!raw) return;
+      const key = raw.toLowerCase();
+      (gmap[key] || (gmap[key] = { label: raw, count: 0 })).count++;
+    });
+    const genres = Object.values(gmap).sort((a, b) => b.count - a.count);
+    const yorder = ["Under 2 years", "2-5 years", "5-10 years", "10-15 years", "15+ years"];
+    const ymap = {};
+    base.forEach((r) => { const y = (r.years || "").trim(); if (y) ymap[y] = (ymap[y] || 0) + 1; });
+    const years = [...yorder.filter((y) => ymap[y]), ...Object.keys(ymap).filter((y) => !yorder.includes(y))]
+      .map((y) => ({ label: y, count: ymap[y] }));
+    const withIg = base.filter((r) => (r.instagram || "").trim()).length;
+    const withPhone = base.filter((r) => waDigits(r.phone || "").length >= 10).length;
+    const weekAgo = Date.now() - 7 * 864e5;
+    const thisWeek = base.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length;
+    return { n, genres, years, withIg, withPhone, thisWeek };
+  }, [rows, sess]);
+  const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
+
   const exportCsv = () => {
     const cols = ["created_at", "session", "name", "dj_name", "genre", "years", "instagram", "phone"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -2280,6 +2323,16 @@ function DJCollective({ showToast }) {
         .dca-chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
         .dca-chart-head span:first-child { color: #8a8878; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; }
         .dca-chart-cur { color: #c9a84c; font-weight: 700; font-size: 13px; }
+        .dca-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .dca-bd { background: #121214; border: 1px solid #232323; border-radius: 8px; padding: 12px 14px; }
+        .dca-bd-h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin-bottom: 9px; }
+        .dca-bd-h > span:first-child { color: #8a8878; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; }
+        .dca-bd-sub { color: #66665e; font-size: 11px; }
+        .dca-bd-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+        .dca-bd-label { flex: 0 0 34%; min-width: 78px; color: #cfcabf; font-size: 12.5px; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dca-bd-bar { flex: 1; height: 8px; background: #1a1a1a; border-radius: 4px; overflow: hidden; }
+        .dca-bd-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #a8842f, #c9a84c); border-radius: 4px; }
+        .dca-bd-val { flex: 0 0 auto; min-width: 28px; text-align: right; color: #e8e8e0; font-weight: 600; font-size: 12.5px; }
         .dca-wrap { overflow-x: auto; margin-top: 10px; }
         .dca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         .dca-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
@@ -2296,16 +2349,11 @@ function DJCollective({ showToast }) {
             <button className={view === "cards" ? "on" : ""} onClick={() => setView("cards")}>Cards</button>
             <button className={view === "table" ? "on" : ""} onClick={() => setView("table")}>Table</button>
           </div>
+          <button className={showStats ? "btn sm" : "btn sm ghost"} onClick={() => setShowStats((v) => !v)}><TrendingUp size={15} /> Stats</button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
         </div>
       </div>
       <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
-
-      <div className="cards" style={{ marginBottom: 6 }}>
-        <Stat label="Total RSVPs" value={rows.length} hint="All editions" />
-        <Stat label="In this view" value={filtered.length} hint={sess === "all" ? "Everyone" : sess} />
-        <Stat label="Editions" value={sessions.length} hint="Distinct sessions" />
-      </div>
 
       <div className="chips">
         <button className={sess === "all" ? "chip on" : "chip"} onClick={() => setSess("all")}>All ({rows.length})</button>
@@ -2314,22 +2362,46 @@ function DJCollective({ showToast }) {
         ))}
       </div>
 
-      {series.length >= 2 && (
-        <div className="dca-chart">
-          <div className="dca-chart-head">
-            <span>Signups by date</span>
-            <span className="dca-chart-cur">{series[series.length - 1].total} DJs{sess !== "all" ? ` · ${sess}` : ""}</span>
+      {showStats && (
+        <div className="dca-stats">
+          <div className="cards" style={{ marginBottom: 10 }}>
+            <Stat label="Total RSVPs" value={rows.length} hint="All editions" />
+            <Stat label={sess === "all" ? "Across all" : "This edition"} value={stats.n} hint={sess === "all" ? "Everyone" : sess} />
+            <Stat label="New · 7 days" value={stats.thisWeek} hint="Momentum" />
+            <Stat label="With Instagram" value={stats.withIg} hint={pctOf(stats.withIg)} />
+            <Stat label="Reachable" value={stats.withPhone} hint="Valid WhatsApp no." />
+            <Stat label="Editions" value={sessions.length} hint="Distinct sessions" />
           </div>
-          <ResponsiveContainer width="100%" height={190}>
-            <ComposedChart data={series} margin={{ top: 6, right: 6, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="#1e1e1e" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "#2a2a2a" }} interval="preserveStartEnd" minTickGap={18} />
-              <YAxis allowDecimals={false} tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={false} width={30} />
-              <Tooltip contentStyle={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#e8e8e0" }} itemStyle={{ padding: 0 }} formatter={(v, n) => [v, n === "total" ? "Collective total" : "New that day"]} />
-              <Bar dataKey="count" name="count" fill="#3a3320" radius={[3, 3, 0, 0]} barSize={14} />
-              <Line type="monotone" dataKey="total" name="total" stroke="#c9a84c" strokeWidth={2} dot={{ r: 2.5, fill: "#c9a84c", strokeWidth: 0 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
+
+          {series.length >= 2 && (
+            <div className="dca-chart">
+              <div className="dca-chart-head">
+                <span>Signups by date</span>
+                <span className="dca-chart-cur">{series[series.length - 1].total} DJs{sess !== "all" ? ` · ${sess}` : ""}</span>
+              </div>
+              <ResponsiveContainer width="100%" height={190}>
+                <ComposedChart data={series} margin={{ top: 6, right: 6, left: -20, bottom: 0 }}>
+                  <CartesianGrid stroke="#1e1e1e" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "#2a2a2a" }} interval="preserveStartEnd" minTickGap={18} />
+                  <YAxis allowDecimals={false} tick={{ fill: "#8a8878", fontSize: 11 }} tickLine={false} axisLine={false} width={30} />
+                  <Tooltip contentStyle={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#e8e8e0" }} itemStyle={{ padding: 0 }} formatter={(v, n) => [v, n === "total" ? "Collective total" : "New that day"]} />
+                  <Bar dataKey="count" name="count" fill="#3a3320" radius={[3, 3, 0, 0]} barSize={14} />
+                  <Line type="monotone" dataKey="total" name="total" stroke="#c9a84c" strokeWidth={2} dot={{ r: 2.5, fill: "#c9a84c", strokeWidth: 0 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {(stats.genres.length > 0 || stats.years.length > 0) && (
+            <div className="dca-grid2">
+              <MiniBars title="Top genres" rows={stats.genres.slice(0, 8)} sub={stats.genres.length > 8 ? `+${stats.genres.length - 8} more` : null} />
+              <MiniBars title="Experience · years DJing" rows={stats.years} />
+            </div>
+          )}
+
+          {series.length < 2 && stats.genres.length === 0 && stats.years.length === 0 && (
+            <p className="empty" style={{ padding: "8px 2px" }}>Stats fill in as RSVPs come in.</p>
+          )}
         </div>
       )}
 
