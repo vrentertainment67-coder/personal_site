@@ -35,7 +35,7 @@ function attLine(att) {
 // column, so DJs can pick several and the list stays filterable later.
 // (Commas are the separator — keep labels comma-free.)
 const GENRES = [
-  "Bollywood", "Commercial", "Open Format", "Hip-Hop / R&B", "House", "Tech House",
+  "Bollywood", "Bolly Tech", "Commercial", "Open Format", "Hip-Hop / R&B", "House", "Tech House",
   "Techno", "Melodic Techno", "Afro House", "Deep House", "Progressive House",
   "Trance", "EDM / Festival", "Punjabi", "Regional", "Disco / Funk", "Amapiano",
   "Drum & Bass", "Reggaeton", "Pop",
