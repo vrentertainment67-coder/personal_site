@@ -31,11 +31,22 @@ function attLine(att) {
   return s ? `${s} ${att.total === 1 ? "is" : "are"} going` : `${att.total} going`;
 }
 
+// Preset genres for the multi-select. Stored comma-joined in the `genre`
+// column, so DJs can pick several and the list stays filterable later.
+// (Commas are the separator — keep labels comma-free.)
+const GENRES = [
+  "Bollywood", "Commercial / Open Format", "Hip-Hop / R&B", "House", "Tech House",
+  "Techno", "Melodic Techno", "Afro House", "Deep House", "Progressive House",
+  "Trance", "EDM / Festival", "Punjabi", "Disco / Funk", "Amapiano",
+  "Drum & Bass", "Reggaeton", "Pop",
+];
+
 export default function DJCollectivePopup() {
   const [shown, setShown] = useState(false);     // mounted in DOM
   const [open, setOpen] = useState(false);        // entrance animation
   const [phase, setPhase] = useState("form");     // form | success
-  const [data, setData] = useState({ name: "", dj_name: "", genre: "", years: "", instagram: "", phone: "", company: "" });
+  const [data, setData] = useState({ name: "", dj_name: "", genres: [], years: "", instagram: "", phone: "", company: "" });
+  const [customGenre, setCustomGenre] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [att, setAtt] = useState(null);            // { total, names } live counter
@@ -87,6 +98,15 @@ export default function DJCollectivePopup() {
   }, [shown]);
 
   const set = (k, v) => setData((d) => ({ ...d, [k]: v }));
+  const toggleGenre = (g) => setData((d) => ({
+    ...d, genres: d.genres.includes(g) ? d.genres.filter((x) => x !== g) : [...d.genres, g],
+  }));
+  const addCustomGenre = () => {
+    const g = customGenre.trim().replace(/,/g, "");
+    if (!g) return;
+    setData((d) => (d.genres.some((x) => x.toLowerCase() === g.toLowerCase()) ? d : { ...d, genres: [...d.genres, g] }));
+    setCustomGenre("");
+  };
 
   async function submit(e) {
     e.preventDefault();
@@ -109,7 +129,7 @@ export default function DJCollectivePopup() {
         body: JSON.stringify({
           p_name: name, p_phone: phone, p_session: SESSION,
           p_dj_name: data.dj_name.trim() || null,
-          p_genre: data.genre.trim() || null,
+          p_genre: data.genres.length ? data.genres.join(", ") : null,
           p_years: data.years.trim() || null,
           p_instagram: data.instagram.trim() || null,
         }),
@@ -154,11 +174,6 @@ export default function DJCollectivePopup() {
             <div className="djc-row">
               <label className="djc-field"><span>DJ / artist name</span>
                 <input type="text" value={data.dj_name} onChange={(e) => set("dj_name", e.target.value)} placeholder="optional" /></label>
-              <label className="djc-field"><span>Genre</span>
-                <input type="text" value={data.genre} onChange={(e) => set("genre", e.target.value)} placeholder="optional" /></label>
-            </div>
-
-            <div className="djc-row">
               <label className="djc-field"><span>Years in the scene</span>
                 <select value={data.years} onChange={(e) => set("years", e.target.value)}>
                   <option value="">—</option>
@@ -168,9 +183,27 @@ export default function DJCollectivePopup() {
                   <option value="10-15 years">10-15 years</option>
                   <option value="15+ years">15+ years</option>
                 </select></label>
-              <label className="djc-field"><span>Instagram</span>
-                <input type="text" value={data.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@handle" /></label>
             </div>
+
+            <div className="djc-field djc-genres">
+              <span>Genre(s) <em>(pick any that fit)</em></span>
+              <div className="djc-chips">
+                {GENRES.map((g) => (
+                  <button type="button" key={g} className={`djc-chip${data.genres.includes(g) ? " on" : ""}`} aria-pressed={data.genres.includes(g)} onClick={() => toggleGenre(g)}>{g}</button>
+                ))}
+                {data.genres.filter((g) => !GENRES.includes(g)).map((g) => (
+                  <button type="button" key={g} className="djc-chip on" aria-pressed="true" onClick={() => toggleGenre(g)}>{g} ✕</button>
+                ))}
+              </div>
+              <div className="djc-chip-add">
+                <input type="text" value={customGenre} placeholder="Other — type &amp; add" onChange={(e) => setCustomGenre(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomGenre(); } }} />
+                <button type="button" className="djc-chip-addbtn" onClick={addCustomGenre} disabled={!customGenre.trim()}>Add</button>
+              </div>
+            </div>
+
+            <label className="djc-field"><span>Instagram</span>
+              <input type="text" value={data.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@handle" /></label>
 
             <label className="djc-field">
               <span>Phone <em>(WhatsApp)</em> *</span>
@@ -224,6 +257,18 @@ const styles = `
 .djc-field input::placeholder{color:rgba(224,220,207,.26);}
 .djc-row{display:flex;gap:.7rem;}
 .djc-row .djc-field{flex:1;min-width:0;}
+.djc-genres>span{margin-bottom:.1rem;}
+.djc-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+.djc-chip{background:#0e0e0e;border:1px solid #2a2a2a;color:rgba(224,220,207,.8);font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;letter-spacing:normal;text-transform:none;padding:.42rem .7rem;border-radius:999px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;}
+.djc-chip:hover{border-color:#C9A84C;color:#E0DCCF;}
+.djc-chip.on{background:#C9A84C;border-color:#C9A84C;color:#080808;font-weight:600;}
+.djc-chip-add{display:flex;gap:.4rem;margin-top:.5rem;}
+.djc-chip-add input{flex:1;min-width:0;background:#0e0e0e;border:1px solid #262626;color:#E0DCCF;padding:.55rem .7rem;font-size:.85rem;font-family:'Inter',sans-serif;border-radius:4px;text-transform:none;letter-spacing:normal;font-weight:400;}
+.djc-chip-add input:focus{outline:none;border-color:#C9A84C;}
+.djc-chip-add input::placeholder{color:rgba(224,220,207,.26);}
+.djc-chip-addbtn{flex:0 0 auto;background:transparent;border:1px solid #C9A84C;color:#C9A84C;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:normal;text-transform:none;padding:.55rem .9rem;border-radius:4px;cursor:pointer;transition:background .15s,color .15s;}
+.djc-chip-addbtn:hover:not(:disabled){background:#C9A84C;color:#080808;}
+.djc-chip-addbtn:disabled{opacity:.4;cursor:default;}
 .djc-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;}
 .djc-err{font-style:normal;font-size:.72rem;font-weight:400;letter-spacing:0;text-transform:none;color:#e89090;margin-top:.1rem;}
 .djc-err--form{text-align:center;}

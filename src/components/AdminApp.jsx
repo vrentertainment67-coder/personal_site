@@ -2218,6 +2218,7 @@ function DJCollective({ showToast }) {
   const [sess, setSess] = useState("all"); const [query, setQuery] = useState("");
   const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
   const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
+  const [genreFilter, setGenreFilter] = useState("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2235,9 +2236,17 @@ function DJCollective({ showToast }) {
   };
 
   const sessions = [...new Set(rows.map((r) => r.session || "—"))];
+  const genreOf = (r) => (r.genre || "").split(",").map((s) => s.trim()).filter(Boolean);
+  // Every distinct genre across all RSVPs (case-insensitive), for the filter.
+  const allGenres = (() => {
+    const m = new Map();
+    rows.forEach((r) => genreOf(r).forEach((g) => { if (!m.has(g.toLowerCase())) m.set(g.toLowerCase(), g); }));
+    return [...m.values()].sort((a, b) => a.localeCompare(b));
+  })();
   const q = query.trim().toLowerCase();
   const filtered = rows
     .filter((r) => sess === "all" || (r.session || "—") === sess)
+    .filter((r) => genreFilter === "all" || genreOf(r).some((g) => g.toLowerCase() === genreFilter.toLowerCase()))
     .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone].some((v) => (v || "").toLowerCase().includes(q)));
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
@@ -2272,9 +2281,11 @@ function DJCollective({ showToast }) {
     const n = base.length;
     const gmap = {};
     base.forEach((r) => {
-      const raw = (r.genre || "").trim(); if (!raw) return;
-      const key = raw.toLowerCase();
-      (gmap[key] || (gmap[key] = { label: raw, count: 0 })).count++;
+      (r.genre || "").split(",").forEach((part) => {
+        const raw = part.trim(); if (!raw) return;
+        const key = raw.toLowerCase();
+        (gmap[key] || (gmap[key] = { label: raw, count: 0 })).count++;
+      });
     });
     const genres = Object.values(gmap).sort((a, b) => b.count - a.count);
     const yorder = ["Under 2 years", "2-5 years", "5-10 years", "10-15 years", "15+ years"];
@@ -2407,6 +2418,12 @@ function DJCollective({ showToast }) {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input className="search" style={{ flex: "1 1 200px", margin: 0 }} placeholder="Search name, DJ name, genre, IG…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        {allGenres.length > 0 && (
+          <select className="search" style={{ width: "auto", margin: 0 }} value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} title="Filter by genre">
+            <option value="all">All genres</option>
+            {allGenres.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        )}
         <select className="search" style={{ width: "auto", margin: 0 }} value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="new">Newest first</option>
           <option value="old">Oldest first</option>
@@ -2415,6 +2432,9 @@ function DJCollective({ showToast }) {
           <option value="genre">Genre</option>
         </select>
       </div>
+      {genreFilter !== "all" && (
+        <p className="sub" style={{ margin: "6px 0 0" }}>Showing <strong style={{ color: "#c9a84c" }}>{genreFilter}</strong> DJs · {filtered.length} <button className="dca-ic" style={{ padding: "2px 8px", marginLeft: 6, fontSize: 12 }} onClick={() => setGenreFilter("all")}>clear</button></p>
+      )}
 
       {editRow && <DJCEditForm row={editRow} onDone={() => { setEditRow(null); load(); }} onCancel={() => setEditRow(null)} showToast={showToast} />}
 
