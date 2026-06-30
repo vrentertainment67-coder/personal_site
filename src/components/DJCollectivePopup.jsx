@@ -38,7 +38,7 @@ const GENRES = [
   "Bollywood", "Bolly Tech", "Commercial", "Open Format", "Hip-Hop / R&B", "House", "Tech House",
   "Techno", "Melodic Techno", "Afro House", "Deep House", "Progressive House",
   "Trance", "EDM / Festival", "Punjabi", "Regional", "Disco / Funk", "Amapiano",
-  "Drum & Bass", "Reggaeton", "Pop",
+  "Drum & Bass", "Reggaeton", "Trap", "Pop",
 ];
 
 export default function DJCollectivePopup() {
