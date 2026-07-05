@@ -673,13 +673,28 @@ function Bookings({ showToast }) {
 
   const decide = async (id, status) => {
     setActing(id);
+    // 1) Set the status directly — the signed-in admin has the grants for this
+    //    (same path as "Mark done & paid"), so confirming/declining never
+    //    depends on the calendar Edge Function's service key being healthy.
+    const { error: upErr } = await supabase.from("bookings").update({ status }).eq("id", id);
+    if (upErr) { setActing(null); return showToast("Couldn't update — " + upErr.message); }
+
+    // 2) Best-effort: add to / remove from Google Calendar. If the function is
+    //    down (e.g. stale service key), the booking is already saved — just warn.
     const res = await fetch(`${FN}/calendar-sync?action=${status === "accepted" ? "confirm" : "release"}`, {
       method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
       body: JSON.stringify({ bookingId: id }),
     }).then((r) => r.json()).catch(() => ({ error: "Network error" }));
     setActing(null);
-    if (res.error) return showToast(res.detail ? `${res.error} (${res.detail})` : res.error);
-    showToast(status === "accepted" ? "Confirmed — on your calendar." : "Declined.");
+
+    const calFailed = res && res.error;
+    if (status === "accepted") {
+      showToast(calFailed
+        ? `Confirmed & saved — but Google Calendar sync failed (${res.detail || res.error}). Use "Sync to calendar" once calendar-sync is fixed.`
+        : "Confirmed — on your calendar.");
+    } else {
+      showToast(calFailed ? "Declined & saved (calendar not updated)." : "Declined.");
+    }
     load();
   };
 
