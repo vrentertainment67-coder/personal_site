@@ -7,11 +7,12 @@ export const CATEGORIES = [
   { key: 'architects',            label: 'The Architects',        desc: 'The founders & builders.' },
   { key: 'other-side-of-the-bar', label: 'Other Side of the Bar', desc: 'The bartenders.' },
   { key: 'bigger-picture',        label: 'The Bigger Picture',    desc: 'Industry, scene & culture.' },
+  { key: 'lab',                   label: 'The Lab',               desc: 'Products & tools, tested live — not sold.' },
 ];
 export const catLabel = (k) => (CATEGORIES.find((c) => c.key === k) || {}).label || k;
 
 // Until guest_type is backfilled, derive a rough person-type from the strand.
-export const TYPE_FROM_CAT = { 'behind-the-decks': 'dj', 'room-makers': 'venue', 'architects': 'founder', 'other-side-of-the-bar': 'bartender', 'bigger-picture': 'voice' };
+export const TYPE_FROM_CAT = { 'behind-the-decks': 'dj', 'room-makers': 'venue', 'architects': 'founder', 'other-side-of-the-bar': 'bartender', 'bigger-picture': 'voice', 'lab': 'founder' };
 export const PERSON = [
   { key: 'dj', label: 'DJs', sub: 'Selectors, residents & headliners.' },
   { key: 'founder', label: 'Founders', sub: 'The ones who started it.' },

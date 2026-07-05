@@ -52,8 +52,15 @@ const vicfixEpisodes = defineCollection({
     season: z.number(),
     episode: z.number(),
     youtubeId: z.string().optional().default(''),
-    category: z.enum(['behind-the-decks', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture']),
+    category: z.enum(['behind-the-decks', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture', 'lab']),
     categoryLabel: z.string(),
+    // Optional overrides for special formats (e.g. The Lab): replace the
+    // "S2 · E17 · {categoryLabel}" eyebrow and the "Season 2" breadcrumb.
+    episodeLabel: z.string().optional(),
+    sectionLabel: z.string().optional(),
+    // When there's no video yet, the "premiering" placeholder says this (e.g.
+    // "today", "this Sunday"). Defaults to "this Sunday".
+    premiereWhen: z.string().optional(),
     tagline: z.string(),
     bio: z.string(),
     pullQuote: z.string().optional(),

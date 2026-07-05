@@ -19,6 +19,8 @@ const hasVideo = !!ep.youtubeId;
 const ytThumb = hasVideo ? `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg` : '';
 const ogImage = ep.guestPhoto || ytThumb || 'https://djvicofficial.com/images/og-default.jpg';
 const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
+const premiereWhen = ep.premiereWhen || 'this Sunday';
+const premiereStrand = ep.sectionLabel || `S${ep.season}E${ep.episode}`;
 
 const rawDesc = `${ep.guestName} on The VIC Fix S${ep.season}E${ep.episode} — ${ep.tagline} Hosted by DJ VIC.`;
 const computedDesc = rawDesc.length > 160 ? rawDesc.slice(0, 157) + '…' : rawDesc;
@@ -42,10 +44,20 @@ const quoteTweetText = ep.pullQuote
 
 
 const all = await getCollection('vicfixEpisodes');
-const related = all
+let related = all
   .filter(e => e.id !== episode.id && e.data.category === ep.category)
   .sort(() => Math.random() - 0.5)
   .slice(0, 3);
+// Thin/new strands (e.g. The Lab's first episode) have no siblings yet —
+// backfill with the most recent other episodes so the rail still shows.
+if (related.length < 3) {
+  const have = new Set(related.map(e => e.id));
+  const fill = all
+    .filter(e => e.id !== episode.id && !have.has(e.id))
+    .sort((a, b) => (b.data.season - a.data.season) || (b.data.episode - a.data.episode))
+    .slice(0, 3 - related.length);
+  related = [...related, ...fill];
+}
 
 const schemas = [
   {
@@ -105,7 +117,7 @@ const schemas = [
       <div class="breadcrumb-inner">
         <a href="/thevicfix/">The VIC Fix</a>
         <span class="bc-sep">/</span>
-        <span>Season {ep.season}</span>
+        <span>{ep.sectionLabel || `Season ${ep.season}`}</span>
         <span class="bc-sep">/</span>
         <span class="bc-current">{ep.guestName}</span>
       </div>
@@ -115,7 +127,7 @@ const schemas = [
     <section id="ep-header">
       <div class="ep-inner">
         <div class="ep-eyebrow">
-          S{ep.season} &middot; E{ep.episode} &middot; {ep.categoryLabel}
+          {ep.episodeLabel ? ep.episodeLabel : (<>S{ep.season} &middot; E{ep.episode} &middot; {ep.categoryLabel}</>)}
         </div>
         <h1 class="ep-name">{ep.guestName}</h1>
         <p class="ep-guest-title">{ep.guestTitle}</p>
@@ -163,9 +175,9 @@ const schemas = [
             ></iframe>
           ) : (
             <div class="ep-soon" style={ep.guestPhoto ? `background-image:linear-gradient(to bottom,rgba(0,0,0,.25),rgba(0,0,0,.8)),url('${ep.guestPhoto}')` : ''}>
-              <span class="ep-soon-badge">Premiering this Sunday</span>
+              <span class="ep-soon-badge">Premiering {premiereWhen}</span>
               <span class="ep-soon-title">{ep.guestName} — “{ep.tagline.split('.')[0]}”</span>
-              <span class="ep-soon-sub">The VIC Fix · S{ep.season}E{ep.episode} · drops Sunday on YouTube</span>
+              <span class="ep-soon-sub">The VIC Fix · {premiereStrand} · drops {premiereWhen} on YouTube</span>
             </div>
           )}
         </div>
