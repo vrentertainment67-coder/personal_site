@@ -361,64 +361,6 @@
 
 <!-- ───────────────── SCRIPT ───────────────── -->
 <script>
-  // ── All DOM refs ──────────────────────────────
-  const video     = document.getElementById('hero-vid')       as HTMLVideoElement  | null;
-  const audio     = document.getElementById('hero-audio')     as HTMLAudioElement  | null;
-  const btn       = document.getElementById('hero-sound-btn') as HTMLButtonElement | null;
-  const iconOff   = btn?.querySelector('.sound-off')          as HTMLElement       | null;
-  const iconOn    = btn?.querySelector('.sound-on')           as HTMLElement       | null;
-
-  // ── Also wire up the existing NOW PLAYING bar ──
-  // (Looks for any element with id="now-playing-audio" in your existing layout)
-  const existingPlayer = document.getElementById('now-playing-audio') as HTMLAudioElement | null;
-
-  let isMuted = true;
-
-  // ── Force autoplay on iOS (needs user gesture workaround) ──
-  document.addEventListener('touchstart', () => {
-    if (video && video.paused) {
-      video.play().catch(() => {});
-    }
-  }, { once: true });
-
-  // ── Unmute toggle ──────────────────────────────
-  btn?.addEventListener('click', () => {
-    isMuted = !isMuted;
-
-    // Video audio
-    if (video) {
-      video.muted = isMuted;
-      if (!isMuted) {
-        video.volume = 0;
-        // Fade video volume up
-        fadeVolume(video, 0, 0.85, 800);
-      }
-    }
-
-    // Ambient audio — plays when unmuted, pauses when muted
-    if (audio) {
-      if (!isMuted) {
-        audio.volume = 0;
-        audio.play().catch(() => {});
-        fadeVolume(audio, 0, 0.45, 800);    // quieter than video — it's ambient
-      } else {
-        fadeVolume(audio, audio.volume, 0, 400, () => audio.pause());
-      }
-    }
-
-    // Update button state
-    btn.setAttribute('aria-pressed', String(!isMuted));
-    btn.setAttribute('aria-label', isMuted ? 'Unmute video' : 'Mute video');
-    if (iconOff) iconOff.style.display = isMuted  ? '' : 'none';
-    if (iconOn)  iconOn.style.display  = !isMuted ? '' : 'none';
-
-    // Tell existing NOW PLAYING bar about the audio source
-    if (existingPlayer && !isMuted) {
-      existingPlayer.src = '/hero-audio.mp3';
-      existingPlayer.play().catch(() => {});
-    }
-  });
-
   // ── Smooth volume fade util ────────────────────
   function fadeVolume(
     el: HTMLMediaElement,
@@ -445,9 +387,69 @@
     }, interval);
   }
 
+  // ── Wire the unmute toggle. Runs on every page show (astro:page-load fires
+  //    on first load AND after each View Transitions navigation) — the hero
+  //    DOM is swapped on nav, so a module-scope one-time binding would leave
+  //    the button dead when you arrive at "/" via a client-side link. ──
+  function initHeroSound() {
+    const video = document.getElementById('hero-vid')       as HTMLVideoElement  | null;
+    const audio = document.getElementById('hero-audio')     as HTMLAudioElement  | null;
+    const btn   = document.getElementById('hero-sound-btn') as HTMLButtonElement | null;
+    if (!video || !btn || btn.dataset.soundBound === '1') return;  // no hero, or already wired
+    btn.dataset.soundBound = '1';
+
+    const iconOff = btn.querySelector('.sound-off') as HTMLElement | null;
+    const iconOn  = btn.querySelector('.sound-on')  as HTMLElement | null;
+    const existingPlayer = document.getElementById('now-playing-audio') as HTMLAudioElement | null;
+    let isMuted = true;
+
+    btn.addEventListener('click', () => {
+      isMuted = !isMuted;
+
+      // Video audio
+      video.muted = isMuted;
+      if (!isMuted) {
+        video.volume = 0;
+        video.play().catch(() => {});
+        fadeVolume(video, 0, 0.85, 800);
+      }
+
+      // Ambient audio — plays when unmuted, pauses when muted
+      if (audio) {
+        if (!isMuted) {
+          audio.volume = 0;
+          audio.play().catch(() => {});
+          fadeVolume(audio, 0, 0.45, 800);    // quieter than video — it's ambient
+        } else {
+          fadeVolume(audio, audio.volume, 0, 400, () => audio.pause());
+        }
+      }
+
+      // Update button state
+      btn.setAttribute('aria-pressed', String(!isMuted));
+      btn.setAttribute('aria-label', isMuted ? 'Unmute video' : 'Mute video');
+      if (iconOff) iconOff.style.display = isMuted  ? '' : 'none';
+      if (iconOn)  iconOn.style.display  = !isMuted ? '' : 'none';
+
+      // Tell existing NOW PLAYING bar about the audio source
+      if (existingPlayer && !isMuted) {
+        existingPlayer.src = '/hero-audio.mp3';
+        existingPlayer.play().catch(() => {});
+      }
+    });
+  }
+  document.addEventListener('astro:page-load', initHeroSound);
+
+  // ── Force autoplay on iOS (needs user gesture) — re-query so it survives nav ──
+  document.addEventListener('touchstart', () => {
+    const v = document.getElementById('hero-vid') as HTMLVideoElement | null;
+    if (v && v.paused) v.play().catch(() => {});
+  });
+
   // ── Pause video when tab is hidden (battery/performance) ──
   document.addEventListener('visibilitychange', () => {
-    if (!video) return;
-    document.hidden ? video.pause() : video.play().catch(() => {});
+    const v = document.getElementById('hero-vid') as HTMLVideoElement | null;
+    if (!v) return;
+    document.hidden ? v.pause() : v.play().catch(() => {});
   });
 </script>
