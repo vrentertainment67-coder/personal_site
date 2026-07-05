@@ -26,7 +26,11 @@ const CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
 const REFRESH_TOKEN = Deno.env.get("GOOGLE_REFRESH_TOKEN")!;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Prefer the new-style secret key (sb_secret_…) set as the SB_SECRET_KEY
+// function secret; fall back to the legacy service_role JWT. The project
+// migrated to the new API keys, which is why the legacy key started failing
+// with "permission denied for table bookings".
+const SERVICE_KEY = Deno.env.get("SB_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const cors = {
