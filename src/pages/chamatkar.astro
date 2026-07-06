@@ -1,25 +1,30 @@
 ---
 // Dedicated Chamatkar event page — shareable link with the guest-list RSVP,
-// event details, and a "from last time" recap (photos + videos).
+// the flyer, event details, add-to-calendar, a sound preview, and a media recap.
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
-// Event details (edition 2). These mirror the live row in the Supabase
-// `events` table (slug chamatkar-2026-07-11); the RSVP writes against `slug`.
+// Event details (Vol. 2). Mirror the live row in the Supabase `events` table
+// (slug chamatkar-2026-07-11); the RSVP writes against `slug`.
 const EVENT = {
   slug: 'chamatkar-2026-07-11',
   title: 'Chamatkar',
-  edition: 'Edition 2',
-  venue: 'Happy Brew',
+  edition: 'Vol. 2',
+  venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
   dateLabel: 'Saturday 11 July',
   timeLabel: '9:00 PM onwards',
   lineup: 'DJ VIC',
-  genre: 'Bollywood / Commercial — Audio-Visual Set',
+  genre: '90s & 2000s Bollywood × Global',
+  theme: '90s & 2000s Bollywood',
+  themeLine: 'The era that made us dance',
+  intro: "The era that made us dance — 90s & 2000s Bollywood flipped through a global lens, mixed live with the visuals locked to every drop. No filler, just one long peak.",
   banner: '/images/chamatkar.jpg',
+  flyer: '/images/chamatkar-flyer.jpg',
+  ics: '/chamatkar.ics',
   rsvpCutoff: '2026-07-11T12:30:00+00:00',
   expiry: '2026-07-11T19:30:00+00:00',
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
@@ -30,14 +35,14 @@ const EVENT = {
 // them live for this event's slug.
 
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
-const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. ${EVENT.genre}. Get on the guest list.`;
+const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood × global, live audio-visual. Get on the guest list.`;
 ---
 
 <Layout
-  title="Chamatkar — Guest List | DJ VIC"
+  title="Chamatkar Vol. 2 — Guest List | DJ VIC"
   description={desc}
-  ogTitle="Chamatkar — You're Invited"
-  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}. Bollywood × global, audio-visual. Tap to get on the guest list.`}
+  ogTitle="Chamatkar Vol. 2 — You're Invited"
+  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
   ogImage="https://djvicofficial.com/images/chamatkar.jpg"
   canonical="https://djvicofficial.com/chamatkar/"
 >
@@ -50,13 +55,56 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
         <span class="ck-eyebrow">Guest List · {EVENT.edition}</span>
         <h1 class="ck-title">{EVENT.title}</h1>
         <p class="ck-lineup">{EVENT.lineup}</p>
-        <p class="ck-genre">{EVENT.genre}</p>
+        <span class="ck-theme">{EVENT.theme}</span>
+        <p class="ck-genre">{EVENT.themeLine} · Live Audio-Visual</p>
+        <p class="ck-blurb">{EVENT.intro}</p>
         <div class="ck-meta">
           <span>🗓 {EVENT.dateLabel}</span>
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
-        <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
+        <div class="ck-ctas">
+          <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
+          <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
+        </div>
+        <a class="ck-cal" href={EVENT.ics} download>＋ Add to calendar</a>
+      </div>
+    </section>
+
+    <!-- ── FLYER ── -->
+    <section class="ck-flyer">
+      <img src={EVENT.flyer} alt={`Chamatkar ${EVENT.edition} — DJ VIC · ${EVENT.dateLabel} · ${EVENT.venue}, ${EVENT.area}`} width="1080" height="1350" loading="eager" />
+    </section>
+
+    <!-- ── ENTRY & COVER ── -->
+    <section class="ck-entry">
+      <div class="ck-sec-head">
+        <span class="ck-kicker">Entry</span>
+        <h2>Entry &amp; cover</h2>
+        <p class="ck-sub">Every cover charge is <strong>fully redeemable</strong> — it all goes back on your tab at the bar.</p>
+      </div>
+      <div class="ck-egrid">
+        <div class="ck-ecard ck-ecard--free">
+          <span class="ck-etype">Couples</span>
+          <span class="ck-eprice">Free till 10 PM</span>
+          <span class="ck-enote">After 10 PM: ₹1000 cover — fully redeemable</span>
+        </div>
+        <div class="ck-ecard ck-ecard--free">
+          <span class="ck-etype">Girls</span>
+          <span class="ck-eprice">Free all night</span>
+          <span class="ck-enote">Walk in any time, no cover</span>
+        </div>
+        <div class="ck-ecard">
+          <span class="ck-etype">Stags</span>
+          <span class="ck-eprice">₹1000 cover</span>
+          <span class="ck-enote">Mandatory · fully redeemable</span>
+        </div>
+        <div class="ck-ecard">
+          <span class="ck-etype">Tables</span>
+          <span class="ck-eprice">On availability</span>
+          <span class="ck-enote">Advance reservation accepted</span>
+          <a class="ck-ereserve" href="https://wa.me/919611803666?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%202%20on%2011%20July." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
+        </div>
       </div>
     </section>
 
@@ -66,6 +114,7 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span>Limited guest-list spots · <span id="ck-countdown">counting…</span></p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -79,12 +128,12 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
       />
     </section>
 
-    <!-- ── FROM LAST TIME ── -->
+    <!-- ── THE VIBE (media) ── -->
     <section class="ck-recap">
       <div class="ck-sec-head">
-        <span class="ck-kicker">From last time</span>
-        <h2>The first Chamatkar</h2>
-        <p class="ck-sub">Bollywood flipped through a global lens, visuals locked to every drop, and a room that never sat down. Edition 2 picks up where that night left off.</p>
+        <span class="ck-kicker">Watch</span>
+        <h2>The Chamatkar vibe</h2>
+        <p class="ck-sub">Bollywood flipped through a global lens, visuals locked to every drop, a room that never sat down — here's what the floor looks like.</p>
       </div>
 
       <EventMedia client:load slug={EVENT.slug} />
@@ -94,9 +143,10 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
     <section class="ck-details">
       <div class="ck-sec-head"><span class="ck-kicker">The details</span><h2>Know before you go</h2></div>
       <div class="ck-dgrid">
-        <div class="ck-dcard"><span class="ck-dlabel">When</span><span class="ck-dval">{EVENT.dateLabel}</span><span class="ck-dsub">{EVENT.timeLabel}</span></div>
+        <div class="ck-dcard"><span class="ck-dlabel">When</span><span class="ck-dval">{EVENT.dateLabel}</span><span class="ck-dsub">{EVENT.timeLabel}</span><a class="ck-dlink" href={EVENT.ics} download>＋ Add to calendar</a></div>
         <div class="ck-dcard"><span class="ck-dlabel">Where</span><span class="ck-dval">{EVENT.venue}</span><span class="ck-dsub">{EVENT.area}</span><a class="ck-dlink" href={mapsHref} target="_blank" rel="noopener noreferrer">Open in Maps →</a></div>
-        <div class="ck-dcard"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.lineup}</span><span class="ck-dsub">{EVENT.genre}</span></div>
+        <div class="ck-dcard ck-dcard--theme"><span class="ck-dlabel">Theme</span><span class="ck-dval">{EVENT.theme}</span><span class="ck-dsub">{EVENT.themeLine} — with a global-remix twist.</span></div>
+        <div class="ck-dcard"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.lineup}</span><span class="ck-dsub">Live audio-visual set</span></div>
       </div>
     </section>
   </main>
@@ -104,24 +154,75 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
   <Footer />
 </Layout>
 
+<script>
+  function ckInit() {
+    // Music preview → footer "Now Playing" bar (dispatches to the site player)
+    const pv = document.getElementById('ck-preview');
+    if (pv && !pv.dataset.bound) {
+      pv.dataset.bound = '1';
+      pv.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('play-track', { detail: { slug: 'besharam-rang-mwaki' } }));
+      });
+    }
+    // Countdown to doors — gentle urgency near the form
+    const cd = document.getElementById('ck-countdown');
+    if (cd) {
+      const target = new Date('2026-07-11T21:00:00+05:30').getTime();
+      const tick = () => {
+        const diff = target - Date.now();
+        if (diff <= 0) { cd.textContent = 'happening now'; return; }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        cd.textContent = d > 0 ? `${d} day${d === 1 ? '' : 's'} to go` : (h > 0 ? `${h} hr ${m} min to go` : `${m} min to go`);
+      };
+      tick();
+      if (!cd.dataset.timer) { cd.dataset.timer = '1'; setInterval(tick, 60000); }
+    }
+  }
+  document.addEventListener('astro:page-load', ckInit);
+</script>
+
 <style>
   .ck { background: #080808; color: #e8e8e0; }
   .ck section { max-width: none; }
 
   /* ── Hero ── */
   .ck-hero { position: relative; overflow: hidden; background: #080808; padding: clamp(7rem, 13vw, 11rem) clamp(16px, 4vw, 40px) clamp(3.5rem, 7vw, 5.5rem); text-align: center; }
-  /* Banner image on its own layer, dimmed to 70% so it recedes behind the text. */
   .ck-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--ck-banner); background-size: cover; background-position: center; opacity: .7; }
-  /* Gradient for legibility + fade to the page background at the bottom. */
   .ck-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(6,6,6,.45), rgba(6,6,6,.78) 62%, #080808); }
   .ck-hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .ck-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .34em; text-transform: uppercase; color: var(--gold, #c9a84c); }
   .ck-title { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(4rem, 15vw, 8.5rem); line-height: .9; letter-spacing: .02em; text-transform: uppercase; color: #fff; margin: .6rem 0 0; }
   .ck-lineup { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 3.5vw, 2rem); letter-spacing: .1em; color: #e2c475; margin: 1rem 0 0; }
-  .ck-genre { font-size: clamp(.8rem, 1.8vw, .95rem); letter-spacing: .04em; color: rgba(255,255,255,.6); margin: .35rem 0 0; }
-  .ck-meta { display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; justify-content: center; margin: 1.6rem 0 0; font-size: .92rem; color: rgba(255,255,255,.82); }
-  .ck-cta { display: inline-block; margin-top: 2rem; background: var(--gold, #c9a84c); color: #0a0a0a; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: .08em; text-transform: uppercase; padding: .85rem 2rem; border-radius: 4px; text-decoration: none; transition: background .2s, transform .15s; }
+  .ck-theme { display: inline-block; font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.15rem, 3.2vw, 1.7rem); letter-spacing: .08em; text-transform: uppercase; color: #0a0a0a; background: var(--gold, #c9a84c); padding: .35rem 1.1rem; border-radius: 4px; margin: 1rem 0 0; }
+  .ck-genre { font-size: clamp(.8rem, 1.8vw, .95rem); letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.6); margin: .7rem 0 0; }
+  .ck-blurb { font-size: clamp(.95rem, 2vw, 1.12rem); color: rgba(255,255,255,.82); line-height: 1.55; max-width: 46ch; margin: 1.3rem auto 0; }
+  .ck-meta { display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; justify-content: center; margin: 1.5rem 0 0; font-size: .92rem; color: rgba(255,255,255,.82); }
+  .ck-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 2rem; }
+  .ck-cta { display: inline-flex; align-items: center; background: var(--gold, #c9a84c); color: #0a0a0a; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: .08em; text-transform: uppercase; padding: .8rem 2rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: 0; transition: background .2s, transform .15s; }
   .ck-cta:hover { background: #e2c475; transform: translateY(-1px); }
+  .ck-cta--ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.4); }
+  .ck-cta--ghost:hover { background: rgba(255,255,255,.08); border-color: #fff; }
+  .ck-cal { display: inline-block; margin-top: 1.1rem; font-size: .82rem; letter-spacing: .02em; color: rgba(255,255,255,.72); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.4); padding-bottom: 1px; }
+  .ck-cal:hover { color: var(--gold, #c9a84c); }
+
+  /* ── Flyer ── */
+  .ck-flyer { max-width: 1080px; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(16px, 4vw, 40px) 0; display: flex; justify-content: center; }
+  .ck-flyer img { width: 100%; max-width: 400px; height: auto; border-radius: 10px; border: 1px solid rgba(201,168,76,.3); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+
+  /* ── Entry & cover ── */
+  .ck-entry { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); border-top: 1px solid #141414; }
+  .ck-egrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 14px; }
+  .ck-ecard { background: #101010; border: 1px solid #1e1e1e; border-radius: 8px; padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: .35rem; }
+  .ck-ecard--free { border-color: rgba(126,224,160,.3); background: rgba(126,224,160,.05); }
+  .ck-etype { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gold, #c9a84c); }
+  .ck-ecard--free .ck-etype { color: #7fe0a0; }
+  .ck-eprice { font-size: 1.3rem; font-weight: 700; color: #fff; line-height: 1.15; }
+  .ck-enote { font-size: .82rem; color: rgba(255,255,255,.6); line-height: 1.45; }
+  .ck-ereserve { margin-top: .5rem; font-size: .8rem; color: var(--gold, #c9a84c); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.35); align-self: flex-start; padding-bottom: 1px; }
+  .ck-ereserve:hover { color: #e2c475; }
+  .ck-dcard--theme { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.06); }
 
   /* ── Section shells ── */
   .ck-rsvp, .ck-recap, .ck-details { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); }
@@ -130,6 +231,10 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
   .ck-kicker { font-family: 'Bebas Neue', sans-serif; font-size: .78rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold, #c9a84c); }
   .ck-sec-head h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(2rem, 5vw, 3rem); line-height: 1; text-transform: uppercase; color: #fff; margin: .5rem 0 0; }
   .ck-sub { font-size: clamp(.9rem, 1.8vw, 1.02rem); color: rgba(255,255,255,.6); line-height: 1.55; margin: .8rem 0 0; }
+  .ck-fomo { display: inline-flex; align-items: center; gap: .5rem; margin: 1.1rem auto 0; font-size: .85rem; font-weight: 600; letter-spacing: .01em; color: #e2c475; }
+  .ck-fomo-dot { width: 8px; height: 8px; border-radius: 50%; background: #e2c475; animation: ck-pulse 1.8s infinite; }
+  @keyframes ck-pulse { 0% { box-shadow: 0 0 0 0 rgba(226,196,117,.5); } 70% { box-shadow: 0 0 0 8px rgba(226,196,117,0); } 100% { box-shadow: 0 0 0 0 rgba(226,196,117,0); } }
+  @media (prefers-reduced-motion: reduce) { .ck-fomo-dot { animation: none; } }
 
   /* ── Details ── */
   .ck-details { border-top: 1px solid #141414; }

@@ -150,8 +150,8 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
       {phase === "thanks" && (
         <div className="er-msg">
           <div className="er-tick">✓</div>
-          <p className="er-msg-lead">You're on the list!</p>
-          <p className="er-msg-sub">See you at {venue || "the venue"}{dateLabel ? ", " + dateLabel : ""}. Tap below to confirm on WhatsApp so we have you saved.</p>
+          <p className="er-msg-lead">You're on the list! 🎉</p>
+          <p className="er-msg-sub">We've got you for {dateLabel || "the night"}{venue ? " at " + venue : ""}. <strong>We'll WhatsApp you the details</strong> before the event — tap below to confirm on WhatsApp so we've saved you.</p>
           <a className="er-wa" href={waHref} target="_blank" rel="noopener noreferrer" data-loc="chamatkar_page"><WaIcon /> Confirm on WhatsApp</a>
         </div>
       )}
