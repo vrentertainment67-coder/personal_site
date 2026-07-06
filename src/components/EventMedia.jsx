@@ -15,13 +15,25 @@ const SUPABASE_KEY =
 // Parse a video URL/ID into something renderable.
 export function parseVideo(raw) {
   const s = String(raw || "").trim();
-  if (/\.(mp4|webm|mov)(\?|#|$)/i.test(s)) return { kind: "file", src: s, portrait: false };
+  if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(s) || /\/video\/upload\//.test(s)) return { kind: "file", src: s, portrait: false };
   const short = s.match(/shorts\/([A-Za-z0-9_-]{6,})/);
   if (short) return { kind: "yt", id: short[1], portrait: true };
   const m = s.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
   const id = m ? m[1] : (/^[A-Za-z0-9_-]{6,}$/.test(s) ? s : null);
   if (id) return { kind: "yt", id, portrait: false };
   return { kind: "link", src: s, portrait: false };
+}
+
+// Uploaded videos (phone reels): size the frame to the video's true aspect
+// ratio once metadata loads, so vertical reels aren't cropped into 16:9.
+function FileVideo({ src }) {
+  const [ar, setAr] = useState(null);
+  return (
+    <div className="em-frame em-frame--file" style={ar ? { aspectRatio: ar } : undefined}>
+      <video src={src} controls playsInline preload="metadata"
+        onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setAr(`${v.videoWidth} / ${v.videoHeight}`); }} />
+    </div>
+  );
 }
 
 export default function EventMedia({ slug }) {
@@ -56,22 +68,20 @@ export default function EventMedia({ slug }) {
             const p = parseVideo(v.url);
             return (
               <figure className={`em-video${p.portrait ? " em-video--portrait" : ""}`} key={v.id}>
-                <div className="em-frame">
-                  {p.kind === "yt" && (
+                {p.kind === "yt" && (
+                  <div className="em-frame">
                     <iframe
                       src={`https://www.youtube.com/embed/${p.id}?rel=0&modestbranding=1&playsinline=1`}
                       title={v.caption || "Chamatkar reel"} loading="lazy"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                     ></iframe>
-                  )}
-                  {p.kind === "file" && (
-                    <video src={p.src} controls playsInline preload="metadata"></video>
-                  )}
-                  {p.kind === "link" && (
-                    <a className="em-linkout" href={p.src} target="_blank" rel="noopener noreferrer">▶ Watch</a>
-                  )}
-                </div>
+                  </div>
+                )}
+                {p.kind === "file" && <FileVideo src={p.src} />}
+                {p.kind === "link" && (
+                  <div className="em-frame"><a className="em-linkout" href={p.src} target="_blank" rel="noopener noreferrer">▶ Watch</a></div>
+                )}
                 {v.caption && <figcaption>{v.caption}</figcaption>}
               </figure>
             );
@@ -98,7 +108,10 @@ const styles = `
 .em-video{margin:0;}
 .em-frame{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;border:1px solid rgba(201,168,76,.25);background:#000;}
 .em-video--portrait .em-frame{aspect-ratio:9/16;max-width:300px;margin:0 auto;}
+/* Uploaded (phone) videos: real aspect set inline; cap tall reels, letterbox any odd ones. */
+.em-frame--file{aspect-ratio:9/16;max-width:320px;max-height:72vh;margin:0 auto;}
 .em-frame iframe,.em-frame video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover;}
+.em-frame--file video{object-fit:contain;}
 .em-linkout{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#c9a84c;font-weight:600;text-decoration:none;letter-spacing:.05em;}
 .em-video figcaption{font-size:.82rem;color:rgba(255,255,255,.6);margin-top:.5rem;line-height:1.4;}
 .em-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:10px;margin-top:16px;}

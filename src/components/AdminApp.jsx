@@ -2660,6 +2660,8 @@ function EventMediaManager({ event, onBack, showToast }) {
   const [url, setUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2682,6 +2684,32 @@ function EventMediaManager({ event, onBack, showToast }) {
     if (error) return showToast("Couldn't add — " + error.message);
     setUrl(""); setCaption(""); showToast(type === "video" ? "Reel added." : "Photo added."); load();
   };
+
+  // Direct upload from the device (phone camera roll). Uploads to Cloudinary
+  // via the signed /auto/upload endpoint (auto-detects video vs image), then
+  // stores the resulting URL. Handles large videos (chunked in cloudinaryUpload).
+  const uploadFile = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ folder: "djvic/event-media" }),
+      }).then((r) => r.json());
+      if (sign.error) throw new Error(sign.error);
+      const up = await cloudinaryUpload(file, sign);
+      const mtype = up.resource_type === "video" || /^video\//.test(file.type || "") ? "video" : "photo";
+      const nextOrder = rows.length ? Math.max(...rows.map((r) => r.sort_order || 0)) + 1 : 0;
+      const { error } = await supabase.from("event_media").insert({
+        event_slug: event.slug, type: mtype, url: up.secure_url, caption: caption.trim() || null, sort_order: nextOrder,
+      });
+      if (error) throw new Error(error.message);
+      setCaption(""); showToast(mtype === "video" ? "Reel uploaded." : "Photo uploaded."); load();
+    } catch (e) { showToast("Upload failed — " + String(e.message || e)); }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const del = async (r) => {
     if (!window.confirm("Remove this item?")) return;
     const { error } = await supabase.from("event_media").delete().eq("id", r.id);
@@ -2717,9 +2745,17 @@ function EventMediaManager({ event, onBack, showToast }) {
         </div>
         <input style={inp} value={url} onChange={(e) => setUrl(e.target.value)} placeholder={type === "video" ? "YouTube / Shorts link or .mp4 URL" : "Image URL (e.g. /images/chamatkar/1.jpg or a full URL)"} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
         <input style={inp} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption (optional)" onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
-        <button className="btn" disabled={busy || !url.trim()} onClick={add} style={{ alignSelf: "flex-start" }}>
-          {busy ? <><Loader2 className="spin" size={15} /> Adding…</> : <><Plus size={15} /> Add {type === "video" ? "reel" : "photo"}</>}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button className="btn" disabled={busy || uploading || !url.trim()} onClick={add}>
+            {busy ? <><Loader2 className="spin" size={15} /> Adding…</> : <><Plus size={15} /> Add link</>}
+          </button>
+          <span style={{ fontSize: 12, color: "#66665e" }}>or</span>
+          <input ref={fileRef} type="file" accept="video/*,image/*" hidden onChange={(e) => uploadFile(e.target.files?.[0])} />
+          <button className="btn sm" disabled={uploading || busy} onClick={() => fileRef.current?.click()}>
+            {uploading ? <><Loader2 className="spin" size={14} /> Uploading…</> : <><Upload size={14} /> Upload from phone</>}
+          </button>
+        </div>
+        <p className="sub" style={{ margin: 0, fontSize: ".72rem" }}>Paste a YouTube/Shorts/.mp4 link, or upload a clip/photo straight from your device — large videos take a moment. Uploads auto-detect video vs photo.</p>
       </div>
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
