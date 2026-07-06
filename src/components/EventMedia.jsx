@@ -28,9 +28,11 @@ export function parseVideo(raw) {
 // ratio once metadata loads, so vertical reels aren't cropped into 16:9.
 function FileVideo({ src }) {
   const [ar, setAr] = useState(null);
+  // Cloudinary auto-generates a poster frame if you swap the extension to .jpg.
+  const poster = src.replace(/\.(mp4|webm|mov|m4v)(\?|#|$)/i, ".jpg$2");
   return (
     <div className="em-frame em-frame--file" style={ar ? { aspectRatio: ar } : undefined}>
-      <video src={src} controls playsInline preload="metadata"
+      <video src={src} poster={poster !== src ? poster : undefined} controls playsInline preload="metadata"
         onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setAr(`${v.videoWidth} / ${v.videoHeight}`); }} />
     </div>
   );
@@ -58,36 +60,51 @@ export default function EventMedia({ slug }) {
     return <p className="em-soon">📸 Photos &amp; clips are dropping here soon.</p>;
   }
 
+  const renderVideo = (v) => {
+    const p = parseVideo(v.url);
+    return (
+      <figure className={`em-video${p.portrait ? " em-video--portrait" : ""}`} key={v.id}>
+        {p.kind === "yt" && (
+          <div className="em-frame">
+            <iframe
+              src={`https://www.youtube.com/embed/${p.id}?rel=0&modestbranding=1&playsinline=1`}
+              title={v.caption || "reel"} loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          </div>
+        )}
+        {p.kind === "file" && <FileVideo src={p.src} />}
+        {p.kind === "link" && (
+          <div className="em-frame"><a className="em-linkout" href={p.src} target="_blank" rel="noopener noreferrer">▶ Watch</a></div>
+        )}
+        {v.caption && <figcaption>{v.caption}</figcaption>}
+      </figure>
+    );
+  };
+
+  // Showcase: the landscape YouTube feature sits centred, the reels (anything
+  // vertical — uploads OR YouTube Shorts) split to the sides at a smaller size.
+  // Falls back to a plain grid unless there's a feature AND 2+ reels to flank.
+  const isReel = (v) => { const p = parseVideo(v.url); return p.kind === "file" || p.portrait; };
+  const reels = videos.filter(isReel);
+  const feature = videos.filter((v) => !isReel(v));
+  const showcase = feature.length >= 1 && reels.length >= 2;
+  const mid = Math.ceil(reels.length / 2);
+
   return (
     <div className="em">
       <style>{styles}</style>
 
-      {videos.length > 0 && (
-        <div className="em-videos">
-          {videos.map((v) => {
-            const p = parseVideo(v.url);
-            return (
-              <figure className={`em-video${p.portrait ? " em-video--portrait" : ""}`} key={v.id}>
-                {p.kind === "yt" && (
-                  <div className="em-frame">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${p.id}?rel=0&modestbranding=1&playsinline=1`}
-                      title={v.caption || "Chamatkar reel"} loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                )}
-                {p.kind === "file" && <FileVideo src={p.src} />}
-                {p.kind === "link" && (
-                  <div className="em-frame"><a className="em-linkout" href={p.src} target="_blank" rel="noopener noreferrer">▶ Watch</a></div>
-                )}
-                {v.caption && <figcaption>{v.caption}</figcaption>}
-              </figure>
-            );
-          })}
+      {videos.length > 0 && (showcase ? (
+        <div className="em-showcase">
+          <div className="em-side">{reels.slice(0, mid).map(renderVideo)}</div>
+          <div className="em-center">{feature.map(renderVideo)}</div>
+          <div className="em-side">{reels.slice(mid).map(renderVideo)}</div>
         </div>
-      )}
+      ) : (
+        <div className="em-videos">{videos.map(renderVideo)}</div>
+      ))}
 
       {photos.length > 0 && (
         <div className="em-photos">
@@ -105,6 +122,18 @@ export default function EventMedia({ slug }) {
 const styles = `
 .em{font-family:'Space Grotesk',sans-serif;}
 .em-videos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:16px;align-items:start;}
+/* Showcase: reels | feature | reels — feature centred, reels smaller on the sides. */
+.em-showcase{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:18px;align-items:center;}
+.em-showcase .em-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:center;}
+.em-showcase .em-center{min-width:0;}
+.em-showcase .em-center .em-frame{aspect-ratio:16/9;}
+.em-showcase .em-side .em-frame--file,.em-showcase .em-side .em-video--portrait .em-frame{max-width:none;max-height:none;}
+.em-showcase .em-side figcaption,.em-showcase .em-side .em-video figcaption{font-size:.68rem;margin-top:.3rem;}
+@media (max-width:900px){
+  .em-showcase{grid-template-columns:1fr;gap:14px;}
+  .em-showcase .em-center{order:-1;}
+  .em-showcase .em-center .em-frame{max-width:640px;margin:0 auto;}
+}
 .em-video{margin:0;}
 .em-frame{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;border:1px solid rgba(201,168,76,.25);background:#000;}
 .em-video--portrait .em-frame{aspect-ratio:9/16;max-width:300px;margin:0 auto;}
