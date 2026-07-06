@@ -63,6 +63,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
+        <p class="ck-proof">🔥 Vol. 1 sold out — get on the list early.</p>
         <div class="ck-ctas">
           <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
           <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
@@ -114,7 +115,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ck-fomo"><span class="ck-fomo-dot"></span>Limited guest-list spots · <span id="ck-countdown">counting…</span></p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Vol. 1 sold out</strong> · limited guest-list spots · <span id="ck-countdown">counting…</span></p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -204,6 +205,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
   .ck-cta:hover { background: #e2c475; transform: translateY(-1px); }
   .ck-cta--ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.4); }
   .ck-cta--ghost:hover { background: rgba(255,255,255,.08); border-color: #fff; }
+  .ck-proof { margin: 1.4rem 0 0; font-size: .92rem; font-weight: 600; letter-spacing: .01em; color: #f0b45a; }
   .ck-cal { display: inline-block; margin-top: 1.1rem; font-size: .82rem; letter-spacing: .02em; color: rgba(255,255,255,.72); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.4); padding-bottom: 1px; }
   .ck-cal:hover { color: var(--gold, #c9a84c); }
 
