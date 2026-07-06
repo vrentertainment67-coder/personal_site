@@ -57,7 +57,7 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
 
   <main id="main-content" class="ck">
     <!-- ── HERO ── -->
-    <section class="ck-hero" style={`background-image:linear-gradient(to bottom,rgba(6,6,6,.62),rgba(6,6,6,.82) 62%,#080808),url('${EVENT.banner}')`}>
+    <section class="ck-hero" style={`--ck-banner:url('${EVENT.banner}')`}>
       <div class="ck-hero-inner">
         <span class="ck-eyebrow">Guest List · {EVENT.edition}</span>
         <h1 class="ck-title">{EVENT.title}</h1>
@@ -149,8 +149,12 @@ const desc = `Chamatkar returns — ${EVENT.lineup} live at ${EVENT.venue}, ${EV
   .ck section { max-width: none; }
 
   /* ── Hero ── */
-  .ck-hero { background-size: cover; background-position: center; padding: clamp(7rem, 13vw, 11rem) clamp(16px, 4vw, 40px) clamp(3.5rem, 7vw, 5.5rem); text-align: center; }
-  .ck-hero-inner { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+  .ck-hero { position: relative; overflow: hidden; background: #080808; padding: clamp(7rem, 13vw, 11rem) clamp(16px, 4vw, 40px) clamp(3.5rem, 7vw, 5.5rem); text-align: center; }
+  /* Banner image on its own layer, dimmed to 70% so it recedes behind the text. */
+  .ck-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--ck-banner); background-size: cover; background-position: center; opacity: .7; }
+  /* Gradient for legibility + fade to the page background at the bottom. */
+  .ck-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(6,6,6,.45), rgba(6,6,6,.78) 62%, #080808); }
+  .ck-hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .ck-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .34em; text-transform: uppercase; color: var(--gold, #c9a84c); }
   .ck-title { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(4rem, 15vw, 8.5rem); line-height: .9; letter-spacing: .02em; text-transform: uppercase; color: #fff; margin: .6rem 0 0; }
   .ck-lineup { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 3.5vw, 2rem); letter-spacing: .1em; color: #e2c475; margin: 1rem 0 0; }
