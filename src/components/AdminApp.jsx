@@ -1356,6 +1356,7 @@ function EventsAdmin({ showToast }) {
   const [events, setEvents] = useState([]); const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // event | "new" | null
   const [viewing, setViewing] = useState(null); // event whose detail is open
+  const [mediaFor, setMediaFor] = useState(null); // event whose photos/videos manager is open
   const [recurFor, setRecurFor] = useState(null); // event id being re-scheduled
   const [recurDate, setRecurDate] = useState(""); const [recurBusy, setRecurBusy] = useState(false);
 
@@ -1412,6 +1413,7 @@ function EventsAdmin({ showToast }) {
 
   if (editing) return <EventForm event={editing === "new" ? null : editing} onDone={() => { setEditing(null); load(); }} showToast={showToast} />;
   if (viewing) return <EventDetail event={viewing} onBack={() => { setViewing(null); load(); }} showToast={showToast} />;
+  if (mediaFor) return <EventMediaManager event={mediaFor} onBack={() => setMediaFor(null)} showToast={showToast} />;
 
   const now = Date.now();
   const upcoming = events.filter((e) => !e.expiry || Date.parse(e.expiry) >= now);
@@ -1431,6 +1433,7 @@ function EventsAdmin({ showToast }) {
       </div>
       <div className="req-actions">
         <button className="act" onClick={() => setViewing(ev)}><Users size={15} /> Guest list</button>
+        <button className="act" onClick={() => setMediaFor(ev)}><Film size={15} /> Photos &amp; videos</button>
         <button className="act" onClick={() => setEditing(ev)}>Edit</button>
         <button className="act" onClick={() => toggleGl(ev)}>{ev.guestlist_enabled ? "Disable RSVP" : "Enable RSVP"}</button>
         <button className="act accept" onClick={() => { setRecurFor(recurFor === ev.id ? null : ev.id); setRecurDate(""); }}><CalendarDays size={15} /> Schedule next</button>
@@ -2637,6 +2640,115 @@ function EventForm({ event, onDone, showToast }) {
           {busy ? <><Loader2 className="spin" size={16} /> Saving…</> : (isEdit ? "Save changes" : "Create event")}
         </button>
       </div>
+    </>
+  );
+}
+
+// ── Photos & videos (reels) for an event → public event page (event_media) ──
+function ytThumb(url) {
+  const s = String(url || "").trim();
+  const short = s.match(/shorts\/([A-Za-z0-9_-]{6,})/);
+  const m = short || s.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+  const id = m ? m[1] : (/^[A-Za-z0-9_-]{6,}$/.test(s) && !/[.\/]/.test(s) ? s : null);
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+}
+
+function EventMediaManager({ event, onBack, showToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [type, setType] = useState("video");
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("event_media")
+      .select("*").eq("event_slug", event.slug).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
+    if (error) showToast("Couldn't load media — run event_media.sql in Supabase.");
+    setRows(data || []); setLoading(false);
+  }, [event.slug, showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const add = async () => {
+    const u = url.trim();
+    if (!u) return showToast(type === "video" ? "Paste a video link (YouTube / Shorts / mp4)." : "Paste an image URL.");
+    setBusy(true);
+    const nextOrder = rows.length ? Math.max(...rows.map((r) => r.sort_order || 0)) + 1 : 0;
+    const { error } = await supabase.from("event_media").insert({
+      event_slug: event.slug, type, url: u, caption: caption.trim() || null, sort_order: nextOrder,
+    });
+    setBusy(false);
+    if (error) return showToast("Couldn't add — " + error.message);
+    setUrl(""); setCaption(""); showToast(type === "video" ? "Reel added." : "Photo added."); load();
+  };
+  const del = async (r) => {
+    if (!window.confirm("Remove this item?")) return;
+    const { error } = await supabase.from("event_media").delete().eq("id", r.id);
+    if (error) return showToast("Delete failed — " + error.message);
+    load();
+  };
+  const move = async (r, dir) => {
+    const i = rows.findIndex((x) => x.id === r.id);
+    const j = i + dir;
+    if (j < 0 || j >= rows.length) return;
+    const a = rows[i], b = rows[j];
+    await Promise.all([
+      supabase.from("event_media").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("event_media").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    load();
+  };
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter", width: "100%" };
+  const icBtn = { background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#cfcabf", cursor: "pointer", lineHeight: 0, minHeight: 30 };
+
+  return (
+    <>
+      <button className="btn sm" onClick={onBack} style={{ marginBottom: 12 }}>← All events</button>
+      <h1 className="h1">Photos &amp; videos — {event.title}</h1>
+      <p className="sub">Drop in reels (YouTube, Shorts, or an .mp4 link) and photos. They show on the event page instantly — no redeploy. Reorder with the arrows; first added shows first.</p>
+
+      <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "inline-flex", border: "1px solid #2a2a2a", borderRadius: 7, overflow: "hidden", alignSelf: "flex-start" }}>
+          {["video", "photo"].map((t) => (
+            <button key={t} onClick={() => setType(t)} style={{ background: type === t ? "#c9a84c" : "transparent", color: type === t ? "#161616" : "#8a8878", border: 0, fontSize: 13, padding: "7px 16px", cursor: "pointer", fontWeight: type === t ? 600 : 400, textTransform: "capitalize" }}>{t === "video" ? "Reel / video" : "Photo"}</button>
+          ))}
+        </div>
+        <input style={inp} value={url} onChange={(e) => setUrl(e.target.value)} placeholder={type === "video" ? "YouTube / Shorts link or .mp4 URL" : "Image URL (e.g. /images/chamatkar/1.jpg or a full URL)"} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
+        <input style={inp} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption (optional)" onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
+        <button className="btn" disabled={busy || !url.trim()} onClick={add} style={{ alignSelf: "flex-start" }}>
+          {busy ? <><Loader2 className="spin" size={15} /> Adding…</> : <><Plus size={15} /> Add {type === "video" ? "reel" : "photo"}</>}
+        </button>
+      </div>
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
+        <p className="empty">Nothing added yet — drop your first reel above.</p>
+      ) : (
+        <div className="list" style={{ marginTop: 12 }}>
+          {rows.map((r, i) => {
+            const thumb = r.type === "video" ? ytThumb(r.url) : r.url;
+            return (
+              <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 92, height: 58, flexShrink: 0, borderRadius: 5, overflow: "hidden", background: "#050505", border: "1px solid #222", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {thumb ? <img src={thumb} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Film size={18} color="#666" />}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12.5, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span className="tag" style={{ marginRight: 6 }}>{r.type}</span>{r.caption || r.url}
+                  </div>
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: "#8a8878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{r.url}</a>
+                </div>
+                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  <button style={icBtn} title="Move up" disabled={i === 0} onClick={() => move(r, -1)}>↑</button>
+                  <button style={icBtn} title="Move down" disabled={i === rows.length - 1} onClick={() => move(r, 1)}>↓</button>
+                  <button style={{ ...icBtn, color: "#e0574a" }} title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
