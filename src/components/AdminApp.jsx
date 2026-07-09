@@ -1499,6 +1499,8 @@ function EventDetail({ event, onBack, showToast }) {
 function EventGuests({ event, showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(""); const [deleting, setDeleting] = useState(null);
+  const [adding, setAdding] = useState(false); const [saving, setSaving] = useState(false);
+  const [f, setF] = useState({ name: "", phone: "", guests: "1", entry: "", instagram: "" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1521,6 +1523,19 @@ function EventGuests({ event, showToast }) {
     setDeleting(null);
     if (error) return showToast("Delete needs the admin delete grant (see event_rsvps.sql).");
     showToast("Removed."); load();
+  };
+  const addGuest = async () => {
+    if (!f.name.trim()) return showToast("Enter a name.");
+    setSaving(true);
+    const { error } = await supabase.from("event_rsvps").insert({
+      event: event.slug, name: f.name.trim(), phone: f.phone.trim() || "—",
+      guests: parseInt(f.guests, 10) || 1, entry_type: f.entry || null,
+      instagram: f.instagram.trim() || null, source: "manual",
+    });
+    setSaving(false);
+    if (error) return showToast("Couldn't add — " + error.message);
+    setF({ name: "", phone: "", guests: "1", entry: "", instagram: "" });
+    setAdding(false); showToast("Added to the guest list."); load();
   };
 
   const q = query.trim().toLowerCase();
@@ -1547,12 +1562,41 @@ function EventGuests({ event, showToast }) {
   return (
     <>
       <div className="row-between">
-        <p className="sub" style={{ margin: 0 }}>RSVPs from the homepage popup.</p>
+        <p className="sub" style={{ margin: 0 }}>RSVPs from the guest-list form + manual adds.</p>
         <div style={{ display: "flex", gap: 8 }}>
+          <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add guest</button>
           <button className="btn sm" onClick={sendListToWhatsApp}><MessageCircle size={15} /> WhatsApp list</button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
         </div>
       </div>
+
+      {adding && (
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8, margin: "12px 0 0" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input className="search" style={{ flex: "2 1 160px", margin: 0 }} placeholder="Name *" value={f.name}
+              onChange={(e) => setF({ ...f, name: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") addGuest(); }} />
+            <input className="search" style={{ flex: "1 1 130px", margin: 0 }} placeholder="Phone / WhatsApp (optional)" value={f.phone}
+              onChange={(e) => setF({ ...f, phone: e.target.value.replace(/[^\d+\s()-]/g, "") })} />
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <select className="search" style={{ flex: "1 1 90px", margin: 0 }} value={f.guests} onChange={(e) => setF({ ...f, guests: e.target.value })}>
+              {["1", "2", "3", "4", "5", "6", "7", "8+"].map((n) => <option key={n} value={n}>{n} {n === "1" ? "guest" : "guests"}</option>)}
+            </select>
+            <select className="search" style={{ flex: "1 1 120px", margin: 0 }} value={f.entry} onChange={(e) => setF({ ...f, entry: e.target.value })}>
+              <option value="">Entry —</option>
+              <option value="couple">Couple</option>
+              <option value="stag">Stag</option>
+              <option value="mixed">Mixed group</option>
+            </select>
+            <input className="search" style={{ flex: "1 1 120px", margin: 0 }} placeholder="Instagram (optional)" value={f.instagram}
+              onChange={(e) => setF({ ...f, instagram: e.target.value })} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn sm" disabled={saving || !f.name.trim()} onClick={addGuest}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Add to list</button>
+            <button className="btn sm ghost" onClick={() => setAdding(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 10, margin: "12px 0 14px" }}>
         <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>RSVPs</span></div>
         <div style={glStat}><strong style={glNum}>{heads}</strong><span style={glLbl}>Total heads</span></div>
@@ -1567,7 +1611,7 @@ function EventGuests({ event, showToast }) {
               <div key={r.id} className="req">
                 <div className="req-top">
                   <div>
-                    <h3>{r.name} <span className="gold">· {r.guests} {Number(r.guests) === 1 ? "guest" : "guests"}</span></h3>
+                    <h3>{r.name} <span className="gold">· {r.guests} {Number(r.guests) === 1 ? "guest" : "guests"}</span>{r.source === "manual" && <span className="mini"> manual</span>}</h3>
                     <p className="req-meta">
                       {r.entry_type && <span className="tag">{r.entry_type}</span>}
                       <span>{r.phone}</span>
