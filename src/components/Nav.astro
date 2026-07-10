@@ -29,7 +29,7 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
 
     <!-- Desktop nav links -->
     <ul>
-      <li><a href={`${base}/#about`} class:list={[{ active: is('/') }]}>About</a></li>
+      <li><a href={`${base}/about/`} class:list={[{ active: startsWith('/about') }]}>About</a></li>
       <li class="has-dropdown">
         <button
           class:list={['dropdown-trigger', { active: isServices }]}
