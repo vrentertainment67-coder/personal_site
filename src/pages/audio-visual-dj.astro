@@ -1,0 +1,280 @@
+---
+// Category pillar — "Audio-Visual DJ". A definitional resource that owns the
+// term: what it is, how it differs from a VJ / standard DJ, what it needs,
+// where it fits, and why it costs more. Marked up with DefinedTerm, Service,
+// FAQPage and VideoObject so AI assistants and Google can cite it directly.
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const AV_VIDEO = 'Lzmtei83uvI'; // Chamatkar live audio-visual set
+const ogImg = `https://img.youtube.com/vi/${AV_VIDEO}/maxresdefault.jpg`;
+
+const DEF = "An audio-visual DJ mixes live music and drives synchronised, purpose-built visuals as one unified performance — as distinct from a standard DJ set accompanied by a separate VJ looping generic graphics. The music and the visuals are designed together: cut to the same beats, built around the theme, brand or couple, and mapped to the arc of the night.";
+
+// FAQ — one source of truth for the visible accordion AND the FAQPage schema.
+const FAQS = [
+  { q: "What is an audio-visual DJ?", a: "An audio-visual (AV) DJ performs live music mixing and synchronised, purpose-built visual content as a single show. Instead of a DJ playing tracks while a separate VJ loops generic graphics, the set and the visuals are produced together — beat-matched, themed to the event, and built to peak at the same moments the music does. DJ VIC has performed in this format since 2007." },
+  { q: "How is an audio-visual DJ different from a VJ?", a: "A VJ (visual jockey) handles only the visuals and usually works alongside a separate DJ. An audio-visual DJ is one performer directing both — the music and the on-screen content are one creative decision, not two people trying to stay in sync. That unity is what makes the moment land." },
+  { q: "How is it different from a normal DJ set with screens behind it?", a: "Most DJ setups with a screen play stock loops or a logo on a slideshow, disconnected from the music. An AV set uses custom, beat-synced content built for that specific room, brand or celebration — entrances, reveals, drops and dedications all hit on cue. It reads as a produced show, not background décor." },
+  { q: "Does an audio-visual DJ cost more?", a: "Yes. There's original content to build, more hardware, a longer programming and rehearsal process, and tighter coordination with the venue's AV team. It is priced as a premium format and it's worth it for the moments that have to be unforgettable — a product launch, an annual-day finale, a luxury-wedding reception entrance." },
+  { q: "What does the venue need for an audio-visual set?", a: "A screen, LED wall or projection with clean sightlines to the dance floor, adequate power, and enough load-in time to test the sync. It's best planned in advance — DJ VIC coordinates directly with the venue's production and AV team so the format is built into the show-flow, not bolted on at the end." },
+  { q: "Can you do an audio-visual DJ set at a wedding?", a: "Yes — it's one of the strongest uses of the format. Sangeet performances, the reception entrance, the first dance and family dedications all gain from visuals cut to the music. It turns key moments into set-pieces the couple and their guests remember." },
+  { q: "Do you build the visuals, or do we supply them?", a: "DJ VIC develops the custom visual content as part of the booking — he has been building AV sets since 2007. For corporate events, brand assets, campaign themes and product footage can be woven into the show; for weddings, the couple's story and theme drive it." },
+  { q: "Is DJ VIC available for audio-visual shows across India and abroad?", a: "Yes. DJ VIC performs across India and has played in 18 countries, including audio-visual formats for corporate launches, annual days, festivals and destination weddings." },
+];
+
+const schema = [
+  {
+    "@context": "https://schema.org", "@type": "DefinedTerm",
+    "name": "Audio-Visual DJ", "description": DEF,
+    "inDefinedTermSet": "https://djvicofficial.com/audio-visual-dj/"
+  },
+  {
+    "@context": "https://schema.org", "@type": "Service",
+    "serviceType": "Audio-Visual DJ Performance",
+    "provider": { "@id": "https://djvicofficial.com/#business" },
+    "areaServed": ["Bangalore", "India"],
+    "description": "Live audio-visual DJ performances — original music synced with custom, purpose-built visuals — for product launches, brand activations, annual days, festivals and luxury weddings. Performed by DJ VIC since 2007."
+  },
+  {
+    "@context": "https://schema.org", "@type": "VideoObject",
+    "name": "DJ VIC — Live Audio-Visual Set",
+    "description": "A live audio-visual DJ set: music mixed with synchronised, purpose-built visuals.",
+    "thumbnailUrl": [ogImg], "uploadDate": "2026-06-01",
+    "contentUrl": `https://www.youtube.com/watch?v=${AV_VIDEO}`,
+    "embedUrl": `https://www.youtube.com/embed/${AV_VIDEO}`,
+    "publisher": { "@type": "Organization", "name": "DJ VIC", "url": "https://djvicofficial.com/" }
+  },
+  {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    "mainEntity": FAQS.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+  },
+  {
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Audio-Visual DJ", "item": "https://djvicofficial.com/audio-visual-dj/" }
+    ]
+  }
+];
+---
+
+<Layout
+  title="Audio-Visual DJ — What It Is & How It Works | DJ VIC"
+  description="What is an audio-visual DJ? Live music mixing synced with custom, purpose-built visuals as one performance — not a DJ plus a VJ. The complete guide, plus AV DJ bookings across India by DJ VIC (since 2007)."
+  ogTitle="Audio-Visual DJ — The Format, Explained"
+  ogDescription="Live music mixed with synchronised, purpose-built visuals as one show. What an audio-visual DJ is, how it differs from a VJ, what venues need, and what it costs."
+  ogImage={ogImg}
+  canonical="https://djvicofficial.com/audio-visual-dj/"
+  schema={schema}
+>
+  <Nav />
+
+  <main id="main-content" class="avd">
+    <!-- ── HERO ── -->
+    <section class="av-hero">
+      <div class="av-inner">
+        <span class="av-eyebrow">The Format · Since 2007</span>
+        <h1>Audio-Visual DJ</h1>
+        <p class="av-sub">Live music and purpose-built visuals, performed as one show. Not a DJ with a screen behind him — a single, synchronised performance.</p>
+        <div class="av-ctas">
+          <a href="/book/" class="cta-btn cta-btn--gold">Enquire About an AV Show →</a>
+          <a href="#what" class="cta-btn cta-btn--ghost">What is it? ↓</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── DEFINITION ── -->
+    <section id="what" class="av-sec">
+      <div class="av-inner">
+        <div class="section-label">The Definition</div>
+        <h2>What is an audio-visual DJ?</h2>
+        <p class="av-def">{DEF}</p>
+        <p class="av-body">Put simply: in a standard setup, a DJ plays the music and, if there's a screen at all, a separate visual jockey (VJ) runs generic loops that rarely line up with what you're hearing. An <strong>audio-visual DJ</strong> collapses that into one performance. The same person shapes the music and the imagery, and they're built together — so the drop, the reveal, the entrance and the dedication all hit at exactly the same moment on screen and in sound.</p>
+        <p class="av-body">DJ VIC has performed in this format since 2007, developing original music synced to custom visuals for launches, annual days, festivals and luxury weddings — across India and in 18 countries.</p>
+      </div>
+    </section>
+
+    <!-- ── COMPARISON ── -->
+    <section class="av-sec av-alt">
+      <div class="av-inner">
+        <div class="section-label">The Difference</div>
+        <h2>AV DJ vs a standard DJ vs a VJ</h2>
+        <div class="av-compare">
+          <div class="av-card av-card--hero">
+            <span class="av-card-tag">Audio-Visual DJ</span>
+            <p>One performer directs the music <em>and</em> synchronised, purpose-built visuals. Content is beat-matched, themed to your event, and built to peak with the set. Reads as a produced show.</p>
+          </div>
+          <div class="av-card">
+            <span class="av-card-tag">Standard DJ</span>
+            <p>Plays the music. Any screen is usually a logo or stock loop, disconnected from the mix. Great for the dance floor — but the visuals do no storytelling.</p>
+          </div>
+          <div class="av-card">
+            <span class="av-card-tag">VJ (Visual Jockey)</span>
+            <p>Handles only the visuals, alongside a separate DJ. Two people trying to stay in sync — the coordination overhead is exactly what the AV format removes.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HOW IT'S BUILT ── -->
+    <section class="av-sec">
+      <div class="av-inner">
+        <div class="section-label">How It Works</div>
+        <h2>How an audio-visual set is built</h2>
+        <p class="av-body">An AV show is programmed, not improvised on top of. The process runs roughly like this:</p>
+        <ul class="av-list">
+          <li><strong>The brief.</strong> The theme, the brand or the couple's story, and the moments that matter — the entrance, the reveal, the finale.</li>
+          <li><strong>The content.</strong> Custom visuals built for those moments — brand assets and product footage for corporates; the couple's story and theme for weddings — cut to the tracks that will play them.</li>
+          <li><strong>The sync.</strong> Music and visuals mapped to the same timeline, so every drop and dedication lands on screen and in sound at once.</li>
+          <li><strong>The room.</strong> Content and set arc tuned to the specific space — sightlines, screen size, and how the floor actually moves.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── VIDEO ── -->
+    <section class="av-sec av-alt">
+      <div class="av-inner">
+        <div class="section-label">See the Format</div>
+        <h2>An audio-visual set, live</h2>
+        <div class="av-video">
+          <iframe
+            src={`https://www.youtube.com/embed/${AV_VIDEO}?rel=0&modestbranding=1`}
+            title="DJ VIC — Live Audio-Visual Set" loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── VENUE + WHERE IT FITS ── -->
+    <section class="av-sec">
+      <div class="av-inner">
+        <div class="section-label">Planning</div>
+        <h2>What the venue needs</h2>
+        <p class="av-body">The format is best built into the show-flow from the start. Practically, an AV set needs a screen, LED wall or projection with clean sightlines to the dance floor, adequate power, and enough load-in time to test the sync. DJ VIC coordinates directly with the venue's production and AV team so nothing is bolted on at the end.</p>
+
+        <div class="section-label" style="margin-top:2.5rem;">Where It Fits</div>
+        <h2>Best-fit formats</h2>
+        <div class="av-tags">
+          <span class="av-tag">Product Launches</span>
+          <span class="av-tag">Brand Activations</span>
+          <span class="av-tag">Annual Days &amp; Galas</span>
+          <span class="av-tag">Festivals</span>
+          <span class="av-tag">Luxury &amp; Destination Weddings</span>
+          <span class="av-tag">Sangeet &amp; Reception Highlights</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WHY IT COSTS MORE ── -->
+    <section class="av-sec av-alt">
+      <div class="av-inner">
+        <div class="section-label">The Honest Part</div>
+        <h2>Why it costs more — and when it's worth it</h2>
+        <p class="av-body">An AV show carries real production: original content to build, more hardware, a longer programming and rehearsal process, and tighter venue coordination. It is priced as a premium format, and it isn't for every event. It's worth it precisely when a moment <em>has</em> to be unforgettable — the launch that has to land, the annual-day finale the whole company will talk about, the reception entrance the couple has imagined for a year. For those, generic playlists and stock loops quietly undersell the moment.</p>
+      </div>
+    </section>
+
+    <!-- ── FAQ ── -->
+    <section class="av-sec">
+      <div class="av-inner">
+        <div class="section-label">Common Questions</div>
+        <h2>Audio-visual DJ FAQ</h2>
+        <div class="av-faq">
+          {FAQS.map((f) => (
+            <details class="faq-item">
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="av-sec av-cta">
+      <div class="av-inner">
+        <h2>Planning a moment that has to land?</h2>
+        <p class="av-body" style="max-width:640px;margin-inline:auto;">Tell us the event and the moment. We'll design the set and the visuals around it.</p>
+        <a href="/book/" class="cta-btn cta-btn--gold">Enquire About an AV Show →</a>
+        <p class="av-explore"><span>Also available for</span>
+          <a href="/corporate/">Corporate →</a>
+          <a href="/weddings/">Weddings →</a>
+          <a href="/festivals/">Festivals →</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .avd { background: #080808; color: #e8e8e0; }
+  .av-inner { max-width: 900px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+  .cta-btn { display: inline-flex; align-items: center; padding: 0.85rem 2rem; font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; border-radius: 4px; text-decoration: none; transition: background 0.2s, color 0.2s, transform 0.15s; }
+  .cta-btn--gold { background: var(--gold, #c9a84c); color: #0a0a0a; }
+  .cta-btn--gold:hover { background: var(--gold-light, #e2c475); transform: translateY(-1px); }
+  .cta-btn--ghost { background: transparent; color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.3); }
+  .cta-btn--ghost:hover { border-color: #fff; color: #fff; }
+
+  /* Hero */
+  .av-hero { position: relative; text-align: center; padding: clamp(7rem, 13vw, 10.5rem) 0 clamp(3.5rem, 7vw, 5rem); background: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(201,168,76,0.12), transparent 65%), #080808; }
+  .av-eyebrow { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-size: .9rem; letter-spacing: .32em; text-transform: uppercase; color: var(--gold, #c9a84c); }
+  .av-hero h1 { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-weight: 400; font-size: clamp(2.8rem, 9vw, 5.5rem); line-height: .95; text-transform: uppercase; color: #fff; margin: .6rem 0 0; letter-spacing: .02em; }
+  .av-sub { font-size: clamp(1rem, 2.1vw, 1.25rem); color: rgba(255,255,255,.72); line-height: 1.6; max-width: 620px; margin: 1.2rem auto 0; }
+  .av-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+
+  /* Sections */
+  .av-sec { padding: clamp(3rem, 6vw, 4.5rem) 0; border-top: 1px solid #141414; }
+  .av-alt { background: rgba(255,255,255,0.015); }
+  .section-label { font-size: .6rem; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; color: var(--gold, #c9a84c); margin-bottom: .75rem; }
+  .av-sec h2 { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-weight: 400; font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.05; text-transform: uppercase; color: #fff; margin: 0 0 1.1rem; letter-spacing: .02em; }
+  .av-body { font-size: 1rem; color: rgba(255,255,255,.72); line-height: 1.85; max-width: 68ch; margin: 0 0 1.1rem; }
+  .av-body strong { color: #fff; }
+  .av-def { font-size: clamp(1.05rem, 2.2vw, 1.3rem); color: #f0ede4; line-height: 1.7; border-left: 3px solid var(--gold, #c9a84c); background: rgba(201,168,76,0.05); padding: 1.1rem 1.4rem; margin: 0 0 1.4rem; }
+
+  .av-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .8rem; }
+  .av-list li { font-size: .95rem; color: rgba(255,255,255,.72); line-height: 1.65; padding-left: 1.4rem; position: relative; }
+  .av-list li::before { content: '—'; position: absolute; left: 0; color: var(--gold, #c9a84c); }
+  .av-list strong { color: #fff; }
+
+  /* Comparison */
+  .av-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px,100%),1fr)); gap: 14px; }
+  .av-card { background: #101010; border: 1px solid #1e1e1e; border-radius: 8px; padding: 1.3rem 1.4rem; }
+  .av-card--hero { border-color: rgba(201,168,76,.4); background: rgba(201,168,76,.06); }
+  .av-card-tag { display: block; font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-size: 1.05rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold, #c9a84c); margin-bottom: .5rem; }
+  .av-card p { font-size: .9rem; color: rgba(255,255,255,.7); line-height: 1.6; margin: 0; }
+  .av-card em { color: rgba(255,255,255,.9); font-style: italic; }
+
+  /* Video */
+  .av-video { position: relative; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; border: 1px solid rgba(201,168,76,.25); background: #000; }
+  .av-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  /* Tags */
+  .av-tags { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .av-tag { border: 1px solid var(--gold, #c9a84c); color: var(--gold, #c9a84c); padding: 9px 18px; border-radius: 4px; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+  /* FAQ */
+  .av-faq { border: 1px solid rgba(201,168,76,0.12); border-radius: 8px; overflow: hidden; }
+  .faq-item { border-bottom: 1px solid rgba(201,168,76,0.12); }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item summary { padding: 1.2rem 1.4rem; font-size: .92rem; font-weight: 600; color: #fff; cursor: pointer; list-style: none; position: relative; padding-right: 3rem; line-height: 1.4; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after { content: '+'; position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: var(--gold, #c9a84c); line-height: 1; transition: transform .2s; }
+  .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+  .faq-item[open] summary { color: var(--gold, #c9a84c); }
+  .faq-item p { padding: 0 1.4rem 1.3rem; font-size: .9rem; color: rgba(255,255,255,.65); line-height: 1.75; margin: 0; }
+
+  /* CTA */
+  .av-cta { text-align: center; }
+  .av-cta h2 { margin-bottom: .8rem; }
+  .av-cta .cta-btn { margin-top: 1.4rem; }
+  .av-explore { display: flex; gap: .5rem 1.3rem; justify-content: center; flex-wrap: wrap; margin: 2.4rem 0 0; }
+  .av-explore span { font-size: .58rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.28); }
+  .av-explore a { font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold, #c9a84c); text-decoration: none; }
+  .av-explore a:hover { color: var(--gold-light, #e2c475); }
+</style>
