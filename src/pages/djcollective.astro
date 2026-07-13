@@ -1,55 +1,306 @@
 ---
-// Dedicated, shareable landing for The DJ Collective (Bengaluru) meetup.
-// Its OWN Open Graph card so WhatsApp/Instagram/etc. preview the event —
-// /thevicfix/ keeps its podcast preview untouched. Opens straight into the
-// RSVP popup (auto-opens once per visitor + the big button).
+// The DJ Collective, Bengaluru — the permanent, high-conversion landing page.
+// Single goal: RSVP. No nav. Mobile-first. Live social proof from real data.
+// Reusable: the "This Edition" block below is the only monthly swap.
 import Layout from '../layouts/Layout.astro';
-import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import DJCollectivePopup from '../components/DJCollectivePopup.jsx';
+import CollectiveStats from '../components/CollectiveStats.jsx';
+
+const WA_CHANNEL = "https://whatsapp.com/channel/0029Vb8ZoHlATRSqaILd683A";
+
+// ── THIS EDITION — the monthly swap-out. Edit these lines each month. ──
+const EDITION = {
+  label: "Edition 01",
+  dateLabel: "Monday, 20 July",
+  timeLabel: "9 PM onwards — come & go",
+  venue: "Watson's",
+  area: "Indiranagar, Bengaluru",
+  mapsQuery: "Watson's Indiranagar Bengaluru",
+  deal: "Special drinks and a curated menu, sorted for the room.",
+  startISO: "2026-07-20T21:00:00+05:30",
+  endISO: "2026-07-21T01:00:00+05:30",
+};
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EDITION.mapsQuery)}`;
+
+const FAQS = [
+  { q: "Is it free?", a: "Completely. No ticket, no cover, no catch. Just RSVP so we know you're coming and can have a name badge ready at the door." },
+  { q: "Do I have to play or perform?", a: "No — and that's the whole point. Nobody's on the decks. No headliner, no set times, no pressure. It's a hang, not a gig." },
+  { q: "What if I don't know anyone there?", a: "Perfect — so did most of the room. It's hosted: the people running it make introductions, so you're never left standing alone. Most arrive not knowing anyone and leave with numbers." },
+  { q: "I'm new to DJing — is it for me?", a: "Yes. The room runs from under-2-years to 15+-year veterans, and everyone's a peer. Leave the ego at the door — nobody's ranking anyone here." },
+  { q: "Can I bring a DJ friend?", a: "Please do — DJs bringing DJs is exactly how this grows. Just have them RSVP too so we've got their badge." },
+  { q: "What actually happens?", a: "You walk in, grab your badge, get a drink, and meet the people behind the flyers you've seen all over the city. Swap war stories, talk the business, find subs and collaborators. Come and go as you like." },
+  { q: "How do I get there / parking?", a: `${EDITION.venue} is in ${EDITION.area}, easy to reach. Tap the map for directions — cabs and autos drop right outside.` },
+  { q: "Is there a dress code?", a: "None. Come as you are — straight from a gig, from work, whatever. It's a room of DJs, not a red carpet." },
+];
+
+const schema = [
+  {
+    "@context": "https://schema.org", "@type": "Event",
+    "name": `The DJ Collective, Bengaluru — ${EDITION.label}`,
+    "startDate": EDITION.startISO, "endDate": EDITION.endISO,
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "location": { "@type": "Place", "name": EDITION.venue, "address": { "@type": "PostalAddress", "addressLocality": "Bengaluru", "addressRegion": "Karnataka", "addressCountry": "IN", "streetAddress": EDITION.area } },
+    "image": ["https://djvicofficial.com/images/og-djcollective.jpg"],
+    "description": "A monthly, no-agenda gathering for Bengaluru's DJs. No headliner, nobody playing — just the people behind the flyers, in one room.",
+    "organizer": { "@type": "Organization", "name": "The Vic Fix", "url": "https://djvicofficial.com/thevicfix/" },
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "url": "https://djvicofficial.com/djcollective/" },
+    "isAccessibleForFree": true
+  },
+  { "@context": "https://schema.org", "@type": "Organization", "name": "The DJ Collective, Bengaluru", "url": "https://djvicofficial.com/djcollective/", "description": "A monthly community gathering for Bengaluru's DJs, arranged by The Vic Fix." },
+  { "@context": "https://schema.org", "@type": "FAQPage", "mainEntity": FAQS.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } })) }
+];
 ---
 
 <Layout
-  title="The DJ Collective, Bengaluru — RSVP"
-  description="No agenda. Just Bengaluru's DJs catching up. RSVP for the next meetup of The DJ Collective, Bengaluru."
+  title="The DJ Collective, Bengaluru — A Monthly Gathering for the City's DJs"
+  description="A monthly, no-agenda gathering for Bengaluru's DJs. No headliner, nobody playing — just the people behind the flyers, in one room. RSVP free."
   ogTitle="The DJ Collective, Bengaluru — You're Invited"
-  ogDescription="No agenda. Just Bengaluru's DJs catching up. Tap to RSVP for the next meetup."
+  ogDescription="Same scene. Never the same room. A monthly no-agenda gathering for the city's DJs. RSVP — it's free."
   ogImage="https://djvicofficial.com/images/og-djcollective.jpg"
   canonical="https://djvicofficial.com/djcollective/"
+  schema={schema}
 >
-  <Nav />
-  <main id="main-content" class="djc-page">
-    <section class="djcp-hero">
-      <span class="djcp-eyebrow">You're invited</span>
-      <h1 class="djcp-brand">The DJ Collective</h1>
-      <span class="djcp-city">Bengaluru</span>
-      <p class="djcp-tag">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
-      <p class="djcp-date">🗓 Monday, 20 July · 9 PM onwards<br />📍 Watsons, Indiranagar</p>
-      <button type="button" class="djcp-cta" data-djc-open>RSVP — Count me in</button>
-      <p class="djcp-fine">No agenda. No headliner.</p>
+  <main id="main-content" class="dc">
+    <!-- ── HERO ── -->
+    <section class="dc-hero">
+      <span class="dc-emblem">The DJ Collective</span>
+      <span class="dc-city">Bengaluru</span>
+      <h1 class="dc-h1">Same scene.<br />Never the same room.</h1>
+      <p class="dc-sub">A monthly, no-agenda gathering for the city's DJs. No headliner, nobody playing — just the people behind the flyers, finally in one room.</p>
+      <button type="button" class="dc-cta" data-djc-open>RSVP — it's free</button>
+      <p class="dc-proof">★ <span id="dc-count">188</span> DJs already in</p>
+      <p class="dc-essentials"><span>📍 {EDITION.venue}</span><span>🗓 {EDITION.dateLabel}</span><span>🕘 9 PM onwards</span></p>
     </section>
+
+    <!-- ── STORY ── -->
+    <section class="dc-sec dc-story">
+      <h2>The whole city, one scene — and we've never met.</h2>
+      <p>Bengaluru's DJs share the same clubs, the same crowds, the same 2 a.m. load-outs. We follow each other online, play the same rooms on different nights, and somehow never end up in the same room ourselves.</p>
+      <p>So we built the one that was missing. No headliner. No agenda. Nobody on the decks. Just peers — from open-format to techno, from two years in to twenty — in a room where everyone's equal and nobody's performing.</p>
+      <p class="dc-pull">"Leave the ego at the door. Everyone here is a peer."</p>
+      <a href="#room" class="dc-link">See who's already coming ↓</a>
+    </section>
+
+    <!-- ── STATS ── -->
+    <section id="room" class="dc-sec dc-alt">
+      <div class="dc-sec-head"><span class="dc-kicker">The room so far</span><h2>Real DJs. Real spread. Already in.</h2></div>
+      <CollectiveStats client:load />
+      <div class="dc-center"><button type="button" class="dc-cta" data-djc-open>Add your name to the count →</button></div>
+    </section>
+
+    <!-- ── WHAT HAPPENS ── -->
+    <section class="dc-sec">
+      <div class="dc-sec-head"><span class="dc-kicker">What happens</span><h2>No agenda. That's the point.</h2></div>
+      <div class="dc-tiles">
+        <div class="dc-tile"><span class="dc-tile-i">🎧</span><h3>Meet the faces</h3><p>Put faces to the flyers you've seen all over the city.</p></div>
+        <div class="dc-tile"><span class="dc-tile-i">🗣️</span><h3>Swap war stories</h3><p>The gigs that went sideways, the crowds that saved the night.</p></div>
+        <div class="dc-tile"><span class="dc-tile-i">🤝</span><h3>Find your people</h3><p>Subs, collaborators, back-to-backs — the room is full of them.</p></div>
+        <div class="dc-tile"><span class="dc-tile-i">🍸</span><h3>Drinks &amp; food, sorted</h3><p>Walk in, grab a badge, get a drink. Come and go as you like.</p></div>
+        <div class="dc-tile"><span class="dc-tile-i">🚫</span><h3>Nobody's playing</h3><p>No decks, no set times, no pressure. The night is the point.</p></div>
+        <div class="dc-tile"><span class="dc-tile-i">✋</span><h3>You won't stand alone</h3><p>It's hosted — we make the introductions so no one's stranded.</p></div>
+      </div>
+      <div class="dc-center"><button type="button" class="dc-cta" data-djc-open>RSVP — it's free</button></div>
+    </section>
+
+    <!-- ── THIS EDITION ── -->
+    <section class="dc-sec dc-alt">
+      <div class="dc-sec-head"><span class="dc-kicker">{EDITION.label}</span><h2>{EDITION.venue} · {EDITION.dateLabel}</h2></div>
+      <div class="dc-edition">
+        <div class="dc-ed-row"><span class="dc-ed-i">🗓</span><div><strong>{EDITION.dateLabel}</strong><span>{EDITION.timeLabel}</span></div></div>
+        <div class="dc-ed-row"><span class="dc-ed-i">📍</span><div><strong>{EDITION.venue}</strong><span>{EDITION.area}</span><a class="dc-ed-map" href={mapsHref} target="_blank" rel="noopener noreferrer">Open in Maps →</a></div></div>
+        <div class="dc-ed-row"><span class="dc-ed-i">🍸</span><div><strong>The deal</strong><span>{EDITION.deal}</span></div></div>
+      </div>
+      <div class="dc-center"><button type="button" class="dc-cta" data-djc-open>RSVP for {EDITION.label} →</button></div>
+    </section>
+
+    <!-- ── FAQ ── -->
+    <section class="dc-sec">
+      <div class="dc-sec-head"><span class="dc-kicker">Questions</span><h2>Everything you're wondering</h2></div>
+      <div class="dc-faq">
+        {FAQS.map((f) => (
+          <details class="dc-faq-item">
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+      <div class="dc-center"><button type="button" class="dc-cta" data-djc-open>RSVP — it's free</button></div>
+    </section>
+
+    <!-- ── FINAL CTA + CAPTURE ── -->
+    <section class="dc-sec dc-final">
+      <h2 class="dc-final-h">You in?</h2>
+      <button type="button" class="dc-cta dc-cta--lg" data-djc-open>RSVP — it's free</button>
+      <div class="dc-capture">
+        <a class="dc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+          Join the WhatsApp channel
+        </a>
+        <form class="dc-email" id="dc-email">
+          <label>Can't make this one? Get first word on the next.</label>
+          <div class="dc-email-row">
+            <input type="email" id="dc-email-input" placeholder="you@email.com" required />
+            <button type="submit" id="dc-email-btn">Notify me</button>
+          </div>
+          <p class="dc-email-msg" id="dc-email-msg"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── FOOTER ── -->
+    <footer class="dc-foot">
+      <span class="dc-foot-brand">The DJ Collective · Bengaluru</span>
+      <span class="dc-foot-by">Arranged by <a href="/thevicfix/">The Vic Fix</a></span>
+      <span class="dc-foot-links">
+        <a href="https://instagram.com/thevicfix" target="_blank" rel="noopener noreferrer">@thevicfix</a>
+        <a href="https://instagram.com/djvicofficial" target="_blank" rel="noopener noreferrer">@djvicofficial</a>
+        <a href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">WhatsApp channel</a>
+      </span>
+    </footer>
   </main>
 
-  <DJCollectivePopup client:load />
+  <!-- Sticky mobile RSVP bar -->
+  <div class="dc-sticky" id="dc-sticky"><button type="button" class="dc-cta" data-djc-open>RSVP — it's free</button></div>
+
+  <DJCollectivePopup client:load autoOpen={false} />
   <Footer />
 </Layout>
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Lora:ital@1&family=Inter:wght@400;500&display=swap');
-  .djc-page { background: #080808; }
-  .djcp-hero {
-    min-height: 74vh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 7.5rem 1.5rem 4.5rem;
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.10), transparent 65%);
+<script>
+  function dcInit() {
+    // Sticky bar appears after the hero scrolls past
+    const bar = document.getElementById('dc-sticky');
+    const hero = document.querySelector('.dc-hero');
+    if (bar && hero && !bar.dataset.bound) {
+      bar.dataset.bound = '1';
+      const io = new IntersectionObserver((es) => { bar.classList.toggle('show', !es[0].isIntersecting); });
+      io.observe(hero);
+    }
+    // Live hero count
+    const cnt = document.getElementById('dc-count');
+    if (cnt && !cnt.dataset.done) {
+      cnt.dataset.done = '1';
+      fetch('https://jftnhuutttmccmqnnybf.supabase.co/rest/v1/rpc/dj_collective_stats', {
+        method: 'POST',
+        headers: { apikey: 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9', Authorization: 'Bearer sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_session: null }),
+      }).then((r) => r.ok ? r.json() : null).then((d) => { if (d && d.total) cnt.textContent = d.total; }).catch(() => {});
+    }
+    // Email capture
+    const form = document.getElementById('dc-email');
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = '1';
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('dc-email-input');
+        const msg = document.getElementById('dc-email-msg');
+        const btn = document.getElementById('dc-email-btn');
+        const email = (input.value || '').trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Enter a valid email.'; msg.style.color = '#e89090'; return; }
+        btn.disabled = true; btn.textContent = '…';
+        fetch('https://jftnhuutttmccmqnnybf.supabase.co/rest/v1/rpc/dj_collective_subscribe', {
+          method: 'POST',
+          headers: { apikey: 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9', Authorization: 'Bearer sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_email: email }),
+        }).then((r) => r.json()).then((d) => {
+          if (d && d.status === 'ok') { form.innerHTML = '<p class="dc-email-ok">✓ You\'re on the list — we\'ll give you first word on the next edition.</p>'; }
+          else { msg.textContent = 'Something went wrong — try again.'; msg.style.color = '#e89090'; btn.disabled = false; btn.textContent = 'Notify me'; }
+        }).catch(() => { msg.textContent = 'Network error — try again.'; msg.style.color = '#e89090'; btn.disabled = false; btn.textContent = 'Notify me'; });
+      });
+    }
   }
-  .djcp-eyebrow { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 0.8rem; letter-spacing: 0.34em; text-transform: uppercase; color: #C9A84C; }
-  .djcp-brand { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(2.6rem, 9vw, 5.5rem); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: #E0DCCF; margin: 1.2rem 0 0; }
-  .djcp-city { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(0.9rem, 2.5vw, 1.2rem); letter-spacing: 0.5em; text-transform: uppercase; color: #C9A84C; margin-top: 0.6rem; }
-  .djcp-tag { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1rem, 2.4vw, 1.3rem); line-height: 1.6; color: rgba(224,220,207,0.82); margin: 1.8rem 0 0; max-width: 44ch; }
-  .djcp-date { font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.03em; color: #C9A84C; margin: 1.1rem 0 0; line-height: 1.6; }
-  .djcp-date-sub { font-weight: 400; color: rgba(224,220,207,0.5); font-size: 0.85rem; }
-  .djcp-cta { margin-top: 2.2rem; appearance: none; background: #C9A84C; color: #080808; border: 0; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 1rem 2.3rem; border-radius: 4px; cursor: pointer; transition: filter 0.2s, transform 0.15s; }
-  .djcp-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
-  .djcp-fine { font-family: 'Lora', serif; font-style: italic; font-size: 0.85rem; color: rgba(224,220,207,0.4); margin-top: 1.7rem; }
+  document.addEventListener('astro:page-load', dcInit);
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Lora:ital@1&family=Inter:wght@400;500;600&display=swap');
+  .dc { background: #080808; color: #E0DCCF; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+  .dc-cta { display: inline-flex; align-items: center; justify-content: center; background: #C9A84C; color: #080808; border: 0; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: .07em; text-transform: uppercase; padding: .95rem 2.2rem; border-radius: 4px; cursor: pointer; transition: filter .2s, transform .15s; }
+  .dc-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .dc-cta--lg { font-size: 1.15rem; padding: 1.05rem 2.8rem; }
+  .dc-center { text-align: center; margin-top: 2rem; }
+
+  /* Hero */
+  .dc-hero { min-height: 92vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 1.5rem 3rem; background: radial-gradient(ellipse 85% 55% at 50% 0%, rgba(201,168,76,0.12), transparent 65%); }
+  .dc-emblem { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem; letter-spacing: .06em; text-transform: uppercase; color: #E0DCCF; }
+  .dc-city { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: .72rem; letter-spacing: .5em; text-transform: uppercase; color: #C9A84C; margin-top: .3rem; }
+  .dc-h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(2.3rem, 9vw, 4.6rem); line-height: 1.02; text-transform: uppercase; color: #fff; margin: 1.8rem 0 0; letter-spacing: .01em; }
+  .dc-sub { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1rem, 2.4vw, 1.3rem); line-height: 1.6; color: rgba(224,220,207,.8); max-width: 40ch; margin: 1.4rem auto 0; }
+  .dc-hero .dc-cta { margin-top: 2.2rem; }
+  .dc-proof { font-size: .9rem; font-weight: 600; color: #C9A84C; margin: 1.1rem 0 0; }
+  .dc-essentials { display: flex; flex-wrap: wrap; gap: .5rem 1.3rem; justify-content: center; margin: 1.4rem 0 0; font-size: .84rem; color: rgba(224,220,207,.65); }
+
+  /* Sections */
+  .dc-sec { max-width: 880px; margin: 0 auto; padding: clamp(3.5rem, 8vw, 6rem) clamp(18px, 5vw, 44px); border-top: 1px solid #161616; }
+  .dc-alt { background: rgba(201,168,76,0.02); }
+  .dc-sec-head { text-align: center; max-width: 620px; margin: 0 auto clamp(1.8rem, 3vw, 2.6rem); }
+  .dc-kicker { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: .72rem; letter-spacing: .3em; text-transform: uppercase; color: #C9A84C; }
+  .dc-sec h2 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(1.6rem, 4.5vw, 2.6rem); line-height: 1.1; text-transform: uppercase; color: #fff; margin: .5rem 0 0; }
+
+  /* Story */
+  .dc-story { text-align: center; }
+  .dc-story h2 { margin-bottom: 1.4rem; }
+  .dc-story p { font-size: clamp(1rem, 2vw, 1.12rem); line-height: 1.8; color: rgba(224,220,207,.75); max-width: 60ch; margin: 0 auto 1.1rem; }
+  .dc-pull { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.15rem, 3vw, 1.5rem); color: #C9A84C; margin: 1.8rem auto; max-width: 30ch; }
+  .dc-link { display: inline-block; margin-top: .6rem; font-family: 'Oswald', sans-serif; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: #C9A84C; text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.4); padding-bottom: 2px; }
+  .dc-link:hover { color: #E0DCCF; }
+
+  /* Tiles */
+  .dc-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px,100%),1fr)); gap: 12px; }
+  .dc-tile { background: #0e0e0e; border: 1px solid #232323; border-radius: 10px; padding: 1.3rem 1.4rem; }
+  .dc-tile-i { font-size: 1.5rem; }
+  .dc-tile h3 { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; color: #E0DCCF; margin: .5rem 0 .3rem; }
+  .dc-tile p { font-size: .88rem; color: rgba(224,220,207,.6); line-height: 1.55; margin: 0; }
+
+  /* Edition */
+  .dc-edition { max-width: 560px; margin: 0 auto; background: #0e0e0e; border: 1px solid rgba(201,168,76,.22); border-radius: 12px; padding: 1.4rem 1.6rem; display: flex; flex-direction: column; gap: 1rem; }
+  .dc-ed-row { display: flex; gap: 1rem; align-items: flex-start; }
+  .dc-ed-i { font-size: 1.2rem; flex-shrink: 0; }
+  .dc-ed-row div { display: flex; flex-direction: column; gap: .15rem; }
+  .dc-ed-row strong { color: #fff; font-size: 1rem; }
+  .dc-ed-row span { color: rgba(224,220,207,.65); font-size: .9rem; }
+  .dc-ed-map { color: #C9A84C !important; font-size: .82rem !important; text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.35); align-self: flex-start; margin-top: .35rem; }
+
+  /* FAQ */
+  .dc-faq { max-width: 640px; margin: 0 auto; border: 1px solid rgba(201,168,76,.12); border-radius: 10px; overflow: hidden; }
+  .dc-faq-item { border-bottom: 1px solid rgba(201,168,76,.12); }
+  .dc-faq-item:last-child { border-bottom: none; }
+  .dc-faq-item summary { padding: 1.1rem 1.3rem; font-weight: 600; font-size: .92rem; color: #fff; cursor: pointer; list-style: none; position: relative; padding-right: 2.8rem; }
+  .dc-faq-item summary::-webkit-details-marker { display: none; }
+  .dc-faq-item summary::after { content: '+'; position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: #C9A84C; transition: transform .2s; }
+  .dc-faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+  .dc-faq-item[open] summary { color: #C9A84C; }
+  .dc-faq-item p { padding: 0 1.3rem 1.2rem; font-size: .9rem; color: rgba(224,220,207,.65); line-height: 1.7; margin: 0; }
+
+  /* Final */
+  .dc-final { text-align: center; }
+  .dc-final-h { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(2.4rem, 9vw, 4.5rem); text-transform: uppercase; color: #fff; margin: 0 0 1.6rem; }
+  .dc-capture { max-width: 460px; margin: 2.6rem auto 0; display: flex; flex-direction: column; gap: 1.1rem; }
+  .dc-wa { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; background: #25D366; color: #06280f; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .92rem; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; padding: .9rem 1.4rem; border-radius: 6px; }
+  .dc-wa:hover { filter: brightness(1.06); }
+  .dc-email label { display: block; font-family: 'Lora', serif; font-style: italic; font-size: .9rem; color: rgba(224,220,207,.6); margin-bottom: .6rem; }
+  .dc-email-row { display: flex; gap: .5rem; }
+  .dc-email-row input { flex: 1; min-width: 0; background: #0e0e0e; border: 1px solid #262626; color: #E0DCCF; padding: .7rem .85rem; font-size: .92rem; font-family: 'Inter', sans-serif; border-radius: 4px; }
+  .dc-email-row input:focus { outline: none; border-color: #C9A84C; }
+  .dc-email-row button { flex-shrink: 0; background: transparent; border: 1px solid #C9A84C; color: #C9A84C; font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .82rem; padding: .7rem 1.1rem; border-radius: 4px; cursor: pointer; }
+  .dc-email-row button:hover:not(:disabled) { background: #C9A84C; color: #080808; }
+  .dc-email-msg { font-size: .78rem; margin: .5rem 0 0; }
+  .dc-email-ok { color: #7fe0a0; font-size: .9rem; line-height: 1.5; margin: 0; }
+
+  /* Footer */
+  .dc-foot { text-align: center; padding: 2.6rem 1.5rem 3.2rem; border-top: 1px solid #161616; display: flex; flex-direction: column; gap: .6rem; }
+  .dc-foot-brand { font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #E0DCCF; font-size: .9rem; }
+  .dc-foot-by { font-size: .82rem; color: rgba(224,220,207,.5); }
+  .dc-foot-by a { color: #C9A84C; text-decoration: none; }
+  .dc-foot-links { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; margin-top: .3rem; }
+  .dc-foot-links a { font-size: .8rem; color: rgba(224,220,207,.6); text-decoration: none; }
+  .dc-foot-links a:hover { color: #C9A84C; }
+
+  /* Sticky mobile bar */
+  .dc-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(8,8,8,.92); backdrop-filter: blur(8px); border-top: 1px solid rgba(201,168,76,.25); transform: translateY(120%); transition: transform .3s ease; }
+  .dc-sticky.show { transform: none; }
+  .dc-sticky .dc-cta { width: 100%; }
+  @media (min-width: 861px) { .dc-sticky { display: none; } }
 </style>

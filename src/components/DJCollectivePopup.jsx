@@ -41,7 +41,7 @@ const GENRES = [
   "Drum & Bass", "Reggaeton", "Trap", "Pop",
 ];
 
-export default function DJCollectivePopup() {
+export default function DJCollectivePopup({ autoOpen = true }) {
   const [shown, setShown] = useState(false);     // mounted in DOM
   const [open, setOpen] = useState(false);        // entrance animation
   const [phase, setPhase] = useState("form");     // form | success
@@ -75,7 +75,7 @@ export default function DJCollectivePopup() {
 
     let timer = null, seen = null;
     try { seen = localStorage.getItem(SEEN_KEY); } catch {}
-    if (!seen) {
+    if (autoOpen && !seen) {
       timer = setTimeout(() => {
         try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
         setPhase("form"); show();
