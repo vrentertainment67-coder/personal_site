@@ -1388,6 +1388,7 @@ function EventsAdmin({ showToast }) {
       const { data: newEv, error } = await supabase.from("events").insert({
         slug: slugify(ev.title) + "-" + recurDate, title: ev.title, venue: ev.venue, area: ev.area,
         time_label: ev.time_label, lineup: ev.lineup, genre: ev.genre, banner_url: ev.banner_url,
+        review_link: ev.review_link || null,
         ...times, guestlist_enabled: true, active: true,
       }).select().single();
       if (error) { setRecurBusy(false); return showToast(/duplicate|unique/i.test(error.message) ? "An event for that date already exists." : error.message); }
@@ -1487,11 +1488,12 @@ function EventDetail({ event, onBack, showToast }) {
       <p className="sub">{event.date_label || "—"}{event.venue ? " · " + event.venue : ""}</p>
       <div className="chips">
         <button className={tab === "list" ? "chip on" : "chip"} onClick={() => setTab("list")}>Guest list</button>
+        <button className={tab === "followup" ? "chip on" : "chip"} onClick={() => setTab("followup")}>Follow-up</button>
         <button className={tab === "invite" ? "chip on" : "chip"} onClick={() => setTab("invite")}>Invite past guests</button>
       </div>
-      {tab === "list"
-        ? <EventGuests event={event} showToast={showToast} />
-        : <InvitePastGuests event={event} showToast={showToast} />}
+      {tab === "list" && <EventGuests event={event} showToast={showToast} />}
+      {tab === "followup" && <EventFollowup event={event} showToast={showToast} />}
+      {tab === "invite" && <InvitePastGuests event={event} showToast={showToast} />}
     </>
   );
 }
@@ -1696,6 +1698,199 @@ function InvitePastGuests({ event, showToast }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Post-event follow-up: two-step experience check → review ask / recovery ──
+// Same click-to-chat model as the rest of the guest list — every message opens
+// WhatsApp prefilled and VIC taps send. The lifecycle (who's been asked, who
+// loved it, who got the review ask) is written back to event_rsvps so we never
+// double-ask and the review request only ever goes to a positive reply.
+function EventFollowup({ event, showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [skipped, setSkipped] = useState(0);
+  const [query, setQuery] = useState("");
+  const [reviewLink, setReviewLink] = useState(event.review_link || "");
+  const [savedLink, setSavedLink] = useState(event.review_link || "");
+  const [savingLink, setSavingLink] = useState(false);
+  const [busy, setBusy] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("event_rsvps").select("*").eq("event", event.slug).order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load RSVPs.");
+    // One entry per WhatsApp-reachable guest — de-dupe by phone, keep the newest
+    // row as the canonical one the lifecycle is written onto. No phone = can't
+    // message, so it's counted and set aside.
+    const all = data || []; const byPhone = {}; let noPhone = 0;
+    all.forEach((r) => { const k = phoneKey(r.phone); if (!k || k.length < 11) { noPhone++; return; } if (!byPhone[k]) byPhone[k] = r; });
+    setRows(Object.values(byPhone)); setSkipped(noPhone); setLoading(false);
+  }, [event.slug, showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const patch = async (id, fields) => {
+    setBusy(id);
+    const { error } = await supabase.from("event_rsvps").update(fields).eq("id", id);
+    setBusy(null);
+    if (error) return showToast(/permission|denied|42501/i.test(error.message) ? "Update needs the admin grant — run event_followup.sql." : error.message);
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...fields } : r)));
+  };
+
+  const evName = event.title || "Chamatkar";
+  const evDate = event.date_label ? ` — ${event.date_label}` : "";
+  const evVenue = event.venue ? ` @ ${event.venue}` : "";
+  const firstName = (r) => (r.name || "").trim().split(/\s+/)[0] || "";
+  const hey = (r) => { const n = firstName(r); return n ? `Hey ${n}!` : "Hey!"; };
+
+  // Message templates (WhatsApp plain text) — tokens fall back cleanly when empty.
+  const tmpl = {
+    reminder: (r) => `${evName} is TOMORROW${evDate}${evVenue} — 9 PM onwards. 🔥\nYou're on the guest list ✅ Get there early, it fills up fast. See you on the floor! 🎧`,
+    step1: (r) => `${hey(r)} 🎶 Hope you had a blast at ${evName} last night 🔥\n\nQuick one — did you make it to the floor? And how was your night?\n\nWe'd love to know what you loved (and anything we can make even better next time). Just hit reply — reading every single one. ❤️\n\n— Team ${evName} / DJ VIC`,
+    review: (r) => `So glad you had a good time! 🙌 That means a lot.\n\nIf you've got 30 seconds, would you drop us a quick review? It genuinely helps us grow and throw bigger, better nights 👇\n${savedLink}\n\nSee you at the next ${evName} — it's going to be even bigger. ✨`,
+    recoverNoShow: (r) => `Ah, sorry we missed you this time! 🙏 We'd love to have you at the next ${evName} — I'll make sure you're first to know when the date drops. Anything you'd want to see more of? All ears. 🎧`,
+    recoverNegative: (r) => `Really appreciate you telling us — sorry it wasn't a 10/10. 🙏 Genuinely want to make the next one better: anything specific you'd change? And the next round's on us to win you back — I'll keep you posted on the date. ❤️`,
+  };
+
+  const send = (r, text, fields) => {
+    window.open(`https://wa.me/${phoneKey(r.phone)}?text=${encodeURIComponent(text)}`, "_blank");
+    patch(r.id, { ...fields, last_message_at: new Date().toISOString() });
+  };
+  const mark = (r, experience) => {
+    const attended = experience === "no_show" ? false : experience === "positive" || experience === "negative" ? true : r.attended;
+    patch(r.id, { experience, attended });
+  };
+
+  const saveLink = async () => {
+    const v = reviewLink.trim();
+    setSavingLink(true);
+    const { error } = await supabase.from("events").update({ review_link: v || null }).eq("id", event.id);
+    setSavingLink(false);
+    if (error) return showToast(error.message);
+    setSavedLink(v); showToast(v ? "Review link saved." : "Review link cleared.");
+  };
+
+  const stage = (r) => {
+    if (r.opted_out) return { label: "Opted out", style: { background: "#2a2320", color: "#c8a37a", borderColor: "#4a3a2a" } };
+    if (r.review_completed) return { label: "Review done", style: liveTag };
+    if (r.review_requested_at) return { label: "Review asked", style: { background: "#1c2a16", color: "#a6d977", borderColor: "#33501f" } };
+    if (r.followup2_sent_at && (r.experience === "no_show" || r.experience === "negative")) return { label: "Recovered", style: { background: "#22201a", color: "#d9b877", borderColor: "#463c26" } };
+    if (r.experience === "positive") return { label: "Positive", style: { background: "#16331f", color: "#7fe0a0", borderColor: "#225436" } };
+    if (r.experience === "no_show") return { label: "No-show", style: { background: "#2a2320", color: "#c8a37a", borderColor: "#4a3a2a" } };
+    if (r.experience === "negative") return { label: "Negative", style: { background: "#331a1a", color: "#e0a0a0", borderColor: "#542222" } };
+    if (r.followup1_sent_at) return { label: "Asked how it went", style: {} };
+    if (r.reminder_sent_at) return { label: "Reminded", style: {} };
+    return { label: "New", style: {} };
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = rows.filter((r) => !q || [r.name, r.phone, r.instagram, r.experience].some((v) => (v || "").toLowerCase().includes(q)));
+  const active = rows.filter((r) => !r.opted_out);
+  const nAsked = active.filter((r) => r.followup1_sent_at).length;
+  const nPositive = active.filter((r) => r.experience === "positive").length;
+  const nReview = active.filter((r) => r.review_requested_at).length;
+
+  const chip = { padding: "3px 9px", fontSize: ".68rem", borderRadius: 5, border: "1px solid #2a2a2a", background: "#111", color: "rgba(255,255,255,.7)", cursor: "pointer" };
+  const chipOn = (on, col) => on ? { ...chip, background: col + "22", borderColor: col + "66", color: col } : chip;
+
+  return (
+    <>
+      <p className="sub" style={{ margin: "0 0 12px" }}>
+        The morning-after loop: ask how the night was, then — only for the happy ones — ask for a review. One tap opens WhatsApp prefilled; you hit send.
+      </p>
+
+      <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8, margin: "0 0 14px" }}>
+        <label style={{ fontSize: ".68rem", letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(255,255,255,.5)" }}>Review link (Step 2a destination)</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input className="search" style={{ flex: "1 1 260px", margin: 0 }} placeholder="Google review short-link, e.g. https://g.page/r/…/review"
+            value={reviewLink} onChange={(e) => setReviewLink(e.target.value)} />
+          <button className="btn sm" disabled={savingLink || reviewLink.trim() === savedLink} onClick={saveLink}>
+            {savingLink ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />} Save link
+          </button>
+        </div>
+        {!savedLink && <p className="req-meta" style={{ margin: 0, color: "#e0b13c" }}>Set this before sending review asks — recommend the Google Business review link for SEO.</p>}
+      </div>
+
+      <div style={{ display: "flex", gap: 10, margin: "0 0 14px", flexWrap: "wrap" }}>
+        <div style={glStat}><strong style={glNum}>{active.length}</strong><span style={glLbl}>Contactable</span></div>
+        <div style={glStat}><strong style={glNum}>{nAsked}</strong><span style={glLbl}>Asked</span></div>
+        <div style={glStat}><strong style={glNum}>{nPositive}</strong><span style={glLbl}>Positive</span></div>
+        <div style={glStat}><strong style={glNum}>{nReview}</strong><span style={glLbl}>Review asked</span></div>
+      </div>
+      {skipped > 0 && <p className="req-meta" style={{ margin: "-6px 0 12px" }}>{skipped} RSVP{skipped === 1 ? "" : "s"} skipped — no valid phone to message.</p>}
+
+      <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">No RSVPs to follow up yet.</p>}
+          {filtered.map((r) => {
+            const st = stage(r); const b = busy === r.id;
+            const canReview = !!savedLink;
+            return (
+              <div key={r.id} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3>{r.name || "Guest"} <span className="tag" style={{ ...st.style }}>{st.label}</span></h3>
+                    <p className="req-meta">
+                      <span>{r.phone}</span>
+                      {r.instagram && <span>{r.instagram}</span>}
+                      {r.review_requested_at && (
+                        <button style={chipOn(r.review_completed, "#7fe0a0")} disabled={b} onClick={() => patch(r.id, { review_completed: !r.review_completed })}>
+                          {r.review_completed ? "✓ Review left" : "Mark review left"}
+                        </button>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {r.opted_out ? (
+                  <div className="req-actions">
+                    <button className="act" disabled={b} onClick={() => patch(r.id, { opted_out: false })}>Undo opt-out</button>
+                  </div>
+                ) : (
+                  <div className="req-actions" style={{ flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                    {!r.reminder_sent_at && (
+                      <button className="act" disabled={b} onClick={() => send(r, tmpl.reminder(r), { reminder_sent_at: new Date().toISOString() })} title="Day-before reminder">
+                        <Send size={14} /> Reminder
+                      </button>
+                    )}
+
+                    {!r.followup1_sent_at ? (
+                      <button className="act wa" disabled={b} onClick={() => send(r, tmpl.step1(r), { followup1_sent_at: new Date().toISOString() })}>
+                        <MessageCircle size={15} /> ① How was it?
+                      </button>
+                    ) : (
+                      <>
+                        <span className="req-meta" style={{ margin: 0 }}>Reply?</span>
+                        <button style={chipOn(r.experience === "positive", "#7fe0a0")} disabled={b} onClick={() => mark(r, "positive")}>Loved it</button>
+                        <button style={chipOn(r.experience === "no_show", "#c8a37a")} disabled={b} onClick={() => mark(r, "no_show")}>No-show</button>
+                        <button style={chipOn(r.experience === "negative", "#e0a0a0")} disabled={b} onClick={() => mark(r, "negative")}>Negative</button>
+                      </>
+                    )}
+
+                    {r.experience === "positive" && (
+                      <button className="act wa" disabled={b || !canReview} title={canReview ? "" : "Set the review link above first"}
+                        onClick={() => send(r, tmpl.review(r), { followup2_sent_at: new Date().toISOString(), review_requested_at: new Date().toISOString() })}>
+                        <Star size={15} /> ② {r.review_requested_at ? "Re-send review ask" : "Ask for review"}
+                      </button>
+                    )}
+                    {(r.experience === "no_show" || r.experience === "negative") && (
+                      <button className="act" disabled={b}
+                        onClick={() => send(r, r.experience === "no_show" ? tmpl.recoverNoShow(r) : tmpl.recoverNegative(r), { followup2_sent_at: new Date().toISOString() })}>
+                        <MessageCircle size={15} /> ② {r.followup2_sent_at ? "Re-send recovery" : "Send recovery"}
+                      </button>
+                    )}
+
+                    <button className="act" disabled={b} style={{ marginLeft: "auto" }} onClick={() => patch(r.id, { opted_out: true })} title="Stop messaging this guest">
+                      <Ban size={14} /> Opt out
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </>
