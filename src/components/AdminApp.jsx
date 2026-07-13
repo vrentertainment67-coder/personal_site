@@ -703,7 +703,7 @@ function Bookings({ showToast }) {
   };
 
   const complete = async (r) => {
-    const bal = Number(r.agreed_fee || 0) - paidOf(r.id);
+    const bal = Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0);
     if (bal > 0 && !window.confirm(`Outstanding balance is ${inr(bal)}. Mark this gig completed & paid anyway?`)) return;
     setActing(r.id);
     const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", r.id);
@@ -729,7 +729,7 @@ function Bookings({ showToast }) {
     .filter((r) => {
       if (filter === "all") return true;
       if (filter === "active") return r.status === "pending" || r.status === "accepted";
-      if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
+      if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0) > 0;
       return r.status === filter;
     })
     .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
@@ -740,6 +740,7 @@ function Bookings({ showToast }) {
   const earned = rows.filter((r) => r.status === "accepted" || r.status === "completed");
   const booked = earned.reduce((s, r) => s + Number(r.agreed_fee || 0), 0);
   const received = earned.reduce((s, r) => s + paidOf(r.id), 0);
+  const tdsTotal = earned.reduce((s, r) => s + Number(r.tds_amount || 0), 0);
 
   // Which sector (event_type) brings in how much — booked fees + received,
   // across the same confirmed+completed set the totals above use.
@@ -752,11 +753,12 @@ function Bookings({ showToast }) {
   const sectorTop = Math.max(...sectors.map((s) => s.booked), 1);
 
   const exportCsv = () => {
-    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "paid", "balance", "message"];
+    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "tds", "paid", "balance", "message"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...filtered.map((r) => {
       const paid = paidOf(r.id);
-      const row = { ...r, paid, balance: Number(r.agreed_fee || 0) - paid };
+      const tds = Number(r.tds_amount || 0);
+      const row = { ...r, tds, paid, balance: Number(r.agreed_fee || 0) - paid - tds };
       return cols.map((c) => esc(row[c])).join(",");
     })].join("\n");
     const a = document.createElement("a");
@@ -872,8 +874,9 @@ function Bookings({ showToast }) {
       {showStats && (<>
       <div className="cards" style={{ marginBottom: 6 }}>
         <Stat label="Booked · confirmed" value={inr(booked)} hint="Agreed fees on confirmed gigs" />
-        <Stat label="Received" value={inr(received)} hint="Payments recorded so far" />
-        <Stat label="Outstanding" value={inr(booked - received)} hint="Still to collect" />
+        <Stat label="Received" value={inr(received)} hint="Cash received so far" />
+        {tdsTotal > 0 && <Stat label="TDS deducted" value={inr(tdsTotal)} hint="Withheld & paid to govt" />}
+        <Stat label="Outstanding" value={inr(booked - received - tdsTotal)} hint="Still to collect (net of TDS)" />
       </div>
 
       {sectors.length > 0 ? (
@@ -919,7 +922,7 @@ function Bookings({ showToast }) {
             <tbody>
               {filtered.map((r) => {
                 const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
-                const owing = r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) > 0;
+                const owing = r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0) > 0;
                 const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
                 return (
                   <tr key={r.id} style={{ cursor: "pointer" }} title={r.message || ""} onClick={() => setOpenId(r.id)}>
@@ -955,19 +958,22 @@ function Bookings({ showToast }) {
 // ── Per-gig financials: agreed fee + a payments ledger (gig_payments) ──
 function GigFinance({ booking, payments, onChange, showToast }) {
   const [fee, setFee] = useState(booking.agreed_fee ?? "");
+  const [tds, setTds] = useState(booking.tds_amount ?? "");
   const [savingFee, setSavingFee] = useState(false);
   const [adding, setAdding] = useState(false);
   const [amt, setAmt] = useState(""); const [method, setMethod] = useState("UPI");
   const [when, setWhen] = useState(new Date().toLocaleDateString("en-CA"));
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setFee(booking.agreed_fee ?? ""); }, [booking.agreed_fee]);
+  useEffect(() => { setFee(booking.agreed_fee ?? ""); setTds(booking.tds_amount ?? ""); }, [booking.agreed_fee, booking.tds_amount]);
 
   const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
   const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
   const feeNum = Number(fee || 0);
-  const bal = feeNum - paid;
+  const tdsNum = Number(tds || 0);
+  const settled = paid + tdsNum;          // cash received + TDS deducted = fully accounted
+  const bal = feeNum - settled;           // what's genuinely still owed
   const st = !feeNum ? { t: "no fee set", c: "#9a9a92", bg: "transparent" }
-    : paid >= feeNum ? { t: "paid in full", c: "#7fe0a0", bg: "#16331f" }
+    : settled >= feeNum ? { t: tdsNum > 0 ? "settled (net of TDS)" : "paid in full", c: "#7fe0a0", bg: "#16331f" }
     : paid > 0 ? { t: "advance paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
     : { t: "unpaid", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" };
   const sqlHint = (m) => {
@@ -979,10 +985,14 @@ function GigFinance({ booking, payments, onChange, showToast }) {
 
   const saveFee = async () => {
     setSavingFee(true);
-    const { error } = await supabase.from("bookings").update({ agreed_fee: fee === "" ? null : Number(fee) }).eq("id", booking.id);
+    const { error } = await supabase.from("bookings").update({
+      agreed_fee: fee === "" ? null : Number(fee),
+      tds_amount: tds === "" ? null : Number(tds),
+    }).eq("id", booking.id);
     setSavingFee(false);
-    if (error) showToast(sqlHint(error.message)); else { showToast("Fee saved ✓"); onChange(); }
+    if (error) showToast(sqlHint(error.message)); else { showToast("Saved ✓"); onChange(); }
   };
+  const dirty = String(fee) !== String(booking.agreed_fee ?? "") || String(tds) !== String(booking.tds_amount ?? "");
   const addPayment = async () => {
     if (!amt || Number(amt) <= 0) return showToast("Enter an amount");
     setBusy(true);
@@ -997,15 +1007,23 @@ function GigFinance({ booking, payments, onChange, showToast }) {
 
   return (
     <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 8, padding: "10px 12px", margin: "8px 0", fontSize: ".82rem" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }}>Fee ₹</span>
           <input type="number" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" style={{ ...inp, width: 92 }} />
-          <button className="btn sm" onClick={saveFee} disabled={savingFee || String(fee) === String(booking.agreed_fee ?? "")}>{savingFee ? <Loader2 size={12} className="spin" /> : "Save"}</button>
         </span>
-        <span style={{ color: "rgba(255,255,255,.7)" }}>Paid <strong style={{ color: "#7fe0a0" }}>{inr(paid)}</strong></span>
-        <span style={{ color: "rgba(255,255,255,.7)" }}>Due <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }}>TDS ₹</span>
+          <input type="number" value={tds} onChange={(e) => setTds(e.target.value)} placeholder="0" style={{ ...inp, width: 76 }} />
+          <button className="btn sm ghost" title="10% of the fee" onClick={() => setTds(feeNum ? String(Math.round(feeNum * 0.1)) : "")} disabled={!feeNum}>10%</button>
+        </span>
+        <button className="btn sm" onClick={saveFee} disabled={savingFee || !dirty}>{savingFee ? <Loader2 size={12} className="spin" /> : "Save"}</button>
         <span style={{ marginLeft: "auto", color: st.c, background: st.bg, padding: "3px 10px", borderRadius: 20, fontSize: ".64rem", textTransform: "uppercase", letterSpacing: ".06em" }}>{st.t}</span>
+      </div>
+      <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 14, fontSize: ".8rem", color: "rgba(255,255,255,.7)" }}>
+        <span>Received <strong style={{ color: "#7fe0a0" }}>{inr(paid)}</strong></span>
+        {tdsNum > 0 && <span>TDS deducted <strong style={{ color: "#c9a84c" }}>{inr(tdsNum)}</strong></span>}
+        <span>Due <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
       </div>
 
       {payments.length > 0 && (
