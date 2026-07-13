@@ -44,4 +44,11 @@ grant update on public.event_rsvps to authenticated;
 alter table public.events
   add column if not exists review_link text;
 
+-- Seed the DJ VIC Google Business review link as the default for every
+-- existing edition (only where unset, so a per-edition override sticks).
+-- New editions cloned from an existing one inherit it automatically.
+update public.events
+  set review_link = 'https://g.page/r/CZKKtBcBFJH4EAE/review'
+  where review_link is null;
+
 notify pgrst, 'reload schema';

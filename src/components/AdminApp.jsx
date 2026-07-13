@@ -1704,6 +1704,10 @@ function InvitePastGuests({ event, showToast }) {
   );
 }
 
+// DJ VIC's Google Business review link — the default Step 2a destination.
+// Editable per edition (events.review_link) from the Follow-up tab.
+const DEFAULT_REVIEW_LINK = "https://g.page/r/CZKKtBcBFJH4EAE/review";
+
 // ── Post-event follow-up: two-step experience check → review ask / recovery ──
 // Same click-to-chat model as the rest of the guest list — every message opens
 // WhatsApp prefilled and VIC taps send. The lifecycle (who's been asked, who
@@ -1713,8 +1717,8 @@ function EventFollowup({ event, showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [skipped, setSkipped] = useState(0);
   const [query, setQuery] = useState("");
-  const [reviewLink, setReviewLink] = useState(event.review_link || "");
-  const [savedLink, setSavedLink] = useState(event.review_link || "");
+  const [reviewLink, setReviewLink] = useState(event.review_link || DEFAULT_REVIEW_LINK);
+  const [savedLink, setSavedLink] = useState(event.review_link || DEFAULT_REVIEW_LINK);
   const [savingLink, setSavingLink] = useState(false);
   const [busy, setBusy] = useState(null);
 
