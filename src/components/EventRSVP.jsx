@@ -29,7 +29,7 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
     return "form";
   };
   const [phase, setPhase] = useState(startPhase);
-  const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "" });
+  const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "", consent: true });
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
@@ -60,6 +60,8 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
       guests: parseInt(data.guests, 10) || 1,
       entry_type: data.entry || null,
       instagram: data.instagram.trim() || null,
+      consent_followup: !!data.consent,
+      wa_opt_in_at: data.consent ? new Date().toISOString() : null,
       source: "chamatkar-page",
       user_agent: navigator.userAgent.slice(0, 300),
     };
@@ -132,10 +134,15 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
               onChange={(e) => setData({ ...data, instagram: e.target.value })} placeholder="@handle" />
           </label>
           {err && <p className="er-err" role="alert">{err}</p>}
+          <label className="er-consent">
+            <input type="checkbox" checked={data.consent}
+              onChange={(e) => setData({ ...data, consent: e.target.checked })} />
+            <span>Message me on WhatsApp with event details, reminders and a note after the night.</span>
+          </label>
           <button type="submit" className="er-submit" disabled={submitting}>
             {submitting ? "Adding you…" : "Get on the Guest List →"}
           </button>
-          <p className="er-fine">We'll WhatsApp you the details before the night.</p>
+          <p className="er-fine">We'll WhatsApp you the details before the night. Reply STOP anytime to opt out.</p>
         </form>
       )}
 
@@ -182,6 +189,8 @@ const styles = `
 .er-submit{margin-top:.4rem;background:#c9a84c;color:#000;border:none;padding:.9rem 1rem;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;transition:background .2s;}
 .er-submit:hover{background:#e2c475;}
 .er-submit:disabled{opacity:.6;cursor:default;}
+.er-consent{display:flex;gap:.5rem;align-items:flex-start;font-size:.72rem;line-height:1.45;color:rgba(255,255,255,.55);text-transform:none;letter-spacing:0;cursor:pointer;margin-top:.2rem;}
+.er-consent input{margin-top:.15rem;accent-color:#c9a84c;flex-shrink:0;}
 .er-fine{font-size:.68rem;color:rgba(255,255,255,.4);text-align:center;margin:.5rem 0 0;}
 .er-msg{background:#0c0c0c;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:1.8rem 1.6rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.7rem;}
 .er-msg-lead{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.03em;color:#fff;margin:0;}

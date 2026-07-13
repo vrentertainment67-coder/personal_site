@@ -1,0 +1,36 @@
+name: WhatsApp Follow-up Sweep
+
+# Fires the Chamatkar post-event follow-up once a day. The whatsapp-send
+# function decides what actually goes out (reminders the day before, the
+# experience check the morning after, the review ask 1-2 days after a
+# positive reply, recovery for no-shows/negatives) and is idempotent, so a
+# daily poke is enough and never double-sends.
+
+on:
+  schedule:
+    # 10:00 AM IST (04:30 UTC) — the morning-after send window.
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger follow-up sweep
+        env:
+          CRON_SECRET: ${{ secrets.WHATSAPP_CRON_SECRET }}
+          FN_URL: https://jftnhuutttmccmqnnybf.supabase.co/functions/v1/whatsapp-send
+          # Publishable anon key — safe to expose; satisfies the gateway.
+          ANON_KEY: sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9
+        run: |
+          for attempt in 1 2 3 4; do
+            code=$(curl -sS -o /tmp/out.json -w "%{http_code}" -X POST "$FN_URL?action=cron" \
+              -H "apikey: $ANON_KEY" \
+              -H "x-cron-secret: $CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              -d '{}') && [ "$code" = "200" ] && break
+            echo "Attempt $attempt failed (HTTP ${code:-none}); retrying…"
+            sleep $((2 ** attempt))
+          done
+          echo "Response:"; cat /tmp/out.json; echo
+          [ "$code" = "200" ] || { echo "Sweep failed after retries (HTTP $code)"; exit 1; }

@@ -24,7 +24,7 @@ export default function EventPopup() {
   const [event, setEvent] = useState(null);       // the live event row
   const [phase, setPhase] = useState("hidden");   // hidden | form | closed | thanks
   const [open, setOpen] = useState(false);        // controls entrance animation
-  const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "" });
+  const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "", consent: true });
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
   const [bannerOk, setBannerOk] = useState(true);
@@ -98,6 +98,8 @@ export default function EventPopup() {
       guests: parseInt(data.guests, 10) || 1,
       entry_type: data.entry || null,
       instagram: data.instagram.trim() || null,
+      consent_followup: !!data.consent,
+      wa_opt_in_at: data.consent ? new Date().toISOString() : null,
       source: "homepage-popup",
       user_agent: navigator.userAgent.slice(0, 300),
     };
@@ -221,10 +223,15 @@ export default function EventPopup() {
                 onChange={(e) => setData({ ...data, instagram: e.target.value })} placeholder="@handle" />
             </label>
             {err && <p className="ep-err" role="alert">{err}</p>}
+            <label className="ep-consent">
+              <input type="checkbox" checked={data.consent}
+                onChange={(e) => setData({ ...data, consent: e.target.checked })} />
+              <span>Message me on WhatsApp with event details, reminders and a note after the night.</span>
+            </label>
             <button type="submit" className="ep-submit" disabled={submitting}>
               {submitting ? "Adding you…" : "Get on the Guest List →"}
             </button>
-            <p className="ep-fine">We'll WhatsApp you the details before the event.</p>
+            <p className="ep-fine">We'll WhatsApp you the details before the event. Reply STOP anytime to opt out.</p>
           </form>
         )}
 
@@ -285,6 +292,8 @@ const styles = `
 .ep-field--sm{flex:1;}
 .ep-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;}
 .ep-err{font-size:.78rem;color:#ff8a8a;margin:.1rem 0 0;}
+.ep-consent{display:flex;gap:.5rem;align-items:flex-start;font-size:.72rem;line-height:1.45;color:rgba(255,255,255,.55);cursor:pointer;margin-top:.2rem;}
+.ep-consent input{margin-top:.15rem;accent-color:#c9a84c;flex-shrink:0;}
 .ep-submit{margin-top:.4rem;background:#c9a84c;color:#000;border:none;padding:.85rem 1rem;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;transition:background .2s;}
 .ep-submit:hover{background:#e2c475;}
 .ep-submit:disabled{opacity:.6;cursor:default;}
