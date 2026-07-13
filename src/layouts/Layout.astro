@@ -8,7 +8,8 @@ import SearchOverlay from '../components/SearchOverlay.astro';
 import Analytics from '../components/Analytics.astro';
 import type { Props as BaseHeadProps } from '../components/BaseHead.astro';
 
-export type Props = BaseHeadProps;
+export type Props = BaseHeadProps & { bare?: boolean };
+const { bare = false } = Astro.props;
 ---
 
 <html lang="en">
@@ -129,10 +130,12 @@ export type Props = BaseHeadProps;
     </div>
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <slot />
-    <MusicPlayer />
+    {!bare && <MusicPlayer />}
     <VideoModal />
     <SearchOverlay />
 
+    {!bare && (
+    <Fragment>
     <!-- Mobile floating CTA bar — WhatsApp primary, Book secondary -->
     <div class="mob-float-bar" id="mob-float-bar" aria-label="Quick booking actions">
       <a
@@ -167,6 +170,8 @@ export type Props = BaseHeadProps;
         </svg>
       </a>
     </aside>
+    </Fragment>
+    )}
 
     <!-- Privacy-friendly pageview tracker (no cookies) — feeds the admin Overview analytics -->
     <script is:inline src="/tracker.js" defer></script>

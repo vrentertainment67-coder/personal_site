@@ -88,12 +88,13 @@ export default function CollectiveStats({ session = null }) {
 
 const styles = `
 .cs { font-family: 'Inter', sans-serif; }
-.cs-counters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.6rem; }
-.cs-counter { background: #0e0e0e; border: 1px solid #232323; border-radius: 10px; padding: 1.3rem .8rem; text-align: center; display: flex; flex-direction: column; gap: .3rem; }
-.cs-num { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1; color: #C9A84C; }
-.cs-lbl { font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(224,220,207,.55); }
-.cs-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.cs-chart { background: #0e0e0e; border: 1px solid #232323; border-radius: 10px; padding: 1.2rem 1.3rem; }
+.cs-counters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.8rem; }
+.cs-counter { position: relative; background: linear-gradient(180deg, #17150e, #0c0c0a); border: 1px solid rgba(201,168,76,.28); border-radius: 14px; padding: 1.6rem .8rem; text-align: center; display: flex; flex-direction: column; gap: .35rem; overflow: hidden; box-shadow: 0 20px 44px -30px rgba(201,168,76,.5); }
+.cs-counter::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 2px; background: linear-gradient(90deg, transparent, #C9A84C, transparent); }
+.cs-num { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(2rem, 7vw, 3.1rem); line-height: 1; background: linear-gradient(175deg, #F4E3A6, #C9A84C 55%, #a3812f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cs-lbl { font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(224,220,207,.6); }
+.cs-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cs-chart { background: linear-gradient(180deg, #111112, #0b0b0c); border: 1px solid #1f1f20; border-radius: 14px; padding: 1.3rem 1.4rem; }
 .cs-chart h4 { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: .78rem; letter-spacing: .18em; text-transform: uppercase; color: #C9A84C; margin: 0 0 .3rem; }
 .cs-chart-note { font-family: 'Lora', serif; font-style: italic; font-size: .8rem; color: rgba(224,220,207,.5); margin: 0 0 .9rem; line-height: 1.4; }
 .cs-bar { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
