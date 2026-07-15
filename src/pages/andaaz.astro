@@ -24,13 +24,17 @@ const BRAND = {
 };
 
 // ── EDITIONS (the only thing you edit month to month) ──
-// status: 'live' = the one taking RSVPs | 'upcoming' = teased below | 'past' = hidden
+// The whole list renders as the public season calendar, so keep every edition
+// here even before its date is fixed. status: 'live' = taking RSVPs now |
+// 'upcoming' = on the calendar, no RSVP yet | 'past' = drops off the calendar.
 const EDITIONS = [
   {
     slug: 'andaaz-2026-08-29',        // must match the `events` row + admin guest list
     name: 'Andaaz Republic',
     edition: 'Edition 01',
-    tagline: 'The debut night.',      // ← replace with your own line
+    monthLabel: 'August',
+    occasion: 'Independence Day special',
+    tagline: 'Freedom to Be Yourself.',
     status: 'live',
     dateLabel: 'Saturday 29 August',
     timeLabel: '8:00 PM onwards',
@@ -46,10 +50,50 @@ const EDITIONS = [
     slug: 'andaaz-utsav',
     name: 'Andaaz Utsav',
     edition: 'Edition 02',
-    tagline: 'The festive one.',      // ← replace with your own line
+    monthLabel: 'September',
+    occasion: 'Ganesh Chaturthi & Onam',
+    tagline: 'Har Celebration Ka Apna Andaaz.',
     status: 'upcoming',
     dateLabel: 'Date to be announced',
-    timeLabel: '',
+    venue: 'Jollygunj',
+    area: 'JP Nagar, Bangalore',
+    poster: null,
+  },
+  {
+    slug: 'andaaz-rang',
+    name: 'Andaaz Rang',
+    edition: 'Edition 03',
+    monthLabel: 'October',
+    occasion: 'Navratri & Dussehra',
+    tagline: 'Dance. Dine. Celebrate.',
+    status: 'upcoming',
+    dateLabel: 'Date to be announced',
+    venue: 'Jollygunj',
+    area: 'JP Nagar, Bangalore',
+    poster: null,
+  },
+  {
+    slug: 'andaaz-roshni',
+    name: 'Andaaz Roshni',
+    edition: 'Edition 04',
+    monthLabel: 'November',
+    occasion: 'Diwali',
+    tagline: 'Light Up the Night.',
+    status: 'upcoming',
+    dateLabel: 'Date to be announced',
+    venue: 'Jollygunj',
+    area: 'JP Nagar, Bangalore',
+    poster: null,
+  },
+  {
+    slug: 'andaaz-noir',
+    name: 'Andaaz Noir',
+    edition: 'Edition 05',
+    monthLabel: 'December',
+    occasion: 'Year-end',
+    tagline: 'The Year Ends in Style.',
+    status: 'upcoming',
+    dateLabel: 'Date to be announced',
     venue: 'Jollygunj',
     area: 'JP Nagar, Bangalore',
     poster: null,
@@ -57,7 +101,7 @@ const EDITIONS = [
 ];
 
 const current  = EDITIONS.find((e) => e.status === 'live') || EDITIONS[0];
-const upcoming = EDITIONS.filter((e) => e.status === 'upcoming');
+const calendar = EDITIONS.filter((e) => e.status !== 'past');
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(current.mapsQuery || `${current.venue}, ${current.area}`)}`;
 const desc = `${BRAND.presenter} presents ${BRAND.name} — ${BRAND.headline}. ${current.name} · ${current.dateLabel}, ${current.timeLabel} · ${current.venue}, ${current.area}. Free entry on the guest list.`;
 
@@ -97,6 +141,7 @@ const schema = [{
       <p class="az-presents">{BRAND.presenter} presents <b>{BRAND.name}</b></p>
       <h1 class="az-h1">{BRAND.headline}</h1>
       <p class="az-edition"><span class="az-ed-name">{current.name}</span><span class="az-ed-sep">·</span><span>{current.dateLabel}</span></p>
+      <p class="az-tagline">{current.tagline}</p>
       <a href="#rsvp" class="az-cta">Get on the guest list</a>
       <p class="az-free">Free entry on the list · {current.timeLabel}</p>
       <div class="az-meta">
@@ -146,21 +191,29 @@ const schema = [{
       </div>
     </section>
 
-    <!-- ── UPCOMING EDITIONS (auto-hides when none) ── -->
-    {upcoming.length > 0 && (
-      <section class="az-sec">
-        <span class="az-kicker">Coming up</span>
-        <h2 class="az-h2">The next editions</h2>
-        <div class="az-next">
-          {upcoming.map((e) => (
-            <div class="az-next-card">
-              <span class="az-next-ed">{e.edition}</span>
-              <strong class="az-next-name">{e.name}</strong>
-              <span class="az-next-tag">{e.tagline}</span>
-              <span class="az-next-date">{e.dateLabel}</span>
-            </div>
+    <!-- ── SEASON CALENDAR — every edition, public, to the year's end ── -->
+    {calendar.length > 0 && (
+      <section class="az-sec az-cal-sec" id="calendar">
+        <span class="az-kicker">The season</span>
+        <h2 class="az-h2">Andaaz through the year</h2>
+        <p class="az-body az-body--tight">One night a month, every month to the year's end — each with its own andaaz.</p>
+        <ol class="az-cal">
+          {calendar.map((e) => (
+            <li class={e.status === 'live' ? 'az-cal-item is-live' : 'az-cal-item'}>
+              <span class="az-cal-month">{e.monthLabel}</span>
+              <div class="az-cal-card">
+                <div class="az-cal-top">
+                  <strong class="az-cal-name">{e.name}</strong>
+                  {e.status === 'live' && <span class="az-cal-badge">RSVPs open</span>}
+                </div>
+                <span class="az-cal-tag">{e.tagline}</span>
+                <span class="az-cal-occasion">{e.occasion}</span>
+                <span class="az-cal-date">{e.status === 'live' ? `${e.dateLabel} · ${e.venue}, ${e.area}` : e.dateLabel}</span>
+                {e.status === 'live' && <a href="#rsvp" class="az-cal-link">Get on the list →</a>}
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
     )}
 
@@ -209,6 +262,7 @@ const schema = [{
   .az-edition { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: .5rem; align-items: baseline; margin: .85rem 0 0; font-size: .92rem; color: rgba(237,228,216,.82); }
   .az-ed-name { font-weight: 600; color: var(--gold-hi); }
   .az-ed-sep { opacity: .45; }
+  .az-tagline { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.05rem, 4vw, 1.3rem); color: rgba(237,228,216,.72); margin: .5rem 0 0; }
   .az-cta { display: inline-flex; align-items: center; justify-content: center; margin: 1.4rem 0 0; padding: 1rem 2.4rem; border-radius: 6px;
     background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #23150a; text-decoration: none;
     font-weight: 700; font-size: .95rem; letter-spacing: .12em; text-transform: uppercase;
@@ -242,13 +296,30 @@ const schema = [{
   .az-rsvp { background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(107,18,38,.28), transparent 70%); }
   .az-form { max-width: 420px; margin: 0 auto; text-align: left; background: linear-gradient(180deg, #1a1013, #110b0d); border: 1px solid rgba(201,162,76,.28); border-radius: 14px; padding: 1.3rem 1.2rem; box-shadow: 0 30px 70px -40px rgba(201,162,76,.5); }
 
-  /* Upcoming */
-  .az-next { display: grid; gap: 12px; margin-top: 1.6rem; }
-  .az-next-card { background: linear-gradient(180deg, #1a1013, #120c0e); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; gap: .25rem; }
-  .az-next-ed { font-size: .64rem; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
-  .az-next-name { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--gold-hi); }
-  .az-next-tag { font-size: .88rem; color: rgba(237,228,216,.6); }
-  .az-next-date { font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(237,228,216,.45); margin-top: .3rem; }
+  /* Season calendar */
+  .az-cal { list-style: none; margin: 1.8rem 0 0; padding: 0 0 0 1.4rem; text-align: left; position: relative; }
+  .az-cal::before { content: ''; position: absolute; left: 3px; top: .5rem; bottom: .5rem; width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(201,162,76,.45) 12%, rgba(201,162,76,.45) 88%, transparent); }
+  .az-cal-item { position: relative; padding-bottom: 14px; }
+  .az-cal-item:last-child { padding-bottom: 0; }
+  .az-cal-item::before { content: ''; position: absolute; left: -1.4rem; top: .95rem; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bg); border: 1px solid rgba(201,162,76,.5); transform: translateX(-1px); }
+  .az-cal-item.is-live::before { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,76,.18); }
+  .az-cal-month { display: block; font-size: .64rem; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); margin: 0 0 .35rem .2rem; }
+  .az-cal-card { background: linear-gradient(180deg, #17100f, #110c0d); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem;
+    display: flex; flex-direction: column; gap: .22rem; }
+  .az-cal-item.is-live .az-cal-card { border-color: rgba(201,162,76,.42); background: linear-gradient(180deg, #24121a, #150d10);
+    box-shadow: 0 18px 44px -28px rgba(201,162,76,.55); }
+  .az-cal-top { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .az-cal-name { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1.35rem; line-height: 1.15; color: var(--gold-hi); }
+  .az-cal-badge { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #23150a;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: .22rem .5rem; border-radius: 100px; white-space: nowrap; }
+  .az-cal-tag { font-size: .92rem; color: rgba(237,228,216,.82); }
+  .az-cal-occasion { font-size: .78rem; color: rgba(201,162,76,.8); }
+  .az-cal-date { font-size: .74rem; letter-spacing: .06em; color: rgba(237,228,216,.45); margin-top: .3rem; }
+  .az-cal-link { align-self: flex-start; margin-top: .5rem; font-size: .76rem; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 600; color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(201,162,76,.45); padding-bottom: 2px; }
+  .az-cal-link:hover { color: var(--gold-hi); }
 
   /* Footer */
   .az-foot { text-align: center; padding: 2.4rem 1.25rem 4.8rem; border-top: 1px solid rgba(201,162,76,.1); display: flex; flex-direction: column; gap: .35rem; }
