@@ -21,7 +21,10 @@ const WaIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
 );
 
-export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLabel, rsvpCutoff, expiry }) {
+// collectEmail / source / pixelEvent are optional and default to Chamatkar's
+// existing behaviour, so adding a brand (Andaaz) never changes this page.
+export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLabel, rsvpCutoff, expiry,
+  collectEmail = false, source = "chamatkar-page", pixelEvent = "Lead" }) {
   const startPhase = () => {
     const now = Date.now();
     if (expiry && now >= Date.parse(expiry)) return "over";
@@ -29,7 +32,7 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
     return "form";
   };
   const [phase, setPhase] = useState(startPhase);
-  const [data, setData] = useState({ name: "", phone: "", guests: "2", entry: "", instagram: "", company: "" });
+  const [data, setData] = useState({ name: "", phone: "", email: "", guests: "2", entry: "", instagram: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
@@ -60,9 +63,12 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
       guests: parseInt(data.guests, 10) || 1,
       entry_type: data.entry || null,
       instagram: data.instagram.trim() || null,
-      source: "chamatkar-page",
+      source,
       user_agent: navigator.userAgent.slice(0, 300),
     };
+    // Only send `email` when the page asks for it — keeps the payload identical
+    // to before for pages that don't collect it.
+    if (collectEmail) row.email = data.email.trim() || null;
 
     let ok = false;
     try {
@@ -84,6 +90,13 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
           `\n\n${title} @ ${venue || ""}`;
         const url = `https://ntfy.sh/${NTFY_TOPIC}?title=${encodeURIComponent("🎉 " + title + " RSVP — " + name)}&priority=4&tags=tada,studio_microphone`;
         navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
+      } catch {}
+      // Meta Pixel conversion — only fires where a pixel is actually loaded
+      // (currently /andaaz). No-op everywhere else.
+      try {
+        if (typeof window.fbq === "function" && pixelEvent) {
+          window.fbq("track", pixelEvent, { content_name: title, content_category: "rsvp", value: row.guests, currency: "INR" });
+        }
       } catch {}
       setPhase("thanks");
     } else {
@@ -109,6 +122,13 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
             <input type="tel" inputMode="tel" value={data.phone} required autoComplete="tel"
               onChange={(e) => setData({ ...data, phone: e.target.value.replace(/[^\d+\s()-]/g, "") })} placeholder="+91 ..." />
           </label>
+          {collectEmail && (
+            <label className="er-field">
+              <span>Email</span>
+              <input type="email" inputMode="email" value={data.email} autoComplete="email"
+                onChange={(e) => setData({ ...data, email: e.target.value })} placeholder="you@email.com (optional)" />
+            </label>
+          )}
           <div className="er-row">
             <label className="er-field er-field--sm">
               <span>Guests</span>

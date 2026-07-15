@@ -1,0 +1,264 @@
+---
+// ANDAAZ — nightlife brand landing page (/andaaz).
+// Premium Bollywood × English lounge night. Sibling to /chamatkar, rebranded:
+// same RSVP island, same `event_rsvps` backend, same admin guest list.
+//
+// ┌─ TO ADD A NEW EDITION ────────────────────────────────────────────────┐
+// │ 1. Add a block to EDITIONS below (copy an existing one).              │
+// │ 2. Set the new one to status:'live' and the old one to 'past'.        │
+// │ 3. Add the matching row to the `events` table — see supabase/andaaz.sql│
+// │ That's it. Nothing else on this page needs touching.                  │
+// └───────────────────────────────────────────────────────────────────────┘
+import Layout from '../layouts/Layout.astro';
+import EventRSVP from '../components/EventRSVP.jsx';
+
+// ── BRAND (rarely changes) ──
+const BRAND = {
+  name: 'Andaaz',
+  presenter: 'Jollygunj',
+  headline: 'Bollywood meets English',
+  emblem: '/images/andaaz-emblem-900.webp',
+  emblemSm: '/images/andaaz-emblem-640.webp',
+  // ← PASTE YOUR META PIXEL ID HERE. Empty = no pixel loads at all.
+  metaPixelId: '',
+};
+
+// ── EDITIONS (the only thing you edit month to month) ──
+// status: 'live' = the one taking RSVPs | 'upcoming' = teased below | 'past' = hidden
+const EDITIONS = [
+  {
+    slug: 'andaaz-2026-08-29',        // must match the `events` row + admin guest list
+    name: 'Andaaz Republic',
+    edition: 'Edition 01',
+    tagline: 'The debut night.',      // ← replace with your own line
+    status: 'live',
+    dateLabel: 'Saturday 29 August',
+    timeLabel: '8:00 PM onwards',
+    venue: 'Jollygunj',
+    area: 'JP Nagar, Bangalore',
+    mapsQuery: 'Jollygunj, JP Nagar, Bangalore',
+    poster: null,                     // e.g. '/images/andaaz-republic-poster.jpg' — section auto-hides while null
+    rsvpCutoff: '2026-08-29T13:00:00+00:00',
+    expiry: '2026-08-30T00:00:00+00:00',
+    startISO: '2026-08-29T20:00:00+05:30',
+  },
+  {
+    slug: 'andaaz-utsav',
+    name: 'Andaaz Utsav',
+    edition: 'Edition 02',
+    tagline: 'The festive one.',      // ← replace with your own line
+    status: 'upcoming',
+    dateLabel: 'Date to be announced',
+    timeLabel: '',
+    venue: 'Jollygunj',
+    area: 'JP Nagar, Bangalore',
+    poster: null,
+  },
+];
+
+const current  = EDITIONS.find((e) => e.status === 'live') || EDITIONS[0];
+const upcoming = EDITIONS.filter((e) => e.status === 'upcoming');
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(current.mapsQuery || `${current.venue}, ${current.area}`)}`;
+const desc = `${BRAND.presenter} presents ${BRAND.name} — ${BRAND.headline}. ${current.name} · ${current.dateLabel}, ${current.timeLabel} · ${current.venue}, ${current.area}. Free entry on the guest list.`;
+
+const schema = [{
+  "@context": "https://schema.org", "@type": "Event",
+  "name": `${current.name} — ${BRAND.name}, Bangalore`,
+  "startDate": current.startISO,
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "location": { "@type": "Place", "name": current.venue, "address": { "@type": "PostalAddress", "streetAddress": current.area, "addressLocality": "Bangalore", "addressRegion": "Karnataka", "addressCountry": "IN" } },
+  "image": [`https://djvicofficial.com${BRAND.emblem}`],
+  "description": desc,
+  "performer": { "@type": "Person", "name": "DJ VIC" },
+  "organizer": { "@type": "Organization", "name": BRAND.presenter },
+  "url": "https://djvicofficial.com/andaaz/"
+}];
+---
+
+<Layout
+  title={`${BRAND.name} — ${BRAND.headline} | ${current.name}, ${current.dateLabel}`}
+  description={desc}
+  ogTitle={`${BRAND.presenter} presents ${BRAND.name} — ${current.name}`}
+  ogDescription={`${BRAND.headline}. ${current.dateLabel} · ${current.venue}, ${current.area}. Get on the guest list.`}
+  ogImage={`https://djvicofficial.com${BRAND.emblem}`}
+  canonical="https://djvicofficial.com/andaaz/"
+  schema={schema}
+  metaPixelId={BRAND.metaPixelId}
+  bare
+>
+  <main id="main-content" class="az">
+    <!-- ── HERO (RSVP CTA above the fold) ── -->
+    <section class="az-hero">
+      <div class="az-glow" aria-hidden="true"></div>
+      <img class="az-emblem" src={BRAND.emblem} srcset={`${BRAND.emblemSm} 640w, ${BRAND.emblem} 900w`}
+        sizes="(max-width: 600px) 64vw, 300px" width="900" height="900"
+        alt={`${BRAND.name} — ${BRAND.headline}`} fetchpriority="high" decoding="async" />
+      <p class="az-presents">{BRAND.presenter} presents <b>{BRAND.name}</b></p>
+      <h1 class="az-h1">{BRAND.headline}</h1>
+      <p class="az-edition"><span class="az-ed-name">{current.name}</span><span class="az-ed-sep">·</span><span>{current.dateLabel}</span></p>
+      <a href="#rsvp" class="az-cta">Get on the guest list</a>
+      <p class="az-free">Free entry on the list · {current.timeLabel}</p>
+      <div class="az-meta">
+        <span>📍 {current.venue}, {current.area}</span>
+      </div>
+    </section>
+
+    <!-- ── POSTER (auto-hides until a poster is set in config) ── -->
+    {current.poster && (
+      <section class="az-poster">
+        <img src={current.poster} alt={`${current.name} — ${current.dateLabel} at ${current.venue}, ${current.area}`} loading="lazy" decoding="async" />
+      </section>
+    )}
+
+    <!-- ── THE NIGHT ── -->
+    <section class="az-sec">
+      <span class="az-kicker">{current.edition} — {current.tagline}</span>
+      <h2 class="az-h2">A grown-up night out.</h2>
+      <p class="az-body">Bollywood you actually want to hear, cut against the English records you grew up on. No carnival, no chaos — a room with taste, a proper sound system, and a crowd that came to dance.</p>
+      <div class="az-facts">
+        <div class="az-fact"><span class="az-fact-i">🗓</span><div><strong>{current.dateLabel}</strong><span>{current.timeLabel}</span></div></div>
+        <div class="az-fact"><span class="az-fact-i">📍</span><div><strong>{current.venue}</strong><span>{current.area}</span><a class="az-map" href={mapsHref} target="_blank" rel="noopener noreferrer">Open in Maps →</a></div></div>
+        <div class="az-fact"><span class="az-fact-i">🎧</span><div><strong>DJ VIC</strong><span>Bollywood × English, all night</span></div></div>
+      </div>
+    </section>
+
+    <!-- ── RSVP ── -->
+    <section class="az-sec az-rsvp" id="rsvp">
+      <span class="az-kicker">Guest list</span>
+      <h2 class="az-h2">Get on the list</h2>
+      <p class="az-body az-body--tight">Free entry for you and your people. Takes ten seconds.</p>
+      <div class="az-form">
+        <EventRSVP
+          client:load
+          slug={current.slug}
+          title={current.name}
+          venue={current.venue}
+          area={current.area}
+          dateLabel={current.dateLabel}
+          timeLabel={current.timeLabel}
+          rsvpCutoff={current.rsvpCutoff}
+          expiry={current.expiry}
+          collectEmail={true}
+          source="andaaz-page"
+          pixelEvent="Lead"
+        />
+      </div>
+    </section>
+
+    <!-- ── UPCOMING EDITIONS (auto-hides when none) ── -->
+    {upcoming.length > 0 && (
+      <section class="az-sec">
+        <span class="az-kicker">Coming up</span>
+        <h2 class="az-h2">The next editions</h2>
+        <div class="az-next">
+          {upcoming.map((e) => (
+            <div class="az-next-card">
+              <span class="az-next-ed">{e.edition}</span>
+              <strong class="az-next-name">{e.name}</strong>
+              <span class="az-next-tag">{e.tagline}</span>
+              <span class="az-next-date">{e.dateLabel}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <footer class="az-foot">
+      <span class="az-foot-brand">{BRAND.presenter} presents {BRAND.name}</span>
+      <span class="az-foot-sub">{current.venue} · {current.area}</span>
+    </footer>
+  </main>
+
+  <div class="az-sticky" id="az-sticky"><a href="#rsvp" class="az-cta az-cta--sm">Get on the guest list</a></div>
+</Layout>
+
+<script>
+  function azInit() {
+    const bar = document.getElementById('az-sticky');
+    const hero = document.querySelector('.az-hero');
+    if (bar && hero && !bar.dataset.bound) {
+      bar.dataset.bound = '1';
+      const io = new IntersectionObserver((es) => { bar.classList.toggle('show', !es[0].isIntersecting); });
+      io.observe(hero);
+    }
+  }
+  document.addEventListener('astro:page-load', azInit);
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+  .az {
+    --maroon: #6b1226; --maroon-deep: #3d0a18; --maroon-lo: #24070f;
+    --gold: #C9A24C; --gold-hi: #E9CE86; --bg: #0f0d0e; --ink: #EDE4D8;
+    --line: rgba(201,162,76,.18);
+    background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; overflow-x: hidden;
+  }
+
+  /* Hero — compact so the CTA lands above the fold on a phone */
+  .az-hero { position: relative; text-align: center; padding: 2rem 1.25rem 2.6rem; display: flex; flex-direction: column; align-items: center;
+    background: radial-gradient(ellipse 80% 60% at 50% 18%, rgba(107,18,38,.5), transparent 62%); }
+  .az-glow { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle 42% at 50% 24%, rgba(201,162,76,.10), transparent 60%); }
+  .az-hero > *:not(.az-glow) { position: relative; z-index: 1; }
+  .az-emblem { width: clamp(180px, 62vw, 300px); height: auto; filter: drop-shadow(0 10px 40px rgba(0,0,0,.6)); }
+  .az-presents { font-size: .74rem; letter-spacing: .26em; text-transform: uppercase; color: rgba(237,228,216,.6); margin: .4rem 0 0; }
+  .az-presents b { color: var(--gold); font-weight: 600; }
+  .az-h1 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: clamp(2rem, 8.5vw, 3.4rem); line-height: 1.05; margin: .5rem 0 0;
+    background: linear-gradient(180deg, #F6E7B4, var(--gold) 62%, #9a7530); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .az-edition { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: .5rem; align-items: baseline; margin: .85rem 0 0; font-size: .92rem; color: rgba(237,228,216,.82); }
+  .az-ed-name { font-weight: 600; color: var(--gold-hi); }
+  .az-ed-sep { opacity: .45; }
+  .az-cta { display: inline-flex; align-items: center; justify-content: center; margin: 1.4rem 0 0; padding: 1rem 2.4rem; border-radius: 6px;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #23150a; text-decoration: none;
+    font-weight: 700; font-size: .95rem; letter-spacing: .12em; text-transform: uppercase;
+    box-shadow: 0 12px 34px -12px rgba(201,162,76,.75); transition: transform .15s, box-shadow .25s, filter .2s; }
+  .az-cta:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 18px 44px -12px rgba(201,162,76,.9); }
+  .az-cta--sm { width: 100%; padding: .9rem 1.4rem; margin: 0; }
+  .az-free { font-size: .78rem; color: rgba(237,228,216,.6); margin: .7rem 0 0; }
+  .az-meta { margin-top: .9rem; font-size: .8rem; color: rgba(237,228,216,.55); }
+
+  /* Poster */
+  .az-poster { max-width: 520px; margin: 0 auto; padding: 0 1.25rem; }
+  .az-poster img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; }
+
+  /* Sections */
+  .az-sec { max-width: 660px; margin: 0 auto; padding: clamp(2.6rem, 7vw, 4rem) 1.25rem; text-align: center; border-top: 1px solid rgba(201,162,76,.1); }
+  .az-kicker { display: inline-block; font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .6rem; }
+  .az-h2 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: clamp(1.6rem, 5.5vw, 2.3rem); color: var(--ink); margin: 0 0 .9rem; }
+  .az-body { font-size: .98rem; line-height: 1.75; color: rgba(237,228,216,.7); max-width: 46ch; margin: 0 auto; }
+  .az-body--tight { margin-bottom: 1.6rem; }
+
+  /* Facts */
+  .az-facts { display: flex; flex-direction: column; gap: .7rem; margin-top: 1.8rem; text-align: left; }
+  .az-fact { display: flex; gap: .9rem; align-items: flex-start; background: linear-gradient(180deg, #1a1013, #120c0e); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; }
+  .az-fact-i { font-size: 1.05rem; flex-shrink: 0; }
+  .az-fact > div { display: flex; flex-direction: column; gap: .15rem; }
+  .az-fact strong { color: #fff; font-size: .96rem; }
+  .az-fact span { color: rgba(237,228,216,.6); font-size: .86rem; }
+  .az-map { color: var(--gold) !important; font-size: .82rem !important; text-decoration: none; border-bottom: 1px solid rgba(201,162,76,.4); align-self: flex-start; margin-top: .35rem; }
+
+  /* RSVP */
+  .az-rsvp { background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(107,18,38,.28), transparent 70%); }
+  .az-form { max-width: 420px; margin: 0 auto; text-align: left; background: linear-gradient(180deg, #1a1013, #110b0d); border: 1px solid rgba(201,162,76,.28); border-radius: 14px; padding: 1.3rem 1.2rem; box-shadow: 0 30px 70px -40px rgba(201,162,76,.5); }
+
+  /* Upcoming */
+  .az-next { display: grid; gap: 12px; margin-top: 1.6rem; }
+  .az-next-card { background: linear-gradient(180deg, #1a1013, #120c0e); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; gap: .25rem; }
+  .az-next-ed { font-size: .64rem; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
+  .az-next-name { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--gold-hi); }
+  .az-next-tag { font-size: .88rem; color: rgba(237,228,216,.6); }
+  .az-next-date { font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(237,228,216,.45); margin-top: .3rem; }
+
+  /* Footer */
+  .az-foot { text-align: center; padding: 2.4rem 1.25rem 4.8rem; border-top: 1px solid rgba(201,162,76,.1); display: flex; flex-direction: column; gap: .35rem; }
+  .az-foot-brand { font-size: .84rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+  .az-foot-sub { font-size: .76rem; color: rgba(237,228,216,.45); }
+
+  /* Sticky mobile CTA */
+  .az-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(15,13,14,.94); backdrop-filter: blur(10px); border-top: 1px solid rgba(201,162,76,.3);
+    transform: translateY(120%); transition: transform .3s ease; }
+  .az-sticky.show { transform: none; }
+  @media (min-width: 861px) { .az-sticky { display: none; } }
+</style>

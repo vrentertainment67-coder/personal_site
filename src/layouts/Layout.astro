@@ -8,8 +8,18 @@ import SearchOverlay from '../components/SearchOverlay.astro';
 import Analytics from '../components/Analytics.astro';
 import type { Props as BaseHeadProps } from '../components/BaseHead.astro';
 
-export type Props = BaseHeadProps & { bare?: boolean };
-const { bare = false } = Astro.props;
+export type Props = BaseHeadProps & { bare?: boolean; metaPixelId?: string };
+const { bare = false, metaPixelId = '' } = Astro.props;
+
+// Meta Pixel snippet is assembled here (plain JS) rather than inline in the
+// template — the fbq bootstrap is full of braces and breaks Astro's expression
+// parser if written as a template literal inside {...}.
+const pixelJs = metaPixelId
+  ? `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixelId}');fbq('track','PageView');`
+  : '';
+const pixelNoscript = metaPixelId
+  ? `<img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1"/>`
+  : '';
 ---
 
 <html lang="en">
@@ -24,6 +34,14 @@ const { bare = false } = Astro.props;
     </script>
     <BaseHead {...Astro.props} />
     <ClientRouter />
+
+    <!-- Meta Pixel — only loads on pages that pass a pixel ID (see /andaaz). -->
+    {metaPixelId && (
+      <Fragment>
+        <script is:inline set:html={pixelJs}></script>
+        <noscript set:html={pixelNoscript}></noscript>
+      </Fragment>
+    )}
     <!-- Sitewide structured data — LocalBusiness + Person -->
     <script type="application/ld+json">
     {
