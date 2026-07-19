@@ -16,16 +16,19 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  COMPANY,
+  DEFAULT_COMPANY,
+  DEFAULT_DOC_TYPE,
+  DEFAULT_FOOTER,
   TAX,
   DEFAULT_META,
   DEFAULT_NOTES,
   SECTIONS,
 } from '../lib/invoiceData.js';
 
-const DRAFT_KEY = 'lloyds-invoice-draft-v1'; // in-progress working copy
-const LIB_KEY = 'lloyds-invoices-v1';        // saved, named invoices
-const LOGO_KEY = 'lloyds-invoice-logo-v1';   // company logo (shared across invoices)
+const DRAFT_KEY = 'lloyds-invoice-draft-v1';   // in-progress working copy
+const LIB_KEY = 'lloyds-invoices-v1';          // saved, named invoices
+const LOGO_KEY = 'lloyds-invoice-logo-v1';     // company logo (shared across invoices)
+const COMPANY_KEY = 'lloyds-invoice-company-v1'; // company header defaults
 
 // ---- helpers -------------------------------------------------
 const inr = (n) =>
@@ -66,6 +69,13 @@ export default function InvoiceBuilder() {
   const [sections, setSections] = useState(draft?.sections || buildInitialSections());
   const [notes, setNotes] = useState(draft?.notes || DEFAULT_NOTES);
   const [tax, setTax] = useState(draft?.tax || TAX);
+  const [company, setCompany] = useState(
+    draft?.company ||
+      (typeof window !== 'undefined' ? readJSON(COMPANY_KEY, null) : null) ||
+      DEFAULT_COMPANY
+  );
+  const [docType, setDocType] = useState(draft?.docType || DEFAULT_DOC_TYPE);
+  const [footer, setFooter] = useState(draft?.footer || DEFAULT_FOOTER);
   const [logo, setLogo] = useState(
     (typeof window !== 'undefined' && readJSON(DRAFT_KEY, null)?.logo) ||
       (typeof window !== 'undefined' ? window.localStorage.getItem(LOGO_KEY) : null) ||
@@ -92,14 +102,16 @@ export default function InvoiceBuilder() {
     try {
       window.localStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ meta, sections, notes, tax, logo, activeId, activeName })
+        JSON.stringify({ meta, sections, notes, tax, logo, company, docType, footer, activeId, activeName })
       );
       if (logo) window.localStorage.setItem(LOGO_KEY, logo);
+      // Remember the latest company header so new invoices inherit it.
+      window.localStorage.setItem(COMPANY_KEY, JSON.stringify(company));
     } catch {
       /* storage full / disabled — non-fatal */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta, sections, notes, tax, logo]);
+  }, [meta, sections, notes, tax, logo, company, docType, footer]);
 
   const persistLibrary = (lib) => {
     setLibrary(lib);
@@ -117,6 +129,9 @@ export default function InvoiceBuilder() {
     setNotes(data.notes);
     setTax(data.tax);
     if (data.logo !== undefined) setLogo(data.logo);
+    if (data.company) setCompany(data.company);
+    if (data.docType) setDocType(data.docType);
+    if (data.footer) setFooter(data.footer);
     setActiveId(id);
     setActiveName(name || '');
     setDirty(false);
@@ -129,6 +144,9 @@ export default function InvoiceBuilder() {
     notes,
     tax,
     logo,
+    company,
+    docType,
+    footer,
   });
 
   const saveInvoice = () => {
@@ -182,19 +200,30 @@ export default function InvoiceBuilder() {
     if (!silent && dirty && !window.confirm('Start a new blank-template invoice? Unsaved changes will be lost.'))
       return;
     loadInto(
-      { meta: DEFAULT_META, sections: buildInitialSections(), notes: DEFAULT_NOTES, tax: TAX, logo },
+      {
+        meta: DEFAULT_META,
+        sections: buildInitialSections(),
+        notes: DEFAULT_NOTES,
+        tax: TAX,
+        logo,
+        company, // keep the current company header on a new invoice
+        docType: DEFAULT_DOC_TYPE,
+        footer: DEFAULT_FOOTER,
+      },
       null,
       ''
     );
   };
 
   const resetToTemplate = () => {
-    if (!window.confirm('Reset the current invoice back to the A26 template?')) return;
+    if (!window.confirm('Reset the current invoice back to the A26 template? (Your company header is kept.)')) return;
     skipDirty.current = false;
     setMeta(DEFAULT_META);
     setSections(buildInitialSections());
     setNotes(DEFAULT_NOTES);
     setTax(TAX);
+    setDocType(DEFAULT_DOC_TYPE);
+    setFooter(DEFAULT_FOOTER);
   };
 
   // ---- structural mutations ---------------------------------
@@ -406,6 +435,15 @@ export default function InvoiceBuilder() {
     />
   );
 
+  const companyField = (key, placeholder, className) => (
+    <input
+      className={className}
+      value={company[key] || ''}
+      placeholder={placeholder}
+      onChange={(e) => setCompany({ ...company, [key]: e.target.value })}
+    />
+  );
+
   return (
     <div className="iv-root">
       {/* ── Toolbar (screen only) ─────────────────────────── */}
@@ -469,9 +507,22 @@ export default function InvoiceBuilder() {
           <div className="iv-head-left">
             <div className="iv-logo-wrap">
               {logo ? (
-                <img src={logo} className="iv-logo-img" alt="Lloyds Pro Sound" />
+                <img src={logo} className="iv-logo-img" alt={company.name} />
               ) : (
-                <div className="iv-logo">LLOYDS<span>PRO SOUND</span></div>
+                <div className="iv-logo">
+                  <input
+                    className="iv-logo-name"
+                    value={company.name}
+                    placeholder="Company name"
+                    onChange={(e) => setCompany({ ...company, name: e.target.value })}
+                  />
+                  <input
+                    className="iv-logo-tag"
+                    value={company.tagline}
+                    placeholder="Tagline"
+                    onChange={(e) => setCompany({ ...company, tagline: e.target.value })}
+                  />
+                </div>
               )}
               <div className="iv-logo-controls no-print">
                 <label className="iv-logo-btn">
@@ -483,12 +534,28 @@ export default function InvoiceBuilder() {
                 )}
               </div>
             </div>
-            <p className="iv-company-line">{COMPANY.address}</p>
-            <p className="iv-company-line">Phone: {COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}</p>
-            <p className="iv-company-line">{COMPANY.website}</p>
+            <textarea
+              className="iv-company-line iv-company-input iv-company-addr iv-autogrow"
+              value={company.address}
+              placeholder="Company address"
+              rows={2}
+              onChange={(e) => setCompany({ ...company, address: e.target.value })}
+            />
+            <div className="iv-company-contact">
+              <span className="iv-company-lbl">Phone:</span>
+              {companyField('phone', 'Phone', 'iv-company-line iv-company-input iv-company-inline')}
+              <span className="iv-company-sep">·</span>
+              {companyField('email', 'Email', 'iv-company-line iv-company-input iv-company-inline')}
+            </div>
+            {companyField('website', 'Website', 'iv-company-line iv-company-input')}
           </div>
           <div className="iv-head-right">
-            <div className="iv-doc-title">Quotation</div>
+            <input
+              className="iv-doc-title"
+              value={docType}
+              placeholder="Quotation"
+              onChange={(e) => setDocType(e.target.value)}
+            />
             <div className="iv-doc-meta">
               <label>Ref No.</label>
               {metaField('invoiceNo', '—')}
@@ -734,8 +801,15 @@ export default function InvoiceBuilder() {
         </section>
 
         <footer className="iv-foot">
-          <span>Thank you for your business.</span>
-          <span>{COMPANY.name} · {COMPANY.phone}</span>
+          <input
+            className="iv-foot-input"
+            value={footer}
+            placeholder="Closing line"
+            onChange={(e) => setFooter(e.target.value)}
+          />
+          <span className="iv-foot-brand">
+            {[company.name, company.tagline].filter(Boolean).join(' ')} · {company.phone}
+          </span>
         </footer>
       </div>
     </div>

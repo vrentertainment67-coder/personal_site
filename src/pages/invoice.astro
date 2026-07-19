@@ -102,13 +102,16 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       /* Header */
       .iv-head { display: flex; justify-content: space-between; gap: 2rem; padding-bottom: 1.25rem; border-bottom: 2px solid var(--ink); }
       .iv-head-left { flex: 1; }
-      .iv-logo {
-        font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 0.9;
-        letter-spacing: 0.06em; color: var(--ink);
+      .iv-logo { line-height: 0.9; }
+      .iv-logo-name {
+        font-family: 'Bebas Neue', sans-serif !important; font-size: 2.6rem; line-height: 0.9;
+        letter-spacing: 0.06em; color: var(--ink); width: auto !important; min-width: 4ch; max-width: 100%;
+        text-transform: uppercase; padding: 0 2px;
       }
-      .iv-logo span {
-        display: block; font-size: 0.82rem; letter-spacing: 0.42em;
-        color: var(--gold-dk); margin-top: 2px;
+      .iv-logo-tag {
+        display: block; font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.82rem; letter-spacing: 0.42em; color: var(--gold-dk);
+        margin-top: 2px; width: auto !important; min-width: 4ch; text-transform: uppercase; padding: 0 2px;
       }
       .iv-logo-wrap { position: relative; display: inline-block; }
       .iv-logo-img { max-height: 74px; max-width: 260px; width: auto; object-fit: contain; }
@@ -124,10 +127,18 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       }
       .iv-logo-btn:hover { border-color: var(--gold-dk); }
       .iv-company-line { font-size: 0.72rem; color: var(--muted); margin: 0.28rem 0 0; max-width: 42ch; }
-      .iv-head-right { text-align: right; min-width: 190px; }
+      .iv-company-input { display: block; }
+      .iv-company-addr { resize: none; overflow: hidden; line-height: 1.4; max-width: 44ch; }
+      .iv-company-contact { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.28rem; }
+      .iv-company-contact .iv-company-input { margin-top: 0; }
+      .iv-company-inline { width: auto !important; min-width: 6ch; }
+      .iv-company-lbl { font-size: 0.72rem; color: var(--muted); }
+      .iv-company-sep { color: var(--muted); }
+      .iv-head-right { text-align: right; min-width: 210px; }
       .iv-doc-title {
-        font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 0.14em;
-        color: var(--gold-dk); text-transform: uppercase;
+        font-family: 'Bebas Neue', sans-serif !important; font-size: 1.9rem; letter-spacing: 0.14em;
+        color: var(--gold-dk); text-transform: uppercase; text-align: right;
+        width: 100%; padding: 0 2px;
       }
       .iv-doc-meta { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 0.35rem; }
       .iv-doc-meta label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
@@ -232,9 +243,12 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       .iv-note-input { resize: none; overflow: hidden; line-height: 1.4; flex: 1; }
 
       .iv-foot {
-        display: flex; justify-content: space-between; margin-top: 1.75rem; padding-top: 0.75rem;
+        display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+        margin-top: 1.75rem; padding-top: 0.75rem;
         border-top: 2px solid var(--ink); font-size: 0.72rem; color: var(--muted);
       }
+      .iv-foot-input { font-size: 0.72rem; color: var(--muted); flex: 1; max-width: 50%; }
+      .iv-foot-brand { white-space: nowrap; }
 
       /* ── Print ──────────────────────────────────────────── */
       @media print {
@@ -266,19 +280,22 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
 
     <!-- Auto-grow the note textareas to fit their content -->
     <script is:inline>
-      function growNotes() {
-        document.querySelectorAll('.iv-note-input').forEach(function (t) {
+      function growAll() {
+        document.querySelectorAll('.iv-note-input, .iv-autogrow').forEach(function (t) {
           t.style.height = 'auto';
           t.style.height = t.scrollHeight + 'px';
         });
       }
       document.addEventListener('input', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('iv-note-input')) {
+        if (e.target && e.target.classList &&
+            (e.target.classList.contains('iv-note-input') || e.target.classList.contains('iv-autogrow'))) {
           e.target.style.height = 'auto';
           e.target.style.height = e.target.scrollHeight + 'px';
         }
       });
-      window.addEventListener('load', function () { setTimeout(growNotes, 400); });
+      window.addEventListener('load', function () { setTimeout(growAll, 400); });
+      // Re-grow after the React island hydrates / values populate.
+      document.addEventListener('astro:page-load', function () { setTimeout(growAll, 500); });
     </script>
   </body>
 </html>

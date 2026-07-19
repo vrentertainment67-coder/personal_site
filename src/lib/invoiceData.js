@@ -19,6 +19,23 @@ export const COMPANY = {
   website: 'www.lloydsprosound.com',
 };
 
+// Editable company header. `name` + `tagline` form the text wordmark shown
+// when no logo image is uploaded. All fields are editable in the builder and
+// persist as the default for new invoices.
+export const DEFAULT_COMPANY = {
+  name: 'LLOYDS',
+  tagline: 'PRO SOUND',
+  address:
+    '#64, Site No. 20 & 21, Horamavu Agara Main Rd, Vaddara Palya, Kalyan Nagar Post, Bangalore - 43.',
+  phone: '9845091585',
+  email: 'djlloyd10@gmail.com',
+  website: 'www.lloydsprosound.com',
+};
+
+// Document type label (top-right of the sheet) and closing line — editable.
+export const DEFAULT_DOC_TYPE = 'Quotation';
+export const DEFAULT_FOOTER = 'Thank you for your business.';
+
 // Default GST split (Karnataka intra-state: CGST 9% + SGST 9% = 18%).
 export const TAX = {
   cgstRate: 9,
