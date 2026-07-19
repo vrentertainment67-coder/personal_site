@@ -1,0 +1,228 @@
+---
+// src/pages/invoice.astro
+// Private invoice builder for Lloyds Pro Sound. Standalone tool page:
+// no public site nav/footer, noindex + nofollow, not linked anywhere.
+// The React island (InvoiceBuilder.jsx) holds every line item as a
+// toggleable/editable row and recomputes GST + grand total live.
+import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lloyds Pro Sound — Invoice Builder</title>
+    <meta name="description" content="Private invoice builder for Lloyds Pro Sound." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:global>
+      :root { color-scheme: light dark; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: #14120e;
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        color: #eee;
+      }
+
+      /* ── Palette ────────────────────────────────────────── */
+      .iv-root { --gold: #c9a84c; --gold-dk: #a9883a; --ink: #1a1a1a; --line: #d9d4c8; --muted: #6a6a6a; }
+
+      /* ── Toolbar ────────────────────────────────────────── */
+      .iv-toolbar {
+        position: sticky; top: 0; z-index: 20;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; flex-wrap: wrap;
+        padding: 0.85rem 1.25rem;
+        background: rgba(14,12,9,0.96);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(201,168,76,0.22);
+      }
+      .iv-toolbar-brand { display: flex; align-items: baseline; gap: 0.6rem; }
+      .iv-toolbar-logo {
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+        letter-spacing: 0.18em; color: #fff;
+      }
+      .iv-toolbar-sub { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+      .iv-toolbar-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .iv-check-inline {
+        display: flex; align-items: center; gap: 0.4rem;
+        font-size: 0.75rem; letter-spacing: 0.05em; color: #cbc4b0; cursor: pointer;
+      }
+      .iv-check-inline input { width: 15px; height: 15px; accent-color: var(--gold); }
+      .iv-btn {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+        padding: 0.6rem 1.1rem; border-radius: 3px; cursor: pointer; border: 1px solid transparent;
+        transition: background 0.18s, color 0.18s, border-color 0.18s;
+      }
+      .iv-btn-gold { background: var(--gold); color: #14120e; }
+      .iv-btn-gold:hover { background: #e0c672; }
+      .iv-btn-ghost { background: transparent; color: #d8d1bd; border-color: rgba(201,168,76,0.4); }
+      .iv-btn-ghost:hover { border-color: var(--gold); color: #fff; }
+      .iv-btn:disabled { opacity: 0.5; cursor: default; }
+
+      /* ── The sheet (white paper) ────────────────────────── */
+      .iv-sheet {
+        background: #fff; color: var(--ink);
+        max-width: 900px; margin: 2rem auto; padding: 3rem 3rem 2.25rem;
+        box-shadow: 0 10px 45px rgba(0,0,0,0.5);
+        line-height: 1.5;
+      }
+      .iv-sheet input, .iv-sheet textarea {
+        font-family: inherit; font-size: inherit; color: inherit;
+        background: transparent; border: 1px solid transparent; border-radius: 3px;
+        padding: 2px 4px; width: 100%; transition: border-color 0.15s, background 0.15s;
+      }
+      .iv-sheet input:hover, .iv-sheet textarea:hover { border-color: var(--line); }
+      .iv-sheet input:focus, .iv-sheet textarea:focus {
+        outline: none; border-color: var(--gold); background: #fdf9ef;
+      }
+
+      /* Header */
+      .iv-head { display: flex; justify-content: space-between; gap: 2rem; padding-bottom: 1.25rem; border-bottom: 2px solid var(--ink); }
+      .iv-head-left { flex: 1; }
+      .iv-logo {
+        font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 0.9;
+        letter-spacing: 0.06em; color: var(--ink);
+      }
+      .iv-logo span {
+        display: block; font-size: 0.82rem; letter-spacing: 0.42em;
+        color: var(--gold-dk); margin-top: 2px;
+      }
+      .iv-company-line { font-size: 0.72rem; color: var(--muted); margin: 0.28rem 0 0; max-width: 42ch; }
+      .iv-head-right { text-align: right; min-width: 190px; }
+      .iv-doc-title {
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 0.14em;
+        color: var(--gold-dk); text-transform: uppercase;
+      }
+      .iv-doc-meta { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 0.35rem; }
+      .iv-doc-meta label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+      .iv-doc-meta input { width: 110px; text-align: right; font-weight: 600; }
+
+      /* Bill-to */
+      .iv-billto { display: flex; gap: 2rem; padding: 1.25rem 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+      .iv-billto-col { flex: 1; min-width: 220px; }
+      .iv-billto-grid { flex: 1.4; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.5rem; align-content: start; }
+      .iv-billto-venue { grid-column: 1 / -1; }
+      .iv-billto-label {
+        display: block; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.16em;
+        color: var(--gold-dk); margin-bottom: 0.1rem;
+      }
+      .iv-billto-col > input { font-size: 1.05rem; font-weight: 600; }
+      .iv-billto-title { margin-top: 0.5rem; }
+      .iv-billto-title input { font-size: 0.86rem; color: var(--muted); }
+      .iv-billto-grid input { font-weight: 500; }
+
+      /* Sections */
+      .iv-section { margin-top: 1.5rem; }
+      .iv-section-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        border-bottom: 1.5px solid var(--ink); padding-bottom: 0.3rem; margin-bottom: 0.5rem;
+      }
+      .iv-section-head h3 {
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--ink); margin: 0;
+      }
+      .iv-section-total { font-size: 0.8rem; font-weight: 700; color: var(--gold-dk); }
+      .iv-group { margin-bottom: 0.4rem; }
+      .iv-group-head { display: flex; align-items: center; gap: 0.5rem; margin: 0.55rem 0 0.15rem; }
+      .iv-group-name {
+        font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+        color: #444;
+      }
+      .iv-group-toggle input { width: 15px; height: 15px; accent-color: var(--gold-dk); }
+
+      .iv-table { width: 100%; border-collapse: collapse; }
+      .iv-table thead th {
+        font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+        text-align: left; font-weight: 600; padding: 0.2rem 0.4rem; border-bottom: 1px solid var(--line);
+      }
+      .iv-col-chk { width: 26px; }
+      .iv-col-qty, .iv-col-rate { width: 90px; }
+      .iv-col-amt { width: 110px; text-align: right; }
+      .iv-table thead .iv-col-qty, .iv-table thead .iv-col-rate { text-align: right; }
+      .iv-table tbody td { padding: 1px 0.4rem; border-bottom: 1px solid #f0ede4; vertical-align: middle; font-size: 0.8rem; }
+      .iv-col-amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .iv-num { text-align: right; font-variant-numeric: tabular-nums; }
+      .iv-row-off { opacity: 0.32; }
+      .iv-row-off .iv-cell-input { text-decoration: line-through; }
+      .iv-cell-input { font-size: 0.8rem; }
+      /* Hide number spinners for a cleaner paper look */
+      .iv-num::-webkit-outer-spin-button, .iv-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      .iv-num { -moz-appearance: textfield; }
+
+      /* Totals */
+      .iv-totals { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
+      .iv-totals-box { width: 320px; }
+      .iv-totals-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 0.28rem 0; color: #333; }
+      .iv-totals-row span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+      .iv-tax-input { width: 42px; text-align: center; font-weight: 600; display: inline-block; }
+      .iv-grand {
+        border-top: 2px solid var(--ink); margin-top: 0.35rem; padding-top: 0.6rem;
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.06em; color: var(--ink);
+      }
+      .iv-grand span:last-child { color: var(--gold-dk); font-weight: 400; }
+      .iv-totals-meta { text-align: right; font-size: 0.66rem; color: var(--muted); margin-top: 0.35rem; }
+
+      /* Notes */
+      .iv-notes { margin-top: 1.75rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+      .iv-notes h4 {
+        font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--ink); margin: 0 0 0.4rem;
+      }
+      .iv-notes ol { margin: 0; padding-left: 1.1rem; }
+      .iv-notes li { font-size: 0.72rem; color: #555; margin-bottom: 0.15rem; }
+      .iv-note-input { resize: none; overflow: hidden; line-height: 1.4; }
+
+      .iv-foot {
+        display: flex; justify-content: space-between; margin-top: 1.75rem; padding-top: 0.75rem;
+        border-top: 2px solid var(--ink); font-size: 0.72rem; color: var(--muted);
+      }
+
+      /* ── Print ──────────────────────────────────────────── */
+      @media print {
+        @page { size: A4; margin: 12mm; }
+        body { background: #fff !important; }
+        .no-print { display: none !important; }
+        .iv-sheet { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+        .iv-row-off { display: none !important; }
+        .iv-sheet input, .iv-sheet textarea { border-color: transparent !important; background: transparent !important; }
+        .iv-section { break-inside: avoid; }
+        .iv-group { break-inside: avoid; }
+      }
+      /* During html2canvas export, strip input borders too */
+      .invoice-exporting .iv-sheet input, .invoice-exporting .iv-sheet textarea { border-color: transparent !important; background: transparent !important; }
+      .invoice-exporting .iv-row-off { display: none !important; }
+
+      @media (max-width: 640px) {
+        .iv-sheet { padding: 1.5rem 1.1rem; margin: 1rem 0.5rem; }
+        .iv-head { flex-direction: column; }
+        .iv-head-right { text-align: left; }
+        .iv-doc-meta { justify-content: flex-start; }
+        .iv-col-qty, .iv-col-rate { width: 62px; }
+        .iv-col-amt { width: 84px; }
+      }
+    </style>
+  </head>
+  <body>
+    <InvoiceBuilder client:only="react" />
+
+    <!-- Auto-grow the note textareas to fit their content -->
+    <script is:inline>
+      function growNotes() {
+        document.querySelectorAll('.iv-note-input').forEach(function (t) {
+          t.style.height = 'auto';
+          t.style.height = t.scrollHeight + 'px';
+        });
+      }
+      document.addEventListener('input', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('iv-note-input')) {
+          e.target.style.height = 'auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }
+      });
+      window.addEventListener('load', function () { setTimeout(growNotes, 400); });
+    </script>
+  </body>
+</html>
