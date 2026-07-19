@@ -112,7 +112,7 @@ export default function InventoryMaster() {
           <span className="inv-sub">Inventory Master</span>
         </div>
         <div className="inv-actions">
-          <a className="inv-link" href="/invoice/">Invoice Builder ↗</a>
+          <a className="inv-link" href="/invoice/">Quotation Builder ↗</a>
           <button className="inv-btn inv-btn-ghost" onClick={resetAll}>Reset</button>
           <button className="inv-btn inv-btn-ghost" onClick={exportCsv}>Export CSV</button>
           <button className="inv-btn inv-btn-gold" onClick={() => window.print()}>Print</button>

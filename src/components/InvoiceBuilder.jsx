@@ -157,8 +157,8 @@ export default function InvoiceBuilder() {
     let name = activeName;
     let id = activeId;
     if (!id) {
-      const suggested = meta.title || meta.client || 'Untitled invoice';
-      name = window.prompt('Save invoice as:', suggested);
+      const suggested = meta.title || meta.client || 'Untitled quotation';
+      name = window.prompt('Save quotation as:', suggested);
       if (name === null) return; // cancelled
       name = name.trim() || suggested;
       id = uid('inv');
@@ -175,7 +175,7 @@ export default function InvoiceBuilder() {
   };
 
   const saveAsNew = () => {
-    const suggested = (activeName ? activeName + ' (copy)' : meta.title || 'Untitled invoice');
+    const suggested = (activeName ? activeName + ' (copy)' : meta.title || 'Untitled quotation');
     const name = window.prompt('Save a copy as:', suggested);
     if (name === null) return;
     const id = uid('inv');
@@ -188,7 +188,7 @@ export default function InvoiceBuilder() {
 
   const loadInvoice = (id) => {
     if (!id) return;
-    if (dirty && !window.confirm('Discard unsaved changes and load this invoice?')) return;
+    if (dirty && !window.confirm('Discard unsaved changes and load this quotation?')) return;
     const entry = library.find((e) => e.id === id);
     if (entry) loadInto(entry.data, entry.id, entry.name);
   };
@@ -201,7 +201,7 @@ export default function InvoiceBuilder() {
   };
 
   const newInvoice = (silent) => {
-    if (!silent && dirty && !window.confirm('Start a new blank-template invoice? Unsaved changes will be lost.'))
+    if (!silent && dirty && !window.confirm('Start a new blank-template quotation? Unsaved changes will be lost.'))
       return;
     loadInto(
       {
@@ -220,7 +220,7 @@ export default function InvoiceBuilder() {
   };
 
   const resetToTemplate = () => {
-    if (!window.confirm('Reset the current invoice back to the A26 template? (Your company header is kept.)')) return;
+    if (!window.confirm('Reset the current quotation back to the A26 template? (Your company header is kept.)')) return;
     skipDirty.current = false;
     setMeta(DEFAULT_META);
     setSections(buildInitialSections());
@@ -455,8 +455,8 @@ export default function InvoiceBuilder() {
         pdf.addImage(img, 'JPEG', 0, position, pageW, imgH);
         heightLeft -= pageH;
       }
-      const safe = (activeName || meta.client || 'invoice').replace(/[^\w-]+/g, '_');
-      pdf.save(`Lloyds_Invoice_${safe}.pdf`);
+      const safe = (activeName || meta.client || 'quotation').replace(/[^\w-]+/g, '_');
+      pdf.save(`Lloyds_Quotation_${safe}.pdf`);
     } catch (e) {
       alert('Sorry — PDF export failed. Use the Print button and "Save as PDF" instead.');
       document.body.classList.remove('invoice-exporting');
@@ -490,7 +490,7 @@ export default function InvoiceBuilder() {
       <div className="iv-toolbar no-print">
         <div className="iv-toolbar-brand">
           <span className="iv-toolbar-logo">LLOYDS</span>
-          <span className="iv-toolbar-sub">Invoice Builder</span>
+          <span className="iv-toolbar-sub">Quotation Builder</span>
         </div>
         <div className="iv-toolbar-actions">
           <a className="iv-tool-link" href="/inventory/">Inventory ↗</a>
@@ -509,7 +509,7 @@ export default function InvoiceBuilder() {
       {/* ── Saved-invoice manager (screen only) ───────────── */}
       <div className="iv-manager no-print">
         <div className="iv-manager-left">
-          <label className="iv-manager-lbl">Invoice</label>
+          <label className="iv-manager-lbl">Quotation</label>
           <select
             className="iv-select"
             value={activeId || ''}
