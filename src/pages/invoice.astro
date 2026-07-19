@@ -60,7 +60,27 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       .iv-btn-gold:hover { background: #e0c672; }
       .iv-btn-ghost { background: transparent; color: #d8d1bd; border-color: rgba(201,168,76,0.4); }
       .iv-btn-ghost:hover { border-color: var(--gold); color: #fff; }
-      .iv-btn:disabled { opacity: 0.5; cursor: default; }
+      .iv-btn:disabled { opacity: 0.4; cursor: default; }
+      .iv-btn-sm { padding: 0.42rem 0.8rem; font-size: 0.66rem; }
+
+      /* ── Saved-invoice manager ──────────────────────────── */
+      .iv-manager {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; flex-wrap: wrap;
+        padding: 0.6rem 1.25rem;
+        background: rgba(20,17,12,0.9);
+        border-bottom: 1px solid rgba(201,168,76,0.12);
+      }
+      .iv-manager-left { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .iv-manager-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      .iv-manager-lbl { font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+      .iv-select {
+        font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem;
+        background: #1b1710; color: #f0e9d6; border: 1px solid rgba(201,168,76,0.35);
+        border-radius: 3px; padding: 0.42rem 0.7rem; min-width: 230px; cursor: pointer;
+      }
+      .iv-dirty { font-size: 0.68rem; color: #e0a94c; letter-spacing: 0.04em; }
+      .iv-saved { font-size: 0.68rem; color: #6fbf7f; letter-spacing: 0.04em; }
 
       /* ── The sheet (white paper) ────────────────────────── */
       .iv-sheet {
@@ -90,6 +110,19 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
         display: block; font-size: 0.82rem; letter-spacing: 0.42em;
         color: var(--gold-dk); margin-top: 2px;
       }
+      .iv-logo-wrap { position: relative; display: inline-block; }
+      .iv-logo-img { max-height: 74px; max-width: 260px; width: auto; object-fit: contain; }
+      .iv-logo-controls {
+        display: flex; gap: 0.4rem; margin-top: 0.4rem;
+        opacity: 0; transition: opacity 0.15s;
+      }
+      .iv-logo-wrap:hover .iv-logo-controls { opacity: 1; }
+      .iv-logo-btn {
+        font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--gold-dk); background: #f5f1e6; border: 1px solid var(--line);
+        border-radius: 3px; padding: 0.2rem 0.5rem; cursor: pointer;
+      }
+      .iv-logo-btn:hover { border-color: var(--gold-dk); }
       .iv-company-line { font-size: 0.72rem; color: var(--muted); margin: 0.28rem 0 0; max-width: 42ch; }
       .iv-head-right { text-align: right; min-width: 190px; }
       .iv-doc-title {
@@ -120,18 +153,41 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
         display: flex; align-items: baseline; justify-content: space-between;
         border-bottom: 1.5px solid var(--ink); padding-bottom: 0.3rem; margin-bottom: 0.5rem;
       }
-      .iv-section-head h3 {
+      .iv-section-title {
         font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 0.1em;
-        text-transform: uppercase; color: var(--ink); margin: 0;
+        text-transform: uppercase; color: var(--ink); margin: 0; flex: 1;
       }
-      .iv-section-total { font-size: 0.8rem; font-weight: 700; color: var(--gold-dk); }
+      .iv-section-head-right { display: flex; align-items: center; gap: 0.4rem; }
+      .iv-section-total { font-size: 0.8rem; font-weight: 700; color: var(--gold-dk); white-space: nowrap; }
       .iv-group { margin-bottom: 0.4rem; }
-      .iv-group-head { display: flex; align-items: center; gap: 0.5rem; margin: 0.55rem 0 0.15rem; }
+      .iv-group-head { display: flex; align-items: center; gap: 0.4rem; margin: 0.55rem 0 0.15rem; }
       .iv-group-name {
         font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-        color: #444;
+        color: #444; flex: 1; max-width: 340px;
       }
       .iv-group-toggle input { width: 15px; height: 15px; accent-color: var(--gold-dk); }
+
+      /* Inline add / remove controls */
+      .iv-icon-btn {
+        width: 20px; height: 20px; line-height: 1; border-radius: 3px;
+        border: 1px solid transparent; background: transparent; color: #c05; cursor: pointer;
+        font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+        opacity: 0.35; transition: opacity 0.15s, background 0.15s;
+      }
+      .iv-icon-btn:hover { opacity: 1; background: #fbeaea; }
+      .iv-col-del { width: 24px; }
+      .iv-add-link {
+        display: inline-block; margin: 0.15rem 0 0.5rem; padding: 0.15rem 0.2rem;
+        background: none; border: none; cursor: pointer;
+        font-size: 0.68rem; letter-spacing: 0.05em; color: var(--gold-dk); font-weight: 600;
+      }
+      .iv-add-link:hover { text-decoration: underline; }
+      .iv-add-section {
+        display: block; width: 100%; margin: 0.75rem 0 0; padding: 0.55rem;
+        background: #faf7ef; border: 1px dashed var(--line); border-radius: 4px; cursor: pointer;
+        font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-dk); font-weight: 600;
+      }
+      .iv-add-section:hover { border-color: var(--gold-dk); }
 
       .iv-table { width: 100%; border-collapse: collapse; }
       .iv-table thead th {
@@ -172,8 +228,8 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
         text-transform: uppercase; color: var(--ink); margin: 0 0 0.4rem;
       }
       .iv-notes ol { margin: 0; padding-left: 1.1rem; }
-      .iv-notes li { font-size: 0.72rem; color: #555; margin-bottom: 0.15rem; }
-      .iv-note-input { resize: none; overflow: hidden; line-height: 1.4; }
+      .iv-notes li { font-size: 0.72rem; color: #555; margin-bottom: 0.15rem; display: flex; align-items: flex-start; gap: 0.3rem; }
+      .iv-note-input { resize: none; overflow: hidden; line-height: 1.4; flex: 1; }
 
       .iv-foot {
         display: flex; justify-content: space-between; margin-top: 1.75rem; padding-top: 0.75rem;

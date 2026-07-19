@@ -1,13 +1,18 @@
 // ============================================================
 // InvoiceBuilder — Lloyds Pro Sound clickable invoice
 // ============================================================
-// A single-screen tool: every line item from Lloyd's quotation is a
-// toggleable, editable row. Untick what the event doesn't need, tweak
-// quantities/rates inline, and the subtotal + GST + grand total recompute
-// live. Print (native → PDF) or Download PDF ships a clean white invoice.
+// Every line item from a quotation is a toggleable, editable row.
+// Untick what an event doesn't need, tweak qty/rate inline, and the
+// subtotal + GST + grand total recompute live. Print (native → PDF) or
+// Download PDF ships a clean white document.
 //
-// Work-in-progress is auto-saved to localStorage so a refresh never loses
-// a half-built invoice. "Reset to template" restores the seeded A26 set.
+// Reusable tool:
+//   • Add / remove line items, sub-groups (band members) and whole
+//     sections — build any event off the A26 master catalogue.
+//   • Save, load, duplicate and delete multiple named invoices
+//     (stored in the browser via localStorage).
+//   • Upload the Lloyds Pro Sound logo (stored with the invoice).
+// A working draft auto-saves so a refresh never loses in-progress edits.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -18,7 +23,9 @@ import {
   SECTIONS,
 } from '../lib/invoiceData.js';
 
-const STORAGE_KEY = 'lloyds-invoice-draft-v1';
+const DRAFT_KEY = 'lloyds-invoice-draft-v1'; // in-progress working copy
+const LIB_KEY = 'lloyds-invoices-v1';        // saved, named invoices
+const LOGO_KEY = 'lloyds-invoice-logo-v1';   // company logo (shared across invoices)
 
 // ---- helpers -------------------------------------------------
 const inr = (n) =>
@@ -28,9 +35,11 @@ const inr = (n) =>
     maximumFractionDigits: 2,
   }).format(n || 0);
 
-// Seed the editable model: every item gets include:true; sections/groups
-// keep their shape so we can render headers and sub-totals.
-function buildInitialState() {
+const uid = (p = 'x') =>
+  `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+
+// Seed the editable model: every item gets include:true.
+function buildInitialSections() {
   return SECTIONS.map((sec) => ({
     ...sec,
     groups: sec.groups.map((g) => ({
@@ -40,42 +49,159 @@ function buildInitialState() {
   }));
 }
 
-function loadDraft() {
-  if (typeof window === 'undefined') return null;
+function readJSON(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return null;
+    return fallback;
   }
 }
 
 export default function InvoiceBuilder() {
-  const draft = typeof window !== 'undefined' ? loadDraft() : null;
+  const draft = typeof window !== 'undefined' ? readJSON(DRAFT_KEY, null) : null;
 
   const [meta, setMeta] = useState(draft?.meta || DEFAULT_META);
-  const [sections, setSections] = useState(draft?.sections || buildInitialState());
+  const [sections, setSections] = useState(draft?.sections || buildInitialSections());
   const [notes, setNotes] = useState(draft?.notes || DEFAULT_NOTES);
   const [tax, setTax] = useState(draft?.tax || TAX);
+  const [logo, setLogo] = useState(
+    (typeof window !== 'undefined' && readJSON(DRAFT_KEY, null)?.logo) ||
+      (typeof window !== 'undefined' ? window.localStorage.getItem(LOGO_KEY) : null) ||
+      null
+  );
+
+  const [library, setLibrary] = useState(() => readJSON(LIB_KEY, []));
+  const [activeId, setActiveId] = useState(draft?.activeId || null);
+  const [activeName, setActiveName] = useState(draft?.activeName || '');
+  const [dirty, setDirty] = useState(false);
+
   const [hideExcluded, setHideExcluded] = useState(false);
   const [busy, setBusy] = useState(false);
   const sheetRef = useRef(null);
+  const skipDirty = useRef(true); // don't flag a fresh load as "unsaved"
 
-  // Auto-save the whole draft on any change.
+  // Auto-save the working draft + track unsaved edits.
   useEffect(() => {
+    if (skipDirty.current) {
+      skipDirty.current = false;
+    } else {
+      setDirty(true);
+    }
     try {
       window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ meta, sections, notes, tax })
+        DRAFT_KEY,
+        JSON.stringify({ meta, sections, notes, tax, logo, activeId, activeName })
       );
+      if (logo) window.localStorage.setItem(LOGO_KEY, logo);
     } catch {
       /* storage full / disabled — non-fatal */
     }
-  }, [meta, sections, notes, tax]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta, sections, notes, tax, logo]);
 
-  // ---- mutations --------------------------------------------
-  const updateItem = (secId, groupId, itemId, patch) => {
-    setSections((prev) =>
+  const persistLibrary = (lib) => {
+    setLibrary(lib);
+    try {
+      window.localStorage.setItem(LIB_KEY, JSON.stringify(lib));
+    } catch {
+      /* non-fatal */
+    }
+  };
+
+  const loadInto = (data, id, name) => {
+    skipDirty.current = true;
+    setMeta(data.meta);
+    setSections(data.sections);
+    setNotes(data.notes);
+    setTax(data.tax);
+    if (data.logo !== undefined) setLogo(data.logo);
+    setActiveId(id);
+    setActiveName(name || '');
+    setDirty(false);
+  };
+
+  // ---- saved-invoice manager --------------------------------
+  const snapshot = () => ({
+    meta,
+    sections,
+    notes,
+    tax,
+    logo,
+  });
+
+  const saveInvoice = () => {
+    let name = activeName;
+    let id = activeId;
+    if (!id) {
+      const suggested = meta.title || meta.client || 'Untitled invoice';
+      name = window.prompt('Save invoice as:', suggested);
+      if (name === null) return; // cancelled
+      name = name.trim() || suggested;
+      id = uid('inv');
+    }
+    const entry = { id, name, updatedAt: Date.now(), data: snapshot() };
+    const exists = library.some((e) => e.id === id);
+    const next = exists
+      ? library.map((e) => (e.id === id ? entry : e))
+      : [...library, entry];
+    persistLibrary(next);
+    setActiveId(id);
+    setActiveName(name);
+    setDirty(false);
+  };
+
+  const saveAsNew = () => {
+    const suggested = (activeName ? activeName + ' (copy)' : meta.title || 'Untitled invoice');
+    const name = window.prompt('Save a copy as:', suggested);
+    if (name === null) return;
+    const id = uid('inv');
+    const entry = { id, name: name.trim() || suggested, updatedAt: Date.now(), data: snapshot() };
+    persistLibrary([...library, entry]);
+    setActiveId(id);
+    setActiveName(entry.name);
+    setDirty(false);
+  };
+
+  const loadInvoice = (id) => {
+    if (!id) return;
+    if (dirty && !window.confirm('Discard unsaved changes and load this invoice?')) return;
+    const entry = library.find((e) => e.id === id);
+    if (entry) loadInto(entry.data, entry.id, entry.name);
+  };
+
+  const deleteInvoice = () => {
+    if (!activeId) return;
+    if (!window.confirm(`Delete "${activeName}"? This can't be undone.`)) return;
+    persistLibrary(library.filter((e) => e.id !== activeId));
+    newInvoice(true);
+  };
+
+  const newInvoice = (silent) => {
+    if (!silent && dirty && !window.confirm('Start a new blank-template invoice? Unsaved changes will be lost.'))
+      return;
+    loadInto(
+      { meta: DEFAULT_META, sections: buildInitialSections(), notes: DEFAULT_NOTES, tax: TAX, logo },
+      null,
+      ''
+    );
+  };
+
+  const resetToTemplate = () => {
+    if (!window.confirm('Reset the current invoice back to the A26 template?')) return;
+    skipDirty.current = false;
+    setMeta(DEFAULT_META);
+    setSections(buildInitialSections());
+    setNotes(DEFAULT_NOTES);
+    setTax(TAX);
+  };
+
+  // ---- structural mutations ---------------------------------
+  const mutateSections = (fn) => setSections((prev) => fn(prev));
+
+  const updateItem = (secId, groupId, itemId, patch) =>
+    mutateSections((prev) =>
       prev.map((sec) =>
         sec.id !== secId
           ? sec
@@ -94,10 +220,35 @@ export default function InvoiceBuilder() {
             }
       )
     );
-  };
 
-  const toggleGroup = (secId, groupId, include) => {
-    setSections((prev) =>
+  const toggleGroup = (secId, groupId, include) =>
+    mutateSections((prev) =>
+      prev.map((sec) =>
+        sec.id !== secId
+          ? sec
+          : {
+              ...sec,
+              groups: sec.groups.map((g) =>
+                g.id !== groupId ? g : { ...g, items: g.items.map((it) => ({ ...it, include })) }
+              ),
+            }
+      )
+    );
+
+  const setSectionTitle = (secId, title) =>
+    mutateSections((prev) => prev.map((s) => (s.id === secId ? { ...s, title } : s)));
+
+  const setGroupName = (secId, groupId, name) =>
+    mutateSections((prev) =>
+      prev.map((sec) =>
+        sec.id !== secId
+          ? sec
+          : { ...sec, groups: sec.groups.map((g) => (g.id === groupId ? { ...g, name } : g)) }
+      )
+    );
+
+  const addItem = (secId, groupId) =>
+    mutateSections((prev) =>
       prev.map((sec) =>
         sec.id !== secId
           ? sec
@@ -106,20 +257,76 @@ export default function InvoiceBuilder() {
               groups: sec.groups.map((g) =>
                 g.id !== groupId
                   ? g
-                  : { ...g, items: g.items.map((it) => ({ ...it, include })) }
+                  : { ...g, items: [...g.items, { id: uid('it'), desc: '', qty: 1, rate: 0, include: true }] }
               ),
             }
       )
     );
+
+  const removeItem = (secId, groupId, itemId) =>
+    mutateSections((prev) =>
+      prev.map((sec) =>
+        sec.id !== secId
+          ? sec
+          : {
+              ...sec,
+              groups: sec.groups.map((g) =>
+                g.id !== groupId ? g : { ...g, items: g.items.filter((it) => it.id !== itemId) }
+              ),
+            }
+      )
+    );
+
+  const addGroup = (secId) =>
+    mutateSections((prev) =>
+      prev.map((sec) =>
+        sec.id !== secId
+          ? sec
+          : {
+              ...sec,
+              groups: [
+                ...sec.groups,
+                { id: uid('grp'), name: 'New member / group', items: [{ id: uid('it'), desc: '', qty: 1, rate: 0, include: true }] },
+              ],
+            }
+      )
+    );
+
+  const removeGroup = (secId, groupId) =>
+    mutateSections((prev) =>
+      prev.map((sec) =>
+        sec.id !== secId ? sec : { ...sec, groups: sec.groups.filter((g) => g.id !== groupId) }
+      )
+    );
+
+  const addSection = () =>
+    mutateSections((prev) => [
+      ...prev,
+      {
+        id: uid('sec'),
+        title: 'New Section',
+        groups: [{ id: uid('grp'), name: null, items: [{ id: uid('it'), desc: '', qty: 1, rate: 0, include: true }] }],
+      },
+    ]);
+
+  const removeSection = (secId) => {
+    if (!window.confirm('Remove this whole section?')) return;
+    mutateSections((prev) => prev.filter((s) => s.id !== secId));
   };
 
-  const resetAll = () => {
-    if (!window.confirm('Reset everything back to the A26 template? Your current changes will be lost.'))
-      return;
-    setMeta(DEFAULT_META);
-    setSections(buildInitialState());
-    setNotes(DEFAULT_NOTES);
-    setTax(TAX);
+  // ---- notes ------------------------------------------------
+  const setNote = (i, v) => setNotes((prev) => prev.map((n, idx) => (idx === i ? v : n)));
+  const addNote = () => setNotes((prev) => [...prev, '']);
+  const removeNote = (i) => setNotes((prev) => prev.filter((_, idx) => idx !== i));
+
+  // ---- logo -------------------------------------------------
+  const onLogoFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setLogo(String(reader.result));
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // ---- totals -----------------------------------------------
@@ -179,8 +386,8 @@ export default function InvoiceBuilder() {
         pdf.addImage(img, 'JPEG', 0, position, pageW, imgH);
         heightLeft -= pageH;
       }
-      const safeClient = (meta.client || 'invoice').replace(/[^\w-]+/g, '_');
-      pdf.save(`Lloyds_Invoice_${safeClient}.pdf`);
+      const safe = (activeName || meta.client || 'invoice').replace(/[^\w-]+/g, '_');
+      pdf.save(`Lloyds_Invoice_${safe}.pdf`);
     } catch (e) {
       alert('Sorry — PDF export failed. Use the Print button and "Save as PDF" instead.');
       document.body.classList.remove('invoice-exporting');
@@ -189,7 +396,7 @@ export default function InvoiceBuilder() {
     }
   };
 
-  // ---- render helpers ---------------------------------------
+  // ---- small render helpers ---------------------------------
   const metaField = (key, placeholder) => (
     <input
       className="iv-meta-input"
@@ -209,21 +416,48 @@ export default function InvoiceBuilder() {
         </div>
         <div className="iv-toolbar-actions">
           <label className="iv-check-inline">
-            <input
-              type="checkbox"
-              checked={hideExcluded}
-              onChange={(e) => setHideExcluded(e.target.checked)}
-            />
+            <input type="checkbox" checked={hideExcluded} onChange={(e) => setHideExcluded(e.target.checked)} />
             Hide unticked
           </label>
-          <button className="iv-btn iv-btn-ghost" onClick={resetAll}>
-            Reset
-          </button>
+          <button className="iv-btn iv-btn-ghost" onClick={resetToTemplate}>Reset</button>
           <button className="iv-btn iv-btn-ghost" onClick={doDownloadPdf} disabled={busy}>
             {busy ? 'Working…' : 'Download PDF'}
           </button>
-          <button className="iv-btn iv-btn-gold" onClick={doPrint}>
-            Print / Save PDF
+          <button className="iv-btn iv-btn-gold" onClick={doPrint}>Print / Save PDF</button>
+        </div>
+      </div>
+
+      {/* ── Saved-invoice manager (screen only) ───────────── */}
+      <div className="iv-manager no-print">
+        <div className="iv-manager-left">
+          <label className="iv-manager-lbl">Invoice</label>
+          <select
+            className="iv-select"
+            value={activeId || ''}
+            onChange={(e) => (e.target.value ? loadInvoice(e.target.value) : newInvoice())}
+          >
+            <option value="">＋ New (A26 template){dirty && !activeId ? ' • unsaved' : ''}</option>
+            {library.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+          {activeId && dirty && <span className="iv-dirty">● unsaved changes</span>}
+          {activeId && !dirty && <span className="iv-saved">✓ saved</span>}
+        </div>
+        <div className="iv-manager-right">
+          <button className="iv-btn iv-btn-sm iv-btn-gold" onClick={saveInvoice}>
+            {activeId ? 'Save' : 'Save…'}
+          </button>
+          <button className="iv-btn iv-btn-sm iv-btn-ghost" onClick={saveAsNew}>Save as copy</button>
+          <button className="iv-btn iv-btn-sm iv-btn-ghost" onClick={() => newInvoice()}>New</button>
+          <button
+            className="iv-btn iv-btn-sm iv-btn-ghost"
+            onClick={deleteInvoice}
+            disabled={!activeId}
+          >
+            Delete
           </button>
         </div>
       </div>
@@ -233,17 +467,30 @@ export default function InvoiceBuilder() {
         {/* Header */}
         <header className="iv-head">
           <div className="iv-head-left">
-            <div className="iv-logo">LLOYDS<span>PRO SOUND</span></div>
+            <div className="iv-logo-wrap">
+              {logo ? (
+                <img src={logo} className="iv-logo-img" alt="Lloyds Pro Sound" />
+              ) : (
+                <div className="iv-logo">LLOYDS<span>PRO SOUND</span></div>
+              )}
+              <div className="iv-logo-controls no-print">
+                <label className="iv-logo-btn">
+                  {logo ? 'Change logo' : 'Upload logo'}
+                  <input type="file" accept="image/*" hidden onChange={onLogoFile} />
+                </label>
+                {logo && (
+                  <button className="iv-logo-btn" onClick={() => setLogo(null)}>Remove</button>
+                )}
+              </div>
+            </div>
             <p className="iv-company-line">{COMPANY.address}</p>
-            <p className="iv-company-line">
-              Phone: {COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}
-            </p>
+            <p className="iv-company-line">Phone: {COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}</p>
             <p className="iv-company-line">{COMPANY.website}</p>
           </div>
           <div className="iv-head-right">
             <div className="iv-doc-title">Quotation</div>
             <div className="iv-doc-meta">
-              <label>Invoice No.</label>
+              <label>Ref No.</label>
               {metaField('invoiceNo', '—')}
             </div>
             <div className="iv-doc-meta">
@@ -258,9 +505,7 @@ export default function InvoiceBuilder() {
           <div className="iv-billto-col">
             <span className="iv-billto-label">Bill To</span>
             {metaField('client', 'Client name')}
-            <div className="iv-billto-title">
-              {metaField('title', 'Event / package title')}
-            </div>
+            <div className="iv-billto-title">{metaField('title', 'Event / package title')}</div>
           </div>
           <div className="iv-billto-grid">
             <div>
@@ -284,15 +529,28 @@ export default function InvoiceBuilder() {
           return (
             <section className="iv-section" key={sec.id}>
               <div className="iv-section-head">
-                <h3>{sec.title}</h3>
-                <span className="iv-section-total">{inr(secTotal)}</span>
+                <input
+                  className="iv-section-title"
+                  value={sec.title}
+                  onChange={(e) => setSectionTitle(sec.id, e.target.value)}
+                />
+                <div className="iv-section-head-right">
+                  <span className="iv-section-total">{inr(secTotal)}</span>
+                  <button
+                    className="iv-icon-btn no-print"
+                    title="Remove section"
+                    onClick={() => removeSection(sec.id)}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {sec.groups.map((g) => {
-                const allOn = g.items.every((it) => it.include);
+                const allOn = g.items.length > 0 && g.items.every((it) => it.include);
                 return (
                   <div className="iv-group" key={g.id}>
-                    {g.name && (
+                    {g.name !== null && (
                       <div className="iv-group-head">
                         <label className="iv-group-toggle no-print">
                           <input
@@ -301,7 +559,18 @@ export default function InvoiceBuilder() {
                             onChange={(e) => toggleGroup(sec.id, g.id, e.target.checked)}
                           />
                         </label>
-                        <span className="iv-group-name">{g.name}</span>
+                        <input
+                          className="iv-group-name"
+                          value={g.name}
+                          onChange={(e) => setGroupName(sec.id, g.id, e.target.value)}
+                        />
+                        <button
+                          className="iv-icon-btn no-print"
+                          title="Remove this group"
+                          onClick={() => removeGroup(sec.id, g.id)}
+                        >
+                          ×
+                        </button>
                       </div>
                     )}
 
@@ -313,6 +582,7 @@ export default function InvoiceBuilder() {
                           <th className="iv-col-qty">Qty</th>
                           <th className="iv-col-rate">Rate / Day</th>
                           <th className="iv-col-amt">Amount</th>
+                          <th className="iv-col-del no-print"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -321,18 +591,13 @@ export default function InvoiceBuilder() {
                           const off = !it.include;
                           if (off && hideExcluded) return null;
                           return (
-                            <tr
-                              key={it.id}
-                              className={`iv-row ${off ? 'iv-row-off' : ''}`}
-                            >
+                            <tr key={it.id} className={`iv-row ${off ? 'iv-row-off' : ''}`}>
                               <td className="iv-col-chk no-print">
                                 <input
                                   type="checkbox"
                                   checked={it.include}
                                   onChange={(e) =>
-                                    updateItem(sec.id, g.id, it.id, {
-                                      include: e.target.checked,
-                                    })
+                                    updateItem(sec.id, g.id, it.id, { include: e.target.checked })
                                   }
                                 />
                               </td>
@@ -340,10 +605,9 @@ export default function InvoiceBuilder() {
                                 <input
                                   className="iv-cell-input"
                                   value={it.desc}
+                                  placeholder="Item description"
                                   onChange={(e) =>
-                                    updateItem(sec.id, g.id, it.id, {
-                                      desc: e.target.value,
-                                    })
+                                    updateItem(sec.id, g.id, it.id, { desc: e.target.value })
                                   }
                                 />
                               </td>
@@ -374,17 +638,38 @@ export default function InvoiceBuilder() {
                                 />
                               </td>
                               <td className="iv-col-amt">{inr(amt)}</td>
+                              <td className="iv-col-del no-print">
+                                <button
+                                  className="iv-icon-btn"
+                                  title="Delete row"
+                                  onClick={() => removeItem(sec.id, g.id, it.id)}
+                                >
+                                  ×
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
+
+                    <button className="iv-add-link no-print" onClick={() => addItem(sec.id, g.id)}>
+                      ＋ Add item
+                    </button>
                   </div>
                 );
               })}
+
+              <button className="iv-add-link no-print" onClick={() => addGroup(sec.id)}>
+                ＋ Add sub-group (band member)
+              </button>
             </section>
           );
         })}
+
+        <button className="iv-add-section no-print" onClick={addSection}>
+          ＋ Add section
+        </button>
 
         {/* Totals */}
         <section className="iv-totals">
@@ -397,7 +682,7 @@ export default function InvoiceBuilder() {
               <span>
                 CGST @{' '}
                 <input
-                  className="iv-tax-input no-print-border"
+                  className="iv-tax-input"
                   type="number"
                   value={tax.cgstRate}
                   onChange={(e) => setTax({ ...tax, cgstRate: Number(e.target.value) })}
@@ -410,7 +695,7 @@ export default function InvoiceBuilder() {
               <span>
                 SGST @{' '}
                 <input
-                  className="iv-tax-input no-print-border"
+                  className="iv-tax-input"
                   type="number"
                   value={tax.sgstRate}
                   onChange={(e) => setTax({ ...tax, sgstRate: Number(e.target.value) })}
@@ -439,15 +724,13 @@ export default function InvoiceBuilder() {
                   className="iv-note-input"
                   value={n}
                   rows={1}
-                  onChange={(e) => {
-                    const next = [...notes];
-                    next[i] = e.target.value;
-                    setNotes(next);
-                  }}
+                  onChange={(e) => setNote(i, e.target.value)}
                 />
+                <button className="iv-icon-btn no-print" title="Remove note" onClick={() => removeNote(i)}>×</button>
               </li>
             ))}
           </ol>
+          <button className="iv-add-link no-print" onClick={addNote}>＋ Add note</button>
         </section>
 
         <footer className="iv-foot">
