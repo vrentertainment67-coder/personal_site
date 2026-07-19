@@ -24,6 +24,7 @@ import {
   DEFAULT_NOTES,
   SECTIONS,
 } from '../lib/invoiceData.js';
+import { INVENTORY_KEY, INVENTORY_CATEGORIES, DEFAULT_INVENTORY } from '../lib/inventoryData.js';
 
 const DRAFT_KEY = 'lloyds-invoice-draft-v1';   // in-progress working copy
 const LIB_KEY = 'lloyds-invoices-v1';          // saved, named invoices
@@ -89,6 +90,9 @@ export default function InvoiceBuilder() {
 
   const [hideExcluded, setHideExcluded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [picker, setPicker] = useState(null);      // { secId, groupId } target for catalogue picker
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [catalogue, setCatalogue] = useState([]);  // snapshot of inventory when picker opens
   const sheetRef = useRef(null);
   const skipDirty = useRef(true); // don't flag a fresh load as "unsaved"
 
@@ -276,7 +280,7 @@ export default function InvoiceBuilder() {
       )
     );
 
-  const addItem = (secId, groupId) =>
+  const appendItem = (secId, groupId, item) =>
     mutateSections((prev) =>
       prev.map((sec) =>
         sec.id !== secId
@@ -286,11 +290,47 @@ export default function InvoiceBuilder() {
               groups: sec.groups.map((g) =>
                 g.id !== groupId
                   ? g
-                  : { ...g, items: [...g.items, { id: uid('it'), desc: '', qty: 1, rate: 0, include: true }] }
+                  : { ...g, items: [...g.items, { id: uid('it'), include: true, qty: 1, desc: '', rate: 0, ...item }] }
               ),
             }
       )
     );
+
+  const addBlankItem = (secId, groupId) => appendItem(secId, groupId, {});
+
+  // ---- catalogue picker (feeds from /inventory) -------------
+  const loadCatalogue = () => {
+    try {
+      const raw = window.localStorage.getItem(INVENTORY_KEY);
+      return raw ? JSON.parse(raw) : DEFAULT_INVENTORY;
+    } catch {
+      return DEFAULT_INVENTORY;
+    }
+  };
+
+  const openPicker = (secId, groupId) => {
+    setCatalogue(loadCatalogue());
+    setPickerQuery('');
+    setPicker({ secId, groupId });
+  };
+
+  const addFromCatalogue = (invItem) => {
+    if (!picker) return;
+    appendItem(picker.secId, picker.groupId, {
+      desc: invItem.name,
+      rate: Number(invItem.rate) || 0,
+    });
+  };
+
+  const pickerList = useMemo(() => {
+    const q = pickerQuery.trim().toLowerCase();
+    const list = q ? catalogue.filter((it) => it.name.toLowerCase().includes(q)) : catalogue;
+    const order = [...INVENTORY_CATEGORIES];
+    const map = {};
+    for (const it of list) (map[it.category] ||= []).push(it);
+    for (const c of Object.keys(map)) if (!order.includes(c)) order.push(c);
+    return order.filter((c) => map[c]).map((c) => [c, map[c]]);
+  }, [catalogue, pickerQuery]);
 
   const removeItem = (secId, groupId, itemId) =>
     mutateSections((prev) =>
@@ -453,6 +493,7 @@ export default function InvoiceBuilder() {
           <span className="iv-toolbar-sub">Invoice Builder</span>
         </div>
         <div className="iv-toolbar-actions">
+          <a className="iv-tool-link" href="/inventory/">Inventory ↗</a>
           <label className="iv-check-inline">
             <input type="checkbox" checked={hideExcluded} onChange={(e) => setHideExcluded(e.target.checked)} />
             Hide unticked
@@ -720,7 +761,7 @@ export default function InvoiceBuilder() {
                       </tbody>
                     </table>
 
-                    <button className="iv-add-link no-print" onClick={() => addItem(sec.id, g.id)}>
+                    <button className="iv-add-link no-print" onClick={() => openPicker(sec.id, g.id)}>
                       ＋ Add item
                     </button>
                   </div>
@@ -812,6 +853,53 @@ export default function InvoiceBuilder() {
           </span>
         </footer>
       </div>
+
+      {/* ── Catalogue picker (from /inventory) ────────────── */}
+      {picker && (
+        <div className="iv-picker-overlay no-print" onClick={() => setPicker(null)}>
+          <div className="iv-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="iv-picker-head">
+              <div>
+                <h3>Add from inventory</h3>
+                <span className="iv-picker-sub">Click an item to add it. Rates auto-fill from the master list.</span>
+              </div>
+              <button className="iv-picker-close" onClick={() => setPicker(null)}>×</button>
+            </div>
+            <input
+              className="iv-picker-search"
+              autoFocus
+              placeholder="Search gear…"
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+            />
+            <div className="iv-picker-body">
+              {pickerList.length === 0 && <p className="iv-picker-empty">No gear matches “{pickerQuery}”.</p>}
+              {pickerList.map(([category, list]) => (
+                <div className="iv-picker-cat" key={category}>
+                  <div className="iv-picker-cat-name">{category}</div>
+                  {list.map((it) => (
+                    <button className="iv-picker-item" key={it.id} onClick={() => addFromCatalogue(it)}>
+                      <span className="iv-picker-item-name">{it.name}</span>
+                      <span className="iv-picker-item-rate">{inr(it.rate)}</span>
+                      <span className="iv-picker-item-add">＋</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="iv-picker-foot">
+              <button
+                className="iv-btn iv-btn-ghost iv-btn-sm"
+                onClick={() => { addBlankItem(picker.secId, picker.groupId); }}
+              >
+                ＋ Add blank / custom row
+              </button>
+              <a className="iv-tool-link" href="/inventory/" target="_blank" rel="noopener">Edit inventory ↗</a>
+              <button className="iv-btn iv-btn-gold iv-btn-sm" onClick={() => setPicker(null)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

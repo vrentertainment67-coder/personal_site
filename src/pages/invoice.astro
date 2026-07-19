@@ -45,6 +45,8 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       }
       .iv-toolbar-sub { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
       .iv-toolbar-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .iv-tool-link { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #d8d1bd; text-decoration: none; }
+      .iv-tool-link:hover { color: var(--gold); }
       .iv-check-inline {
         display: flex; align-items: center; gap: 0.4rem;
         font-size: 0.75rem; letter-spacing: 0.05em; color: #cbc4b0; cursor: pointer;
@@ -249,6 +251,57 @@ import InvoiceBuilder from '../components/InvoiceBuilder.jsx';
       }
       .iv-foot-input { font-size: 0.72rem; color: var(--muted); flex: 1; max-width: 50%; }
       .iv-foot-brand { white-space: nowrap; }
+
+      /* ── Catalogue picker modal ─────────────────────────── */
+      .iv-picker-overlay {
+        position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+        background: rgba(8,7,5,0.6); backdrop-filter: blur(3px); padding: 1rem;
+      }
+      .iv-picker {
+        background: #fff; color: var(--ink); width: 100%; max-width: 560px; max-height: 82vh;
+        display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      }
+      .iv-picker-head {
+        display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+        padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid var(--line);
+      }
+      .iv-picker-head h3 {
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--ink); margin: 0;
+      }
+      .iv-picker-sub { font-size: 0.7rem; color: var(--muted); }
+      .iv-picker-close { background: none; border: none; font-size: 1.6rem; line-height: 1; color: var(--muted); cursor: pointer; padding: 0; }
+      .iv-picker-close:hover { color: var(--ink); }
+      .iv-picker-search {
+        margin: 0.85rem 1.25rem 0.4rem; padding: 0.55rem 0.75rem; font-size: 0.9rem;
+        border: 1px solid var(--line); border-radius: 5px; font-family: inherit;
+      }
+      .iv-picker-search:focus { outline: none; border-color: var(--gold-dk); }
+      .iv-picker-body { overflow-y: auto; padding: 0.25rem 1.25rem 0.5rem; flex: 1; }
+      .iv-picker-empty { color: var(--muted); font-style: italic; padding: 1rem 0; }
+      .iv-picker-cat-name {
+        font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold-dk);
+        font-weight: 700; margin: 0.7rem 0 0.15rem;
+      }
+      .iv-picker-item {
+        display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left;
+        background: none; border: none; border-bottom: 1px solid #f2efe6; padding: 0.5rem 0.3rem; cursor: pointer;
+        font-family: inherit; transition: background 0.12s;
+      }
+      .iv-picker-item:hover { background: #fdf7e9; }
+      .iv-picker-item-name { flex: 1; font-size: 0.84rem; color: var(--ink); }
+      .iv-picker-item-rate { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .iv-picker-item-add {
+        width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 50%; background: var(--gold); color: #14120e; font-weight: 700; font-size: 0.9rem;
+      }
+      .iv-picker-foot {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+        padding: 0.75rem 1.25rem; border-top: 1px solid var(--line); background: #faf8f2;
+      }
+      .iv-picker-foot .iv-tool-link { color: var(--gold-dk); }
+      .iv-picker-foot .iv-tool-link:hover { color: var(--ink); }
 
       /* ── Print ──────────────────────────────────────────── */
       @media print {
