@@ -61,6 +61,13 @@ alter table public.banned_identifiers enable row level security;
 -- keep full access. If you moderate from an authenticated dashboard user
 -- instead of service_role, add read/update policies for that role only.
 
+-- IMPORTANT: RLS-bypass is NOT a privilege grant. On this project the default
+-- privileges do not auto-grant table access, so the edge function's
+-- service_role writes fail silently without these. (This was the real bug that
+-- made submissions vanish on first deploy.)
+grant all on public.event_feedback     to service_role;
+grant all on public.banned_identifiers to service_role;
+
 -- ---------------------------------------------------------------------
 -- 4. Convenience view for the moderation queue
 -- ---------------------------------------------------------------------
