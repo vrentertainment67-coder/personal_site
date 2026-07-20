@@ -20,6 +20,12 @@ const SESSION = "2026-07-launch";
 const WA_CHANNEL = "https://whatsapp.com/channel/0029Vb8ZoHlATRSqaILd683A";
 const SEEN_KEY = "djc_rsvp_seen";
 
+// RSVPs close at 8:00 PM IST on the event day (doors 9 PM). After this the
+// popup shows a "closed" message and the form no longer submits. Update this
+// per edition. (Client-side gate; the times use an explicit +05:30 offset so
+// it's correct regardless of the visitor's timezone.)
+const RSVP_CLOSE = new Date("2026-07-20T20:00:00+05:30").getTime();
+
 // "Martin, Vicky, Shine and Jasmeet + 20 are going" from { total, names }.
 function attLine(att) {
   if (!att || !att.total) return null;
@@ -51,6 +57,7 @@ export default function DJCollectivePopup({ autoOpen = true }) {
   const [errors, setErrors] = useState({});
   const [att, setAtt] = useState(null);            // { total, names } live counter
   const [dup, setDup] = useState(false);           // already-registered (dedup)
+  const [closed, setClosed] = useState(() => Date.now() >= RSVP_CLOSE); // RSVPs shut at 8 PM
   const cardRef = useRef(null);
 
   const show = () => { setShown(true); requestAnimationFrame(() => setOpen(true)); };
@@ -97,6 +104,15 @@ export default function DJCollectivePopup({ autoOpen = true }) {
     return () => { document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
   }, [shown]);
 
+  // Flip to "closed" exactly at the deadline if the page is left open past 8 PM.
+  useEffect(() => {
+    if (closed) return;
+    const ms = RSVP_CLOSE - Date.now();
+    if (ms <= 0) { setClosed(true); return; }
+    const t = setTimeout(() => setClosed(true), Math.min(ms, 2147483647));
+    return () => clearTimeout(t);
+  }, [closed]);
+
   const set = (k, v) => setData((d) => ({ ...d, [k]: v }));
   const toggleGenre = (g) => setData((d) => ({
     ...d, genres: d.genres.includes(g) ? d.genres.filter((x) => x !== g) : [...d.genres, g],
@@ -111,6 +127,7 @@ export default function DJCollectivePopup({ autoOpen = true }) {
   async function submit(e) {
     e.preventDefault();
     if (submitting) return;
+    if (closed) return;                               // RSVPs shut at 8 PM
     if (data.company) { hide(); return; }            // honeypot tripped
     const name = data.name.trim();
     const phone = data.phone.trim();
@@ -158,7 +175,20 @@ export default function DJCollectivePopup({ autoOpen = true }) {
           {attLine(att) && <span className="djc-count">{attLine(att)}</span>}
         </div>
 
-        {phase === "form" ? (
+        {closed ? (
+          <div className="djc-success">
+            <p className="djc-success-line">RSVPs are closed for this edition.</p>
+            <div className="djc-push">
+              <span className="djc-push-head">Catch the next one</span>
+              <span className="djc-push-sub">The line-up, reminders &amp; the next edition go out <strong>only on the WhatsApp channel</strong>. Join so you don't miss the next round.</span>
+            </div>
+            <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+              Join the WhatsApp channel
+            </a>
+            <p className="djc-foot">No agenda. No headliner.</p>
+          </div>
+        ) : phase === "form" ? (
           <form className="djc-body" onSubmit={submit} noValidate>
             <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
             <p className="djc-date">🗓 Monday, 20 July · 9 PM onwards<br />📍 Watsons, Indiranagar</p>
