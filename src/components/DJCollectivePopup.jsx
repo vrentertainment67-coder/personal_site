@@ -20,11 +20,13 @@ const SESSION = "2026-07-launch";
 const WA_CHANNEL = "https://whatsapp.com/channel/0029Vb8ZoHlATRSqaILd683A";
 const SEEN_KEY = "djc_rsvp_seen";
 
-// RSVPs close at 8:00 PM IST on the event day (doors 9 PM). After this the
-// popup shows a "closed" message and the form no longer submits. Update this
-// per edition. (Client-side gate; the times use an explicit +05:30 offset so
-// it's correct regardless of the visitor's timezone.)
-const RSVP_CLOSE = new Date("2026-07-20T20:00:00+05:30").getTime();
+// Optional RSVP close time. `null` = RSVPs are OPEN (no deadline). To close at
+// a set time, set this to a timestamp, e.g.:
+//   const RSVP_CLOSE = new Date("2026-07-20T20:00:00+05:30").getTime();
+// Past the deadline the popup shows a "closed" message and the form stops
+// submitting. (Client-side gate; use an explicit +05:30 offset so it's correct
+// regardless of the visitor's timezone.)
+const RSVP_CLOSE = null;
 
 // "Martin, Vicky, Shine and Jasmeet + 20 are going" from { total, names }.
 function attLine(att) {
@@ -57,7 +59,7 @@ export default function DJCollectivePopup({ autoOpen = true }) {
   const [errors, setErrors] = useState({});
   const [att, setAtt] = useState(null);            // { total, names } live counter
   const [dup, setDup] = useState(false);           // already-registered (dedup)
-  const [closed, setClosed] = useState(() => Date.now() >= RSVP_CLOSE); // RSVPs shut at 8 PM
+  const [closed, setClosed] = useState(() => RSVP_CLOSE != null && Date.now() >= RSVP_CLOSE);
   const cardRef = useRef(null);
 
   const show = () => { setShown(true); requestAnimationFrame(() => setOpen(true)); };
@@ -104,9 +106,10 @@ export default function DJCollectivePopup({ autoOpen = true }) {
     return () => { document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
   }, [shown]);
 
-  // Flip to "closed" exactly at the deadline if the page is left open past 8 PM.
+  // Flip to "closed" exactly at the deadline if the page is left open past it.
+  // No-op when RSVP_CLOSE is null (RSVPs open with no deadline).
   useEffect(() => {
-    if (closed) return;
+    if (closed || RSVP_CLOSE == null) return;
     const ms = RSVP_CLOSE - Date.now();
     if (ms <= 0) { setClosed(true); return; }
     const t = setTimeout(() => setClosed(true), Math.min(ms, 2147483647));
