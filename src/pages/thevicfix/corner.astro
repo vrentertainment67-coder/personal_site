@@ -1,0 +1,374 @@
+---
+// src/pages/thevicfix/corner.astro
+// ────────────────────────────────────────────────────────────────────────
+// THE VIC FIX — CORNER
+// A personal, phone-first live tool for running a Q&A corner at an event.
+// Tap a question to bump its "asked" counter; counts persist in localStorage
+// so they survive refreshes, the phone locking, and flaky venue wifi.
+//
+// Standalone page: no site nav/footer, noindex + nofollow, linked nowhere.
+// Pure static HTML + one inline vanilla-JS script → fast, offline-tolerant,
+// deploys fine on GitHub Pages.
+//
+// ── EDITING THE QUESTIONS ───────────────────────────────────────────────
+// Everything lives in CATEGORIES below. To add/edit:
+//   • Give every question a UNIQUE, STABLE `id` (any short string). The id is
+//     what the saved counts are keyed to — changing an id resets that count,
+//     changing the `text` does not. So edit text freely; only invent a new id
+//     for a brand-new question.
+//   • Set `hero: true` on a question to give it the gold star.
+// Categories render as tabs in the order listed here.
+// ────────────────────────────────────────────────────────────────────────
+
+const CATEGORIES = [
+  {
+    id: 'openers',
+    name: 'Openers',
+    questions: [
+      { id: 'op1', text: 'How did you get into all this?' },
+      { id: 'op2', text: 'First gig you ever played?' },
+      { id: 'op3', text: 'Who put you on early?' },
+      { id: 'op4', text: "What's the story behind your name?" },
+      { id: 'op5', text: 'What were you doing before this?' },
+    ],
+  },
+  {
+    id: 'hottakes',
+    name: 'Hot Takes',
+    questions: [
+      { id: 'ht1', text: 'Is the scene better or worse than 5 years ago?' },
+      { id: 'ht2', text: 'Most overrated genre right now?' },
+      { id: 'ht3', text: 'Do song requests ruin a set?' },
+      { id: 'ht4', text: 'CDJs vs vinyl — does it actually matter?' },
+      { id: 'ht5', text: 'One trend you wish would die?' },
+    ],
+  },
+  {
+    id: 'confessions',
+    name: 'Confessions',
+    questions: [
+      { id: 'cf1', text: 'Biggest mistake behind the decks?' },
+      { id: 'cf2', text: 'Ever played the wrong song at the wrong moment?' },
+      { id: 'cf3', text: "A track you secretly love but won't admit?" },
+      { id: 'cf4', text: 'Most nervous you’ve ever been before a set?' },
+    ],
+  },
+  {
+    id: 'thescene',
+    name: 'The Scene',
+    questions: [
+      // Hero question — starred.
+      { id: 'sc-hero', text: "Worst request you've ever gotten?", hero: true },
+      { id: 'sc1', text: 'Best crowd you’ve ever played to?' },
+      { id: 'sc2', text: 'City with the best nightlife?' },
+      { id: 'sc3', text: 'Most memorable booth moment?' },
+      { id: 'sc4', text: 'A venue you’d play forever?' },
+    ],
+  },
+  {
+    id: 'quickfire',
+    name: 'Quickfire',
+    questions: [
+      { id: 'qf1', text: 'Coffee or Red Bull?' },
+      { id: 'qf2', text: 'Sunrise set or peak time?' },
+      { id: 'qf3', text: 'Beach party or warehouse?' },
+      { id: 'qf4', text: 'Boiler Room or festival main stage?' },
+      { id: 'qf5', text: 'Headphones on both ears or one?' },
+    ],
+  },
+  {
+    id: 'tonight',
+    name: 'Tonight',
+    questions: [
+      { id: 'tn1', text: 'How’s the energy feeling right now?' },
+      { id: 'tn2', text: 'What are we ending on?' },
+      { id: 'tn3', text: 'Give the crowd a shout out.' },
+      { id: 'tn4', text: 'One thing you want people to remember from tonight?' },
+    ],
+  },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#080808" />
+    <title>The Vic Fix — Corner</title>
+    <meta name="description" content="Private Q&A corner tool." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Fonts: Oswald (headings) + Inter (body). display=swap + system
+         fallbacks keep the tool usable if venue wifi never loads them. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #080808;
+        --gold: #c9a84c;
+        --gold-dim: rgba(201, 168, 76, 0.35);
+        --text: #e0dccf;
+        --dim: #6f6a5c;
+        --line: rgba(201, 168, 76, 0.14);
+        --card: #101010;
+        --font-head: 'Oswald', 'Oswald Fallback', Impact, sans-serif;
+        --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: contain;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+
+      .wrap { max-width: 620px; margin: 0 auto; padding-bottom: 3rem; }
+
+      /* ── Header ─────────────────────────────────────────── */
+      header {
+        position: sticky; top: 0; z-index: 30;
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+        padding: 0.85rem 1rem calc(0.7rem + env(safe-area-inset-top, 0));
+        background: rgba(8, 8, 8, 0.94);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        font-family: var(--font-head); font-weight: 700; letter-spacing: 0.14em;
+        text-transform: uppercase; font-size: 0.92rem; line-height: 1;
+      }
+      .brand span { color: var(--gold); }
+      .brand small {
+        display: block; font-family: var(--font-body); font-weight: 500;
+        letter-spacing: 0.28em; font-size: 0.52rem; color: var(--dim); margin-top: 4px;
+      }
+      .hdr-right { display: flex; align-items: center; gap: 0.85rem; }
+      .total { text-align: right; line-height: 1; }
+      .total b {
+        display: block; font-family: var(--font-head); font-weight: 700; font-size: 1.7rem;
+        color: var(--gold); font-variant-numeric: tabular-nums;
+      }
+      .total small { font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+      .reset {
+        appearance: none; background: transparent; color: var(--dim);
+        border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.55rem;
+        font-family: var(--font-body); font-size: 0.58rem; letter-spacing: 0.12em;
+        text-transform: uppercase; font-weight: 600; cursor: pointer;
+        touch-action: manipulation;
+      }
+      .reset:active { color: var(--gold); border-color: var(--gold-dim); }
+
+      /* ── Category tabs ──────────────────────────────────── */
+      .tabs {
+        position: sticky; top: 0; z-index: 20;
+        display: flex; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;
+        padding: 0.6rem 0.85rem; background: rgba(8, 8, 8, 0.94);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab {
+        flex: 0 0 auto; appearance: none; cursor: pointer; white-space: nowrap;
+        background: transparent; color: var(--text);
+        border: 1px solid var(--line); border-radius: 20px;
+        padding: 0.55rem 0.95rem; font-family: var(--font-body); font-weight: 600;
+        font-size: 0.8rem; letter-spacing: 0.02em; touch-action: manipulation;
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+      }
+      .tab .tab-n { color: var(--gold); margin-left: 0.4rem; font-variant-numeric: tabular-nums; opacity: 0.85; }
+      .tab.active { background: var(--gold); color: #080808; border-color: var(--gold); }
+      .tab.active .tab-n { color: #080808; opacity: 0.65; }
+
+      /* ── Category sections ──────────────────────────────── */
+      .cat { display: none; }
+      .cat.active { display: block; }
+      .cat-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        padding: 1.1rem 1rem 0.4rem;
+      }
+      .cat-head h2 {
+        font-family: var(--font-head); font-weight: 600; letter-spacing: 0.08em;
+        text-transform: uppercase; font-size: 1.15rem; color: var(--text);
+      }
+      .cat-head em { font-style: normal; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+
+      /* ── Question rows ──────────────────────────────────── */
+      .q {
+        display: flex; align-items: center; gap: 0.75rem; width: 100%;
+        min-height: 68px; padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: transparent; text-align: left; color: var(--text);
+        cursor: pointer; user-select: none; -webkit-user-select: none;
+        touch-action: manipulation;
+        transition: background 0.1s, opacity 0.15s;
+      }
+      .q:active { background: #141310; }
+      .q-star { color: var(--gold); font-size: 1.05rem; margin-right: -0.2rem; flex: 0 0 auto; }
+      .q-text { flex: 1 1 auto; font-size: 1.14rem; font-weight: 500; line-height: 1.3; }
+      .q.asked .q-text { color: var(--dim); font-weight: 400; }
+      .q.asked .q-star { opacity: 0.4; }
+
+      .q-count {
+        flex: 0 0 auto; min-width: 46px; height: 46px; padding: 0 0.4rem;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 999px; border: 1.5px solid var(--gold-dim);
+        font-family: var(--font-head); font-weight: 600; font-size: 1.15rem;
+        color: var(--dim); font-variant-numeric: tabular-nums;
+      }
+      .q.asked .q-count { background: var(--gold); border-color: var(--gold); color: #080808; }
+
+      .q-dec {
+        flex: 0 0 auto; width: 46px; height: 46px; appearance: none;
+        background: transparent; color: var(--gold); border: 1px solid var(--line);
+        border-radius: 12px; font-size: 1.5rem; line-height: 1; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        touch-action: manipulation; opacity: 0.75;
+      }
+      .q-dec:active { background: #141310; opacity: 1; }
+
+      .foot { text-align: center; color: var(--dim); font-size: 0.62rem; letter-spacing: 0.1em; padding: 1.5rem 1rem; text-transform: uppercase; }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="brand">THE VIC FIX <span>·</span> CORNER<small>Q&amp;A</small></div>
+        <div class="hdr-right">
+          <div class="total"><b id="total">0</b><small>Asked</small></div>
+          <button class="reset" id="reset" type="button">Reset</button>
+        </div>
+      </header>
+
+      <nav class="tabs" id="tabs">
+        {CATEGORIES.map((c, i) => (
+          <button class={`tab${i === 0 ? ' active' : ''}`} type="button" data-tab={c.id}>
+            {c.name}<span class="tab-n" data-catn={c.id}>0</span>
+          </button>
+        ))}
+      </nav>
+
+      <main>
+        {CATEGORIES.map((c, i) => (
+          <section class={`cat${i === 0 ? ' active' : ''}`} data-cat={c.id}>
+            <div class="cat-head">
+              <h2>{c.name}</h2>
+              <em><span data-catn2={c.id}>0</span> / {c.questions.length} asked</em>
+            </div>
+            {c.questions.map((q) => (
+              <div class="q" role="button" tabindex="0" data-qid={q.id} data-cat={c.id}>
+                {q.hero && <span class="q-star" aria-hidden="true">★</span>}
+                <span class="q-text">{q.text}</span>
+                <span class="q-count" data-count={q.id}>0</span>
+                <button class="q-dec" type="button" aria-label="Decrease count">–</button>
+              </div>
+            ))}
+          </section>
+        ))}
+      </main>
+
+      <p class="foot">Tap a question to count it · counts saved on this device</p>
+    </div>
+
+    <script is:inline>
+      (function () {
+        var KEY = 'vicfix-corner-v1';
+        var TABKEY = 'vicfix-corner-tab-v1';
+
+        var counts = {};
+        try { counts = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { counts = {}; }
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(counts)); } catch (e) {} }
+
+        function buzz() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
+
+        var rows = Array.prototype.slice.call(document.querySelectorAll('.q'));
+        var totalEl = document.getElementById('total');
+
+        // Group row ids by category for the per-tab "asked" counters.
+        var byCat = {};
+        rows.forEach(function (row) {
+          var cat = row.getAttribute('data-cat');
+          (byCat[cat] = byCat[cat] || []).push(row.getAttribute('data-qid'));
+        });
+
+        function applyRow(row) {
+          var id = row.getAttribute('data-qid');
+          var n = counts[id] || 0;
+          var badge = row.querySelector('[data-count]');
+          if (badge) badge.textContent = n;
+          if (n > 0) row.classList.add('asked'); else row.classList.remove('asked');
+        }
+
+        function applyTotals() {
+          var total = 0;
+          for (var k in counts) if (counts.hasOwnProperty(k)) total += counts[k] || 0;
+          totalEl.textContent = total;
+          // Per-category count of questions asked at least once.
+          Object.keys(byCat).forEach(function (cat) {
+            var asked = byCat[cat].reduce(function (s, id) { return s + ((counts[id] || 0) > 0 ? 1 : 0); }, 0);
+            document.querySelectorAll('[data-catn="' + cat + '"]').forEach(function (el) { el.textContent = asked; });
+            document.querySelectorAll('[data-catn2="' + cat + '"]').forEach(function (el) { el.textContent = asked; });
+          });
+        }
+
+        function applyAll() { rows.forEach(applyRow); applyTotals(); }
+
+        function inc(row) { var id = row.getAttribute('data-qid'); counts[id] = (counts[id] || 0) + 1; save(); applyRow(row); applyTotals(); buzz(); }
+        function dec(row) { var id = row.getAttribute('data-qid'); counts[id] = Math.max(0, (counts[id] || 0) - 1); save(); applyRow(row); applyTotals(); buzz(); }
+
+        // Delegated tap handling.
+        document.addEventListener('click', function (e) {
+          var decBtn = e.target.closest('.q-dec');
+          if (decBtn) { e.stopPropagation(); dec(decBtn.closest('.q')); return; }
+          var row = e.target.closest('.q');
+          if (row) inc(row);
+        });
+        // Keyboard support for the row buttons.
+        document.addEventListener('keydown', function (e) {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          var row = e.target.closest && e.target.closest('.q');
+          if (row && !e.target.closest('.q-dec')) { e.preventDefault(); inc(row); }
+        });
+
+        // ── Tabs ──────────────────────────────────────────
+        var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+        var cats = Array.prototype.slice.call(document.querySelectorAll('.cat'));
+        function showCat(id) {
+          tabs.forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-tab') === id); });
+          cats.forEach(function (c) { c.classList.toggle('active', c.getAttribute('data-cat') === id); });
+          try { localStorage.setItem(TABKEY, id); } catch (e) {}
+          window.scrollTo({ top: 0 });
+        }
+        tabs.forEach(function (t) {
+          t.addEventListener('click', function () { showCat(t.getAttribute('data-tab')); });
+        });
+        // Restore last-viewed tab.
+        try {
+          var saved = localStorage.getItem(TABKEY);
+          if (saved && document.querySelector('.cat[data-cat="' + saved + '"]')) showCat(saved);
+        } catch (e) {}
+
+        // ── Reset ─────────────────────────────────────────
+        document.getElementById('reset').addEventListener('click', function () {
+          if (window.confirm('Reset ALL counts to zero for a new event?')) { counts = {}; save(); applyAll(); }
+        });
+
+        applyAll();
+      })();
+    </script>
+  </body>
+</html>
