@@ -2292,6 +2292,103 @@ function MiniBars({ title, rows, sub }) {
   );
 }
 
+// ── Feedback from the /feedback QR page (event_feedback) ──
+// Rendered as a sub-tab inside the Collective view. Moderation: approve /
+// reject, plus a silent ban that rejects the row AND blocks that
+// device/network from ever surfacing again (they still see "Got it.").
+function CollectiveFeedback({ showToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("pending");
+  const [busy, setBusy] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("event_feedback").select("*").order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load feedback — run supabase/vicfix_feedback_admin.sql (admin read policy).");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const moderate = async (r, s) => {
+    setBusy(r.id);
+    const { error } = await supabase.from("event_feedback").update({ status: s }).eq("id", r.id);
+    setBusy(null);
+    if (error) return showToast("Update failed — " + error.message);
+    showToast(s === "approved" ? "Approved." : s === "rejected" ? "Rejected." : "Moved to pending.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, status: s } : x)));
+  };
+
+  const ban = async (r) => {
+    if (!(r.fingerprint || r.ip_hash)) return showToast("Nothing to ban here — no device/network signal on this row.");
+    if (!window.confirm("Silently ban this device/network?\n\nTheir future submissions are auto-rejected and never surface — they still see “Got it.” This row will be rejected too.")) return;
+    setBusy(r.id);
+    const { error: be } = await supabase.from("banned_identifiers").insert({ fingerprint: r.fingerprint || null, ip_hash: r.ip_hash || null, reason: "banned from admin" });
+    if (be) { setBusy(null); return showToast("Ban failed — " + be.message); }
+    await supabase.from("event_feedback").update({ status: "rejected" }).eq("id", r.id);
+    setBusy(null);
+    showToast("Banned + rejected.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, status: "rejected" } : x)));
+  };
+
+  const counts = {
+    pending: rows.filter((r) => r.status === "pending").length,
+    approved: rows.filter((r) => r.status === "approved").length,
+    rejected: rows.filter((r) => r.status === "rejected").length,
+    all: rows.length,
+  };
+  const filtered = status === "all" ? rows : rows.filter((r) => r.status === status);
+  const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  const catColor = { feedback: "#c9a84c", idea: "#4CAF87", question: "#5aa9e6", other: "#8a8878" };
+
+  return (
+    <div className="cfb">
+      <style>{`
+        .cfb-card { background:#111; border:1px solid #1e1e1e; border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+        .cfb-card.flagged { border-color:#5a2b2b; }
+        .cfb-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+        .cfb-cat { font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; padding:3px 9px; border-radius:100px; }
+        .cfb-flag { font-size:11px; color:#e08a8a; display:inline-flex; align-items:center; gap:4px; }
+        .cfb-when { font-size:12px; color:#6b6a5f; margin-left:auto; white-space:nowrap; }
+        .cfb-msg { font-size:15px; line-height:1.6; color:#e8e4d8; white-space:pre-wrap; word-break:break-word; }
+        .cfb-acts { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .cfb-badge { font-size:11px; padding:2px 8px; border-radius:100px; text-transform:uppercase; letter-spacing:.08em; }
+        .cfb-badge.approved { background:rgba(76,175,135,.14); color:#7fe0a0; }
+        .cfb-badge.rejected { background:rgba(255,80,80,.12); color:#e89090; }
+      `}</style>
+
+      <p className="sub">Anonymous feedback &amp; questions from the <code>/feedback</code> QR page. Nothing here is public — approve only what you want to keep.</p>
+
+      <div className="chips" style={{ alignItems: "center" }}>
+        {[["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["all", "All"]].map(([k, label]) => (
+          <button key={k} className={status === k ? "chip on" : "chip"} onClick={() => setStatus(k)}>{label} ({counts[k]})</button>
+        ))}
+        <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={load}><RefreshCw size={14} /> Refresh</button>
+      </div>
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
+        <p className="empty"><Inbox size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />No {status === "all" ? "" : status + " "}feedback{status === "pending" ? " — you're all caught up" : ""}.</p>
+      ) : filtered.map((r) => (
+        <div key={r.id} className={r.flagged ? "cfb-card flagged" : "cfb-card"}>
+          <div className="cfb-head">
+            <span className="cfb-cat" style={{ background: (catColor[r.category] || "#8a8878") + "22", color: catColor[r.category] || "#8a8878" }}>{r.category}</span>
+            {r.status !== "pending" && <span className={`cfb-badge ${r.status}`}>{r.status}</span>}
+            {r.flagged && <span className="cfb-flag"><Ban size={12} /> {r.flag_reason || "flagged"}</span>}
+            <span className="cfb-when">{fmtWhen(r.created_at)}</span>
+          </div>
+          <div className="cfb-msg">{r.message}</div>
+          <div className="cfb-acts">
+            {r.status !== "approved" && <button className="btn sm" onClick={() => moderate(r, "approved")} disabled={busy === r.id}>{busy === r.id ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Approve</button>}
+            {r.status !== "rejected" && <button className="btn sm ghost" onClick={() => moderate(r, "rejected")} disabled={busy === r.id}><XCircle size={14} /> Reject</button>}
+            {r.status === "rejected" && <button className="btn sm ghost" onClick={() => moderate(r, "pending")} disabled={busy === r.id}><Clock size={14} /> Restore</button>}
+            <button className="btn sm ghost" style={{ color: "#e08a8a", borderColor: "#5a2b2b" }} onClick={() => ban(r)} disabled={busy === r.id} title="Silently ban this device/network"><Ban size={14} /> Ban</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── The DJ Collective (Bengaluru) — RSVP counts + attendee list ──
 function DJCollective({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
@@ -2299,6 +2396,7 @@ function DJCollective({ showToast }) {
   const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
   const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
   const [genreFilter, setGenreFilter] = useState("all");
+  const [panel, setPanel] = useState("rsvps"); // "rsvps" | "feedback" sub-tab
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2472,6 +2570,7 @@ function DJCollective({ showToast }) {
       `}</style>
       <div className="row-between">
         <h1 className="h1">The DJ Collective</h1>
+        {panel === "rsvps" && (
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div className="dca-vt">
             <button className={view === "cards" ? "on" : ""} onClick={() => setView("cards")}>Cards</button>
@@ -2483,7 +2582,16 @@ function DJCollective({ showToast }) {
             {rosterBusy ? <Loader2 size={15} className="spin" /> : <Download size={15} />} Roster (Excel)
           </button>
         </div>
+        )}
       </div>
+
+      <div className="dca-vt" style={{ margin: "2px 0 14px" }}>
+        <button className={panel === "rsvps" ? "on" : ""} onClick={() => setPanel("rsvps")}>RSVPs ({rows.length})</button>
+        <button className={panel === "feedback" ? "on" : ""} onClick={() => setPanel("feedback")}>Feedback</button>
+      </div>
+
+      {panel === "feedback" ? <CollectiveFeedback showToast={showToast} /> : (
+      <>
       <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
 
       <div className="chips">
@@ -2612,6 +2720,8 @@ function DJCollective({ showToast }) {
             );
           })}
         </div>
+      )}
+      </>
       )}
     </>
   );
