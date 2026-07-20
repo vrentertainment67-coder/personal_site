@@ -109,7 +109,7 @@ const CATEGORIES = [
       rel="stylesheet"
     />
 
-    <style>
+    <style is:global>
       :root {
         --bg: #080808;
         --gold: #c9a84c;
@@ -240,6 +240,33 @@ const CATEGORIES = [
       }
       .q-dec:active { background: #141310; opacity: 1; }
 
+      /* ── Add-your-own question ──────────────────────────── */
+      .q--custom .q-text::after {
+        content: 'yours'; margin-left: 0.5rem; font-size: 0.5rem; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--dim); vertical-align: middle;
+        border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px;
+      }
+      .q-del {
+        flex: 0 0 auto; width: 34px; height: 34px; background: transparent; border: none;
+        color: var(--dim); font-size: 1.25rem; line-height: 1; cursor: pointer; opacity: 0.5;
+        touch-action: manipulation; margin-left: -0.15rem;
+      }
+      .q-del:active { color: #e0574a; opacity: 1; }
+      .addq { display: flex; gap: 0.5rem; padding: 0.95rem 1rem 0.4rem; }
+      .addq-in {
+        flex: 1 1 auto; min-width: 0; background: var(--card); color: var(--text);
+        border: 1px solid var(--line); border-radius: 10px; padding: 0.75rem 0.85rem;
+        font-family: var(--font-body); font-size: 1rem;
+      }
+      .addq-in::placeholder { color: var(--dim); }
+      .addq-in:focus { outline: none; border-color: var(--gold-dim); }
+      .addq-btn {
+        flex: 0 0 auto; background: var(--gold); color: #080808; border: none; border-radius: 10px;
+        font-family: var(--font-body); font-weight: 700; font-size: 0.92rem; letter-spacing: 0.04em;
+        padding: 0 1.15rem; cursor: pointer; touch-action: manipulation;
+      }
+      .addq-btn:active { opacity: 0.85; }
+
       .foot { text-align: center; color: var(--dim); font-size: 0.62rem; letter-spacing: 0.1em; padding: 1.5rem 1rem; text-transform: uppercase; }
     </style>
   </head>
@@ -277,6 +304,11 @@ const CATEGORIES = [
                 <button class="q-dec" type="button" aria-label="Decrease count">–</button>
               </div>
             ))}
+            {/* Custom questions render here (before the form) via the inline script. */}
+            <form class="addq" data-cat={c.id}>
+              <input class="addq-in" type="text" placeholder="Add your own question…" autocomplete="off" enterkeyhint="done" />
+              <button class="addq-btn" type="submit">Add</button>
+            </form>
           </section>
         ))}
       </main>
@@ -289,21 +321,66 @@ const CATEGORIES = [
         var KEY = 'vicfix-corner-v1';
         var TABKEY = 'vicfix-corner-tab-v1';
 
+        var CKEY = 'vicfix-corner-custom-v1';
+
         var counts = {};
         try { counts = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { counts = {}; }
         function save() { try { localStorage.setItem(KEY, JSON.stringify(counts)); } catch (e) {} }
 
+        // Manually-added questions, keyed by category id → [{ id, text }].
+        var custom = {};
+        try { custom = JSON.parse(localStorage.getItem(CKEY)) || {}; } catch (e) { custom = {}; }
+        function saveCustom() { try { localStorage.setItem(CKEY, JSON.stringify(custom)); } catch (e) {} }
+
         function buzz() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
 
-        var rows = Array.prototype.slice.call(document.querySelectorAll('.q'));
         var totalEl = document.getElementById('total');
-
-        // Group row ids by category for the per-tab "asked" counters.
+        var rows = [];
         var byCat = {};
-        rows.forEach(function (row) {
-          var cat = row.getAttribute('data-cat');
-          (byCat[cat] = byCat[cat] || []).push(row.getAttribute('data-qid'));
-        });
+
+        // Build a question row element (same markup the server renders; custom
+        // rows get a small delete button).
+        function makeRow(id, text, cat, isCustom) {
+          var row = document.createElement('div');
+          row.className = 'q' + (isCustom ? ' q--custom' : '');
+          row.setAttribute('role', 'button');
+          row.tabIndex = 0;
+          row.setAttribute('data-qid', id);
+          row.setAttribute('data-cat', cat);
+          var t = document.createElement('span'); t.className = 'q-text'; t.textContent = text;
+          var c = document.createElement('span'); c.className = 'q-count'; c.setAttribute('data-count', id); c.textContent = '0';
+          var d = document.createElement('button'); d.type = 'button'; d.className = 'q-dec'; d.setAttribute('aria-label', 'Decrease count'); d.textContent = '–';
+          row.appendChild(t); row.appendChild(c); row.appendChild(d);
+          if (isCustom) {
+            var x = document.createElement('button'); x.type = 'button'; x.className = 'q-del'; x.setAttribute('aria-label', 'Delete question'); x.textContent = '×';
+            row.appendChild(x);
+          }
+          return row;
+        }
+
+        // Re-render all custom rows into their categories (before the add form).
+        function renderCustom() {
+          Array.prototype.slice.call(document.querySelectorAll('.q--custom')).forEach(function (el) { el.remove(); });
+          Object.keys(custom).forEach(function (cat) {
+            var section = document.querySelector('.cat[data-cat="' + cat + '"]');
+            var form = document.querySelector('.addq[data-cat="' + cat + '"]');
+            if (!section) return;
+            (custom[cat] || []).forEach(function (q) {
+              var row = makeRow(q.id, q.text, cat, true);
+              if (form) section.insertBefore(row, form); else section.appendChild(row);
+            });
+          });
+        }
+
+        // (Re)collect every row + rebuild the per-category id map.
+        function collect() {
+          rows = Array.prototype.slice.call(document.querySelectorAll('.q'));
+          byCat = {};
+          rows.forEach(function (row) {
+            var cat = row.getAttribute('data-cat');
+            (byCat[cat] = byCat[cat] || []).push(row.getAttribute('data-qid'));
+          });
+        }
 
         function applyRow(row) {
           var id = row.getAttribute('data-qid');
@@ -332,10 +409,40 @@ const CATEGORIES = [
 
         // Delegated tap handling.
         document.addEventListener('click', function (e) {
+          var delBtn = e.target.closest('.q-del');
+          if (delBtn) {
+            e.stopPropagation();
+            var drow = delBtn.closest('.q');
+            var did = drow.getAttribute('data-qid');
+            var dcat = drow.getAttribute('data-cat');
+            if (!window.confirm('Delete this question?')) return;
+            if (custom[dcat]) custom[dcat] = custom[dcat].filter(function (q) { return q.id !== did; });
+            saveCustom();
+            delete counts[did]; save();
+            renderCustom(); collect(); applyAll();
+            return;
+          }
           var decBtn = e.target.closest('.q-dec');
           if (decBtn) { e.stopPropagation(); dec(decBtn.closest('.q')); return; }
           var row = e.target.closest('.q');
           if (row) inc(row);
+        });
+
+        // Add-your-own question.
+        document.addEventListener('submit', function (e) {
+          var form = e.target.closest('.addq');
+          if (!form) return;
+          e.preventDefault();
+          var input = form.querySelector('.addq-in');
+          var text = (input.value || '').trim();
+          if (!text) return;
+          var cat = form.getAttribute('data-cat');
+          var id = 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+          (custom[cat] = custom[cat] || []).push({ id: id, text: text });
+          saveCustom();
+          input.value = '';
+          renderCustom(); collect(); applyAll();
+          input.focus();
         });
         // Keyboard support for the row buttons.
         document.addEventListener('keydown', function (e) {
@@ -367,6 +474,9 @@ const CATEGORIES = [
           if (window.confirm('Reset ALL counts to zero for a new event?')) { counts = {}; save(); applyAll(); }
         });
 
+        // Initial paint: render any saved custom questions, then apply counts.
+        renderCustom();
+        collect();
         applyAll();
       })();
     </script>
