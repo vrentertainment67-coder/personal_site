@@ -2391,6 +2391,43 @@ function DJCollective({ showToast }) {
     a.click();
   };
 
+  // Clean check-in roster for the Watson's team: name + DJ name only (no phone),
+  // sorted alphabetically, with two empty tick columns — "Checked In" (arrived)
+  // and "In Jar" (name written & dropped in the lucky-dip jar). Real .xlsx via
+  // SheetJS, dynamically imported so it never weighs down the admin's load.
+  const [rosterBusy, setRosterBusy] = useState(false);
+  const exportRoster = async () => {
+    const list = [...filtered].sort((a, b) =>
+      (a.name || a.dj_name || "").localeCompare(b.name || b.dj_name || ""));
+    if (!list.length) return showToast("No RSVPs to export in this view.");
+    setRosterBusy(true);
+    try {
+      const XLSX = await import("xlsx");
+      const editionLabel = sess === "all" ? "All editions" : sess;
+      const data = list.map((r, i) => ({
+        "#": i + 1,
+        "Name": r.name || "",
+        "DJ Name": r.dj_name || "",
+        "Checked In": "",
+        "In Jar (Lucky Dip)": "",
+      }));
+      const ws = XLSX.utils.json_to_sheet(data, {
+        header: ["#", "Name", "DJ Name", "Checked In", "In Jar (Lucky Dip)"],
+      });
+      ws["!cols"] = [{ wch: 4 }, { wch: 26 }, { wch: 22 }, { wch: 12 }, { wch: 18 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Roster");
+      const stamp = new Date().toISOString().slice(0, 10);
+      const safe = editionLabel.replace(/[^\w-]+/g, "_");
+      XLSX.writeFile(wb, `dj-collective-roster-${safe}-${stamp}.xlsx`);
+      showToast(`Roster exported — ${list.length} name${list.length === 1 ? "" : "s"}.`);
+    } catch (e) {
+      showToast("Excel export failed — " + (e?.message || "try again"));
+    } finally {
+      setRosterBusy(false);
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -2441,7 +2478,10 @@ function DJCollective({ showToast }) {
             <button className={view === "table" ? "on" : ""} onClick={() => setView("table")}>Table</button>
           </div>
           <button className={showStats ? "btn sm" : "btn sm ghost"} onClick={() => setShowStats((v) => !v)}><TrendingUp size={15} /> Stats</button>
-          <button className="btn sm" onClick={exportCsv}>Export CSV</button>
+          <button className="btn sm ghost" onClick={exportCsv}>Export CSV</button>
+          <button className="btn sm" onClick={exportRoster} disabled={rosterBusy} title="Name + DJ name only, with check-in & lucky-dip columns">
+            {rosterBusy ? <Loader2 size={15} className="spin" /> : <Download size={15} />} Roster (Excel)
+          </button>
         </div>
       </div>
       <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
