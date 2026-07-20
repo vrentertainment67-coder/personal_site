@@ -20,96 +20,58 @@
 // Categories render as tabs in the order listed here.
 // ────────────────────────────────────────────────────────────────────────
 
+// One single category — everything the night could ask, merged and de-duped.
+// The tab name carries the "We asked Bangalore DJs" framing, so each row keeps
+// just the question. Grouped by theme (comments only) for easy scanning/editing.
+// Original ids are preserved so any counts already tapped carry over.
 const CATEGORIES = [
   {
-    // Featured series for the night — "We asked Bangalore DJs: …". The tab name
-    // carries the framing, so each row keeps just the question.
     id: 'bangaloredjs',
     name: 'We Asked Bangalore DJs',
     questions: [
-      // Spicy / debate-driving
+      // ── Openers ──
+      { id: 'op1', text: 'How did you get into all this?' },
+      { id: 'op2', text: 'First gig you ever played?' },
+      { id: 'op4', text: "What's the story behind your name?" },
+      { id: 'op5', text: 'What were you doing before this?' },
+      // ── Spicy / debate-driving ──
       { id: 'bd1', text: "Most overrated track you won't stop hearing?" },
+      { id: 'ht2', text: 'Most overrated genre right now?' },
       { id: 'bd2', text: 'One DJ trend that needs to die?' },
       { id: 'bd3', text: 'CDJs or controllers — settle it.' },
+      { id: 'ht4', text: 'CDJs vs vinyl — does it actually matter?' },
       { id: 'bd4', text: "What's the scene getting wrong right now?" },
-      // Confessions
+      { id: 'ht1', text: 'Is the scene better or worse than 5 years ago?' },
+      { id: 'ht3', text: 'Do song requests ruin a set?' },
+      // ── Confessions ──
       { id: 'bd5', text: "The worst request you've ever gotten?", hero: true },
       { id: 'bd6', text: 'Your most embarrassing track secretly on the USB?' },
       { id: 'bd7', text: 'Ever trainwrecked a set live?' },
-      { id: 'bd8', text: "The wildest thing you've seen from the booth?" },
-      // Scene / heart
-      { id: 'bd9', text: "What does the city's scene need more of?" },
-      { id: 'bd10', text: 'Who put you on when you were starting out?' },
-      { id: 'bd11', text: 'Best advice you ever got behind the decks?' },
-      { id: 'bd12', text: 'What does a night like this mean for the city?' },
-      // Reveal
-      { id: 'bd13', text: 'How much should a DJ actually charge?' },
-      { id: 'bd14', text: 'The track that never fails to fill a floor?' },
-      { id: 'bd15', text: "The gig you'd never do again?" },
-      // Quickfire
-      { id: 'bd16', text: 'Describe the scene in one word.' },
-      { id: 'bd17', text: 'Peak time or warm-up?' },
-    ],
-  },
-  {
-    id: 'openers',
-    name: 'Openers',
-    questions: [
-      { id: 'op1', text: 'How did you get into all this?' },
-      { id: 'op2', text: 'First gig you ever played?' },
-      { id: 'op3', text: 'Who put you on early?' },
-      { id: 'op4', text: "What's the story behind your name?" },
-      { id: 'op5', text: 'What were you doing before this?' },
-    ],
-  },
-  {
-    id: 'hottakes',
-    name: 'Hot Takes',
-    questions: [
-      { id: 'ht1', text: 'Is the scene better or worse than 5 years ago?' },
-      { id: 'ht2', text: 'Most overrated genre right now?' },
-      { id: 'ht3', text: 'Do song requests ruin a set?' },
-      { id: 'ht4', text: 'CDJs vs vinyl — does it actually matter?' },
-      { id: 'ht5', text: 'One trend you wish would die?' },
-    ],
-  },
-  {
-    id: 'confessions',
-    name: 'Confessions',
-    questions: [
       { id: 'cf1', text: 'Biggest mistake behind the decks?' },
       { id: 'cf2', text: 'Ever played the wrong song at the wrong moment?' },
-      { id: 'cf3', text: "A track you secretly love but won't admit?" },
+      { id: 'bd8', text: "The wildest thing you've seen from the booth?" },
       { id: 'cf4', text: 'Most nervous you’ve ever been before a set?' },
-    ],
-  },
-  {
-    id: 'thescene',
-    name: 'The Scene',
-    questions: [
-      // Hero question — starred.
-      { id: 'sc-hero', text: "Worst request you've ever gotten?", hero: true },
+      // ── Scene / heart ──
+      { id: 'bd9', text: "What does the city's scene need more of?" },
       { id: 'sc1', text: 'Best crowd you’ve ever played to?' },
       { id: 'sc2', text: 'City with the best nightlife?' },
       { id: 'sc3', text: 'Most memorable booth moment?' },
+      { id: 'bd10', text: 'Who put you on when you were starting out?' },
+      { id: 'bd11', text: 'Best advice you ever got behind the decks?' },
+      { id: 'bd12', text: 'What does a night like this mean for the city?' },
       { id: 'sc4', text: 'A venue you’d play forever?' },
-    ],
-  },
-  {
-    id: 'quickfire',
-    name: 'Quickfire',
-    questions: [
+      // ── Reveal ──
+      { id: 'bd13', text: 'How much should a DJ actually charge?' },
+      { id: 'bd14', text: 'The track that never fails to fill a floor?' },
+      { id: 'bd15', text: "The gig you'd never do again?" },
+      // ── Quickfire ──
+      { id: 'bd16', text: 'Describe the scene in one word.' },
+      { id: 'bd17', text: 'Peak time or warm-up?' },
       { id: 'qf1', text: 'Coffee or Red Bull?' },
-      { id: 'qf2', text: 'Sunrise set or peak time?' },
       { id: 'qf3', text: 'Beach party or warehouse?' },
       { id: 'qf4', text: 'Boiler Room or festival main stage?' },
       { id: 'qf5', text: 'Headphones on both ears or one?' },
-    ],
-  },
-  {
-    id: 'tonight',
-    name: 'Tonight',
-    questions: [
+      // ── Tonight ──
       { id: 'tn1', text: 'How’s the energy feeling right now?' },
       { id: 'tn2', text: 'What are we ending on?' },
       { id: 'tn3', text: 'Give the crowd a shout out.' },
@@ -311,13 +273,15 @@ const CATEGORIES = [
         </div>
       </header>
 
-      <nav class="tabs" id="tabs">
-        {CATEGORIES.map((c, i) => (
-          <button class={`tab${i === 0 ? ' active' : ''}`} type="button" data-tab={c.id}>
-            {c.name}<span class="tab-n" data-catn={c.id}>0</span>
-          </button>
-        ))}
-      </nav>
+      {CATEGORIES.length > 1 && (
+        <nav class="tabs" id="tabs">
+          {CATEGORIES.map((c, i) => (
+            <button class={`tab${i === 0 ? ' active' : ''}`} type="button" data-tab={c.id}>
+              {c.name}<span class="tab-n" data-catn={c.id}>0</span>
+            </button>
+          ))}
+        </nav>
+      )}
 
       <main>
         {CATEGORIES.map((c, i) => (
