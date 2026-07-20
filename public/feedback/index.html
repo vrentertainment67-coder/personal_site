@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Off the record — The Vic Fix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Lora:ital@1&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --black:#080808; --gold:#C9A84C; --white:#E0DCCF; --grey:#8A8878;
+    --line:#1c1a15;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--black); color:var(--white);
+    font-family:'Oswald',system-ui,sans-serif; font-weight:500;
+    min-height:100dvh; display:flex; justify-content:center;
+    padding:max(24px,env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; gap:22px}
+  header{text-align:center; padding-top:8px}
+  .mark{font-weight:700; letter-spacing:.22em; font-size:15px; color:var(--gold)}
+  .voice{font-family:'Lora',serif; font-style:italic; font-weight:400;
+    font-size:30px; color:var(--white); margin:10px 0 0; letter-spacing:.01em}
+  .rule{width:40px; height:2px; background:var(--gold); margin:16px auto 0}
+  .intro{color:var(--grey); text-align:center; font-size:15px; line-height:1.55; letter-spacing:.01em}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center}
+  .chip{
+    appearance:none; border:1px solid var(--line); background:transparent;
+    color:var(--grey); font-family:inherit; font-weight:500; font-size:13px;
+    letter-spacing:.12em; text-transform:uppercase; padding:9px 15px; border-radius:999px;
+    cursor:pointer; transition:.15s;
+  }
+  .chip[aria-pressed="true"]{border-color:var(--gold); color:var(--black); background:var(--gold)}
+  .chip:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  textarea{
+    width:100%; min-height:150px; resize:vertical; background:#0d0c0a;
+    border:1px solid var(--line); border-radius:12px; color:var(--white);
+    font-family:'Lora',serif; font-style:italic; font-size:17px; line-height:1.6;
+    padding:16px; letter-spacing:.01em;
+  }
+  textarea::placeholder{color:#555148}
+  textarea:focus{outline:none; border-color:var(--gold)}
+  .send{
+    appearance:none; border:none; cursor:pointer; width:100%;
+    background:var(--gold); color:var(--black);
+    font-family:'Oswald',sans-serif; font-weight:700; letter-spacing:.16em;
+    text-transform:uppercase; font-size:15px; padding:16px; border-radius:12px;
+    transition:.15s;
+  }
+  .send:disabled{opacity:.45; cursor:default}
+  .send:not(:disabled):active{transform:scale(.99)}
+  .fine{color:#5b574e; font-size:12px; line-height:1.55; text-align:center; letter-spacing:.02em}
+  .done{text-align:center; padding:40px 0; display:none}
+  .done .voice{font-size:26px}
+  .done p{color:var(--grey); font-size:15px; margin-top:10px}
+  .done .again{margin-top:22px; background:transparent; border:1px solid var(--line);
+    color:var(--grey); font-family:inherit; letter-spacing:.12em; text-transform:uppercase;
+    font-size:12px; padding:11px 18px; border-radius:999px; cursor:pointer}
+  @media (prefers-reduced-motion:no-preference){.wrap{animation:rise .5s ease}}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+</style>
+</head>
+<body>
+  <main class="wrap" id="wrap">
+    <header>
+      <div class="mark">THE VIC FIX</div>
+      <p class="voice">Off the record.</p>
+      <div class="rule"></div>
+    </header>
+
+    <p class="intro">Tell us anything — what worked, what didn't, an idea, a question.
+      No name, no login. We read every word and it shapes the next edition.</p>
+
+    <div class="chips" id="chips" role="group" aria-label="What is this about?">
+      <button class="chip" data-cat="feedback" aria-pressed="true">Feedback</button>
+      <button class="chip" data-cat="idea" aria-pressed="false">Idea</button>
+      <button class="chip" data-cat="question" aria-pressed="false">Question</button>
+      <button class="chip" data-cat="other" aria-pressed="false">Something else</button>
+    </div>
+
+    <textarea id="msg" maxlength="2000" placeholder="Say it here…" aria-label="Your message"></textarea>
+
+    <button class="send" id="send">Send it</button>
+
+    <p class="fine">Anonymous — we don't ask for your name or number. To keep out spam
+      and abuse, basic technical data (a device signal and a hashed network address)
+      is logged. Nothing else.</p>
+  </main>
+
+  <section class="done" id="done" aria-live="polite">
+    <p class="voice">Got it.</p>
+    <p>Thanks for keeping us honest. See you on the floor.</p>
+    <button class="again" id="again">Add another</button>
+  </section>
+
+<script type="module">
+  // ---- CONFIG ---------------------------------------------------------
+  // Point this at your deployed edge function, and set the event.
+  const ENDPOINT  = "https://jftnhuutttmccmqnnybf.supabase.co/functions/v1/submit-feedback";
+  const EVENT_SLUG = "vicfix-2026";
+  // --------------------------------------------------------------------
+
+  import FingerprintJS from "https://openfpcdn.io/fingerprintjs/v4";
+
+  let category = "feedback";
+  let fpPromise = FingerprintJS.load().then(fp => fp.get()).then(r => r.visitorId).catch(() => null);
+
+  const chips = document.getElementById("chips");
+  chips.addEventListener("click", (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    category = b.dataset.cat;
+    chips.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+  });
+
+  const send = document.getElementById("send");
+  const msg  = document.getElementById("msg");
+
+  send.addEventListener("click", async () => {
+    const message = msg.value.trim();
+    if (!message) { msg.focus(); return; }
+    send.disabled = true; send.textContent = "Sending…";
+
+    let fingerprint = null;
+    try { fingerprint = await Promise.race([fpPromise, new Promise(r => setTimeout(() => r(null), 1500))]); } catch {}
+
+    try {
+      await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message, category, event_slug: EVENT_SLUG, fingerprint }),
+      });
+    } catch {}
+    // Always show success — the server decides quietly what to do with it.
+    document.getElementById("wrap").style.display = "none";
+    document.getElementById("done").style.display = "block";
+  });
+
+  document.getElementById("again").addEventListener("click", () => {
+    msg.value = ""; send.disabled = false; send.textContent = "Send it";
+    document.getElementById("done").style.display = "none";
+    document.getElementById("wrap").style.display = "flex";
+    msg.focus();
+  });
+</script>
+</body>
+</html>
