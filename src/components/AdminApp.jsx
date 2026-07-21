@@ -641,6 +641,13 @@ function Bookings({ showToast }) {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState("new"); // new | date_asc | date_desc
   const [showStats, setShowStats] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  // One-shot collection (Owing view): pick several unpaid gigs, log one payment.
+  const [sel, setSel] = useState(() => new Set());
+  const [collectOpen, setCollectOpen] = useState(false);
+  const [colAmt, setColAmt] = useState(""); const [colMethod, setColMethod] = useState("UPI");
+  const [colWhen, setColWhen] = useState(new Date().toLocaleDateString("en-CA"));
+  const [colNote, setColNote] = useState(""); const [colBusy, setColBusy] = useState(false);
   const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
 
@@ -668,9 +675,13 @@ function Bookings({ showToast }) {
     setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
+  // Leaving the Owing view drops any pending selection so it can't go stale.
+  useEffect(() => { if (filter !== "owing") { setSel(new Set()); setCollectOpen(false); } }, [filter]);
 
   const paidOf = (id) => (pays[id] || []).reduce((s, p) => s + Number(p.amount || 0), 0);
   const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  // What's still genuinely owed on a gig: fee − cash received − TDS deducted.
+  const balOf = (r) => Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0);
 
   const decide = async (id, status) => {
     setActing(id);
@@ -703,14 +714,59 @@ function Bookings({ showToast }) {
     await supabase.from("bookings").update({ notes }).eq("id", id);
   };
 
+  // Marking a gig completed says the EVENT is done — it never invents a
+  // payment. Anything still owed stays tracked under "Owing" until the money
+  // actually lands (that's what makes one-shot collection possible).
   const complete = async (r) => {
-    const bal = Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0);
-    if (bal > 0 && !window.confirm(`Outstanding balance is ${inr(bal)}. Mark this gig completed & paid anyway?`)) return;
+    const bal = balOf(r);
+    if (bal > 0 && !window.confirm(`${inr(bal)} is still outstanding on this gig.\n\nMark it completed anyway?\n\nIt stays under "Owing" until you record the payment — use that when you collect several gigs in one go.`)) return;
     setActing(r.id);
     const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", r.id);
     setActing(null);
     if (error) return showToast("Couldn't update — " + error.message);
-    showToast("Done & paid — moved to Completed."); setOpenId(null); load();
+    showToast(bal > 0 ? `Completed — ${inr(bal)} still to collect.` : "Completed & settled.");
+    setOpenId(null); load();
+  };
+
+  // Bulk: everything confirmed whose date has passed → completed, in one go.
+  const completePast = async () => {
+    const today = new Date().toLocaleDateString("en-CA");
+    const past = rows.filter((r) => r.status === "accepted" && r.event_date && (r.event_end_date || r.event_date) < today);
+    if (!past.length) return showToast("No past confirmed gigs to complete.");
+    const owed = past.reduce((s, r) => s + Math.max(0, balOf(r)), 0);
+    if (!window.confirm(`Mark ${past.length} past gig${past.length > 1 ? "s" : ""} as completed?` +
+      (owed > 0 ? `\n\n${inr(owed)} across them is still unpaid — that stays tracked under "Owing".` : ""))) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("bookings").update({ status: "completed" }).in("id", past.map((r) => r.id));
+    setBulkBusy(false);
+    if (error) return showToast("Couldn't update — " + error.message);
+    showToast(`${past.length} gig${past.length > 1 ? "s" : ""} completed.`); load();
+  };
+
+  // One-shot collection: a single amount received, split across the selected
+  // gigs oldest-first, writing one payment row per gig so each still balances.
+  const collect = async () => {
+    const total = Number(colAmt || 0);
+    if (total <= 0) return showToast("Enter the amount you received.");
+    if (total > selTotal + 0.5) return showToast(`That's more than the ${inr(selTotal)} outstanding on the selected gigs.`);
+    const queue = [...selRows].sort((a, b) => (a.event_date || "").localeCompare(b.event_date || ""));
+    let left = total;
+    const inserts = [];
+    for (const r of queue) {
+      if (left <= 0) break;
+      const due = Math.max(0, balOf(r));
+      if (due <= 0) continue;
+      const amt = Math.min(due, left);
+      inserts.push({ booking_id: r.id, amount: amt, paid_on: colWhen, method: colMethod, note: colNote || "One-shot collection" });
+      left -= amt;
+    }
+    if (!inserts.length) return showToast("Nothing outstanding on the selected gigs.");
+    setColBusy(true);
+    const { error } = await supabase.from("gig_payments").insert(inserts);
+    setColBusy(false);
+    if (error) return showToast(error.message.includes("gig_payments") ? "Run gig_finance.sql in Supabase first" : error.message);
+    showToast(`${inr(total)} split across ${inserts.length} gig${inserts.length > 1 ? "s" : ""}.`);
+    setSel(new Set()); setCollectOpen(false); setColAmt(""); setColNote(""); load();
   };
   const reopen = async (r) => {
     const { error } = await supabase.from("bookings").update({ status: "accepted" }).eq("id", r.id);
@@ -730,7 +786,10 @@ function Bookings({ showToast }) {
     .filter((r) => {
       if (filter === "all") return true;
       if (filter === "active") return r.status === "pending" || r.status === "accepted";
-      if (filter === "owing") return r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0) > 0;
+      // Owing spans confirmed AND completed gigs: a finished gig you haven't
+      // been paid for yet (e.g. DJ classes collected in one shot later) must
+      // stay visible here, not vanish the moment it's marked completed.
+      if (filter === "owing") return (r.status === "accepted" || r.status === "completed") && balOf(r) > 0;
       return r.status === filter;
     })
     .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
@@ -746,6 +805,11 @@ function Bookings({ showToast }) {
     }
     return new Date(b.created_at) - new Date(a.created_at); // newest enquiry
   });
+
+  // Selection for one-shot collection (only meaningful in the Owing view).
+  const selRows = sorted.filter((r) => sel.has(r.id));
+  const selTotal = selRows.reduce((s, r) => s + Math.max(0, balOf(r)), 0);
+  const toggleSel = (id) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   // Money roll-up across confirmed + completed gigs (completed are fully past gigs;
   // they stay in the financial totals, just out of the working pipeline).
@@ -823,8 +887,8 @@ function Bookings({ showToast }) {
             </button>
           )}
           {r.status === "accepted" && (
-            <button className="act accept" disabled={acting === r.id} onClick={() => complete(r)} title="Event done and payment received — archive it">
-              {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Mark done & paid
+            <button className="act accept" disabled={acting === r.id} onClick={() => complete(r)} title="Event done — archive it. Any unpaid balance stays tracked under Owing.">
+              {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Mark completed
             </button>
           )}
           {r.status === "completed" && (
@@ -871,6 +935,9 @@ function Bookings({ showToast }) {
         <h1 className="h1">Bookings</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <button className={showStats ? "btn sm" : "btn sm ghost"} onClick={() => setShowStats((v) => !v)}><TrendingUp size={15} /> Stats</button>
+          <button className="btn sm ghost" onClick={completePast} disabled={bulkBusy} title="Mark every confirmed gig whose date has passed as completed. Unpaid ones stay under Owing.">
+            {bulkBusy ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} />} Complete past
+          </button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
           <button className="btn sm" onClick={openBlankForm}><Plus size={15} /> Log enquiry</button>
         </div>
@@ -931,26 +998,67 @@ function Bookings({ showToast }) {
         </select>
       </div>
 
+      {filter === "owing" && sorted.length > 0 && (
+        <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.22)", borderRadius: 8, padding: "10px 12px", margin: "10px 0", fontSize: ".82rem" }}>
+          {sel.size === 0 ? (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", color: "rgba(255,255,255,.7)" }}>
+              <span>Collecting several gigs in one payment? Tick them below.</span>
+              <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={() => setSel(new Set(sorted.map((r) => r.id)))}>Select all {sorted.length}</button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ color: "rgba(255,255,255,.75)" }}><strong style={{ color: "#c9a84c" }}>{sel.size}</strong> selected · outstanding <strong style={{ color: "#ff8a8a" }}>{inr(selTotal)}</strong></span>
+              {collectOpen ? (
+                <>
+                  <input type="number" value={colAmt} onChange={(e) => setColAmt(e.target.value)} placeholder="Amount ₹"
+                    style={{ background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem", width: 110 }} />
+                  <select value={colMethod} onChange={(e) => setColMethod(e.target.value)} style={{ background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem" }}>
+                    <option>UPI</option><option>Cash</option><option>Bank</option><option>Card</option><option>Other</option>
+                  </select>
+                  <input type="date" value={colWhen} onChange={(e) => setColWhen(e.target.value)}
+                    style={{ background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem" }} />
+                  <input type="text" value={colNote} onChange={(e) => setColNote(e.target.value)} placeholder="Note (e.g. DJ classes)"
+                    style={{ background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "6px 9px", color: "var(--off)", fontSize: ".8rem", width: 150 }} />
+                  <button className="btn sm" onClick={collect} disabled={colBusy}>{colBusy ? <Loader2 size={12} className="spin" /> : "Record"}</button>
+                  <button className="btn sm ghost" onClick={() => setCollectOpen(false)}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn sm" onClick={() => { setColAmt(String(selTotal)); setCollectOpen(true); }}>Collect payment</button>
+              )}
+              <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={() => { setSel(new Set()); setCollectOpen(false); }}>Clear</button>
+            </div>
+          )}
+          {collectOpen && <p style={{ margin: "8px 0 0", color: "rgba(255,255,255,.5)", fontSize: ".74rem" }}>Split oldest gig first across the selected gigs — one payment row each, so every gig still balances on its own.</p>}
+        </div>
+      )}
+
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : sorted.length === 0 ? (
         <p className="empty">Nothing here.</p>
       ) : (
         <div className="bk-wrap">
           <table className="bk-table">
-            <thead><tr><th>Client</th><th>Type</th><th>Date(s)</th><th>Value</th><th>Status</th><th></th></tr></thead>
+            <thead><tr>{filter === "owing" && <th style={{ width: 28 }}></th>}<th>Client</th><th>Type</th><th>Date(s)</th><th>Value</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {sorted.map((r) => {
                 const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
-                const owing = r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0) > 0;
+                const owingAmt = (r.status === "accepted" || r.status === "completed") ? Math.max(0, balOf(r)) : 0;
+                const owing = owingAmt > 0;
                 const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
                 return (
                   <tr key={r.id} style={{ cursor: "pointer" }} title={r.message || ""} onClick={() => setOpenId(r.id)}>
+                    {filter === "owing" && (
+                      <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                        <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggleSel(r.id)}
+                          title={`Outstanding ${inr(Math.max(0, balOf(r)))}`} style={{ accentColor: "#c9a84c", cursor: "pointer" }} />
+                      </td>
+                    )}
                     <td>
                       <div className="bk-name">{r.name} {r.source === "manual" && <span className="mini">manual</span>}</div>
                       <div className="bk-sub">{[r.venue, r.city].filter(Boolean).join(", ") || "—"}</div>
                     </td>
                     <td><span className="tag">{r.event_type}</span></td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtRange(r.event_date, r.event_end_date)}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{value}{owing && <div className="bk-sub" style={{ color: "#e0b13c" }}>owing</div>}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{value}{owing && <div className="bk-sub" style={{ color: "#e0b13c" }}>{inr(owingAmt)} owing</div>}</td>
                     <td><span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span></td>
                     <td className="bk-actions" onClick={(e) => e.stopPropagation()}>
                       {r.status === "pending" && (
