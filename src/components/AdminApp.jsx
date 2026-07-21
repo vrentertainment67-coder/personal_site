@@ -1139,9 +1139,9 @@ function GigFinance({ booking, payments, onChange, showToast }) {
   const advNum = Number(advance || 0);
   const advDue = Math.max(0, advNum - paid);
   const st = !feeNum ? { t: "no fee set", c: "#9a9a92", bg: "transparent" }
-    : settled >= feeNum ? { t: tdsNum > 0 ? "settled (net of TDS)" : "paid in full", c: "#7fe0a0", bg: "#16331f" }
+    : settled >= feeNum ? { t: tdsNum > 0 ? "settled" : "paid in full", c: "#7fe0a0", bg: "#16331f" }
     : advDue > 0 ? { t: "advance due", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" }
-    : paid > 0 ? { t: advNum > 0 ? "advance received · balance due" : "part paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
+    : paid > 0 ? { t: "balance due", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
     : { t: "unpaid", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" };
   const sqlHint = (m) => {
     const s = m || "";
@@ -1183,10 +1183,8 @@ function GigFinance({ booking, payments, onChange, showToast }) {
           <input type="number" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" style={{ ...inp, width: 92 }} />
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }} title="Amount agreed up front to block the date">Advance ₹</span>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }} title="Amount taken up front to block the date">Advance ₹</span>
           <input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} placeholder="0" style={{ ...inp, width: 84 }} />
-          <button className="btn sm ghost" title="25% of the fee" onClick={() => setAdvance(feeNum ? String(Math.round(feeNum * 0.25)) : "")} disabled={!feeNum}>25%</button>
-          <button className="btn sm ghost" title="50% of the fee" onClick={() => setAdvance(feeNum ? String(Math.round(feeNum * 0.5)) : "")} disabled={!feeNum}>50%</button>
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }}>TDS ₹</span>
@@ -1198,13 +1196,9 @@ function GigFinance({ booking, payments, onChange, showToast }) {
       </div>
       <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 14, fontSize: ".8rem", color: "rgba(255,255,255,.7)" }}>
         <span>Received <strong style={{ color: "#7fe0a0" }}>{inr(paid)}</strong></span>
-        {advNum > 0 && (
-          advDue > 0
-            ? <span>Advance due <strong style={{ color: "#ff8a8a" }}>{inr(advDue)}</strong> <span style={{ opacity: .6 }}>of {inr(advNum)}</span></span>
-            : <span>Advance <strong style={{ color: "#7fe0a0" }}>{inr(advNum)}</strong> <span style={{ opacity: .6 }}>received</span></span>
-        )}
-        {tdsNum > 0 && <span>TDS deducted <strong style={{ color: "#c9a84c" }}>{inr(tdsNum)}</strong></span>}
-        <span>{advNum > 0 && advDue <= 0 ? "Balance on the date" : "Due"} <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
+        {advDue > 0 && <span>Advance due <strong style={{ color: "#ff8a8a" }}>{inr(advDue)}</strong></span>}
+        {tdsNum > 0 && <span>TDS <strong style={{ color: "#c9a84c" }}>{inr(tdsNum)}</strong></span>}
+        <span>Balance <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
       </div>
 
       {payments.length > 0 && (
@@ -1236,7 +1230,6 @@ function GigFinance({ booking, payments, onChange, showToast }) {
             <option>UPI</option><option>Cash</option><option>Bank</option><option>Card</option><option>Other</option>
           </select>
           <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} style={inp} />
-          <input type="text" value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (e.g. Advance)" style={{ ...inp, width: 130 }} />
           <button className="btn sm" onClick={addPayment} disabled={busy}>{busy ? <Loader2 size={12} className="spin" /> : "Add"}</button>
           <button className="btn sm ghost" onClick={() => { setAdding(false); setPayNote(""); }}>Cancel</button>
         </div>
