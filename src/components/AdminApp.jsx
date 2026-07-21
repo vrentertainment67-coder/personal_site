@@ -639,7 +639,14 @@ function Bookings({ showToast }) {
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
-  const [sort, setSort] = useState("new"); // new | date_asc | date_desc
+  // Click a column header to sort by it; click again to flip direction.
+  const [sortKey, setSortKey] = useState("created"); // created | name | type | date | value | status
+  const [sortDir, setSortDir] = useState("desc");
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    // Sensible first direction per column: dates/names read forwards, money reads biggest-first.
+    else { setSortKey(key); setSortDir(key === "value" ? "desc" : "asc"); }
+  };
   const [showStats, setShowStats] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   // One-shot collection (Owing view): pick several unpaid gigs, log one payment.
@@ -795,16 +802,36 @@ function Bookings({ showToast }) {
     .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
     .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
 
-  // Ordering. event_date is ISO (YYYY-MM-DD), so a plain string compare sorts
-  // chronologically; undated gigs sink to the bottom in either direction.
+  // Ordering, driven by the clicked column header. event_date is ISO
+  // (YYYY-MM-DD) so a plain string compare sorts chronologically; undated gigs
+  // always sink to the bottom regardless of direction.
   const sorted = [...filtered].sort((a, b) => {
-    if (sort === "date_asc" || sort === "date_desc") {
-      const av = a.event_date || "", bv = b.event_date || "";
-      if (!av || !bv) return !av && !bv ? 0 : (!av ? 1 : -1);
-      return sort === "date_asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    const dir = sortDir === "asc" ? 1 : -1;
+    const txt = (v) => String(v || "").toLowerCase();
+    switch (sortKey) {
+      case "name": return dir * txt(a.name).localeCompare(txt(b.name));
+      case "type": return dir * txt(a.event_type).localeCompare(txt(b.event_type));
+      case "date": {
+        const av = a.event_date || "", bv = b.event_date || "";
+        if (!av || !bv) return !av && !bv ? 0 : (!av ? 1 : -1);
+        return dir * av.localeCompare(bv);
+      }
+      case "value": return dir * (Number(a.agreed_fee || 0) - Number(b.agreed_fee || 0));
+      case "status": return dir * txt(a.status).localeCompare(txt(b.status));
+      default: return dir * (new Date(a.created_at) - new Date(b.created_at));
     }
-    return new Date(b.created_at) - new Date(a.created_at); // newest enquiry
   });
+
+  // Header cell that sorts. Plain function (not a component) so React keeps the
+  // same <th> identity across renders.
+  const sortTh = (k, label, extra = {}) => (
+    <th key={k} className="bk-th-sort" onClick={() => toggleSort(k)} title={`Sort by ${label.toLowerCase()}`} style={extra}>
+      {label}
+      <span style={{ marginLeft: 5, fontSize: 10, color: sortKey === k ? "#c9a84c" : "inherit", opacity: sortKey === k ? 1 : 0.3 }}>
+        {sortKey === k ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
+      </span>
+    </th>
+  );
 
   // Selection for one-shot collection (only meaningful in the Owing view).
   const selRows = sorted.filter((r) => sel.has(r.id));
@@ -918,6 +945,8 @@ function Bookings({ showToast }) {
         .bk-ic.green:hover { border-color: #4ea765; color: #4ea765; }
         .bk-ic.danger:hover { border-color: #e0574a; color: #e0574a; }
         .bk-ic:disabled { opacity: .5; cursor: default; }
+        .bk-table th.bk-th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+        .bk-table th.bk-th-sort:hover { color: #c9a84c; }
         @media (max-width: 720px) { .bk-table { min-width: 720px; } }
         .bk-sectors { background: #121214; border: 1px solid #232323; border-radius: 8px; padding: 12px 14px; margin: 0 0 12px; }
         .bk-sectors-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
@@ -991,11 +1020,6 @@ function Bookings({ showToast }) {
           <option value="all">All types</option>
           {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select className="search" style={{ width: "auto", margin: 0 }} value={sort} onChange={(e) => setSort(e.target.value)} title="Order the list">
-          <option value="new">Newest enquiry</option>
-          <option value="date_asc">Event date ↑ (soonest first)</option>
-          <option value="date_desc">Event date ↓ (latest first)</option>
-        </select>
       </div>
 
       {filter === "owing" && sorted.length > 0 && (
@@ -1037,7 +1061,15 @@ function Bookings({ showToast }) {
       ) : (
         <div className="bk-wrap">
           <table className="bk-table">
-            <thead><tr>{filter === "owing" && <th style={{ width: 28 }}></th>}<th>Client</th><th>Type</th><th>Date(s)</th><th>Value</th><th>Status</th><th></th></tr></thead>
+            <thead><tr>
+              {filter === "owing" && <th style={{ width: 28 }}></th>}
+              {sortTh("name", "Client")}
+              {sortTh("type", "Type")}
+              {sortTh("date", "Date(s)")}
+              {sortTh("value", "Value")}
+              {sortTh("status", "Status")}
+              <th></th>
+            </tr></thead>
             <tbody>
               {sorted.map((r) => {
                 const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
