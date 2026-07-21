@@ -2957,6 +2957,7 @@ function EventForm({ event, onDone, showToast }) {
     dateStr: "", time_label: init.time_label || "9:00 PM onwards",
     lineup: init.lineup || "DJ VIC", genre: init.genre || "",
     guestlist_enabled: init.guestlist_enabled ?? true, active: init.active ?? false,
+    logGig: true, // new events also land in Bookings as a confirmed gig
   });
   const [bannerUrl, setBannerUrl] = useState(init.banner_url || "");
   const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false);
@@ -2996,7 +2997,33 @@ function EventForm({ event, onDone, showToast }) {
       return showToast(/duplicate|unique/i.test(res.error.message) ? "An event with this name + date already exists." : res.error.message);
     }
     if (f.active && res.data) await supabase.from("events").update({ active: false }).neq("id", res.data.id);
-    setBusy(false); showToast(isEdit ? "Event updated." : "Event created."); onDone();
+
+    // A new event is a gig too — log it in Bookings and push it to the calendar,
+    // the same way the recurring "next edition" flow already does. Edits never
+    // re-log, and an existing gig with the same name + date is left alone so
+    // re-creating an event can't produce duplicates.
+    let extra = "";
+    if (!isEdit && f.dateStr && f.logGig) {
+      const title = f.title.trim();
+      const { data: dupe } = await supabase.from("bookings").select("id").eq("name", title).eq("event_date", f.dateStr).limit(1);
+      if (dupe && dupe.length) {
+        extra = " · already in Bookings";
+      } else {
+        const { data: bk, error: bkErr } = await supabase.from("bookings").insert({
+          name: title, contact: "—", event_type: "nightlife", event_date: f.dateStr,
+          venue: f.venue.trim() || null, city: f.area.trim() || null, source: "manual", status: "accepted",
+        }).select().single();
+        if (bkErr) extra = " — but it didn't log in Bookings: " + bkErr.message;
+        else if (bk?.id) {
+          const cal = await fetch(`${FN}/calendar-sync?action=confirm`, {
+            method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+            body: JSON.stringify({ bookingId: bk.id }),
+          }).then((r) => r.json()).catch(() => ({ error: "network" }));
+          extra = cal?.error ? " · in Bookings (calendar didn't sync)" : " · in Bookings + calendar";
+        }
+      }
+    }
+    setBusy(false); showToast((isEdit ? "Event updated." : "Event created.") + extra); onDone();
   };
 
   return (
@@ -3032,6 +3059,11 @@ function EventForm({ event, onDone, showToast }) {
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".85rem", color: "rgba(255,255,255,.8)" }}>
           <input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Show on website now (live popup)
         </label>
+        {!isEdit && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".85rem", color: "rgba(255,255,255,.8)" }}>
+            <input type="checkbox" checked={f.logGig} onChange={(e) => setF({ ...f, logGig: e.target.checked })} /> Also log it as a confirmed gig in Bookings
+          </label>
+        )}
         <button className="btn" disabled={busy} onClick={save}>
           {busy ? <><Loader2 className="spin" size={16} /> Saving…</> : (isEdit ? "Save changes" : "Create event")}
         </button>
