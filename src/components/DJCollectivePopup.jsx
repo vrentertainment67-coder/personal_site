@@ -20,13 +20,16 @@ const SESSION = "2026-07-launch";
 const WA_CHANNEL = "https://whatsapp.com/channel/0029Vb8ZoHlATRSqaILd683A";
 const SEEN_KEY = "djc_rsvp_seen";
 
-// Optional RSVP close time. `null` = RSVPs are OPEN (no deadline). To close at
-// a set time, set this to a timestamp, e.g.:
-//   const RSVP_CLOSE = new Date("2026-07-20T20:00:00+05:30").getTime();
-// Past the deadline the popup shows a "closed" message and the form stops
-// submitting. (Client-side gate; use an explicit +05:30 offset so it's correct
-// regardless of the visitor's timezone.)
-const RSVP_CLOSE = null;
+// When RSVPs are closed, sign-ups drop into this session instead — the
+// "get on the list for the next edition" list. Shows up in the admin under
+// this session name so past-interest can be invited when the next date is set.
+const WAITLIST_SESSION = "next-edition-waitlist";
+
+// RSVP close time. `null` = RSVPs OPEN (no deadline). A timestamp closes them
+// at/after that time: the popup then shows the "get on the next list" form
+// instead of the RSVP form. Set back to `null` to reopen for the next edition.
+// (Client-side gate; explicit +05:30 offset so it's timezone-correct.)
+const RSVP_CLOSE = new Date("2026-07-20T20:00:00+05:30").getTime(); // closed
 
 // "Martin, Vicky, Shine and Jasmeet + 20 are going" from { total, names }.
 function attLine(att) {
@@ -60,6 +63,7 @@ export default function DJCollectivePopup({ autoOpen = true }) {
   const [att, setAtt] = useState(null);            // { total, names } live counter
   const [dup, setDup] = useState(false);           // already-registered (dedup)
   const [closed, setClosed] = useState(() => RSVP_CLOSE != null && Date.now() >= RSVP_CLOSE);
+  const [waitDone, setWaitDone] = useState(false); // added to next-edition list
   const cardRef = useRef(null);
 
   const show = () => { setShown(true); requestAnimationFrame(() => setOpen(true)); };
@@ -79,7 +83,7 @@ export default function DJCollectivePopup({ autoOpen = true }) {
   // ── Triggers: [data-djc-open] buttons + auto-open once per visitor ──
   useEffect(() => {
     const openers = Array.from(document.querySelectorAll("[data-djc-open]"));
-    const onClick = (e) => { e.preventDefault(); setErrors({}); setPhase("form"); show(); };
+    const onClick = (e) => { e.preventDefault(); setErrors({}); setPhase("form"); setWaitDone(false); show(); };
     openers.forEach((b) => b.addEventListener("click", onClick));
 
     let timer = null, seen = null;
@@ -163,6 +167,39 @@ export default function DJCollectivePopup({ autoOpen = true }) {
     } else setErrors({ form: "Couldn't send that — please try again." });
   }
 
+  // Next-edition waitlist submit (shown when RSVPs are closed). Same table,
+  // tagged with WAITLIST_SESSION so it lands in the admin as its own list.
+  async function submitWaitlist(e) {
+    e.preventDefault();
+    if (submitting) return;
+    if (data.company) { setWaitDone(true); return; }  // honeypot tripped
+    const name = data.name.trim();
+    const phone = data.phone.trim();
+    const errs = {};
+    if (name.length < 2) errs.name = "Let us know what you go by.";
+    if (phone.replace(/\D/g, "").length < 8) errs.phone = "Add a valid WhatsApp number.";
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    setSubmitting(true);
+    let status = "error";
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/djc_rsvp`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          p_name: name, p_phone: phone, p_session: WAITLIST_SESSION,
+          p_dj_name: data.dj_name.trim() || null,
+          p_genre: null, p_years: null, p_instagram: null,
+        }),
+      });
+      if (r.ok) { const d = await r.json(); status = (d && d.status) || "error"; }
+    } catch {}
+    setSubmitting(false);
+    if (status === "ok" || status === "duplicate") setWaitDone(true);
+    else setErrors({ form: "Couldn't send that — please try again." });
+  }
+
   if (!shown) return null;
 
   return (
@@ -179,18 +216,47 @@ export default function DJCollectivePopup({ autoOpen = true }) {
         </div>
 
         {closed ? (
-          <div className="djc-success">
-            <p className="djc-success-line">RSVPs are closed for this edition.</p>
-            <div className="djc-push">
-              <span className="djc-push-head">Catch the next one</span>
-              <span className="djc-push-sub">The line-up, reminders &amp; the next edition go out <strong>only on the WhatsApp channel</strong>. Join so you don't miss the next round.</span>
+          waitDone ? (
+            <div className="djc-success">
+              <p className="djc-success-line">You're on the list — we'll give you first word on the next edition.</p>
+              <div className="djc-push">
+                <span className="djc-push-head">One more thing</span>
+                <span className="djc-push-sub">The next date &amp; reminders go out <strong>only on the WhatsApp channel</strong>. Join so you don't miss it.</span>
+              </div>
+              <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+                Join the WhatsApp channel
+              </a>
+              <p className="djc-foot">No agenda. No headliner.</p>
             </div>
-            <a className="djc-wa" href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
-              Join the WhatsApp channel
-            </a>
-            <p className="djc-foot">No agenda. No headliner.</p>
-          </div>
+          ) : (
+            <form className="djc-body" onSubmit={submitWaitlist} noValidate>
+              <p className="djc-intro"><strong>RSVPs for this edition are closed.</strong><br />Want in on the next one? Get on the list.</p>
+              <input type="text" name="company" className="djc-hp" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                value={data.company} onChange={(e) => set("company", e.target.value)} />
+
+              <label className="djc-field">
+                <span>Name <em>(what you go by)</em> *</span>
+                <input type="text" value={data.name} autoComplete="name" onChange={(e) => set("name", e.target.value)} placeholder="Your name" />
+                {errors.name && <i className="djc-err">{errors.name}</i>}
+              </label>
+
+              <div className="djc-row">
+                <label className="djc-field"><span>DJ / artist name</span>
+                  <input type="text" value={data.dj_name} onChange={(e) => set("dj_name", e.target.value)} placeholder="optional" /></label>
+                <label className="djc-field"><span>WhatsApp number *</span>
+                  <input type="tel" inputMode="tel" value={data.phone} autoComplete="tel" onChange={(e) => set("phone", e.target.value)} placeholder="10-digit number" />
+                  {errors.phone && <i className="djc-err">{errors.phone}</i>}</label>
+              </div>
+
+              {errors.form && <i className="djc-err djc-err--form">{errors.form}</i>}
+              <button type="submit" className="djc-submit" disabled={submitting}>{submitting ? "Adding…" : "Add me to the next list"}</button>
+              <a className="djc-wa" style={{ marginTop: "0.6rem" }} href={WA_CHANNEL} target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.004 0C5.374 0 0 5.373 0 12c0 2.139.561 4.14 1.538 5.878L0 24l6.305-1.511A11.95 11.95 0 0 0 12.004 24C18.63 24 24 18.627 24 12c0-6.628-5.371-12-11.996-12z"/></svg>
+                Join the WhatsApp channel
+              </a>
+            </form>
+          )
         ) : phase === "form" ? (
           <form className="djc-body" onSubmit={submit} noValidate>
             <p className="djc-intro">No agenda. Just Bengaluru's DJs catching up.<br />Let us know you're coming.</p>
