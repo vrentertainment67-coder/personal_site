@@ -639,6 +639,7 @@ function Bookings({ showToast }) {
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
+  const [sort, setSort] = useState("new"); // new | date_asc | date_desc
   const [showStats, setShowStats] = useState(false);
   const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
@@ -735,6 +736,17 @@ function Bookings({ showToast }) {
     .filter((r) => typeFilter === "all" || r.event_type === typeFilter)
     .filter((r) => !q || [r.name, r.contact, r.city, r.venue, r.event_type].some((v) => (v || "").toLowerCase().includes(q)));
 
+  // Ordering. event_date is ISO (YYYY-MM-DD), so a plain string compare sorts
+  // chronologically; undated gigs sink to the bottom in either direction.
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "date_asc" || sort === "date_desc") {
+      const av = a.event_date || "", bv = b.event_date || "";
+      if (!av || !bv) return !av && !bv ? 0 : (!av ? 1 : -1);
+      return sort === "date_asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return new Date(b.created_at) - new Date(a.created_at); // newest enquiry
+  });
+
   // Money roll-up across confirmed + completed gigs (completed are fully past gigs;
   // they stay in the financial totals, just out of the working pipeline).
   const earned = rows.filter((r) => r.status === "accepted" || r.status === "completed");
@@ -753,12 +765,13 @@ function Bookings({ showToast }) {
   const sectorTop = Math.max(...sectors.map((s) => s.booked), 1);
 
   const exportCsv = () => {
-    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "tds", "paid", "balance", "message"];
+    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "advance", "advance_due", "tds", "paid", "balance", "message"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [cols.join(","), ...filtered.map((r) => {
+    const csv = [cols.join(","), ...sorted.map((r) => {
       const paid = paidOf(r.id);
       const tds = Number(r.tds_amount || 0);
-      const row = { ...r, tds, paid, balance: Number(r.agreed_fee || 0) - paid - tds };
+      const advance = Number(r.advance_amount || 0);
+      const row = { ...r, tds, paid, advance, advance_due: Math.max(0, advance - paid), balance: Number(r.agreed_fee || 0) - paid - tds };
       return cols.map((c) => esc(row[c])).join(",");
     })].join("\n");
     const a = document.createElement("a");
@@ -911,16 +924,21 @@ function Bookings({ showToast }) {
           <option value="all">All types</option>
           {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
+        <select className="search" style={{ width: "auto", margin: 0 }} value={sort} onChange={(e) => setSort(e.target.value)} title="Order the list">
+          <option value="new">Newest enquiry</option>
+          <option value="date_asc">Event date ↑ (soonest first)</option>
+          <option value="date_desc">Event date ↓ (latest first)</option>
+        </select>
       </div>
 
-      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : sorted.length === 0 ? (
         <p className="empty">Nothing here.</p>
       ) : (
         <div className="bk-wrap">
           <table className="bk-table">
             <thead><tr><th>Client</th><th>Type</th><th>Date(s)</th><th>Value</th><th>Status</th><th></th></tr></thead>
             <tbody>
-              {filtered.map((r) => {
+              {sorted.map((r) => {
                 const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
                 const owing = r.status === "accepted" && Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0) > 0;
                 const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
@@ -959,12 +977,16 @@ function Bookings({ showToast }) {
 function GigFinance({ booking, payments, onChange, showToast }) {
   const [fee, setFee] = useState(booking.agreed_fee ?? "");
   const [tds, setTds] = useState(booking.tds_amount ?? "");
+  const [advance, setAdvance] = useState(booking.advance_amount ?? "");
   const [savingFee, setSavingFee] = useState(false);
   const [adding, setAdding] = useState(false);
   const [amt, setAmt] = useState(""); const [method, setMethod] = useState("UPI");
+  const [payNote, setPayNote] = useState("");
   const [when, setWhen] = useState(new Date().toLocaleDateString("en-CA"));
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setFee(booking.agreed_fee ?? ""); setTds(booking.tds_amount ?? ""); }, [booking.agreed_fee, booking.tds_amount]);
+  useEffect(() => {
+    setFee(booking.agreed_fee ?? ""); setTds(booking.tds_amount ?? ""); setAdvance(booking.advance_amount ?? "");
+  }, [booking.agreed_fee, booking.tds_amount, booking.advance_amount]);
 
   const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
   const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -972,9 +994,14 @@ function GigFinance({ booking, payments, onChange, showToast }) {
   const tdsNum = Number(tds || 0);
   const settled = paid + tdsNum;          // cash received + TDS deducted = fully accounted
   const bal = feeNum - settled;           // what's genuinely still owed
+  // Advance = the agreed blocking amount. What's still to come in for it is the
+  // advance minus whatever has already been received against this gig.
+  const advNum = Number(advance || 0);
+  const advDue = Math.max(0, advNum - paid);
   const st = !feeNum ? { t: "no fee set", c: "#9a9a92", bg: "transparent" }
     : settled >= feeNum ? { t: tdsNum > 0 ? "settled (net of TDS)" : "paid in full", c: "#7fe0a0", bg: "#16331f" }
-    : paid > 0 ? { t: "advance paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
+    : advDue > 0 ? { t: "advance due", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" }
+    : paid > 0 ? { t: advNum > 0 ? "advance received · balance due" : "part paid", c: "#c9a84c", bg: "rgba(201,168,76,.12)" }
     : { t: "unpaid", c: "#ff8a8a", bg: "rgba(255,59,59,.1)" };
   const sqlHint = (m) => {
     const s = m || "";
@@ -988,18 +1015,21 @@ function GigFinance({ booking, payments, onChange, showToast }) {
     const { error } = await supabase.from("bookings").update({
       agreed_fee: fee === "" ? null : Number(fee),
       tds_amount: tds === "" ? null : Number(tds),
+      advance_amount: advance === "" ? null : Number(advance),
     }).eq("id", booking.id);
     setSavingFee(false);
     if (error) showToast(sqlHint(error.message)); else { showToast("Saved ✓"); onChange(); }
   };
-  const dirty = String(fee) !== String(booking.agreed_fee ?? "") || String(tds) !== String(booking.tds_amount ?? "");
+  const dirty = String(fee) !== String(booking.agreed_fee ?? "")
+    || String(tds) !== String(booking.tds_amount ?? "")
+    || String(advance) !== String(booking.advance_amount ?? "");
   const addPayment = async () => {
     if (!amt || Number(amt) <= 0) return showToast("Enter an amount");
     setBusy(true);
-    const { error } = await supabase.from("gig_payments").insert({ booking_id: booking.id, amount: Number(amt), paid_on: when, method });
+    const { error } = await supabase.from("gig_payments").insert({ booking_id: booking.id, amount: Number(amt), paid_on: when, method, note: payNote || null });
     setBusy(false);
     if (error) return showToast(sqlHint(error.message));
-    setAmt(""); setAdding(false); showToast("Payment recorded ✓"); onChange();
+    setAmt(""); setPayNote(""); setAdding(false); showToast("Payment recorded ✓"); onChange();
   };
   const delPayment = async (id) => { if (!confirm("Remove this payment?")) return; await supabase.from("gig_payments").delete().eq("id", id); onChange(); };
 
@@ -1013,6 +1043,12 @@ function GigFinance({ booking, payments, onChange, showToast }) {
           <input type="number" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" style={{ ...inp, width: 92 }} />
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }} title="Amount agreed up front to block the date">Advance ₹</span>
+          <input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} placeholder="0" style={{ ...inp, width: 84 }} />
+          <button className="btn sm ghost" title="25% of the fee" onClick={() => setAdvance(feeNum ? String(Math.round(feeNum * 0.25)) : "")} disabled={!feeNum}>25%</button>
+          <button className="btn sm ghost" title="50% of the fee" onClick={() => setAdvance(feeNum ? String(Math.round(feeNum * 0.5)) : "")} disabled={!feeNum}>50%</button>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".66rem", textTransform: "uppercase", letterSpacing: ".06em" }}>TDS ₹</span>
           <input type="number" value={tds} onChange={(e) => setTds(e.target.value)} placeholder="0" style={{ ...inp, width: 76 }} />
           <button className="btn sm ghost" title="10% of the fee" onClick={() => setTds(feeNum ? String(Math.round(feeNum * 0.1)) : "")} disabled={!feeNum}>10%</button>
@@ -1022,8 +1058,13 @@ function GigFinance({ booking, payments, onChange, showToast }) {
       </div>
       <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 14, fontSize: ".8rem", color: "rgba(255,255,255,.7)" }}>
         <span>Received <strong style={{ color: "#7fe0a0" }}>{inr(paid)}</strong></span>
+        {advNum > 0 && (
+          advDue > 0
+            ? <span>Advance due <strong style={{ color: "#ff8a8a" }}>{inr(advDue)}</strong> <span style={{ opacity: .6 }}>of {inr(advNum)}</span></span>
+            : <span>Advance <strong style={{ color: "#7fe0a0" }}>{inr(advNum)}</strong> <span style={{ opacity: .6 }}>received</span></span>
+        )}
         {tdsNum > 0 && <span>TDS deducted <strong style={{ color: "#c9a84c" }}>{inr(tdsNum)}</strong></span>}
-        <span>Due <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
+        <span>{advNum > 0 && advDue <= 0 ? "Balance on the date" : "Due"} <strong style={{ color: bal > 0 ? "#ff8a8a" : "#7fe0a0" }}>{inr(bal)}</strong></span>
       </div>
 
       {payments.length > 0 && (
@@ -1032,6 +1073,7 @@ function GigFinance({ booking, payments, onChange, showToast }) {
             <div key={p.id} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: ".72rem", color: "rgba(255,255,255,.6)" }}>
               <strong style={{ color: "#7fe0a0" }}>{inr(p.amount)}</strong>
               <span>{p.method || "—"}</span>
+              {p.note && <span style={{ color: "#c9a84c" }}>{p.note}</span>}
               <span>{new Date(p.paid_on).toLocaleDateString("en-IN")}</span>
               <button onClick={() => delPayment(p.id)} title="Remove" style={{ marginLeft: "auto", background: "none", border: "none", color: "#ff8a8a", cursor: "pointer", padding: 0 }}><Trash2 size={12} /></button>
             </div>
@@ -1042,12 +1084,21 @@ function GigFinance({ booking, payments, onChange, showToast }) {
       {adding ? (
         <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <input type="number" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="Amount ₹" style={{ ...inp, width: 104 }} />
+          {advDue > 0 && (
+            <button className="btn sm ghost" title={`Fill the outstanding advance (${inr(advDue)})`}
+              onClick={() => { setAmt(String(advDue)); setPayNote("Advance"); }}>Advance</button>
+          )}
+          {bal > 0 && (
+            <button className="btn sm ghost" title={`Fill the full balance (${inr(bal)})`}
+              onClick={() => { setAmt(String(bal)); setPayNote("Balance"); }}>Balance</button>
+          )}
           <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}>
             <option>UPI</option><option>Cash</option><option>Bank</option><option>Card</option><option>Other</option>
           </select>
           <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} style={inp} />
+          <input type="text" value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (e.g. Advance)" style={{ ...inp, width: 130 }} />
           <button className="btn sm" onClick={addPayment} disabled={busy}>{busy ? <Loader2 size={12} className="spin" /> : "Add"}</button>
-          <button className="btn sm ghost" onClick={() => setAdding(false)}>Cancel</button>
+          <button className="btn sm ghost" onClick={() => { setAdding(false); setPayNote(""); }}>Cancel</button>
         </div>
       ) : (
         <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setAdding(true)}><Plus size={13} /> Record payment</button>
