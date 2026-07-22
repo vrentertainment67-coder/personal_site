@@ -1,15 +1,20 @@
 ---
 // MOVED — the Collective now lives on its own domain.
-// Source for the live page: /collective (deployed to bengalurudjscollective.com).
 //
-// This page only exists to catch old links (WhatsApp shares, Instagram bio,
-// anything already printed) and hand them on. GitHub Pages can't issue a real
-// 301, so this does the next best thing: rel=canonical pointing at the new
-// URL so search engines consolidate there, plus an instant meta-refresh and a
-// JS fallback. If djvicofficial.com's DNS sits on Cloudflare, add a Redirect
-// Rule for /djcollective* → https://bengalurudjscollective.com/ to make it a
-// true 301 and delete this file.
+// Catches old links (WhatsApp shares, Instagram bio, anything already printed)
+// and hands them on. `rel=canonical` always points at the new URL so search
+// engines consolidate there regardless of the flag below.
+//
+// INTERIM: the auto-redirect is deliberately OFF while bengalurudjscollective.com
+// has no DNS yet — bouncing visitors straight into a browser "site can't be
+// reached" error is worse than telling them where it went. Flip AUTO_REDIRECT
+// to true the moment the domain resolves.
+//
+// Better still, once it's live: if djvicofficial.com's DNS sits on Cloudflare,
+// add a Redirect Rule for /djcollective* → the new URL as a real 301 and
+// delete this file.
 const NEW_URL = 'https://bengalurudjscollective.com/';
+const AUTO_REDIRECT = false;
 ---
 <!doctype html>
 <html lang="en">
@@ -18,19 +23,33 @@ const NEW_URL = 'https://bengalurudjscollective.com/';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bengaluru DJs Collective has moved</title>
     <link rel="canonical" href={NEW_URL} />
-    <meta http-equiv="refresh" content={`0; url=${NEW_URL}`} />
     <meta name="description" content="The Bengaluru DJs Collective now lives at bengalurudjscollective.com." />
-    <script is:inline define:vars={{ NEW_URL }}>window.location.replace(NEW_URL);</script>
+    {AUTO_REDIRECT && <meta http-equiv="refresh" content={`0; url=${NEW_URL}`} />}
+    {AUTO_REDIRECT && <script is:inline define:vars={{ NEW_URL }}>window.location.replace(NEW_URL);</script>}
+    <link rel="icon" href="/images/djcollective-logo-sm.png" />
     <style>
       body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-        background: #080808; color: #E0DCCF; font-family: system-ui, sans-serif; text-align: center; padding: 24px; }
-      a { color: #C9A84C; }
+        background: #080808; color: #E0DCCF; font-family: system-ui, -apple-system, sans-serif;
+        text-align: center; padding: 24px; }
+      .m { max-width: 30rem; }
+      .m img { width: 132px; height: auto; margin-bottom: 22px; }
+      .m h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+        color: #C9A84C; margin: 0 0 12px; }
+      .m p { color: rgba(224,220,207,.7); line-height: 1.65; margin: 0 0 22px; font-size: .95rem; }
+      .m a.go { display: inline-block; background: linear-gradient(180deg,#EBCE7A,#C9A84C); color: #120e04;
+        text-decoration: none; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+        font-size: .82rem; padding: .85rem 1.8rem; border-radius: 6px; }
+      .m .sub { display: block; margin-top: 18px; font-size: .76rem; color: rgba(224,220,207,.4); }
+      .m .sub a { color: rgba(224,220,207,.6); }
     </style>
   </head>
   <body>
-    <div>
-      <p>The Bengaluru DJs Collective has a new home.</p>
-      <p><a href={NEW_URL}>bengalurudjscollective.com →</a></p>
+    <div class="m">
+      <img src="/images/djcollective-logo.png" alt="Bengaluru DJs Collective" width="132" height="132" />
+      <h1>We've moved</h1>
+      <p>The Bengaluru DJs Collective now has its own home. Everything — the guest list, the room so far, the next edition — lives there.</p>
+      <a class="go" href={NEW_URL}>bengalurudjscollective.com →</a>
+      <span class="sub">Arranged by <a href="/thevicfix/">The Vic Fix</a></span>
     </div>
   </body>
 </html>
