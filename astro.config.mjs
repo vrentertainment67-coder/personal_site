@@ -9,7 +9,9 @@ export default defineConfig({
   site: 'https://djvicofficial.com',
   integrations: [mdx(), sitemap({
     // Keep noindex pages out of the sitemap (admin, booking funnel, thank-you).
-    filter: (page) => !/\/(admin|book|thanks)\/?$/.test(page),
+    // Keep noindex pages out (admin, booking funnel, thank-you) and the
+    // /djcollective redirect stub — the Collective is indexed on its own domain.
+    filter: (page) => !/\/(admin|book|thanks|djcollective)\/?$/.test(page),
     changefreq: 'weekly',
     priority: 0.7,
     lastmod: new Date(),

@@ -1,0 +1,55 @@
+---
+// Minimal shell for the Collective's own domain. Deliberately NOT the DJ VIC
+// layout: no preloader, no GA property, no DJ VIC LocalBusiness/Person schema,
+// no music player / social rail. This site stands on its own brand.
+interface Props {
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonical: string;
+  schema?: any[];
+}
+const { title, description, ogTitle, ogDescription, ogImage, canonical, schema = [] } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/images/djcollective-logo-sm.png" />
+    <meta name="theme-color" content="#080808" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bengaluru DJs Collective" />
+    <meta property="og:title" content={ogTitle || title} />
+    <meta property="og:description" content={ogDescription || description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle || title} />
+    <meta name="twitter:description" content={ogDescription || description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://jftnhuutttmccmqnnybf.supabase.co" />
+
+    {schema.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)}></script>
+    ))}
+  </head>
+  <body>
+    <slot />
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #080808; }
+      * { box-sizing: border-box; }
+      img { max-width: 100%; }
+      :focus-visible { outline: 2px solid #C9A84C; outline-offset: 2px; }
+    </style>
+  </body>
+</html>
