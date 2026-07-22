@@ -1341,6 +1341,12 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   const [terms, setTerms] = useState(7);
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  // Editable subject + body. Pre-filled from the template for the current mode,
+  // and re-filled whenever the mode or the money changes — but never once it's
+  // been hand-edited, so typed changes are not clobbered.
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [edited, setEdited] = useState(false);
 
   useEffect(() => {
     if (!open || billers) return;
@@ -1353,6 +1359,11 @@ function GigMailer({ booking, payments, onChange, showToast }) {
 
   const total = Number(booking.agreed_fee || 0);
   const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const tds = Number(booking.tds_amount || 0);
+  const advance = Number(booking.advance_amount || 0);
+  const advDue = Math.max(0, advance - paid);
+  const balance = total - paid - tds;                 // what's genuinely still owed
+  const lastPay = payments.length ? payments[payments.length - 1] : null;
   const invNo = invoiceNumber();
   const dueStr = niceDate(addDays(terms));
   const dateStr = niceDate(new Date());
@@ -1363,6 +1374,90 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     biller, invNo, dateStr, dueStr, terms,
     billTo: { company, gstin, address }, item: desc, qty: 1, rate: total, total, paid,
   }) : "", [biller, invNo, dateStr, dueStr, terms, company, gstin, address, desc, total, paid]);
+
+  // ── Email templates ────────────────────────────────────────────────────
+  // One paragraph per line. These only seed the editable fields below — what
+  // actually goes out is whatever is in the Subject / Message boxes at send time.
+  const hi = `Hi ${booking.name || "there"},`;
+  const when = booking.event_date ? niceDate(new Date(booking.event_date + "T12:00:00")) : "";
+  const feeLine = total
+    ? `Agreed fee: <strong>${rupee(total)}</strong>${paid > 0 ? ` · Received so far: ${rupee(paid)}` : ""}${balance > 0 ? ` · Balance: <strong>${rupee(balance)}</strong>` : ""}.`
+    : "";
+
+  function templateFor(m) {
+    if (m === "invoice") {
+      return {
+        subject: `Invoice #${invNo}${biller ? ` — ${biller.name}` : ""}`,
+        lines: [
+          hi,
+          `Please find attached the invoice for <strong>${desc}</strong>.`,
+          `<strong>Balance due: ${rupee(total - paid)}</strong> · Payment terms: ${terms} days (due ${dueStr}).`,
+          biller && biller.upi
+            ? `You can pay via UPI to <strong>${biller.upi}</strong>, or by bank transfer (details on the invoice).`
+            : `Bank transfer details are on the invoice.`,
+          `Thank you!`,
+        ],
+      };
+    }
+    if (m === "confirmation") {
+      return {
+        subject: `Your booking with DJ VIC is confirmed${when ? ` — ${when}` : ""}`,
+        lines: [
+          hi,
+          `Your booking is confirmed for <strong>${when || booking.event_date}</strong>${booking.venue ? ` at <strong>${booking.venue}</strong>` : ""}.`,
+          feeLine || `Looking forward to it!`,
+          advDue > 0
+            ? `To lock the date in, an advance of <strong>${rupee(advDue)}</strong> is due. Happy to share payment details whenever convenient.`
+            : (advance > 0 ? `Your advance of <strong>${rupee(advance)}</strong> has been received — the date is blocked.` : ""),
+          `I'll be in touch with the run-of-show closer to the date. Reply here anytime.`,
+        ].filter(Boolean),
+      };
+    }
+    if (m === "receipt") {
+      const amt = lastPay ? Number(lastPay.amount || 0) : advance;
+      const on = lastPay ? niceDate(new Date(lastPay.paid_on + "T12:00:00")) : niceDate(new Date());
+      const isAdvance = advance > 0 && paid <= advance;
+      return {
+        subject: `Payment received${amt ? ` — ${rupee(amt)}` : ""}${when ? ` · ${when}` : ""}`,
+        lines: [
+          hi,
+          `This is to confirm we've received your ${isAdvance ? "advance" : "payment"} of <strong>${rupee(amt)}</strong>${lastPay && lastPay.method ? ` via ${lastPay.method}` : ""} on ${on}. Thank you.`,
+          when ? `This is against your ${booking.event_type || "event"} on <strong>${when}</strong>${booking.venue ? ` at ${booking.venue}` : ""}.` : "",
+          total
+            ? (balance > 0
+                ? `Agreed fee ${rupee(total)} · Received ${rupee(paid)}${tds > 0 ? ` · TDS ${rupee(tds)}` : ""} · <strong>Balance ${rupee(balance)}</strong>, payable on the event date.`
+                : `That settles the full amount — nothing further is due. `)
+            : "",
+          isAdvance && balance > 0 ? `Your date is now blocked.` : "",
+          `Reply here if you'd like a formal invoice or receipt.`,
+        ].filter(Boolean),
+      };
+    }
+    return {
+      subject: `Following up — your event with DJ VIC`,
+      lines: [
+        hi,
+        `Just following up regarding your ${booking.event_type || "event"}${when ? ` on ${when}` : ""}.`,
+        balance > 0
+          ? `A balance of <strong>${rupee(balance)}</strong> is outstanding — happy to share payment details whenever convenient.`
+          : `Let me know if there's anything you need from my side.`,
+        `Thanks!`,
+      ],
+    };
+  }
+
+  // Seed / re-seed the editable fields. Skipped once the text has been touched.
+  useEffect(() => {
+    if (!open || edited) return;
+    const t = templateFor(mode);
+    setSubject(t.subject);
+    setBody(t.lines.join("\n"));
+  }, [open, mode, edited, total, paid, advance, tds, desc, terms, biller, booking.event_date, booking.venue, booking.name]);
+
+  const resetTemplate = () => {
+    const t = templateFor(mode);
+    setSubject(t.subject); setBody(t.lines.join("\n")); setEdited(false);
+  };
 
   const persist = () => supabase.from("bookings").update({
     client_email: email || null, client_company: company || null, client_gstin: gstin || null, client_address: address || null,
@@ -1412,34 +1507,19 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     if (mode === "invoice" && !biller) return showToast("Billers not loaded — deploy gig-mailer first");
     setBusy(true);
     try {
-      let subject, html, attachments;
+      // Whatever is in the Subject / Message boxes is exactly what goes out.
+      const lines = body.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (!subject.trim()) { setBusy(false); return showToast("Add a subject"); }
+      if (!lines.length) { setBusy(false); return showToast("The message is empty"); }
+      const heading = mode === "invoice" ? `Invoice from ${biller.name}`
+        : mode === "confirmation" ? "Booking confirmed"
+        : mode === "receipt" ? "Payment received"
+        : "Quick follow-up";
+
+      let html = plainEmailHTML(heading, lines), attachments;
       if (mode === "invoice") {
         const b64 = (await makePdf()).output("datauristring").split(",")[1];
-        subject = `Invoice #${invNo} — ${biller.name}`;
-        html = plainEmailHTML(`Invoice from ${biller.name}`, [
-          `Hi ${booking.name || "there"},`,
-          `Please find attached the invoice for <strong>${desc}</strong>.`,
-          `<strong>Balance due: ${rupee(total - paid)}</strong> · Payment terms: ${terms} days (due ${dueStr}).`,
-          biller.upi ? `You can pay via UPI to <strong>${biller.upi}</strong>, or by bank transfer (details on the invoice).` : `Bank transfer details are on the invoice.`,
-          `Thank you!`,
-        ]);
         attachments = [{ filename: `Invoice-${invNo}.pdf`, contentBase64: b64 }];
-      } else if (mode === "confirmation") {
-        subject = `Your booking with DJ VIC is confirmed — ${booking.event_date}`;
-        html = plainEmailHTML("Booking confirmed", [
-          `Hi ${booking.name || "there"},`,
-          `Your booking is confirmed for <strong>${booking.event_date}</strong>${booking.venue ? ` at <strong>${booking.venue}</strong>` : ""}.`,
-          total ? `Agreed fee: <strong>${rupee(total)}</strong>${paid > 0 ? ` · Advance received: ${rupee(paid)} · Balance: ${rupee(total - paid)}` : ""}.` : `Looking forward to it!`,
-          `I'll be in touch with the run-of-show closer to the date. Reply here anytime.`,
-        ]);
-      } else {
-        subject = `Following up — your event with DJ VIC`;
-        html = plainEmailHTML("Quick follow-up", [
-          `Hi ${booking.name || "there"},`,
-          `Just following up regarding your ${booking.event_type || "event"}${booking.event_date ? ` on ${booking.event_date}` : ""}.`,
-          total - paid > 0 ? `A balance of <strong>${rupee(total - paid)}</strong> is outstanding — happy to share payment details whenever convenient.` : `Let me know if there's anything you need from my side.`,
-          `Thanks!`,
-        ]);
       }
 
       const res = await fetch(`${FN}/gig-mailer?action=send`, {
@@ -1453,7 +1533,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
         }),
       }).then((x) => x.json()).catch(() => ({ error: "Network error" }));
       if (res.error) showToast("Send failed: " + JSON.stringify(res.error).slice(0, 140));
-      else { showToast(`${mode === "invoice" ? "Invoice" : mode === "confirmation" ? "Confirmation" : "Follow-up"} sent ✓`); persist(); }
+      else { showToast(`${mode === "invoice" ? "Invoice" : mode === "confirmation" ? "Confirmation" : mode === "receipt" ? "Payment receipt" : "Follow-up"} sent ✓`); persist(); }
     } catch (e) { showToast("Error: " + String(e.message || e)); }
     setBusy(false);
   }
@@ -1468,7 +1548,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--line)", borderRadius: 8, padding: 12, margin: "8px 0" }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-        {[["invoice", "Invoice"], ["confirmation", "Confirmation"], ["followup", "Follow-up"]].map(([k, l]) => (
+        {[["invoice", "Invoice"], ["confirmation", "Confirmation"], ["receipt", "Payment received"], ["followup", "Follow-up"]].map(([k, l]) => (
           <button key={k} className={mode === k ? "chip on" : "chip"} onClick={() => setMode(k)}>{l}</button>
         ))}
         <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={() => setOpen(false)}>Close</button>
@@ -1513,8 +1593,42 @@ function GigMailer({ booking, payments, onChange, showToast }) {
         </>
       )}
 
+      {/* ── The actual email. Pre-filled, fully editable, sent exactly as typed. ── */}
+      <div style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <span style={{ ...lbl, margin: 0 }}>Subject</span>
+          {edited && <span style={{ fontSize: ".62rem", color: "#c9a84c", letterSpacing: ".06em", textTransform: "uppercase" }}>edited</span>}
+          <button className="btn sm ghost" style={{ marginLeft: "auto" }} onClick={resetTemplate} title="Discard edits and rebuild from the template">
+            <RefreshCw size={12} /> Reset to template
+          </button>
+        </div>
+        <input style={inp} value={subject} onChange={(e) => { setSubject(e.target.value); setEdited(true); }} placeholder="Subject line" />
+
+        <div style={{ marginTop: 8 }}>
+          <span style={lbl}>Message</span>
+          <textarea
+            style={{ ...inp, minHeight: 168, resize: "vertical", lineHeight: 1.55, fontFamily: "Inter" }}
+            value={body}
+            onChange={(e) => { setBody(e.target.value); setEdited(true); }}
+            placeholder="One paragraph per line…"
+          />
+          <p style={{ fontSize: ".68rem", color: "rgba(255,255,255,.42)", margin: "5px 0 0" }}>
+            One paragraph per line. <code>&lt;strong&gt;bold&lt;/strong&gt;</code> works.
+            {mode === "invoice" && " The invoice PDF is attached automatically."}
+          </p>
+        </div>
+
+        {(advDue > 0 || (advance > 0 && mode !== "receipt")) && (
+          <p style={{ fontSize: ".72rem", color: "rgba(255,255,255,.6)", margin: "8px 0 0" }}>
+            {advDue > 0
+              ? <>Advance of <strong style={{ color: "#ffb3b3" }}>{rupee(advDue)}</strong> still due on this gig.</>
+              : <>Advance <strong style={{ color: "#7fe0a0" }}>{rupee(advance)}</strong> received — use <em>Payment received</em> to confirm it.</>}
+          </p>
+        )}
+      </div>
+
       <button className="btn" style={{ marginTop: 12 }} onClick={send} disabled={busy || !isEmail(email) || (mode === "invoice" && !biller)}>
-        {busy ? <Loader2 size={15} className="spin" /> : <Send size={15} />} Send {mode === "invoice" ? "invoice" : mode} to client
+        {busy ? <Loader2 size={15} className="spin" /> : <Send size={15} />} Send {mode === "invoice" ? "invoice" : mode === "receipt" ? "receipt" : mode} to client
       </button>
     </div>
   );
