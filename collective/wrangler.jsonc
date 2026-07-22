@@ -1,0 +1,17 @@
+{
+  // Bengaluru DJs Collective — static site deployed to Cloudflare Workers
+  // (Workers Static Assets). There is no Worker script: `assets.directory`
+  // alone serves the built Astro output, so no `main` entry is needed.
+  //
+  // Cloudflare runs this from the `collective` directory (set "Path" to
+  // `collective` in the dashboard), after `npm install && npm run build`
+  // has produced ./dist.
+  "name": "bengaluru-djs-collective",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./dist",
+    // Single-page static site: anything unmatched falls back to index.html
+    // rather than a bare 404.
+    "not_found_handling": "single-page-application"
+  }
+}

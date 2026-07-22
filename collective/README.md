@@ -17,27 +17,40 @@ npm run dev      # http://localhost:4321
 npm run build    # → collective/dist
 ```
 
-## Deploy (Cloudflare Pages)
+## Deploy (Cloudflare Workers — "Connect to Git")
 
-The domain was bought through Cloudflare, so Pages is the path of least
-resistance — same account, custom domain in one click, free, auto-deploys on
-push. **This has to be done once, in the Cloudflare dashboard:**
+`wrangler.jsonc` in this folder configures a **static-assets Worker**: no Worker
+script, `assets.directory` alone serves the built Astro output. Set up once in
+the Cloudflare dashboard:
 
-1. **Workers & Pages → Create → Pages → Connect to Git**, pick this repo.
-2. Set the build config exactly:
-   - **Framework preset:** Astro
-   - **Build command:** `npm install && npm run build`
-   - **Build output directory:** `collective/dist`
-   - **Root directory:** `collective`
-   - **Production branch:** `master`
-3. **Save and Deploy.** First build takes a couple of minutes.
-4. **Custom domains → Set up a custom domain →** `bengalurudjscollective.com`.
-   Cloudflare adds the DNS itself since the domain is in the same account.
-   Add `www` too if you want it to resolve.
+| Field | Value |
+|---|---|
+| Project name | `bengaluru-djs-collective` |
+| Build command | `npm install && npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Path / Root directory | `collective` |
+| Production branch | `master` |
 
-After that, every push to `master` that touches `collective/` redeploys
-automatically. The parent DJ VIC site keeps deploying to GitHub Pages exactly
-as before — the two are independent.
+> The project name defaults to the repo name (`personal_site`), which Cloudflare
+> rejects — underscores aren't allowed, only lowercase letters, numbers and
+> dashes. Change it before deploying.
+
+Then **Settings → Domains & Routes → Add → Custom domain →**
+`bengalurudjscollective.com`. Cloudflare adds the DNS itself since the domain is
+in the same account. Add `www` too if you want it to resolve.
+
+After that, every push to `master` redeploys automatically. The parent DJ VIC
+site keeps deploying to GitHub Pages exactly as before — the two are
+independent.
+
+Verify the config locally before pushing:
+
+```bash
+cd collective && npm run build && npx wrangler deploy --dry-run
+```
+
+(Cloudflare Pages also still works if you prefer it — same build command, with
+output directory `collective/dist`. `wrangler.jsonc` is simply ignored there.)
 
 ## Making the old URL a real 301 (optional)
 
