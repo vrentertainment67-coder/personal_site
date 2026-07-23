@@ -4,11 +4,11 @@ PRODID:-//DJ VIC//Chamatkar//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
-UID:chamatkar-2026-07-11@djvicofficial.com
-DTSTAMP:20260706T000000Z
-DTSTART:20260711T153000Z
-DTEND:20260711T193000Z
-SUMMARY:Chamatkar Vol. 2 — DJ VIC
+UID:chamatkar-2026-08-01@djvicofficial.com
+DTSTAMP:20260723T000000Z
+DTSTART:20260801T153000Z
+DTEND:20260801T193000Z
+SUMMARY:Chamatkar Vol. 3 — DJ VIC
 LOCATION:Happy Brew Cocktail Club, Koramangala, Bangalore
 DESCRIPTION:Bollywood x global, live audio-visual night with DJ VIC. Guest list: https://djvicofficial.com/chamatkar/
 URL:https://djvicofficial.com/chamatkar/

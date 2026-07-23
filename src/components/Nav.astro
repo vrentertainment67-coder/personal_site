@@ -15,6 +15,13 @@ const services = [
 ];
 
 const isServices = startsWith('/weddings') || startsWith('/corporate') || startsWith('/sangeet') || startsWith('/private-events') || startsWith('/nightlife') || startsWith('/festivals') || startsWith('/audio-visual-dj');
+
+const events = [
+  { href: `${base}/chamatkar/`, label: 'Chamatkar — This Edition' },
+  { href: `${base}/events/chamatkar/`, label: 'Chamatkar — Past Editions' },
+  { href: `${base}/events/`, label: 'All Events' },
+];
+const isEvents = startsWith('/events') || startsWith('/chamatkar');
 ---
 
 <header id="site-header">
@@ -49,6 +56,20 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
                 {label}
               </a>
             </li>
+          ))}
+        </ul>
+      </li>
+      <li class="has-dropdown">
+        <button
+          class:list={['dropdown-trigger', { active: isEvents }]}
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Events <span class="chevron" aria-hidden="true">&#8964;</span>
+        </button>
+        <ul class="dropdown">
+          {events.map(({ href, label }) => (
+            <li><a href={href}>{label}</a></li>
           ))}
         </ul>
       </li>
@@ -93,6 +114,8 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
     <a href={`${base}/weddings/`} aria-current={startsWith('/weddings') ? 'page' : undefined}>Weddings</a>
     <a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a>
     <a href={`${base}/nightlife/`} aria-current={startsWith('/nightlife') ? 'page' : undefined}>Club &amp; Nightlife</a>
+    <a href={`${base}/chamatkar/`} aria-current={is('/chamatkar') ? 'page' : undefined}>Chamatkar — Guest List</a>
+    <a href={`${base}/events/chamatkar/`} aria-current={startsWith('/events/chamatkar') ? 'page' : undefined}>Chamatkar — Past Editions</a>
     <a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a>
     <a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a>
     <a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Gallery</a>

@@ -1,0 +1,120 @@
+---
+// Chamatkar — past editions archive. Reached via nav Events → Chamatkar.
+// Shows each edition with its details and its live media (photos/videos from
+// Supabase event_media), and points visitors to the current guest list.
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import EventMedia from '../../components/EventMedia.jsx';
+
+// Newest first. `slug` matches the Supabase events/event_media rows.
+const EDITIONS = [
+  {
+    slug: 'chamatkar-2026-07-11',
+    edition: 'Vol. 2',
+    dateLabel: 'Saturday, 11 July 2026',
+    venue: 'Happy Brew Cocktail Club',
+    area: 'Koramangala, Bangalore',
+    lineup: 'DJ VIC',
+    theme: 'Bollywood × Global — Live Audio-Visual',
+    blurb: '90s & 2000s Bollywood flipped through a global lens, visuals locked to every drop. A room that never sat down.',
+  },
+  {
+    slug: 'chamatkar-2026-06-13',
+    edition: 'Vol. 1',
+    dateLabel: 'Saturday, 13 June 2026',
+    venue: 'Happy Brew Cocktail Club',
+    area: 'Koramangala, Bangalore',
+    lineup: 'DJ VIC',
+    theme: 'Bollywood × Global — Live Audio-Visual',
+    blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.',
+  },
+];
+
+const schema = [
+  {
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://djvicofficial.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Events", "item": "https://djvicofficial.com/events/" },
+      { "@type": "ListItem", "position": 3, "name": "Chamatkar", "item": "https://djvicofficial.com/events/chamatkar/" },
+    ],
+  },
+  {
+    "@context": "https://schema.org", "@type": "EventSeries",
+    "name": "Chamatkar — DJ VIC, Bangalore",
+    "url": "https://djvicofficial.com/events/chamatkar/",
+    "description": "Chamatkar is DJ VIC's recurring Bollywood × global, live audio-visual night at Happy Brew, Koramangala, Bangalore.",
+    "organizer": { "@id": "https://djvicofficial.com/#person" },
+  },
+];
+---
+
+<Layout
+  title="Chamatkar — Past Editions | DJ VIC, Bangalore"
+  description="Every Chamatkar so far — DJ VIC's Bollywood × global, live audio-visual night at Happy Brew, Koramangala. Photos, clips and details from each edition."
+  ogTitle="Chamatkar — Past Editions"
+  ogDescription="DJ VIC's Bollywood × global, live audio-visual night in Bangalore. Look back at every edition — then get on the list for the next."
+  ogImage="https://djvicofficial.com/images/chamatkar.jpg"
+  canonical="https://djvicofficial.com/events/chamatkar/"
+  schema={schema}
+>
+  <Nav />
+
+  <main id="main-content" class="cka">
+    <section class="cka-hero">
+      <span class="cka-eyebrow">The story so far</span>
+      <h1>Chamatkar</h1>
+      <p class="cka-lead">A recurring Bollywood × global night, mixed live with the visuals locked to every drop — at Happy Brew, Koramangala. Here's every edition. The next one's already taking names.</p>
+      <a class="cka-cta" href="/chamatkar/">Get on the guest list for the next one →</a>
+    </section>
+
+    {EDITIONS.map((ed) => (
+      <section class="cka-ed">
+        <div class="cka-ed-head">
+          <span class="cka-ed-vol">{ed.edition}</span>
+          <h2>{ed.dateLabel}</h2>
+          <div class="cka-ed-meta">
+            <span>📍 {ed.venue} · {ed.area}</span>
+            <span>🎧 {ed.lineup}</span>
+            <span>🎬 {ed.theme}</span>
+          </div>
+          <p class="cka-ed-blurb">{ed.blurb}</p>
+        </div>
+        <EventMedia client:visible slug={ed.slug} />
+      </section>
+    ))}
+
+    <section class="cka-foot-cta">
+      <h2>Next edition</h2>
+      <p>Chamatkar Vol. 3 — Saturday 1 August, Happy Brew. Guest-list spots are limited.</p>
+      <a class="cka-cta" href="/chamatkar/">Get on the guest list →</a>
+      <a class="cka-back" href="/">← Back to djvicofficial.com</a>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .cka { background: #080808; color: #E0DCCF; font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .cka-hero { max-width: 820px; margin: 0 auto; padding: clamp(3rem, 8vw, 5.5rem) 1.25rem 2rem; text-align: center; }
+  .cka-eyebrow { font-size: .72rem; letter-spacing: .3em; text-transform: uppercase; color: #C9A84C; }
+  .cka-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 12vw, 6rem); line-height: .95; letter-spacing: .02em; margin: .4rem 0 0; color: #fff; }
+  .cka-lead { font-size: clamp(1rem, 2.2vw, 1.15rem); line-height: 1.7; color: rgba(224,220,207,.72); max-width: 54ch; margin: 1.2rem auto 0; }
+  .cka-cta { display: inline-block; margin-top: 1.6rem; background: linear-gradient(180deg, #E9CE86, #C9A84C); color: #120e04; text-decoration: none; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .86rem; padding: .95rem 1.9rem; border-radius: 6px; }
+  .cka-cta:hover { filter: brightness(1.06); }
+
+  .cka-ed { max-width: 1040px; margin: 0 auto; padding: clamp(2.4rem, 6vw, 4rem) 1.25rem; border-top: 1px solid rgba(201,168,76,.14); }
+  .cka-ed-head { max-width: 720px; margin: 0 auto 1.8rem; text-align: center; }
+  .cka-ed-vol { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .18em; color: #C9A84C; }
+  .cka-ed-head h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: .02em; margin: .2rem 0 .8rem; color: #fff; }
+  .cka-ed-meta { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; justify-content: center; font-size: .84rem; color: rgba(224,220,207,.6); }
+  .cka-ed-blurb { font-size: .96rem; line-height: 1.65; color: rgba(224,220,207,.72); margin: 1rem auto 0; max-width: 52ch; }
+
+  .cka-foot-cta { max-width: 640px; margin: 0 auto; padding: clamp(3rem, 8vw, 5rem) 1.25rem 5rem; text-align: center; border-top: 1px solid rgba(201,168,76,.14); }
+  .cka-foot-cta h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 6vw, 3rem); color: #fff; margin: 0 0 .6rem; }
+  .cka-foot-cta p { color: rgba(224,220,207,.72); line-height: 1.6; margin: 0 auto; max-width: 42ch; }
+  .cka-back { display: block; margin-top: 1.6rem; color: rgba(224,220,207,.55); font-size: .84rem; text-decoration: none; }
+  .cka-back:hover { color: #C9A84C; }
+</style>
