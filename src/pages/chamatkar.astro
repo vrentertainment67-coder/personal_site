@@ -39,6 +39,14 @@ const EVENT = {
 
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
 const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood × global, live audio-visual. Get on the guest list.`;
+
+// Past editions — newest first. Each pulls its own photos/clips from Supabase
+// `event_media` (slug). When the current edition wraps, move its details up
+// into this list and set EVENT to the next one.
+const PAST_EDITIONS = [
+  { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
+  { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
+];
 ---
 
 <Layout
@@ -132,17 +140,6 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
       />
     </section>
 
-    <!-- ── THE VIBE (media) ── -->
-    <section class="ck-recap">
-      <div class="ck-sec-head">
-        <span class="ck-kicker">Watch</span>
-        <h2>The Chamatkar vibe</h2>
-        <p class="ck-sub">Bollywood flipped through a global lens, visuals locked to every drop, a room that never sat down — here's what the floor looks like.</p>
-      </div>
-
-      <EventMedia client:load slug={EVENT.mediaSlug} />
-    </section>
-
     <!-- ── DETAILS ── -->
     <section class="ck-details">
       <div class="ck-sec-head"><span class="ck-kicker">The details</span><h2>Know before you go</h2></div>
@@ -152,6 +149,26 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
         <div class="ck-dcard ck-dcard--theme"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.theme}</span><span class="ck-dsub">{EVENT.themeLine}.</span></div>
         <div class="ck-dcard"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.lineup}</span><span class="ck-dsub">Live audio-visual set</span></div>
       </div>
+    </section>
+
+    <!-- ── PAST EDITIONS (scroll down for the story so far) ── -->
+    <section class="ck-past">
+      <div class="ck-sec-head">
+        <span class="ck-kicker">The story so far</span>
+        <h2>Past editions</h2>
+        <p class="ck-sub">Every Chamatkar so far — photos, clips and the floor at full tilt. This is what you're getting on.</p>
+      </div>
+      {PAST_EDITIONS.map((ed) => (
+        <div class="ck-past-ed">
+          <div class="ck-past-head">
+            <span class="ck-past-vol">{ed.edition}</span>
+            <span class="ck-past-date">{ed.dateLabel}</span>
+            <span class="ck-past-venue">📍 {ed.venue} · {ed.area}</span>
+          </div>
+          <p class="ck-past-blurb">{ed.blurb}</p>
+          <EventMedia client:load slug={ed.slug} />
+        </div>
+      ))}
     </section>
   </main>
 
@@ -230,7 +247,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
   .ck-dcard--theme { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.06); }
 
   /* ── Section shells ── */
-  .ck-rsvp, .ck-recap, .ck-details { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); }
+  .ck-rsvp, .ck-recap, .ck-details, .ck-past { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); }
   .ck-rsvp { border-top: 1px solid #141414; }
   .ck-sec-head { text-align: center; max-width: 640px; margin: 0 auto clamp(1.6rem, 3vw, 2.2rem); }
   .ck-kicker { font-family: 'Bebas Neue', sans-serif; font-size: .78rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold, #c9a84c); }
@@ -250,4 +267,14 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
   .ck-dsub { font-size: .88rem; color: rgba(255,255,255,.6); }
   .ck-dlink { margin-top: .5rem; font-size: .82rem; color: var(--gold, #c9a84c); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.35); align-self: flex-start; padding-bottom: 1px; }
   .ck-dlink:hover { color: #e2c475; }
+
+  /* Past editions */
+  .ck-past { border-top: 1px solid #141414; }
+  .ck-past-ed { padding-top: clamp(1.6rem, 4vw, 2.6rem); margin-top: clamp(1.6rem, 4vw, 2.6rem); border-top: 1px dashed rgba(201,168,76,.18); }
+  .ck-past-ed:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  .ck-past-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; justify-content: center; text-align: center; }
+  .ck-past-vol { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: .06em; color: var(--gold, #c9a84c); }
+  .ck-past-date { font-size: 1rem; color: #fff; font-weight: 600; }
+  .ck-past-venue { font-size: .85rem; color: rgba(255,255,255,.55); }
+  .ck-past-blurb { text-align: center; font-size: .92rem; line-height: 1.6; color: rgba(255,255,255,.66); max-width: 56ch; margin: .7rem auto 1.4rem; }
 </style>
