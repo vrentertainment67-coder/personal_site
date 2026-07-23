@@ -6,6 +6,10 @@ import { getCollection } from 'astro:content';
 
 const allEvents = await getCollection('events');
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+// Today (Asia/Kolkata) as YYYY-MM-DD — used to keep only genuinely upcoming
+// shows in the "Upcoming Shows" list. A past event listed as "upcoming" reads
+// as a dead calendar, so it must be filtered out at build time.
+const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
 const eventsData = allEvents.map(e => ({
   slug: e.id,
@@ -97,13 +101,13 @@ const eventsData = allEvents.map(e => ({
     </section>
 
     <!-- ── Upcoming Events (static list for search-engine discoverability) ── -->
-    {eventsData.filter(e => !e.isPrivate).length > 0 && (
+    {eventsData.filter(e => !e.isPrivate && e.date >= todayISO).length > 0 && (
       <section id="upcoming-events-list">
         <div class="upcoming-inner">
           <div class="uel-label">Upcoming Shows</div>
           <ul class="events-list" role="list">
             {eventsData
-              .filter(e => !e.isPrivate)
+              .filter(e => !e.isPrivate && e.date >= todayISO)
               .sort((a, b) => a.date.localeCompare(b.date))
               .map(e => (
                 <li>
