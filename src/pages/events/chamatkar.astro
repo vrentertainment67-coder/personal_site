@@ -81,7 +81,7 @@ const schema = [
           </div>
           <p class="cka-ed-blurb">{ed.blurb}</p>
         </div>
-        <EventMedia client:visible slug={ed.slug} />
+        <EventMedia client:load slug={ed.slug} />
       </section>
     ))}
 
