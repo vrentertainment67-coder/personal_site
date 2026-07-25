@@ -662,9 +662,16 @@ function Bookings({ showToast }) {
     const text = cap.trim();
     if (!text) return;
     setCapBusy(true);
-    const d = await parseEnquiry(text);
+    let d;
+    try { d = await parseEnquiry(text); } catch { d = { error: "Couldn't reach the parser." }; }
     setCapBusy(false);
-    if (d.error) return showToast(d.error);
+    // Parser down or unsure? Never dead-end or lose the typed enquiry — open the
+    // blank form with the raw text dropped into Notes so it can be finished by
+    // hand. The manual form needs only a name + date, so nothing blocks logging.
+    if (!d || d.error) {
+      setPrefill({ message: text }); setAdding(true); setFormKey((k) => k + 1); setCap("");
+      return showToast(`${(d && d.error) || "Parser unavailable"} — opened a blank form with your text; fill the rest in.`);
+    }
     setPrefill(d); setAdding(true); setFormKey((k) => k + 1); setCap("");
     showToast("Pulled the details — check and save.");
   };
