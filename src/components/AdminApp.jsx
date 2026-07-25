@@ -2695,6 +2695,7 @@ function DJCollective({ showToast }) {
   const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
   const [genreFilter, setGenreFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all"); // all | dj | promoter | returning | waitlist
+  const [flag, setFlag] = useState("none"); // none | returning (also in a past edition) | dupes
   const [panel, setPanel] = useState("rsvps"); // "rsvps" | "feedback" sub-tab
 
   const load = useCallback(async () => {
@@ -2734,9 +2735,34 @@ function DJCollective({ showToast }) {
     return [...m.values()].sort((a, b) => a.localeCompare(b));
   })();
   const q = query.trim().toLowerCase();
+
+  // ── Duplicate / returning detection ──────────────────────────────────────
+  // A person is matched across editions by their phone (last 10 digits, so
+  // +91 / spacing don't matter). Signing up for Edition 02 after Edition 01 is
+  // NOT a duplicate — each edition is its own list, so one row per edition is
+  // correct. We surface (a) returnees, as a retention signal, and (b) genuine
+  // same-edition collisions, which the insert RPC should prevent but a manual
+  // add could slip through.
+  const phoneKey = (p) => { const n = waDigits(p || ""); return n.length >= 10 ? n.slice(-10) : ""; };
+  const peopleIndex = useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => { const k = phoneKey(r.phone); if (!k) return; if (!m.has(k)) m.set(k, []); m.get(k).push(r); });
+    return m;
+  }, [rows]);
+  const matchOf = (r) => {
+    const k = phoneKey(r.phone);
+    const grp = (k && peopleIndex.get(k)) || [];
+    if (grp.length < 2) return { dupeHere: false, priorSessions: [] };
+    const mine = r.session || "—";
+    const dupeHere = grp.some((o) => o.id !== r.id && (o.session || "—") === mine);
+    const priorSessions = [...new Set(grp.filter((o) => (o.session || "—") !== mine).map((o) => o.session || "—"))];
+    return { dupeHere, priorSessions };
+  };
+
   const filtered = rows
     .filter((r) => sess === "all" || (r.session || "—") === sess)
     .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter)
+    .filter((r) => flag === "none" || (flag === "dupes" ? matchOf(r).dupeHere : matchOf(r).priorSessions.length > 0))
     .filter((r) => genreFilter === "all" || genreOf(r).some((g) => g.toLowerCase() === genreFilter.toLowerCase()))
     .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone, r.org_name].some((v) => (v || "").toLowerCase().includes(q)));
   // How many of each kind, for the filter row (respects session, ignores the
@@ -2746,6 +2772,15 @@ function DJCollective({ showToast }) {
     const c = { all: base.length, dj: 0, promoter: 0, returning: 0, waitlist: 0 };
     base.forEach((r) => { c[kindKey(r)]++; });
     return c;
+  })();
+  // Returning-by-match (also in a past edition) and same-edition duplicate
+  // counts, over the current session/role view — for the flag chips.
+  const flagCounts = (() => {
+    const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess)
+      .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter);
+    let returning = 0, dupes = 0;
+    base.forEach((r) => { const m = matchOf(r); if (m.priorSessions.length) returning++; if (m.dupeHere) dupes++; });
+    return { returning, dupes };
   })();
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
@@ -2757,6 +2792,25 @@ function DJCollective({ showToast }) {
 
   const waLink = (p) => { let n = waDigits(p); if (n.length === 10) n = "91" + n; return n.length >= 10 ? `https://wa.me/${n}` : null; };
   const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+
+  // ── One-tap WhatsApp invite (waitlist → current edition) ─────────────────
+  // Nothing sends automatically — it opens WhatsApp with the message ready.
+  const ED2_RSVP = "https://bengalurudjscollective.com/join/";
+  const inviteMsg = (r) => {
+    const first = (r.name || "").trim().split(/\s+/)[0];
+    return `Hi${first ? " " + first : ""}! Edition 02 of the Bengaluru DJs Collective is locked in — Monday 24 August, doors from 8 PM. You asked to be told first, so here it is. RSVP (free): ${ED2_RSVP}`;
+  };
+  const inviteLink = (r) => { const base = waLink(r.phone); return base ? `${base}?text=${encodeURIComponent(inviteMsg(r))}` : null; };
+
+  // Bulk: every waitlist WhatsApp number, for pasting into a broadcast list.
+  const waitlistNums = rows.filter((r) => kindKey(r) === "waitlist")
+    .map((r) => { const n = waDigits(r.phone || ""); return n.length === 10 ? "+91" + n : (n.length >= 10 ? "+" + n : ""); })
+    .filter(Boolean);
+  const copyWaitlist = async () => {
+    if (!waitlistNums.length) return showToast("No waitlist numbers to copy.");
+    try { await navigator.clipboard.writeText(waitlistNums.join("\n")); showToast(`Copied ${waitlistNums.length} waitlist number${waitlistNums.length > 1 ? "s" : ""} — paste into a WhatsApp broadcast.`); }
+    catch { showToast("Clipboard blocked — allow access and retry."); }
+  };
 
   // Signups-by-date for the selected edition: per-day new RSVPs + the running
   // "collective number" (cumulative total). Search query is intentionally
@@ -2889,6 +2943,11 @@ function DJCollective({ showToast }) {
         .dca-tname { font-weight: 600; color: #e8e8e0; }
         .dca-tact { white-space: nowrap; text-align: right; }
         .dca-kind { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid currentColor; border-radius: 100px; white-space: nowrap; }
+        .dca-flag { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; margin-left: 7px; border: 1px solid currentColor; border-radius: 100px; white-space: nowrap; }
+        .dca-flag.ret { color: #45d16a; }
+        .dca-flag.dup { color: #e0a03a; }
+        .dca-ic.invite { color: #45d16a; }
+        .dca-ic.invite:hover { background: rgba(69,209,106,.12); }
         @media (max-width: 720px) { .dca-table { min-width: 900px; } }
       `}</style>
       <div className="row-between">
@@ -2904,6 +2963,11 @@ function DJCollective({ showToast }) {
           <button className="btn sm" onClick={exportRoster} disabled={rosterBusy} title="Name + DJ name only, with check-in & lucky-dip columns">
             {rosterBusy ? <Loader2 size={15} className="spin" /> : <Download size={15} />} Roster (Excel)
           </button>
+          {waitlistNums.length > 0 && (
+            <button className="btn sm ghost" onClick={copyWaitlist} title="Copy every waitlist WhatsApp number for a broadcast list">
+              <ClipboardList size={15} /> Copy waitlist ({waitlistNums.length})
+            </button>
+          )}
         </div>
         )}
       </div>
@@ -2934,6 +2998,25 @@ function DJCollective({ showToast }) {
               {KIND[k].label}s ({kindCounts[k]})
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Duplicate / returning flags — matched by phone across editions. */}
+      {(flagCounts.returning > 0 || flagCounts.dupes > 0) && (
+        <div className="chips" style={{ marginTop: 6 }}>
+          <button className={flag === "none" ? "chip on" : "chip"} onClick={() => setFlag("none")}>All in view</button>
+          {flagCounts.returning > 0 && (
+            <button className={flag === "returning" ? "chip on" : "chip"} onClick={() => setFlag(flag === "returning" ? "none" : "returning")}
+              style={flag === "returning" ? undefined : { borderColor: "#45d16a", color: "#45d16a" }}>
+              <History size={12} style={{ marginRight: 4, verticalAlign: "-2px" }} />Also in a past edition ({flagCounts.returning})
+            </button>
+          )}
+          {flagCounts.dupes > 0 && (
+            <button className={flag === "dupes" ? "chip on" : "chip"} onClick={() => setFlag(flag === "dupes" ? "none" : "dupes")}
+              style={flag === "dupes" ? undefined : { borderColor: "#e0a03a", color: "#e0a03a" }}>
+              ⚠ Duplicate in this edition ({flagCounts.dupes})
+            </button>
+          )}
         </div>
       )}
 
@@ -3014,9 +3097,15 @@ function DJCollective({ showToast }) {
                 const wl = waLink(r.phone);
                 const k = kindKey(r);
                 const isProm = r.role === "promoter";
+                const m = matchOf(r);
+                const il = inviteLink(r);
                 return (
-                  <tr key={r.id}>
-                    <td className="dca-tname">{r.name}</td>
+                  <tr key={r.id} style={m.dupeHere ? { background: "#2a1e12" } : undefined}>
+                    <td className="dca-tname">
+                      {r.name}
+                      {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
+                      {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
+                    </td>
                     <td><span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color }}>{KIND[k].label}</span></td>
                     <td>{isProm ? (r.org_name || "—") : (r.dj_name || "—")}</td>
                     <td>{isProm ? (r.org_role || "—") : (r.genre || "—")}</td>
@@ -3025,6 +3114,7 @@ function DJCollective({ showToast }) {
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
                     <td className="dca-tact">
+                      {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
                       <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                       <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                     </td>
@@ -3041,17 +3131,22 @@ function DJCollective({ showToast }) {
             const wl = waLink(r.phone);
             const k = kindKey(r);
             const isProm = r.role === "promoter";
+            const m = matchOf(r);
+            const il = inviteLink(r);
             const meta = isProm
               ? [r.org_name, r.org_role].filter(Boolean)
               : [r.genre, r.years].filter(Boolean);
             return (
-              <div key={r.id} className="dca-card">
+              <div key={r.id} className="dca-card" style={m.dupeHere ? { borderColor: "#8a5a1e" } : undefined}>
                 <div className="dca-top">
                   <div className="dca-name">
                     {r.name}{!isProm && r.dj_name ? <span className="dca-dj"> · {r.dj_name}</span> : ""}
                     {k !== "dj" && <span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color, marginLeft: 8 }}>{KIND[k].label}</span>}
+                    {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
+                    {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
                   </div>
                   <div className="dca-acts">
+                    {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
                     <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                     <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                   </div>
