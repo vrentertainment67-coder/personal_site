@@ -11,13 +11,22 @@ security definer
 set search_path = public
 as $$
 begin
+  -- Admin-entered rows (the Log-enquiry form sets source='manual') are trusted
+  -- and must never be rate-limited. Without this, logging several enquiries
+  -- with a blank contact — which the form stores as the placeholder '—' — trips
+  -- the per-contact cap below, because every '—' looks like "the same contact".
+  if new.source = 'manual' then
+    return new;
+  end if;
+
   -- Global burst cap: no more than 8 new requests in any 10-minute window.
   if (select count(*) from bookings where created_at > now() - interval '10 minutes') >= 8 then
     raise exception 'Too many booking requests right now. Please try again in a few minutes.';
   end if;
 
-  -- Per-contact cap: at most 3 outstanding pending requests from the same contact.
-  if new.contact is not null
+  -- Per-contact cap: at most 3 outstanding pending requests from the same
+  -- contact. The blank-contact placeholder '—' is ignored so it can't collide.
+  if new.contact is not null and new.contact <> '—'
      and (select count(*) from bookings where contact = new.contact and status = 'pending') >= 3 then
     raise exception 'You already have pending requests — we''ll be in touch shortly.';
   end if;
