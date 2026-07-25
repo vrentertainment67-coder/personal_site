@@ -2696,6 +2696,7 @@ function DJCollective({ showToast }) {
   const [genreFilter, setGenreFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all"); // all | dj | promoter | returning | waitlist
   const [flag, setFlag] = useState("none"); // none | returning (also in a past edition) | dupes
+  const [showBlast, setShowBlast] = useState(false);
   const [panel, setPanel] = useState("rsvps"); // "rsvps" | "feedback" sub-tab
 
   const load = useCallback(async () => {
@@ -2811,6 +2812,20 @@ function DJCollective({ showToast }) {
     try { await navigator.clipboard.writeText(waitlistNums.join("\n")); showToast(`Copied ${waitlistNums.length} waitlist number${waitlistNums.length > 1 ? "s" : ""} — paste into a WhatsApp broadcast.`); }
     catch { showToast("Clipboard blocked — allow access and retry."); }
   };
+
+  // Deduped, opted-in recipients for the one-by-one WhatsApp invite. Respects
+  // whatever session/role/search filters are active, one message per person
+  // (matched by phone), skipping explicit opt-outs and unreachable numbers.
+  const blastList = (() => {
+    const seen = new Set(); const out = [];
+    filtered.forEach((r) => {
+      if (r.consent === false) return;
+      const k = phoneKey(r.phone); if (!k || seen.has(k)) return;
+      if (!waLink(r.phone)) return;
+      seen.add(k); out.push(r);
+    });
+    return out;
+  })();
 
   // Signups-by-date for the selected edition: per-day new RSVPs + the running
   // "collective number" (cumulative total). Search query is intentionally
@@ -2963,6 +2978,11 @@ function DJCollective({ showToast }) {
           <button className="btn sm" onClick={exportRoster} disabled={rosterBusy} title="Name + DJ name only, with check-in & lucky-dip columns">
             {rosterBusy ? <Loader2 size={15} className="spin" /> : <Download size={15} />} Roster (Excel)
           </button>
+          {blastList.length > 0 && (
+            <button className="btn sm" onClick={() => setShowBlast(true)} title="Message these people one by one on WhatsApp — you press send each time">
+              <MessageCircle size={15} /> Invite blast ({blastList.length})
+            </button>
+          )}
           {waitlistNums.length > 0 && (
             <button className="btn sm ghost" onClick={copyWaitlist} title="Copy every waitlist WhatsApp number for a broadcast list">
               <ClipboardList size={15} /> Copy waitlist ({waitlistNums.length})
@@ -3084,6 +3104,7 @@ function DJCollective({ showToast }) {
       )}
 
       {editRow && <DJCEditForm row={editRow} onDone={() => { setEditRow(null); load(); }} onCancel={() => setEditRow(null)} showToast={showToast} />}
+      {showBlast && <DJCBlast recipients={blastList} audience={sess === "all" ? "everyone in view" : sess} showToast={showToast} onClose={() => setShowBlast(false)} />}
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">No RSVPs yet.</p>
@@ -3202,6 +3223,92 @@ function DJCEditForm({ row, onDone, onCancel, showToast }) {
       <div className="req-actions">
         <button className="act wa" disabled={busy} onClick={save}>{busy ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Save changes</button>
         <button className="act" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+const DEFAULT_BLAST_MSG =
+  "Hey {name}! 👋 Edition 02 of the Bengaluru DJs Collective is locked in — Monday 24 August, doors from 8 PM.\n\n" +
+  "Free entry, same room, more of the city's DJs — this time with the promoters and venues who book them. No headliner, nobody playing, just the scene in one place.\n\n" +
+  "RSVP here so we've got your badge ready: https://bengalurudjscollective.com/join/";
+
+// ── One-by-one WhatsApp invite ────────────────────────────────────────────
+// Opens each contact's chat with the message prefilled in a single reused
+// WhatsApp Web tab; the operator presses send, then advances. Sent phones are
+// remembered on this device, so a run can be paused and resumed without
+// double-messaging. Nothing sends automatically — it's a click assist, not a
+// bulk sender, so the number can't be flagged for automation.
+function DJCBlast({ recipients, audience, showToast, onClose }) {
+  const STORE = "bdc_blast_sent";
+  const [msg, setMsg] = useState(DEFAULT_BLAST_MSG);
+  const [sent, setSent] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem(STORE) || "[]")); } catch { return new Set(); } });
+  const [idx, setIdx] = useState(0);
+  const [redo, setRedo] = useState(false);
+
+  const key = (r) => (r.phone || "").replace(/\D/g, "").slice(-10);
+  const queue = redo ? recipients : recipients.filter((r) => !sent.has(key(r)));
+  const cur = queue[idx] || null;
+  const doneCount = recipients.filter((r) => sent.has(key(r))).length;
+
+  const persist = (s) => { try { localStorage.setItem(STORE, JSON.stringify([...s])); } catch {} };
+  const firstName = (r) => ((r.name || "").trim().split(/\s+/)[0] || "there");
+  const bodyFor = (r) => msg.replace(/\{name\}/g, firstName(r));
+  const waUrl = (r) => { let n = (r.phone || "").replace(/\D/g, ""); if (n.length === 10) n = "91" + n; return `https://web.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(bodyFor(r))}`; };
+
+  const openCur = () => { if (cur) window.open(waUrl(cur), "bdc_whatsapp"); };
+  const markSent = () => { if (!cur) return; const s = new Set(sent); s.add(key(cur)); setSent(s); persist(s); setIdx((v) => v + 1); };
+  const skip = () => setIdx((v) => v + 1);
+  const resetSent = () => { if (!window.confirm("Clear the 'already messaged' memory on this device?")) return; const s = new Set(); setSent(s); persist(s); setIdx(0); showToast("Sent history cleared."); };
+
+  return (
+    <div className="card entry" style={{ borderColor: "#c9a84c", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <h3 style={{ margin: 0, color: "#e8e8e0" }}>Invite blast — WhatsApp, one by one</h3>
+        <button className="dca-ic" title="Close" onClick={onClose}><XCircle size={16} /></button>
+      </div>
+      <p className="sub" style={{ marginTop: 0 }}>
+        {recipients.length} opted-in {recipients.length === 1 ? "person" : "people"} ({audience}), deduplicated by phone.
+        Have <b>WhatsApp Web</b> open and logged in — each contact opens in the same WhatsApp tab with the message ready; press Enter there to send, then hit “Sent — next”.
+      </p>
+
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label>Message · <span style={{ color: "#8a8878" }}>{"{name}"} becomes their first name</span></label>
+        <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={5}
+          style={{ width: "100%", background: "#0e0e0d", color: "#e8e8e0", border: "1px solid #2a2a2a", borderRadius: 6, padding: 10, fontFamily: "inherit", fontSize: 13.5, resize: "vertical", boxSizing: "border-box" }} />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+        <div style={{ flex: "1 1 160px", height: 6, background: "#1c1c1c", borderRadius: 100, overflow: "hidden" }}>
+          <div style={{ width: `${recipients.length ? (doneCount / recipients.length) * 100 : 0}%`, height: "100%", background: "#45d16a" }} />
+        </div>
+        <span style={{ fontSize: 12.5, color: "#8a8878" }}>Messaged {doneCount} / {recipients.length}{!redo && ` · ${Math.max(0, queue.length - idx)} left`}</span>
+        <label style={{ fontSize: 12, color: "#8a8878", display: "inline-flex", alignItems: "center", gap: 5 }}>
+          <input type="checkbox" checked={redo} onChange={(e) => { setRedo(e.target.checked); setIdx(0); }} /> include already-messaged
+        </label>
+      </div>
+
+      {cur ? (
+        <div style={{ background: "#121214", border: "1px solid #232323", borderRadius: 8, padding: "12px 14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <div><b style={{ color: "#e8e8e0", fontSize: 15 }}>{cur.name || "—"}</b>{cur.dj_name ? <span style={{ color: "#8a8878" }}> · {cur.dj_name}</span> : ""}</div>
+            <span style={{ color: "#c9a84c", fontSize: 13, whiteSpace: "nowrap" }}>{cur.phone}{sent.has(key(cur)) ? " · ✓ sent" : ""}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <button className="act wa" onClick={openCur}><Send size={15} /> Open in WhatsApp</button>
+            <button className="act" onClick={markSent} style={{ borderColor: "#45d16a", color: "#45d16a" }}><CheckCircle2 size={15} /> Sent — next</button>
+            <button className="act" onClick={skip}>Skip</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: "#121214", border: "1px solid #232323", borderRadius: 8, padding: 16, textAlign: "center", color: "#9fd8a6" }}>
+          🎉 That's everyone{redo ? "" : " not yet messaged"}. {doneCount}/{recipients.length} done.
+        </div>
+      )}
+
+      <div className="req-actions" style={{ marginTop: 12 }}>
+        <button className="act" onClick={onClose}>Done</button>
+        <button className="act" onClick={resetSent} style={{ color: "#e0a03a", borderColor: "#5a4420" }}>Reset sent history</button>
       </div>
     </div>
   );
