@@ -2767,10 +2767,19 @@ function DJCollective({ showToast }) {
     return { dupeHere, priorSessions };
   };
 
+  // Per-row status filter: duplicates, cross-edition returnees, and (once the
+  // door tool has run) who arrived vs didn't.
+  const flagPass = (r) => {
+    if (flag === "dupes") return matchOf(r).dupeHere;
+    if (flag === "returning") return matchOf(r).priorSessions.length > 0;
+    if (flag === "arrived") return !!r.checked_in;
+    if (flag === "noshow") return !r.checked_in;
+    return true; // "none"
+  };
   const filtered = rows
     .filter((r) => sess === "all" || (r.session || "—") === sess)
     .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter)
-    .filter((r) => flag === "none" || (flag === "dupes" ? matchOf(r).dupeHere : matchOf(r).priorSessions.length > 0))
+    .filter(flagPass)
     .filter((r) => genreFilter === "all" || genreOf(r).some((g) => g.toLowerCase() === genreFilter.toLowerCase()))
     .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone, r.org_name].some((v) => (v || "").toLowerCase().includes(q)));
   // How many of each kind, for the filter row (respects session, ignores the
@@ -2786,9 +2795,9 @@ function DJCollective({ showToast }) {
   const flagCounts = (() => {
     const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess)
       .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter);
-    let returning = 0, dupes = 0;
-    base.forEach((r) => { const m = matchOf(r); if (m.priorSessions.length) returning++; if (m.dupeHere) dupes++; });
-    return { returning, dupes };
+    let returning = 0, dupes = 0, arrived = 0;
+    base.forEach((r) => { const m = matchOf(r); if (m.priorSessions.length) returning++; if (m.dupeHere) dupes++; if (r.checked_in) arrived++; });
+    return { returning, dupes, arrived, total: base.length };
   })();
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
@@ -2870,14 +2879,15 @@ function DJCollective({ showToast }) {
       .map((y) => ({ label: y, count: ymap[y] }));
     const withIg = base.filter((r) => (r.instagram || "").trim()).length;
     const withPhone = base.filter((r) => waDigits(r.phone || "").length >= 10).length;
+    const arrived = base.filter((r) => r.checked_in).length;
     const weekAgo = Date.now() - 7 * 864e5;
     const thisWeek = base.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length;
-    return { n, genres, years, withIg, withPhone, thisWeek };
+    return { n, genres, years, withIg, withPhone, arrived, thisWeek };
   }, [rows, sess]);
   const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
 
   const exportCsv = () => {
-    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone"];
+    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "checked_in", "checked_in_at"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const cell = (r, c) => (c === "type" ? KIND[kindKey(r)].label : r[c]);
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(cell(r, c))).join(","))].join("\n");
@@ -2968,6 +2978,7 @@ function DJCollective({ showToast }) {
         .dca-flag { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; margin-left: 7px; border: 1px solid currentColor; border-radius: 100px; white-space: nowrap; }
         .dca-flag.ret { color: #45d16a; }
         .dca-flag.dup { color: #e0a03a; }
+        .dca-flag.arr { color: #2fb85a; background: rgba(69,209,106,.12); }
         .dca-ic.invite { color: #45d16a; }
         .dca-ic.invite:hover { background: rgba(69,209,106,.12); }
         @media (max-width: 720px) { .dca-table { min-width: 900px; } }
@@ -3028,10 +3039,19 @@ function DJCollective({ showToast }) {
         </div>
       )}
 
-      {/* Duplicate / returning flags — matched by phone across editions. */}
-      {(flagCounts.returning > 0 || flagCounts.dupes > 0) && (
+      {/* Status flags — arrivals (from the door tool), plus duplicate/returning
+          matches by phone across editions. */}
+      {(flagCounts.returning > 0 || flagCounts.dupes > 0 || flagCounts.arrived > 0) && (
         <div className="chips" style={{ marginTop: 6 }}>
           <button className={flag === "none" ? "chip on" : "chip"} onClick={() => setFlag("none")}>All in view</button>
+          {flagCounts.arrived > 0 && (
+            <>
+              <button className={flag === "arrived" ? "chip on" : "chip"} onClick={() => setFlag(flag === "arrived" ? "none" : "arrived")}
+                style={flag === "arrived" ? undefined : { borderColor: "#45d16a", color: "#45d16a" }}>✓ Arrived ({flagCounts.arrived})</button>
+              <button className={flag === "noshow" ? "chip on" : "chip"} onClick={() => setFlag(flag === "noshow" ? "none" : "noshow")}
+                style={flag === "noshow" ? undefined : { borderColor: "#8a8878", color: "#8a8878" }}>No-show ({flagCounts.total - flagCounts.arrived})</button>
+            </>
+          )}
           {flagCounts.returning > 0 && (
             <button className={flag === "returning" ? "chip on" : "chip"} onClick={() => setFlag(flag === "returning" ? "none" : "returning")}
               style={flag === "returning" ? undefined : { borderColor: "#45d16a", color: "#45d16a" }}>
@@ -3055,6 +3075,7 @@ function DJCollective({ showToast }) {
             <Stat label="New · 7 days" value={stats.thisWeek} hint="Momentum" />
             <Stat label="With Instagram" value={stats.withIg} hint={pctOf(stats.withIg)} />
             <Stat label="Reachable" value={stats.withPhone} hint="Valid WhatsApp no." />
+            {stats.arrived > 0 && <Stat label="Arrived" value={stats.arrived} hint={`${pctOf(stats.arrived)} · door check-in`} />}
             <Stat label="Editions" value={sessions.length} hint="Distinct sessions" />
           </div>
 
@@ -3133,6 +3154,7 @@ function DJCollective({ showToast }) {
                       {r.name}
                       {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                       {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
+                    {r.checked_in && <span className="dca-flag arr" title={r.checked_in_at ? "Arrived — checked in at the door" : "Checked in at the door"}>✓ in</span>}
                     </td>
                     <td><span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color }}>{KIND[k].label}</span></td>
                     <td>{isProm ? (r.org_name || "—") : (r.dj_name || "—")}</td>
@@ -3172,6 +3194,7 @@ function DJCollective({ showToast }) {
                     {k !== "dj" && <span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color, marginLeft: 8 }}>{KIND[k].label}</span>}
                     {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                     {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
+                    {r.checked_in && <span className="dca-flag arr" title={r.checked_in_at ? "Arrived — checked in at the door" : "Checked in at the door"}>✓ in</span>}
                   </div>
                   <div className="dca-acts">
                     {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
