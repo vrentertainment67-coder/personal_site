@@ -2887,7 +2887,7 @@ function DJCollective({ showToast }) {
   const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
 
   const exportCsv = () => {
-    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "checked_in", "checked_in_at"];
+    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "checked_in", "checked_in_via", "checked_in_at"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const cell = (r, c) => (c === "type" ? KIND[kindKey(r)].label : r[c]);
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(cell(r, c))).join(","))].join("\n");
@@ -2979,6 +2979,7 @@ function DJCollective({ showToast }) {
         .dca-flag.ret { color: #45d16a; }
         .dca-flag.dup { color: #e0a03a; }
         .dca-flag.arr { color: #2fb85a; background: rgba(69,209,106,.12); }
+        .dca-flag.walk { color: #e0a03a; }
         .dca-ic.invite { color: #45d16a; }
         .dca-ic.invite:hover { background: rgba(69,209,106,.12); }
         @media (max-width: 720px) { .dca-table { min-width: 900px; } }
@@ -3154,7 +3155,8 @@ function DJCollective({ showToast }) {
                       {r.name}
                       {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                       {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
-                    {r.checked_in && <span className="dca-flag arr" title={r.checked_in_at ? "Arrived — checked in at the door" : "Checked in at the door"}>✓ in</span>}
+                    {r.checked_in && <span className="dca-flag arr" title={`Checked in${r.checked_in_via ? " via " + r.checked_in_via : ""}${r.checked_in_at ? " · " + fmtWhen(r.checked_in_at) : ""}`}>✓ {r.checked_in_via === "qr" ? "QR" : "manual"}</span>}
+                    {r.source === "door-walkin" && <span className="dca-flag walk" title="Walk-in — added at the door, never RSVP'd">walk-in</span>}
                     </td>
                     <td><span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color }}>{KIND[k].label}</span></td>
                     <td>{isProm ? (r.org_name || "—") : (r.dj_name || "—")}</td>
@@ -3194,7 +3196,8 @@ function DJCollective({ showToast }) {
                     {k !== "dj" && <span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color, marginLeft: 8 }}>{KIND[k].label}</span>}
                     {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                     {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
-                    {r.checked_in && <span className="dca-flag arr" title={r.checked_in_at ? "Arrived — checked in at the door" : "Checked in at the door"}>✓ in</span>}
+                    {r.checked_in && <span className="dca-flag arr" title={`Checked in${r.checked_in_via ? " via " + r.checked_in_via : ""}${r.checked_in_at ? " · " + fmtWhen(r.checked_in_at) : ""}`}>✓ {r.checked_in_via === "qr" ? "QR" : "manual"}</span>}
+                    {r.source === "door-walkin" && <span className="dca-flag walk" title="Walk-in — added at the door, never RSVP'd">walk-in</span>}
                   </div>
                   <div className="dca-acts">
                     {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
