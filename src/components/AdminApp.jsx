@@ -2694,6 +2694,7 @@ function DJCollective({ showToast }) {
   const [editRow, setEditRow] = useState(null); const [sort, setSort] = useState("new");
   const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
   const [genreFilter, setGenreFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all"); // all | dj | promoter | returning | waitlist
   const [panel, setPanel] = useState("rsvps"); // "rsvps" | "feedback" sub-tab
 
   const load = useCallback(async () => {
@@ -2712,6 +2713,19 @@ function DJCollective({ showToast }) {
   };
 
   const sessions = [...new Set(rows.map((r) => r.session || "—"))];
+  // Classify each row so promoters, returners and waitlist sign-ups are
+  // distinguishable — Edition 02 mixes them into one table.
+  const KIND = {
+    promoter: { label: "Promoter", color: "#7a5cff" },
+    returning: { label: "Returning", color: "#45d16a" },
+    waitlist: { label: "Waitlist", color: "#c9a84c" },
+    dj: { label: "DJ", color: "#8a8878" },
+  };
+  const kindKey = (r) =>
+    (r.session || "") === "next-edition-waitlist" ? "waitlist"
+      : r.role === "promoter" ? "promoter"
+        : r.source === "returning" ? "returning"
+          : "dj";
   const genreOf = (r) => (r.genre || "").split(",").map((s) => s.trim()).filter(Boolean);
   // Every distinct genre across all RSVPs (case-insensitive), for the filter.
   const allGenres = (() => {
@@ -2722,8 +2736,17 @@ function DJCollective({ showToast }) {
   const q = query.trim().toLowerCase();
   const filtered = rows
     .filter((r) => sess === "all" || (r.session || "—") === sess)
+    .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter)
     .filter((r) => genreFilter === "all" || genreOf(r).some((g) => g.toLowerCase() === genreFilter.toLowerCase()))
-    .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone].some((v) => (v || "").toLowerCase().includes(q)));
+    .filter((r) => !q || [r.name, r.dj_name, r.genre, r.instagram, r.phone, r.org_name].some((v) => (v || "").toLowerCase().includes(q)));
+  // How many of each kind, for the filter row (respects session, ignores the
+  // role filter itself so the counts don't collapse to one).
+  const kindCounts = (() => {
+    const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess);
+    const c = { all: base.length, dj: 0, promoter: 0, returning: 0, waitlist: 0 };
+    base.forEach((r) => { c[kindKey(r)]++; });
+    return c;
+  })();
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
     if (sort === "name") return (a.name || "").localeCompare(b.name || "");
@@ -2778,9 +2801,10 @@ function DJCollective({ showToast }) {
   const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
 
   const exportCsv = () => {
-    const cols = ["created_at", "session", "name", "dj_name", "genre", "years", "instagram", "phone"];
+    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const cell = (r, c) => (c === "type" ? KIND[kindKey(r)].label : r[c]);
+    const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(cell(r, c))).join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `dj-collective-rsvps-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -2864,7 +2888,8 @@ function DJCollective({ showToast }) {
         .dca-table tbody tr:hover td { background: #141414; }
         .dca-tname { font-weight: 600; color: #e8e8e0; }
         .dca-tact { white-space: nowrap; text-align: right; }
-        @media (max-width: 720px) { .dca-table { min-width: 780px; } }
+        .dca-kind { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid currentColor; border-radius: 100px; white-space: nowrap; }
+        @media (max-width: 720px) { .dca-table { min-width: 900px; } }
       `}</style>
       <div className="row-between">
         <h1 className="h1">The DJ Collective</h1>
@@ -2898,6 +2923,19 @@ function DJCollective({ showToast }) {
           <button key={s} className={sess === s ? "chip on" : "chip"} onClick={() => setSess(s)}>{s} ({rows.filter((r) => (r.session || "—") === s).length})</button>
         ))}
       </div>
+
+      {/* Filter by who they are — only worth showing once the mix exists. */}
+      {(kindCounts.promoter > 0 || kindCounts.returning > 0 || kindCounts.waitlist > 0) && (
+        <div className="chips" style={{ marginTop: 6 }}>
+          <button className={roleFilter === "all" ? "chip on" : "chip"} onClick={() => setRoleFilter("all")}>Everyone ({kindCounts.all})</button>
+          {["dj", "promoter", "returning", "waitlist"].filter((k) => kindCounts[k] > 0).map((k) => (
+            <button key={k} className={roleFilter === k ? "chip on" : "chip"} onClick={() => setRoleFilter(k)}
+              style={roleFilter === k ? undefined : { borderColor: KIND[k].color, color: KIND[k].color }}>
+              {KIND[k].label}s ({kindCounts[k]})
+            </button>
+          ))}
+        </div>
+      )}
 
       {showStats && (
         <div className="dca-stats">
@@ -2969,16 +3007,19 @@ function DJCollective({ showToast }) {
       ) : view === "table" ? (
         <div className="dca-wrap">
           <table className="dca-table">
-            <thead><tr><th>Name</th><th>DJ name</th><th>Genre</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Type</th><th>DJ / Venue</th><th>Genre / Role</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
             <tbody>
               {sorted.map((r) => {
                 const ig = (r.instagram || "").replace(/^@/, "");
                 const wl = waLink(r.phone);
+                const k = kindKey(r);
+                const isProm = r.role === "promoter";
                 return (
                   <tr key={r.id}>
                     <td className="dca-tname">{r.name}</td>
-                    <td>{r.dj_name || "—"}</td>
-                    <td>{r.genre || "—"}</td>
+                    <td><span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color }}>{KIND[k].label}</span></td>
+                    <td>{isProm ? (r.org_name || "—") : (r.dj_name || "—")}</td>
+                    <td>{isProm ? (r.org_role || "—") : (r.genre || "—")}</td>
                     <td>{r.years || "—"}</td>
                     <td>{ig ? <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer" style={{ color: "#cfcabf" }}>@{ig}</a> : "—"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
@@ -2998,11 +3039,18 @@ function DJCollective({ showToast }) {
           {sorted.map((r) => {
             const ig = (r.instagram || "").replace(/^@/, "");
             const wl = waLink(r.phone);
-            const meta = [r.genre, r.years].filter(Boolean);
+            const k = kindKey(r);
+            const isProm = r.role === "promoter";
+            const meta = isProm
+              ? [r.org_name, r.org_role].filter(Boolean)
+              : [r.genre, r.years].filter(Boolean);
             return (
               <div key={r.id} className="dca-card">
                 <div className="dca-top">
-                  <div className="dca-name">{r.name}{r.dj_name ? <span className="dca-dj"> · {r.dj_name}</span> : ""}</div>
+                  <div className="dca-name">
+                    {r.name}{!isProm && r.dj_name ? <span className="dca-dj"> · {r.dj_name}</span> : ""}
+                    {k !== "dj" && <span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color, marginLeft: 8 }}>{KIND[k].label}</span>}
+                  </div>
                   <div className="dca-acts">
                     <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                     <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
