@@ -2702,8 +2702,9 @@ function DJCollective({ showToast }) {
   const [view, setView] = useState("cards"); const [showStats, setShowStats] = useState(false);
   const [genreFilter, setGenreFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all"); // all | dj | promoter | returning | waitlist
-  const [flag, setFlag] = useState("none"); // none | returning (also in a past edition) | dupes
+  const [flag, setFlag] = useState("none"); // none | returning | dupes | arrived | noshow | invited | uninvited
   const [showBlast, setShowBlast] = useState(false);
+  const [selected, setSelected] = useState(() => new Set()); // ids picked for a targeted blast
   const [panel, setPanel] = useState("rsvps"); // "rsvps" | "feedback" sub-tab
 
   const load = useCallback(async () => {
@@ -2774,6 +2775,8 @@ function DJCollective({ showToast }) {
     if (flag === "returning") return matchOf(r).priorSessions.length > 0;
     if (flag === "arrived") return !!r.checked_in;
     if (flag === "noshow") return !r.checked_in;
+    if (flag === "invited") return !!r.invited_at;
+    if (flag === "uninvited") return !r.invited_at;
     return true; // "none"
   };
   const filtered = rows
@@ -2795,9 +2798,9 @@ function DJCollective({ showToast }) {
   const flagCounts = (() => {
     const base = rows.filter((r) => sess === "all" || (r.session || "—") === sess)
       .filter((r) => roleFilter === "all" || kindKey(r) === roleFilter);
-    let returning = 0, dupes = 0, arrived = 0;
-    base.forEach((r) => { const m = matchOf(r); if (m.priorSessions.length) returning++; if (m.dupeHere) dupes++; if (r.checked_in) arrived++; });
-    return { returning, dupes, arrived, total: base.length };
+    let returning = 0, dupes = 0, arrived = 0, invited = 0;
+    base.forEach((r) => { const m = matchOf(r); if (m.priorSessions.length) returning++; if (m.dupeHere) dupes++; if (r.checked_in) arrived++; if (r.invited_at) invited++; });
+    return { returning, dupes, arrived, invited, total: base.length };
   })();
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "old") return new Date(a.created_at) - new Date(b.created_at);
@@ -2840,13 +2843,29 @@ function DJCollective({ showToast }) {
     return out;
   })();
 
-  // Bulk: the current view's WhatsApp numbers (deduped, opted-in) for a
-  // broadcast — filter to Waitlist or a past edition first, then copy.
+  // Selection: tick specific people to target the blast / copy at just them.
+  // With nothing ticked, the target is the whole filtered, opted-in view.
+  const toggleSel = (id) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selectAllInView = () => setSelected(new Set(blastList.map((r) => r.id)));
+  const clearSel = () => setSelected(new Set());
+  const blastTargets = selected.size ? blastList.filter((r) => selected.has(r.id)) : blastList;
+
+  // Mark someone invited (persisted + cross-device). The signed-in admin can
+  // update the table directly, so no RPC. invited=false clears it.
+  const markInvited = (r, invited = true) => {
+    if (!r) return;
+    const iso = invited ? new Date().toISOString() : null;
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, invited_at: iso } : x)));
+    supabase.from("dj_collective_rsvps").update({ invited_at: iso }).eq("id", r.id)
+      .then(({ error }) => { if (error) showToast("Couldn't save invite status — " + error.message); });
+  };
+
+  // Bulk: the target's WhatsApp numbers (deduped, opted-in) for a broadcast.
   const copyNumbers = async () => {
-    const nums = blastList
+    const nums = blastTargets
       .map((r) => { const n = waDigits(r.phone || ""); return n.length === 10 ? "+91" + n : (n.length >= 10 ? "+" + n : ""); })
       .filter(Boolean);
-    if (!nums.length) return showToast("No numbers in this view to copy.");
+    if (!nums.length) return showToast("No numbers to copy.");
     try { await navigator.clipboard.writeText(nums.join("\n")); showToast(`Copied ${nums.length} number${nums.length > 1 ? "s" : ""} — paste into a WhatsApp broadcast.`); }
     catch { showToast("Clipboard blocked — allow access and retry."); }
   };
@@ -2895,7 +2914,7 @@ function DJCollective({ showToast }) {
   const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
 
   const exportCsv = () => {
-    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "checked_in", "checked_in_via", "checked_in_at"];
+    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "invited_at", "checked_in", "checked_in_via", "checked_in_at"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const cell = (r, c) => (c === "type" ? KIND[kindKey(r)].label : r[c]);
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(cell(r, c))).join(","))].join("\n");
@@ -2988,6 +3007,7 @@ function DJCollective({ showToast }) {
         .dca-flag.dup { color: #e0a03a; }
         .dca-flag.arr { color: #2fb85a; background: rgba(69,209,106,.12); }
         .dca-flag.walk { color: #e0a03a; }
+        .dca-flag.inv { color: #4bb4e0; }
         .dca-ic.invite { color: #45d16a; }
         .dca-ic.invite:hover { background: rgba(69,209,106,.12); }
         @media (max-width: 720px) { .dca-table { min-width: 900px; } }
@@ -3005,14 +3025,14 @@ function DJCollective({ showToast }) {
           <button className="btn sm" onClick={exportRoster} disabled={rosterBusy} title="Name + DJ name only, with check-in & lucky-dip columns">
             {rosterBusy ? <Loader2 size={15} className="spin" /> : <Download size={15} />} Roster (Excel)
           </button>
-          {blastList.length > 0 && (
-            <button className="btn sm" onClick={() => setShowBlast(true)} title="Message these people one by one on WhatsApp — you press send each time">
-              <MessageCircle size={15} /> Invite blast ({blastList.length})
+          {blastTargets.length > 0 && (
+            <button className="btn sm" onClick={() => setShowBlast(true)} title={selected.size ? "Message the ticked people one by one on WhatsApp" : "Message everyone in this view one by one — or tick specific rows first"}>
+              <MessageCircle size={15} /> Invite blast ({blastTargets.length}{selected.size ? " picked" : ""})
             </button>
           )}
-          {blastList.length > 0 && (
-            <button className="btn sm ghost" onClick={copyNumbers} title="Copy this view's WhatsApp numbers (deduped, opted-in) for a broadcast — filter to Waitlist or a past edition first">
-              <ClipboardList size={15} /> Copy numbers ({blastList.length})
+          {blastTargets.length > 0 && (
+            <button className="btn sm ghost" onClick={copyNumbers} title="Copy these WhatsApp numbers (deduped, opted-in) for a broadcast">
+              <ClipboardList size={15} /> Copy numbers ({blastTargets.length})
             </button>
           )}
         </div>
@@ -3050,7 +3070,7 @@ function DJCollective({ showToast }) {
 
       {/* Status flags — arrivals (from the door tool), plus duplicate/returning
           matches by phone across editions. */}
-      {(flagCounts.returning > 0 || flagCounts.dupes > 0 || flagCounts.arrived > 0) && (
+      {(flagCounts.returning > 0 || flagCounts.dupes > 0 || flagCounts.arrived > 0 || flagCounts.invited > 0) && (
         <div className="chips" style={{ marginTop: 6 }}>
           <button className={flag === "none" ? "chip on" : "chip"} onClick={() => setFlag("none")}>All in view</button>
           {flagCounts.arrived > 0 && (
@@ -3073,6 +3093,21 @@ function DJCollective({ showToast }) {
               ⚠ Duplicate in this edition ({flagCounts.dupes})
             </button>
           )}
+          {flagCounts.invited > 0 && (
+            <>
+              <button className={flag === "invited" ? "chip on" : "chip"} onClick={() => setFlag(flag === "invited" ? "none" : "invited")}
+                style={flag === "invited" ? undefined : { borderColor: "#4bb4e0", color: "#4bb4e0" }}>✈ Invited ({flagCounts.invited})</button>
+              <button className={flag === "uninvited" ? "chip on" : "chip"} onClick={() => setFlag(flag === "uninvited" ? "none" : "uninvited")}
+                style={flag === "uninvited" ? undefined : { borderColor: "#8a8878", color: "#8a8878" }}>Not invited ({flagCounts.total - flagCounts.invited})</button>
+            </>
+          )}
+        </div>
+      )}
+
+      {selected.size > 0 && (
+        <div className="chips" style={{ marginTop: 6, alignItems: "center" }}>
+          <span style={{ color: "#c9a84c", fontWeight: 600, fontSize: 13 }}>{selected.size} picked{blastTargets.length !== selected.size ? ` · ${blastTargets.length} reachable` : ""} — Invite blast / Copy numbers target these</span>
+          <button className="chip" onClick={clearSel}>Clear selection</button>
         </div>
       )}
 
@@ -3141,14 +3176,14 @@ function DJCollective({ showToast }) {
       )}
 
       {editRow && <DJCEditForm row={editRow} onDone={() => { setEditRow(null); load(); }} onCancel={() => setEditRow(null)} showToast={showToast} />}
-      {showBlast && <DJCBlast recipients={blastList} audience={sess === "all" ? "everyone in view" : sess} showToast={showToast} onClose={() => setShowBlast(false)} />}
+      {showBlast && <DJCBlast recipients={blastTargets} audience={selected.size ? `${selected.size} picked` : (sess === "all" ? "everyone in view" : sess)} onSent={(id) => markInvited(rows.find((x) => x.id === id))} showToast={showToast} onClose={() => setShowBlast(false)} />}
 
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : filtered.length === 0 ? (
         <p className="empty">No RSVPs yet.</p>
       ) : view === "table" ? (
         <div className="dca-wrap">
           <table className="dca-table">
-            <thead><tr><th>Name</th><th>Type</th><th>DJ / Venue</th><th>Genre / Role</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 26 }}><input type="checkbox" title="Select everyone reachable in this view" checked={blastList.length > 0 && selected.size >= blastList.length} onChange={(e) => (e.target.checked ? selectAllInView() : clearSel())} /></th><th>Name</th><th>Type</th><th>DJ / Venue</th><th>Genre / Role</th><th>Years</th><th>Instagram</th><th>Phone</th><th>When</th><th></th></tr></thead>
             <tbody>
               {sorted.map((r) => {
                 const ig = (r.instagram || "").replace(/^@/, "");
@@ -3158,13 +3193,15 @@ function DJCollective({ showToast }) {
                 const m = matchOf(r);
                 const il = inviteLink(r);
                 return (
-                  <tr key={r.id} style={m.dupeHere ? { background: "#2a1e12" } : undefined}>
+                  <tr key={r.id} style={m.dupeHere ? { background: "#2a1e12" } : (selected.has(r.id) ? { background: "#16210f" } : undefined)}>
+                    <td><input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)} /></td>
                     <td className="dca-tname">
                       {r.name}
                       {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                       {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
                     {r.checked_in && <span className="dca-flag arr" title={`Checked in${r.checked_in_via ? " via " + r.checked_in_via : ""}${r.checked_in_at ? " · " + fmtWhen(r.checked_in_at) : ""}`}>✓ {r.checked_in_via === "qr" ? "QR" : "manual"}</span>}
                     {r.source === "door-walkin" && <span className="dca-flag walk" title="Walk-in — added at the door, never RSVP'd">walk-in</span>}
+                    {r.invited_at && <span className="dca-flag inv" title={"Invited to Edition 02 · " + fmtWhen(r.invited_at)}>✈ invited</span>}
                     </td>
                     <td><span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color }}>{KIND[k].label}</span></td>
                     <td>{isProm ? (r.org_name || "—") : (r.dj_name || "—")}</td>
@@ -3174,7 +3211,7 @@ function DJCollective({ showToast }) {
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
                     <td className="dca-tact">
-                      {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
+                      {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" href={il} target="_blank" rel="noopener noreferrer" onClick={() => markInvited(r)}><Send size={14} /></a>}
                       <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                       <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                     </td>
@@ -3197,18 +3234,20 @@ function DJCollective({ showToast }) {
               ? [r.org_name, r.org_role].filter(Boolean)
               : [r.genre, r.years].filter(Boolean);
             return (
-              <div key={r.id} className="dca-card" style={m.dupeHere ? { borderColor: "#8a5a1e" } : undefined}>
+              <div key={r.id} className="dca-card" style={m.dupeHere ? { borderColor: "#8a5a1e" } : (selected.has(r.id) ? { borderColor: "#5a7a2e", background: "#141b0f" } : undefined)}>
                 <div className="dca-top">
                   <div className="dca-name">
+                    <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)} style={{ marginRight: 8, verticalAlign: "middle" }} />
                     {r.name}{!isProm && r.dj_name ? <span className="dca-dj"> · {r.dj_name}</span> : ""}
                     {k !== "dj" && <span className="dca-kind" style={{ color: KIND[k].color, borderColor: KIND[k].color, marginLeft: 8 }}>{KIND[k].label}</span>}
                     {m.priorSessions.length > 0 && <span className="dca-flag ret" title={`Also signed up: ${m.priorSessions.join(", ")}`}>↩ prior</span>}
                     {m.dupeHere && <span className="dca-flag dup" title="Same number appears more than once in this edition — likely a duplicate">⚠ dup</span>}
                     {r.checked_in && <span className="dca-flag arr" title={`Checked in${r.checked_in_via ? " via " + r.checked_in_via : ""}${r.checked_in_at ? " · " + fmtWhen(r.checked_in_at) : ""}`}>✓ {r.checked_in_via === "qr" ? "QR" : "manual"}</span>}
                     {r.source === "door-walkin" && <span className="dca-flag walk" title="Walk-in — added at the door, never RSVP'd">walk-in</span>}
+                    {r.invited_at && <span className="dca-flag inv" title={"Invited to Edition 02 · " + fmtWhen(r.invited_at)}>✈ invited</span>}
                   </div>
                   <div className="dca-acts">
-                    {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
+                    {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" href={il} target="_blank" rel="noopener noreferrer" onClick={() => markInvited(r)}><Send size={14} /></a>}
                     <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                     <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                   </div>
@@ -3280,7 +3319,7 @@ const DEFAULT_BLAST_MSG =
 // remembered on this device, so a run can be paused and resumed without
 // double-messaging. Nothing sends automatically — it's a click assist, not a
 // bulk sender, so the number can't be flagged for automation.
-function DJCBlast({ recipients, audience, showToast, onClose }) {
+function DJCBlast({ recipients, audience, onSent, showToast, onClose }) {
   const STORE = "bdc_blast_sent";
   const [msg, setMsg] = useState(DEFAULT_BLAST_MSG);
   const [sent, setSent] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem(STORE) || "[]")); } catch { return new Set(); } });
@@ -3298,7 +3337,7 @@ function DJCBlast({ recipients, audience, showToast, onClose }) {
   const waUrl = (r) => { let n = (r.phone || "").replace(/\D/g, ""); if (n.length === 10) n = "91" + n; return `https://web.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(bodyFor(r))}`; };
 
   const openCur = () => { if (cur) window.open(waUrl(cur), "bdc_whatsapp"); };
-  const markSent = () => { if (!cur) return; const s = new Set(sent); s.add(key(cur)); setSent(s); persist(s); setIdx((v) => v + 1); };
+  const markSent = () => { if (!cur) return; const s = new Set(sent); s.add(key(cur)); setSent(s); persist(s); if (onSent) onSent(cur.id); setIdx((v) => v + 1); };
   const skip = () => setIdx((v) => v + 1);
   const resetSent = () => { if (!window.confirm("Clear the 'already messaged' memory on this device?")) return; const s = new Set(); setSent(s); persist(s); setIdx(0); showToast("Sent history cleared."); };
 
