@@ -2810,24 +2810,21 @@ function DJCollective({ showToast }) {
   const waLink = (p) => { let n = waDigits(p); if (n.length === 10) n = "91" + n; return n.length >= 10 ? `https://wa.me/${n}` : null; };
   const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
 
-  // ── One-tap WhatsApp invite (waitlist → current edition) ─────────────────
+  // ── One-tap WhatsApp invite: waitlist AND past-edition guests → Edition 02 ─
   // Nothing sends automatically — it opens WhatsApp with the message ready.
   const ED2_RSVP = "https://bengalurudjscollective.com/join/";
+  const ED2_SESSION = "2026-08-edition-02";
+  // Anyone not already in Edition 02 is worth inviting: the waitlist and every
+  // past-edition guest. Rows already in Ed02 have RSVP'd, so no invite.
+  const isPrior = (r) => (r.session || "") !== ED2_SESSION;
   const inviteMsg = (r) => {
     const first = (r.name || "").trim().split(/\s+/)[0];
-    return `Hi${first ? " " + first : ""}! Edition 02 of the Bengaluru DJs Collective is locked in — Monday 24 August, doors from 8 PM. You asked to be told first, so here it is. RSVP (free): ${ED2_RSVP}`;
+    const hook = kindKey(r) === "waitlist"
+      ? "You asked to be told first, so here it is."
+      : "You were in the room for a past edition — here's the next one.";
+    return `Hi${first ? " " + first : ""}! Edition 02 of the Bengaluru DJs Collective is locked in — Monday 24 August, doors from 8 PM. ${hook} RSVP (free): ${ED2_RSVP}`;
   };
   const inviteLink = (r) => { const base = waLink(r.phone); return base ? `${base}?text=${encodeURIComponent(inviteMsg(r))}` : null; };
-
-  // Bulk: every waitlist WhatsApp number, for pasting into a broadcast list.
-  const waitlistNums = rows.filter((r) => kindKey(r) === "waitlist")
-    .map((r) => { const n = waDigits(r.phone || ""); return n.length === 10 ? "+91" + n : (n.length >= 10 ? "+" + n : ""); })
-    .filter(Boolean);
-  const copyWaitlist = async () => {
-    if (!waitlistNums.length) return showToast("No waitlist numbers to copy.");
-    try { await navigator.clipboard.writeText(waitlistNums.join("\n")); showToast(`Copied ${waitlistNums.length} waitlist number${waitlistNums.length > 1 ? "s" : ""} — paste into a WhatsApp broadcast.`); }
-    catch { showToast("Clipboard blocked — allow access and retry."); }
-  };
 
   // Deduped, opted-in recipients for the one-by-one WhatsApp invite. Respects
   // whatever session/role/search filters are active, one message per person
@@ -2842,6 +2839,17 @@ function DJCollective({ showToast }) {
     });
     return out;
   })();
+
+  // Bulk: the current view's WhatsApp numbers (deduped, opted-in) for a
+  // broadcast — filter to Waitlist or a past edition first, then copy.
+  const copyNumbers = async () => {
+    const nums = blastList
+      .map((r) => { const n = waDigits(r.phone || ""); return n.length === 10 ? "+91" + n : (n.length >= 10 ? "+" + n : ""); })
+      .filter(Boolean);
+    if (!nums.length) return showToast("No numbers in this view to copy.");
+    try { await navigator.clipboard.writeText(nums.join("\n")); showToast(`Copied ${nums.length} number${nums.length > 1 ? "s" : ""} — paste into a WhatsApp broadcast.`); }
+    catch { showToast("Clipboard blocked — allow access and retry."); }
+  };
 
   // Signups-by-date for the selected edition: per-day new RSVPs + the running
   // "collective number" (cumulative total). Search query is intentionally
@@ -3002,9 +3010,9 @@ function DJCollective({ showToast }) {
               <MessageCircle size={15} /> Invite blast ({blastList.length})
             </button>
           )}
-          {waitlistNums.length > 0 && (
-            <button className="btn sm ghost" onClick={copyWaitlist} title="Copy every waitlist WhatsApp number for a broadcast list">
-              <ClipboardList size={15} /> Copy waitlist ({waitlistNums.length})
+          {blastList.length > 0 && (
+            <button className="btn sm ghost" onClick={copyNumbers} title="Copy this view's WhatsApp numbers (deduped, opted-in) for a broadcast — filter to Waitlist or a past edition first">
+              <ClipboardList size={15} /> Copy numbers ({blastList.length})
             </button>
           )}
         </div>
@@ -3166,7 +3174,7 @@ function DJCollective({ showToast }) {
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
                     <td className="dca-tact">
-                      {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
+                      {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
                       <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                       <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                     </td>
@@ -3200,7 +3208,7 @@ function DJCollective({ showToast }) {
                     {r.source === "door-walkin" && <span className="dca-flag walk" title="Walk-in — added at the door, never RSVP'd">walk-in</span>}
                   </div>
                   <div className="dca-acts">
-                    {k === "waitlist" && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
+                    {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp" href={il} target="_blank" rel="noopener noreferrer"><Send size={14} /></a>}
                     <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                     <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                   </div>
