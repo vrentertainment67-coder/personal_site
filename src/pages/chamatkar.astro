@@ -16,6 +16,7 @@ const EVENT = {
   mediaSlug: 'chamatkar-2026-07-11',   // Vol. 2 media for the "vibe" recap
   title: 'Chamatkar',
   edition: 'Vol. 3',
+  tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
   dateLabel: 'Saturday 1 August',
@@ -43,9 +44,11 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // Past editions — newest first. Each pulls its own photos/clips from Supabase
 // `event_media` (slug). When the current edition wraps, move its details up
 // into this list and set EVENT to the next one.
+// `poster` (landscape cover) is optional — the block just shows text + gallery
+// until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
-  { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
-  { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
+  { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
+  { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
 ];
 ---
 
@@ -65,6 +68,7 @@ const PAST_EDITIONS = [
       <div class="ck-hero-inner">
         <span class="ck-eyebrow">Guest List · {EVENT.edition}</span>
         <h1 class="ck-title">{EVENT.title}</h1>
+        {EVENT.tagline && <span class="ck-tagline">{EVENT.tagline}</span>}
         <p class="ck-lineup">{EVENT.lineup}</p>
         <span class="ck-theme">{EVENT.theme}</span>
         <p class="ck-genre">{EVENT.themeLine} · Live Audio-Visual</p>
@@ -160,6 +164,9 @@ const PAST_EDITIONS = [
       </div>
       {PAST_EDITIONS.map((ed) => (
         <div class="ck-past-ed">
+          {ed.poster && (
+            <img class="ck-past-poster" src={ed.poster} alt={`Chamatkar ${ed.edition} — ${ed.dateLabel} at ${ed.venue}, ${ed.area}`} loading="lazy" decoding="async" />
+          )}
           <div class="ck-past-head">
             <span class="ck-past-vol">{ed.edition}</span>
             <span class="ck-past-date">{ed.dateLabel}</span>
@@ -214,6 +221,7 @@ const PAST_EDITIONS = [
   .ck-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(6,6,6,.45), rgba(6,6,6,.78) 62%, #080808); }
   .ck-hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .ck-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .34em; text-transform: uppercase; color: var(--gold, #c9a84c); }
+  .ck-tagline { display: block; font-family: 'Bebas Neue', sans-serif; font-size: clamp(1rem, 3vw, 1.35rem); letter-spacing: .22em; text-transform: uppercase; color: var(--gold, #c9a84c); margin: .3rem 0 0; }
   .ck-title { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(4rem, 15vw, 8.5rem); line-height: .9; letter-spacing: .02em; text-transform: uppercase; color: #fff; margin: .6rem 0 0; }
   .ck-lineup { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 3.5vw, 2rem); letter-spacing: .1em; color: #e2c475; margin: 1rem 0 0; }
   .ck-theme { display: inline-block; font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.15rem, 3.2vw, 1.7rem); letter-spacing: .08em; text-transform: uppercase; color: #0a0a0a; background: var(--gold, #c9a84c); padding: .35rem 1.1rem; border-radius: 4px; margin: 1rem 0 0; }
@@ -277,4 +285,5 @@ const PAST_EDITIONS = [
   .ck-past-date { font-size: 1rem; color: #fff; font-weight: 600; }
   .ck-past-venue { font-size: .85rem; color: rgba(255,255,255,.55); }
   .ck-past-blurb { text-align: center; font-size: .92rem; line-height: 1.6; color: rgba(255,255,255,.66); max-width: 56ch; margin: .7rem auto 1.4rem; }
+  .ck-past-poster { display: block; width: 100%; max-width: 720px; margin: 0 auto 1.2rem; border-radius: 10px; border: 1px solid rgba(201,168,76,.25); }
 </style>
