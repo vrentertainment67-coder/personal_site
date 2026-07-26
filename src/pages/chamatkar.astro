@@ -27,9 +27,8 @@ const EVENT = {
   themeLine: 'Live Audio-Visual Set',
   intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
   // heroBg = a clean, text-safe static background behind the hero copy. Null =
-  // a plain dark gradient (no busy creative behind the text). Drop the custom
-  // background image here when ready.
-  heroBg: null,
+  // a plain dark gradient (no busy creative behind the text).
+  heroBg: '/images/chamatkar-hero-bg.jpg',
   // flyer = the horizontal creative for the upcoming edition, shown below the hero.
   flyer: '/images/chamatkar-vol3-banner.jpg',
   ics: '/chamatkar.ics',
@@ -222,8 +221,10 @@ const PAST_EDITIONS = [
   /* ── Hero ── */
   .ck-hero { position: relative; overflow: hidden; background: radial-gradient(ellipse 130% 90% at 50% -10%, #1c1109 0%, #0c0805 45%, #080808 75%); padding: clamp(7rem, 13vw, 11rem) clamp(16px, 4vw, 40px) clamp(3.5rem, 7vw, 5.5rem); text-align: center; }
   /* Custom static background (heroBg), if provided. Kept subtle + text-safe. */
-  .ck-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--ck-banner, none); background-size: cover; background-position: center; opacity: .5; }
-  .ck-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(6,6,6,.5), rgba(6,6,6,.72) 62%, #080808); }
+  .ck-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--ck-banner, none); background-size: cover; background-position: center; opacity: .58; }
+  /* Dark scrim: a pool behind the centred copy for readability, rays glowing at
+     the edges, fading to solid black into the flyer section below. */
+  .ck-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse 80% 68% at 50% 42%, rgba(6,6,6,.68), rgba(6,6,6,.24)), linear-gradient(to bottom, rgba(6,6,6,.22), rgba(6,6,6,.55) 60%, #080808); }
   .ck-hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .ck-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .34em; text-transform: uppercase; color: var(--gold, #c9a84c); }
   .ck-tagline { display: block; font-family: 'Bebas Neue', sans-serif; font-size: clamp(1rem, 3vw, 1.35rem); letter-spacing: .22em; text-transform: uppercase; color: var(--gold, #c9a84c); margin: .3rem 0 0; }
