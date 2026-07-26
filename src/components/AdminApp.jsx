@@ -3910,10 +3910,19 @@ function CalendarTab({ showToast }) {
 function Media({ showToast }) {
   const [items, setItems] = useState([]); const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState("gallery"); const fileRef = useRef();
+  // Event galleries (Chamatkar etc.) live in event_media, per event. Surface a
+  // shortcut here so their photos/videos can be reordered from the Gallery tab.
+  const [eventGalleries, setEventGalleries] = useState([]);
+  const [eventFor, setEventFor] = useState(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("media").select("*").order("sort").order("created_at", { ascending: false });
     setItems(data || []);
+    // Events that actually have media, so the list stays relevant.
+    const { data: evs } = await supabase.from("events").select("slug,title,date_label").order("rsvp_cutoff", { ascending: false, nullsFirst: false });
+    const { data: em } = await supabase.from("event_media").select("event_slug");
+    const counts = (em || []).reduce((m, r) => (m[r.event_slug] = (m[r.event_slug] || 0) + 1, m), {});
+    setEventGalleries((evs || []).filter((e) => counts[e.slug]).map((e) => ({ ...e, count: counts[e.slug] })));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -3967,10 +3976,29 @@ function Media({ showToast }) {
     );
     load();
   };
+  // Opening an event gallery reuses the same manager as Events → Photos & videos
+  // (upload, delete, and reorder with the arrows).
+  if (eventFor) return <EventMediaManager event={eventFor} onBack={() => { setEventFor(null); load(); }} showToast={showToast} />;
+
   return (
     <>
       <h1 className="h1">Gallery &amp; Media</h1>
       <p className="sub">A live mirror of the public site. Pick a set, then upload or delete — changes go live instantly.</p>
+
+      {eventGalleries.length > 0 && (
+        <div className="card" style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 13, color: "#8a8878", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Event galleries — reorder photos &amp; videos</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {eventGalleries.map((e) => (
+              <button key={e.slug} className="btn sm ghost" onClick={() => setEventFor(e)} title={`${e.count} item${e.count === 1 ? "" : "s"}`}>
+                <Images size={14} /> {e.title}{e.date_label ? ` · ${e.date_label}` : ""} <span style={{ opacity: .55 }}>({e.count})</span>
+              </button>
+            ))}
+          </div>
+          <p className="sub" style={{ margin: "8px 0 0", fontSize: ".72rem" }}>Open one to drag the good shots to the front — first added shows first on the event page.</p>
+        </div>
+      )}
+
       <div className="card upload-card">
         <div className="chips">
           {["gallery", "press", "logo"].map((k) => (
