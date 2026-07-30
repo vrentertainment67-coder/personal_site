@@ -1254,7 +1254,8 @@ function invoiceNumber() { const d = new Date(); const p = (x) => String(x).padS
 function addDays(days) { const d = new Date(); d.setDate(d.getDate() + Number(days || 0)); return d; }
 const niceDate = (d) => d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 
-function buildInvoiceHTML({ biller, invNo, dateStr, dueStr, terms, billTo, item, qty, rate, total, paid }) {
+function buildInvoiceHTML({ biller, invNo, dateStr, dueStr, terms, billTo, item, qty, rate, total, paid, proforma = false }) {
+  const docLabel = proforma ? "PROFORMA INVOICE" : "INVOICE";
   const bank = biller.bank || {};
   const notes = [
     biller.upi ? `UPI: ${biller.upi}` : null,
@@ -1277,8 +1278,8 @@ function buildInvoiceHTML({ biller, invNo, dateStr, dueStr, terms, billTo, item,
         ${biller.pan ? `<div style="font-size:12px;color:#6b7280">PAN: ${biller.pan}</div>` : ""}
       </td>
       <td style="vertical-align:top;text-align:right">
-        <div style="font-size:34px;font-weight:800;letter-spacing:1px;color:#111827">INVOICE</div>
-        <div style="font-size:14px;color:#9ca3af;margin-top:2px">#${invNo}</div>
+        <div style="font-size:${proforma ? 26 : 34}px;font-weight:800;letter-spacing:1px;color:#111827">${docLabel}</div>
+        <div style="font-size:14px;color:#9ca3af;margin-top:2px">${proforma ? "Ref " : "#"}${invNo}</div>
       </td>
     </tr></table>
     <div style="border-top:1px solid #e5e7eb;margin:26px 0"></div>
@@ -1317,6 +1318,7 @@ function buildInvoiceHTML({ biller, invNo, dateStr, dueStr, terms, billTo, item,
         <tr><td style="padding:9px 11px;text-align:right;font-weight:800;font-size:15px">Balance Due</td><td style="padding:9px 11px;text-align:right;font-weight:800;font-size:15px">${rupee(balance)}</td></tr>
       </table>
     </td></tr></table>
+    ${proforma ? `<div style="margin-top:20px;padding:10px 12px;background:#fff7e6;border:1px solid #f0d9a8;border-radius:6px;font-size:12px;color:#8a6d1f">This is a proforma invoice for your reference and is not a tax invoice or a demand for payment. A final invoice will be issued on confirmation.</div>` : ""}
     <div style="margin-top:34px">
       <div style="font-size:11px;color:#9ca3af;letter-spacing:.06em">NOTES</div>
       ${notes.map((l) => `<div style="font-size:12px;color:#374151;margin-top:3px">${l}</div>`).join("")}
@@ -1348,6 +1350,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   const [terms, setTerms] = useState(7);
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [proforma, setProforma] = useState(false); // invoice → proforma variant
   // Editable subject + body. Pre-filled from the template for the current mode,
   // and re-filled whenever the mode or the money changes — but never once it's
   // been hand-edited, so typed changes are not clobbered.
@@ -1379,8 +1382,9 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   // Only recompute when invoice-relevant fields change (not on every keystroke in e.g. email)
   const invHTML = useMemo(() => biller ? buildInvoiceHTML({
     biller, invNo, dateStr, dueStr, terms,
-    billTo: { company, gstin, address }, item: desc, qty: 1, rate: total, total, paid,
-  }) : "", [biller, invNo, dateStr, dueStr, terms, company, gstin, address, desc, total, paid]);
+    billTo: { company, gstin, address }, item: desc, qty: 1, rate: total, total, paid, proforma,
+  }) : "", [biller, invNo, dateStr, dueStr, terms, company, gstin, address, desc, total, paid, proforma]);
+  const docWord = proforma ? "Proforma invoice" : "Invoice";
 
   // ── Email templates ────────────────────────────────────────────────────
   // One paragraph per line. These only seed the editable fields below — what
@@ -1393,7 +1397,15 @@ function GigMailer({ booking, payments, onChange, showToast }) {
 
   function templateFor(m) {
     if (m === "invoice") {
-      return {
+      return proforma ? {
+        subject: `Proforma invoice${biller ? ` — ${biller.name}` : ""} · ${desc}`,
+        lines: [
+          hi,
+          `Please find attached the <strong>proforma invoice</strong> for <strong>${desc}</strong>${when ? `, ${when}` : ""}.`,
+          `Amount: <strong>${rupee(total)}</strong>. This is for your reference and approval — a final invoice will follow on confirmation.`,
+          `Do let me know if you'd like anything adjusted.`,
+        ],
+      } : {
         subject: `Invoice #${invNo}${biller ? ` — ${biller.name}` : ""}`,
         lines: [
           hi,
@@ -1459,7 +1471,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     const t = templateFor(mode);
     setSubject(t.subject);
     setBody(t.lines.join("\n"));
-  }, [open, mode, edited, total, paid, advance, tds, desc, terms, biller, booking.event_date, booking.venue, booking.name]);
+  }, [open, mode, edited, proforma, total, paid, advance, tds, desc, terms, biller, booking.event_date, booking.venue, booking.name]);
 
   const resetTemplate = () => {
     const t = templateFor(mode);
@@ -1470,7 +1482,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     client_email: email || null, client_company: company || null, client_gstin: gstin || null, client_address: address || null,
   }).eq("id", booking.id).then(() => onChange && onChange());
 
-  const fileName = `Invoice-${invNo}-${(company || "client").replace(/[^a-z0-9]+/gi, "-").slice(0, 28)}.pdf`;
+  const fileName = `${proforma ? "Proforma-Invoice" : "Invoice"}-${invNo}-${(company || "client").replace(/[^a-z0-9]+/gi, "-").slice(0, 28)}.pdf`;
 
   // Build the invoice PDF from bundled jsPDF + html2canvas (no CDN at runtime).
   async function makePdf() {
@@ -1497,7 +1509,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
     if (!biller) return showToast("Pick a biller first");
     if (total <= 0) return showToast("Set the gig Fee first — invoice is ₹0");
     setBusy(true);
-    try { (await makePdf()).save(fileName); persist(); showToast("Invoice downloaded ✓"); }
+    try { (await makePdf()).save(fileName); persist(); showToast(`${docWord} downloaded ✓`); }
     catch (e) { showToast("Couldn't build PDF: " + String(e.message || e)); }
     setBusy(false);
   }
@@ -1505,7 +1517,9 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   async function whatsappInvoice() {
     await downloadInvoice();
     const num = waDigits(booking.contact || "");
-    const msg = encodeURIComponent(`Hi ${booking.name || "there"}, please find attached the invoice for ${desc}. Balance due: ${rupee(total - paid)}. Thank you!`);
+    const msg = encodeURIComponent(proforma
+      ? `Hi ${booking.name || "there"}, please find attached the proforma invoice for ${desc}. Amount: ${rupee(total)}. Let me know if you'd like any changes.`
+      : `Hi ${booking.name || "there"}, please find attached the invoice for ${desc}. Balance due: ${rupee(total - paid)}. Thank you!`);
     window.open(num.length >= 10 ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
   }
 
@@ -1518,7 +1532,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
       const lines = body.split("\n").map((l) => l.trim()).filter(Boolean);
       if (!subject.trim()) { setBusy(false); return showToast("Add a subject"); }
       if (!lines.length) { setBusy(false); return showToast("The message is empty"); }
-      const heading = mode === "invoice" ? `Invoice from ${biller.name}`
+      const heading = mode === "invoice" ? `${docWord} from ${biller.name}`
         : mode === "confirmation" ? "Booking confirmed"
         : mode === "receipt" ? "Payment received"
         : "Quick follow-up";
@@ -1526,7 +1540,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
       let html = plainEmailHTML(heading, lines), attachments;
       if (mode === "invoice") {
         const b64 = (await makePdf()).output("datauristring").split(",")[1];
-        attachments = [{ filename: `Invoice-${invNo}.pdf`, contentBase64: b64 }];
+        attachments = [{ filename: `${proforma ? "Proforma-Invoice" : "Invoice"}-${invNo}.pdf`, contentBase64: b64 }];
       }
 
       const res = await fetch(`${FN}/gig-mailer?action=send`, {
@@ -1581,12 +1595,16 @@ function GigMailer({ booking, payments, onChange, showToast }) {
             <div><span style={lbl}>Terms (days)</span><input type="number" style={inp} value={terms} onChange={(e) => setTerms(e.target.value)} /></div>
             <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.6)", paddingBottom: 6 }}>Fee {rupee(total)} · Paid {rupee(paid)} · <strong style={{ color: "#ffb3b3" }}>Due {rupee(total - paid)}</strong></div>
           </div>
-          {total <= 0 && <p style={{ fontSize: ".72rem", color: "#ffb3b3", margin: "6px 0 0" }}>Set the gig Fee above first — the invoice total is ₹0.</p>}
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: ".82rem", color: "rgba(255,255,255,.8)", cursor: "pointer" }}>
+            <input type="checkbox" checked={proforma} onChange={(e) => setProforma(e.target.checked)} />
+            Proforma invoice <span style={{ fontSize: ".72rem", color: "rgba(255,255,255,.45)" }}>— same amount, marked "Proforma" and "not a tax invoice"</span>
+          </label>
+          {total <= 0 && <p style={{ fontSize: ".72rem", color: "#ffb3b3", margin: "6px 0 0" }}>Set the gig Fee above first — the {docWord.toLowerCase()} total is ₹0.</p>}
 
           {billers && (
             <div style={{ marginTop: 10 }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button className="btn sm" onClick={() => setShowPreview((v) => !v)}>{showPreview ? <><EyeOff size={12} /> Hide preview</> : <><Eye size={12} /> Preview invoice</>}</button>
+                <button className="btn sm" onClick={() => setShowPreview((v) => !v)}>{showPreview ? <><EyeOff size={12} /> Hide preview</> : <><Eye size={12} /> Preview {proforma ? "proforma" : "invoice"}</>}</button>
                 <button className="btn sm" onClick={downloadInvoice} disabled={busy}>{busy ? <Loader2 size={12} className="spin" /> : <Download size={12} />} Download</button>
                 <button className="btn sm" onClick={whatsappInvoice} disabled={busy}><MessageCircle size={12} /> Download + WhatsApp</button>
               </div>
@@ -1635,7 +1653,7 @@ function GigMailer({ booking, payments, onChange, showToast }) {
       </div>
 
       <button className="btn" style={{ marginTop: 12 }} onClick={send} disabled={busy || !isEmail(email) || (mode === "invoice" && !biller)}>
-        {busy ? <Loader2 size={15} className="spin" /> : <Send size={15} />} Send {mode === "invoice" ? "invoice" : mode === "receipt" ? "receipt" : mode} to client
+        {busy ? <Loader2 size={15} className="spin" /> : <Send size={15} />} Send {mode === "invoice" ? (proforma ? "proforma invoice" : "invoice") : mode === "receipt" ? "receipt" : mode} to client
       </button>
     </div>
   );
@@ -2914,7 +2932,7 @@ function DJCollective({ showToast }) {
   const pctOf = (a) => (stats.n ? `${Math.round((a / stats.n) * 100)}% of edition` : "—");
 
   const exportCsv = () => {
-    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "org_name", "org_role", "source", "instagram", "phone", "invited_at", "checked_in", "checked_in_via", "checked_in_at"];
+    const cols = ["created_at", "session", "type", "name", "dj_name", "genre", "years", "dob", "bringing_gear", "org_name", "org_role", "source", "instagram", "phone", "invited_at", "checked_in", "checked_in_via", "checked_in_at"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const cell = (r, c) => (c === "type" ? KIND[kindKey(r)].label : r[c]);
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(cell(r, c))).join(","))].join("\n");
