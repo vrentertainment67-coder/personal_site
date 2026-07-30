@@ -788,6 +788,20 @@ function Bookings({ showToast }) {
     showToast("Re-opened as confirmed."); load();
   };
 
+  // Permanently remove an enquiry/gig. Handy when the same date has more than one
+  // enquiry logged and you want to drop the ones that didn't convert. Any linked
+  // payment rows go with it (gig_payments cascades on booking_id).
+  const delBooking = async (r) => {
+    if (!window.confirm(`Delete "${r.name}" (${fmtRange(r.event_date, r.event_end_date)}) permanently?\n\nThis can't be undone.`)) return;
+    setActing(r.id);
+    await supabase.from("gig_payments").delete().eq("booking_id", r.id); // best-effort; ignore if table absent
+    const { error } = await supabase.from("bookings").delete().eq("id", r.id);
+    setActing(null);
+    if (error) return showToast("Couldn't delete — " + error.message);
+    showToast("Enquiry deleted.");
+    setOpenId(null); load();
+  };
+
   const whatsapp = (r) => {
     const num = waDigits(r.contact);
     const msg = encodeURIComponent(`Hi ${r.name}, this is Vic — thanks for your booking request for ${r.event_date}. `);
@@ -930,6 +944,9 @@ function Bookings({ showToast }) {
           )}
           <button className="act" onClick={() => setEditing(r)}><Pencil size={15} /> Edit</button>
           <button className="act wa" onClick={() => whatsapp(r)}><MessageCircle size={15} /> Reply</button>
+          <button className="act decline" disabled={acting === r.id} onClick={() => delBooking(r)} title="Permanently delete this enquiry">
+            {acting === r.id ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />} Delete
+          </button>
         </div>
       </>
     );
@@ -1108,6 +1125,7 @@ function Bookings({ showToast }) {
                       )}
                       <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
                       <button className="bk-ic" title="Open" onClick={() => setOpenId(r.id)}><Eye size={14} /></button>
+                      <button className="bk-ic danger" title="Delete" disabled={acting === r.id} onClick={() => delBooking(r)}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
