@@ -1900,9 +1900,11 @@ function EventGuests({ event, showToast }) {
   const q = query.trim().toLowerCase();
   const filtered = rows.filter((r) => !q || [r.name, r.phone, r.instagram, r.entry_type].some((v) => (v || "").toLowerCase().includes(q)));
   const heads = filtered.reduce((s, r) => s + (parseInt(r.guests, 10) || 1), 0);
+  const doorCount = filtered.filter((r) => r.source === "door").length;
+  const paidCount = filtered.filter((r) => r.paid).length;
 
   const exportCsv = () => {
-    const cols = ["created_at", "name", "phone", "guests", "entry_type", "instagram", "source"];
+    const cols = ["created_at", "name", "phone", "guests", "paid", "entry_type", "instagram", "source", "attended"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
     const a = document.createElement("a");
@@ -1956,9 +1958,11 @@ function EventGuests({ event, showToast }) {
           </div>
         </div>
       )}
-      <div style={{ display: "flex", gap: 10, margin: "12px 0 14px" }}>
+      <div style={{ display: "flex", gap: 10, margin: "12px 0 14px", flexWrap: "wrap" }}>
         <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>RSVPs</span></div>
         <div style={glStat}><strong style={glNum}>{heads}</strong><span style={glLbl}>Total heads</span></div>
+        {doorCount > 0 && <div style={glStat}><strong style={glNum}>{doorCount}</strong><span style={glLbl}>Door check-ins</span></div>}
+        {paidCount > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#7fe0a0" }}>{paidCount}</strong><span style={glLbl}>Paid cover</span></div>}
       </div>
       <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
@@ -1970,9 +1974,16 @@ function EventGuests({ event, showToast }) {
               <div key={r.id} className="req">
                 <div className="req-top">
                   <div>
-                    <h3>{r.name} <span className="gold">· {r.guests} {Number(r.guests) === 1 ? "guest" : "guests"}</span>{r.source === "manual" && <span className="mini"> manual</span>}</h3>
+                    <h3>{r.name} <span className="gold">· {r.guests} {Number(r.guests) === 1 ? "guest" : "guests"}</span>{r.source === "manual" && <span className="mini"> manual</span>}{r.source === "door" && <span className="mini"> door</span>}</h3>
                     <p className="req-meta">
-                      {r.entry_type && <span className="tag">{r.entry_type}</span>}
+                      {r.source === "door" && (
+                        <span className="tag" style={r.paid
+                          ? { background: "#16331f", color: "#7fe0a0", borderColor: "#1e6b43" }
+                          : { background: "rgba(224,160,58,.12)", color: "#f0c980", borderColor: "#7a5a1e" }}>
+                          {r.paid ? "✓ paid" : "unpaid"}
+                        </span>
+                      )}
+                      {r.entry_type && r.entry_type !== "walk-in" && <span className="tag">{r.entry_type}</span>}
                       <span>{r.phone}</span>
                       {r.instagram && <span>{r.instagram}</span>}
                       <span>{MONTHS[t.getMonth()]} {t.getDate()}, {pad(t.getHours())}:{pad(t.getMinutes())}</span>

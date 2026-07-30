@@ -1,0 +1,291 @@
+---
+// ============================================================
+// /guestlist — front-desk door capture for the live event.
+// Hand this URL to the person on the door. They capture each guest's
+// name + phone and whether the cover charge was paid; every entry writes
+// straight into the Chamatkar guest list (event_rsvps) for the current
+// edition, tagged source='door' and attended=true.
+//
+// Standalone kiosk page (no site nav/footer) + vanilla JS, so it loads
+// instantly and keeps working even on flaky venue wifi: failed saves are
+// queued in the browser and retried automatically.
+//
+// ---- CHANGE THIS PER EVENT ----------------------------------
+// EVENT_SLUG must match the edition in src/pages/chamatkar.astro.
+// PASSCODE is a soft gate so a leaked link can't be spammed (change it
+// each event and tell the door person; it's remembered on their device).
+// -------------------------------------------------------------
+const EVENT_SLUG  = "chamatkar-2026-08-01";
+const EVENT_TITLE = "Chamatkar Vol. 3";
+const EVENT_VENUE = "Happy Brew · Koramangala";
+const EVENT_DATE  = "Sat 1 August";
+const PASSCODE    = "2608"; // door-desk code
+
+// Public anon publishable key (same as EventRSVP's fallback) — safe to inline.
+const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Door — {EVENT_TITLE}</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root{ --gold:#c9a84c; --gold2:#a8842f; --bg:#0b0b0c; --card:#141416; --line:#2a2a2a;
+      --off:#e8e8e0; --mut:#8a8878; --green:#39b56a; --greenbg:#123021; --amber:#e0a03a; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--off);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+      min-height:100dvh; }
+    body{ padding:max(14px,env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom)); }
+    .wrap{ max-width:460px; margin:0 auto; }
+    header{ text-align:center; padding:6px 0 14px; }
+    header .k{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:700; }
+    header h1{ margin:4px 0 2px; font-size:20px; }
+    header .m{ color:var(--mut); font-size:12.5px; }
+    label.fld{ display:block; margin:0 0 12px; }
+    label.fld > span{ display:block; font-size:12px; color:var(--mut); margin:0 0 6px; letter-spacing:.02em; }
+    input[type=text],input[type=tel]{ width:100%; background:#0e0e10; border:1.5px solid var(--line);
+      border-radius:12px; padding:15px 14px; color:var(--off); font-size:18px; outline:none; }
+    input:focus{ border-color:var(--gold); }
+    .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+    /* paid toggle */
+    .seg{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 14px; }
+    .seg button{ padding:15px 8px; border-radius:12px; border:1.5px solid var(--line); background:#0e0e10;
+      color:var(--mut); font-size:15px; font-weight:700; cursor:pointer; transition:.12s; }
+    .seg button .sub{ display:block; font-weight:500; font-size:11px; opacity:.8; margin-top:2px; }
+    .seg button[aria-pressed=true].paid{ border-color:var(--green); background:var(--greenbg); color:#8ff0b6; }
+    .seg button[aria-pressed=true].comp{ border-color:var(--amber); background:rgba(224,160,58,.12); color:#f0c980; }
+    /* guests stepper */
+    .steprow{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:#0e0e10; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 14px; }
+    .steprow .lab{ font-size:14px; color:var(--mut); }
+    .step{ display:flex; align-items:center; gap:14px; }
+    .step button{ width:40px; height:40px; border-radius:10px; border:1.5px solid var(--line);
+      background:#161618; color:var(--off); font-size:22px; line-height:1; cursor:pointer; }
+    .step b{ min-width:26px; text-align:center; font-size:20px; }
+    .go{ width:100%; padding:17px; border:none; border-radius:14px; font-size:18px; font-weight:800;
+      color:#161208; background:linear-gradient(90deg,var(--gold2),var(--gold)); cursor:pointer; letter-spacing:.02em; }
+    .go:disabled{ opacity:.55; }
+    .flash{ text-align:center; font-weight:700; padding:12px; border-radius:12px; margin:0 0 12px; display:none; }
+    .flash.ok{ display:block; background:var(--greenbg); color:#8ff0b6; border:1px solid #1e6b43; }
+    .flash.warn{ display:block; background:rgba(224,160,58,.12); color:#f0c980; border:1px solid #7a5a1e; }
+    .flash.err{ display:block; background:rgba(224,87,74,.12); color:#ff9a90; border:1px solid #7a2e28; }
+    .tally{ display:flex; gap:8px; margin:16px 0 8px; }
+    .tally div{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 8px; text-align:center; }
+    .tally b{ display:block; font-size:22px; color:var(--gold); }
+    .tally span{ font-size:10.5px; color:var(--mut); text-transform:uppercase; letter-spacing:.06em; }
+    .recent{ margin-top:6px; }
+    .recent h4{ font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:.08em; margin:14px 0 6px; }
+    .recent ul{ list-style:none; margin:0; padding:0; }
+    .recent li{ display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:9px 0; border-bottom:1px solid #1b1b1d; font-size:14px; }
+    .recent li .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .recent li .badge{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    .badge.p{ background:var(--greenbg); color:#8ff0b6; }
+    .badge.u{ background:rgba(224,160,58,.14); color:#f0c980; }
+    .pend{ font-size:12px; color:var(--amber); text-align:center; margin-top:8px; min-height:16px; }
+    .foot{ text-align:center; color:#55554e; font-size:11px; margin-top:22px; }
+    .foot a{ color:#6a6a60; cursor:pointer; }
+    /* gate */
+    .gate{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; z-index:20; }
+    .gate .box{ width:100%; max-width:300px; text-align:center; }
+    .gate h2{ font-size:16px; margin:0 0 4px; }
+    .gate p{ color:var(--mut); font-size:12.5px; margin:0 0 16px; }
+    .gate input{ text-align:center; letter-spacing:.4em; font-size:22px; }
+    .hidden{ display:none !important; }
+  </style>
+</head>
+<body>
+  <!-- passcode gate -->
+  <div id="gate" class="gate">
+    <div class="box">
+      <div class="k" style="color:var(--gold);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700">Door check-in</div>
+      <h2>{EVENT_TITLE}</h2>
+      <p>{EVENT_VENUE} · {EVENT_DATE}<br/>Enter the door code to start.</p>
+      <input id="gcode" type="tel" inputmode="numeric" maxlength="8" placeholder="••••" />
+      <button id="gbtn" class="go" style="margin-top:14px">Start</button>
+      <div id="gerr" class="pend"></div>
+    </div>
+  </div>
+
+  <main id="app" class="wrap hidden">
+    <header>
+      <div class="k" style="color:var(--gold);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700">Door check-in</div>
+      <h1>{EVENT_TITLE}</h1>
+      <div class="m">{EVENT_VENUE} · {EVENT_DATE}</div>
+    </header>
+
+    <div id="flash" class="flash"></div>
+
+    <form id="f" autocomplete="off" novalidate>
+      <input class="hp" type="text" id="company" tabindex="-1" aria-hidden="true" />
+      <label class="fld"><span>Name</span>
+        <input type="text" id="name" autocapitalize="words" placeholder="Guest name" enterkeyhint="next" /></label>
+      <label class="fld"><span>Phone / WhatsApp</span>
+        <input type="tel" id="phone" inputmode="tel" placeholder="+91…" enterkeyhint="done" /></label>
+
+      <div class="seg" role="group" aria-label="Cover charge">
+        <button type="button" id="bPaid"  class="paid" aria-pressed="true">Paid<span class="sub">cover collected</span></button>
+        <button type="button" id="bComp" class="comp" aria-pressed="false">Not paid<span class="sub">comp / guest list</span></button>
+      </div>
+
+      <div class="steprow">
+        <span class="lab">People entering</span>
+        <div class="step">
+          <button type="button" id="gMinus" aria-label="Fewer">–</button>
+          <b id="gCount">1</b>
+          <button type="button" id="gPlus" aria-label="More">+</button>
+        </div>
+      </div>
+
+      <button type="submit" id="go" class="go">Add guest ✓</button>
+      <div id="pend" class="pend"></div>
+    </form>
+
+    <div class="tally">
+      <div><b id="tEntries">0</b><span>Entries</span></div>
+      <div><b id="tHeads">0</b><span>Heads</span></div>
+      <div><b id="tPaid">0</b><span>Paid</span></div>
+    </div>
+
+    <div class="recent">
+      <h4>Just added (this device)</h4>
+      <ul id="recent"><li style="color:var(--mut);border:none">Nothing yet tonight.</li></ul>
+    </div>
+
+    <div class="foot">Feeds directly into the Chamatkar guest list · <a id="lock">lock</a></div>
+  </main>
+
+  <script is:inline define:vars={{ EVENT_SLUG, SUPABASE_URL, SUPABASE_KEY, PASSCODE }}>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var LOGKEY = "gl_log_" + EVENT_SLUG;      // tonight's device tally (name/paid/heads)
+      var QKEY   = "gl_queue_" + EVENT_SLUG;     // offline retry queue
+      var AUTHK  = "gl_auth_" + EVENT_SLUG;
+
+      // ---------- passcode gate ----------
+      function unlock() { $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); $("name").focus(); }
+      if (localStorage.getItem(AUTHK) === PASSCODE) unlock();
+      $("gbtn").onclick = function () {
+        if ($("gcode").value.trim() === PASSCODE) { localStorage.setItem(AUTHK, PASSCODE); unlock(); }
+        else { $("gerr").textContent = "Wrong code."; }
+      };
+      $("gcode").addEventListener("keydown", function (e) { if (e.key === "Enter") $("gbtn").click(); });
+      $("lock").onclick = function () { localStorage.removeItem(AUTHK); location.reload(); };
+
+      // ---------- state ----------
+      var paid = true, heads = 1;
+      function setPaid(v) { paid = v; $("bPaid").setAttribute("aria-pressed", v); $("bComp").setAttribute("aria-pressed", !v); }
+      $("bPaid").onclick = function () { setPaid(true); };
+      $("bComp").onclick = function () { setPaid(false); };
+      function setHeads(n) { heads = Math.max(1, Math.min(20, n)); $("gCount").textContent = heads; }
+      $("gPlus").onclick = function () { setHeads(heads + 1); };
+      $("gMinus").onclick = function () { setHeads(heads - 1); };
+
+      // ---------- tally + recent ----------
+      function todayLog() {
+        try { var l = JSON.parse(localStorage.getItem(LOGKEY) || "[]"); return Array.isArray(l) ? l : []; }
+        catch (e) { return []; }
+      }
+      function saveLog(l) { localStorage.setItem(LOGKEY, JSON.stringify(l.slice(-400))); }
+      function render() {
+        var l = todayLog();
+        var e = l.length, h = 0, p = 0;
+        for (var i = 0; i < l.length; i++) { h += (l[i].g || 1); if (l[i].paid) p++; }
+        $("tEntries").textContent = e; $("tHeads").textContent = h; $("tPaid").textContent = p;
+        var ul = $("recent"), recent = l.slice(-6).reverse();
+        if (!recent.length) { ul.innerHTML = '<li style="color:var(--mut);border:none">Nothing yet tonight.</li>'; return; }
+        ul.innerHTML = recent.map(function (r) {
+          var badge = r.paid ? '<span class="badge p">Paid</span>' : '<span class="badge u">Unpaid</span>';
+          var nm = (r.n || "—") + (r.g > 1 ? " ·" + r.g : "");
+          return '<li><span class="nm">' + esc(nm) + '</span>' + badge + '</li>';
+        }).join("");
+      }
+      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+
+      // ---------- flash ----------
+      var ft;
+      function flash(msg, cls) {
+        var f = $("flash"); f.textContent = msg; f.className = "flash " + cls;
+        clearTimeout(ft); ft = setTimeout(function () { f.className = "flash"; }, 2600);
+      }
+
+      // ---------- network + offline queue ----------
+      function post(row) {
+        return fetch(SUPABASE_URL + "/rest/v1/event_rsvps", {
+          method: "POST",
+          headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify(row)
+        }).then(function (r) { return r.ok; }).catch(function () { return false; });
+      }
+      function queue() { try { return JSON.parse(localStorage.getItem(QKEY) || "[]"); } catch (e) { return []; } }
+      function setQueue(q) { localStorage.setItem(QKEY, JSON.stringify(q)); showPend(); }
+      function showPend() {
+        var n = queue().length;
+        $("pend").textContent = n ? ("⏳ " + n + " waiting to sync — will retry automatically") : "";
+      }
+      function flush() {
+        var q = queue();
+        if (!q.length || !navigator.onLine) { showPend(); return; }
+        var next = q[0];
+        post(next).then(function (ok) {
+          if (ok) { var qq = queue(); qq.shift(); setQueue(qq); if (qq.length) flush(); }
+          else { showPend(); }
+        });
+      }
+      window.addEventListener("online", flush);
+      setInterval(flush, 15000);
+
+      // ---------- submit ----------
+      $("f").addEventListener("submit", function (e) {
+        e.preventDefault();
+        if ($("company").value) return; // honeypot
+        var name = $("name").value.trim();
+        var phone = $("phone").value.trim();
+        if (name.length < 2) return flash("Enter the guest's name.", "err");
+        if (phone.replace(/\D/g, "").length < 8) return flash("Enter a valid phone number.", "err");
+
+        // double-tap guard: same phone added in the last 3 min on this device
+        var pk = phone.replace(/\D/g, "").slice(-10), now = Date.now();
+        var dup = todayLog().some(function (r) { return r.pk === pk && (now - r.ts) < 180000; });
+        if (dup && !$("f").dataset.force) {
+          $("f").dataset.force = "1";
+          return flash("Just added this number — tap Add again to confirm.", "warn");
+        }
+        delete $("f").dataset.force;
+
+        var row = {
+          event: EVENT_SLUG, name: name, phone: phone, guests: heads,
+          paid: paid, source: "door", attended: true, entry_type: "walk-in",
+          user_agent: (navigator.userAgent || "").slice(0, 300)
+        };
+
+        var go = $("go"); go.disabled = true;
+        post(row).then(function (ok) {
+          go.disabled = false;
+          if (!ok) {
+            var q = queue(); q.push(row); setQueue(q);   // any failure → retry queue
+            flash("Saved offline — will sync when back online.", "warn");
+          } else {
+            flash("✓ " + name + (paid ? " · paid" : " · not paid"), "ok");
+          }
+          // record locally either way (so the tally + recent are instant)
+          var l = todayLog();
+          l.push({ n: name, pk: pk, g: heads, paid: paid, ts: now });
+          saveLog(l); render();
+          // reset for next guest
+          $("name").value = ""; $("phone").value = ""; setPaid(true); setHeads(1);
+          $("name").focus();
+        });
+      });
+
+      // ---------- boot ----------
+      render(); showPend(); flush();
+    })();
+  </script>
+</body>
+</html>
