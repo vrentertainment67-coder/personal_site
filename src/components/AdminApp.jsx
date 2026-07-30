@@ -1902,9 +1902,11 @@ function EventGuests({ event, showToast }) {
   const heads = filtered.reduce((s, r) => s + (parseInt(r.guests, 10) || 1), 0);
   const doorCount = filtered.filter((r) => r.source === "door").length;
   const paidCount = filtered.filter((r) => r.paid).length;
+  const collected = filtered.reduce((s, r) => s + (Number(r.cover_amount) || 0), 0);
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
   const exportCsv = () => {
-    const cols = ["created_at", "name", "phone", "guests", "paid", "entry_type", "instagram", "source", "attended"];
+    const cols = ["created_at", "name", "phone", "guests", "paid", "cover_amount", "entry_type", "instagram", "source", "attended"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...filtered.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
     const a = document.createElement("a");
@@ -1963,6 +1965,7 @@ function EventGuests({ event, showToast }) {
         <div style={glStat}><strong style={glNum}>{heads}</strong><span style={glLbl}>Total heads</span></div>
         {doorCount > 0 && <div style={glStat}><strong style={glNum}>{doorCount}</strong><span style={glLbl}>Door check-ins</span></div>}
         {paidCount > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#7fe0a0" }}>{paidCount}</strong><span style={glLbl}>Paid cover</span></div>}
+        {collected > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#7fe0a0" }}>{inr(collected)}</strong><span style={glLbl}>Collected</span></div>}
       </div>
       <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
@@ -1980,7 +1983,7 @@ function EventGuests({ event, showToast }) {
                         <span className="tag" style={r.paid
                           ? { background: "#16331f", color: "#7fe0a0", borderColor: "#1e6b43" }
                           : { background: "rgba(224,160,58,.12)", color: "#f0c980", borderColor: "#7a5a1e" }}>
-                          {r.paid ? "✓ paid" : "unpaid"}
+                          {r.paid ? (r.cover_amount ? `✓ ${inr(r.cover_amount)}` : "✓ paid") : "unpaid"}
                         </span>
                       )}
                       {r.entry_type && r.entry_type !== "walk-in" && <span className="tag">{r.entry_type}</span>}

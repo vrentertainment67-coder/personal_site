@@ -19,7 +19,7 @@ const EVENT_SLUG  = "chamatkar-2026-08-01";
 const EVENT_TITLE = "Chamatkar Vol. 3";
 const EVENT_VENUE = "Happy Brew · Koramangala";
 const EVENT_DATE  = "Sat 1 August";
-const PASSCODE    = "2608"; // door-desk code
+const PASSCODE    = "1234"; // door-desk code
 
 // Public anon publishable key (same as EventRSVP's fallback) — safe to inline.
 const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
@@ -59,6 +59,17 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
     .seg button .sub{ display:block; font-weight:500; font-size:11px; opacity:.8; margin-top:2px; }
     .seg button[aria-pressed=true].paid{ border-color:var(--green); background:var(--greenbg); color:#8ff0b6; }
     .seg button[aria-pressed=true].comp{ border-color:var(--amber); background:rgba(224,160,58,.12); color:#f0c980; }
+    /* cover amount */
+    .amt{ margin:-4px 0 14px; }
+    .amt.hidden{ display:none; }
+    .amtlab{ display:block; font-size:12px; color:var(--mut); margin:0 0 8px; }
+    .amt .chips{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:0 0 8px; }
+    .amt .chip{ padding:12px 4px; border-radius:10px; border:1.5px solid var(--line); background:#0e0e10;
+      color:var(--off); font-size:15px; font-weight:700; cursor:pointer; }
+    .amt .chip[aria-pressed=true]{ border-color:var(--green); background:var(--greenbg); color:#8ff0b6; }
+    .amt input{ width:100%; background:#0e0e10; border:1.5px solid var(--line); border-radius:12px;
+      padding:13px 14px; color:var(--off); font-size:16px; outline:none; }
+    .amt input:focus{ border-color:var(--gold); }
     /* guests stepper */
     .steprow{ display:flex; align-items:center; justify-content:space-between; gap:10px;
       background:#0e0e10; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 14px; }
@@ -126,11 +137,22 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       <label class="fld"><span>Name</span>
         <input type="text" id="name" autocapitalize="words" placeholder="Guest name" enterkeyhint="next" /></label>
       <label class="fld"><span>Phone / WhatsApp</span>
-        <input type="tel" id="phone" inputmode="tel" placeholder="+91…" enterkeyhint="done" /></label>
+        <input type="tel" id="phone" inputmode="numeric" maxlength="15" placeholder="Phone number" enterkeyhint="done" /></label>
 
       <div class="seg" role="group" aria-label="Cover charge">
         <button type="button" id="bPaid"  class="paid" aria-pressed="true">Paid<span class="sub">cover collected</span></button>
         <button type="button" id="bComp" class="comp" aria-pressed="false">Not paid<span class="sub">comp / guest list</span></button>
+      </div>
+
+      <div id="amtWrap" class="amt">
+        <span class="amtlab">Cover collected (₹)</span>
+        <div class="chips">
+          <button type="button" class="chip" data-amt="500">500</button>
+          <button type="button" class="chip" data-amt="750">750</button>
+          <button type="button" class="chip" data-amt="1000">1000</button>
+          <button type="button" class="chip" data-amt="1500">1500</button>
+        </div>
+        <input type="tel" id="amount" inputmode="numeric" maxlength="7" placeholder="Or type amount" />
       </div>
 
       <div class="steprow">
@@ -150,6 +172,7 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       <div><b id="tEntries">0</b><span>Entries</span></div>
       <div><b id="tHeads">0</b><span>Heads</span></div>
       <div><b id="tPaid">0</b><span>Paid</span></div>
+      <div><b id="tCollected">₹0</b><span>Collected</span></div>
     </div>
 
     <div class="recent">
@@ -177,9 +200,34 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       $("gcode").addEventListener("keydown", function (e) { if (e.key === "Enter") $("gbtn").click(); });
       $("lock").onclick = function () { localStorage.removeItem(AUTHK); location.reload(); };
 
+      // ---------- phone: digits only ----------
+      $("phone").addEventListener("input", function () {
+        var v = this.value.replace(/\D/g, "");
+        if (this.value !== v) this.value = v;
+      });
+
       // ---------- state ----------
-      var paid = true, heads = 1;
-      function setPaid(v) { paid = v; $("bPaid").setAttribute("aria-pressed", v); $("bComp").setAttribute("aria-pressed", !v); }
+      var paid = true, heads = 1, amount = "";
+      function setAmount(v) {
+        amount = String(v || "").replace(/\D/g, "");
+        $("amount").value = amount;
+        var chips = document.querySelectorAll(".amt .chip");
+        for (var i = 0; i < chips.length; i++)
+          chips[i].setAttribute("aria-pressed", chips[i].dataset.amt === amount);
+      }
+      $("amount").addEventListener("input", function () { setAmount(this.value); });
+      (function () {
+        var chips = document.querySelectorAll(".amt .chip");
+        for (var i = 0; i < chips.length; i++)
+          chips[i].onclick = function () { setAmount(this.dataset.amt); };
+      })();
+      function setPaid(v) {
+        paid = v;
+        $("bPaid").setAttribute("aria-pressed", v);
+        $("bComp").setAttribute("aria-pressed", !v);
+        $("amtWrap").classList.toggle("hidden", !v);   // amount only when a cover was collected
+        if (!v) setAmount("");
+      }
       $("bPaid").onclick = function () { setPaid(true); };
       $("bComp").onclick = function () { setPaid(false); };
       function setHeads(n) { heads = Math.max(1, Math.min(20, n)); $("gCount").textContent = heads; }
@@ -194,13 +242,14 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       function saveLog(l) { localStorage.setItem(LOGKEY, JSON.stringify(l.slice(-400))); }
       function render() {
         var l = todayLog();
-        var e = l.length, h = 0, p = 0;
-        for (var i = 0; i < l.length; i++) { h += (l[i].g || 1); if (l[i].paid) p++; }
+        var e = l.length, h = 0, p = 0, c = 0;
+        for (var i = 0; i < l.length; i++) { h += (l[i].g || 1); if (l[i].paid) p++; c += (l[i].amt || 0); }
         $("tEntries").textContent = e; $("tHeads").textContent = h; $("tPaid").textContent = p;
+        $("tCollected").textContent = "₹" + c.toLocaleString("en-IN");
         var ul = $("recent"), recent = l.slice(-6).reverse();
         if (!recent.length) { ul.innerHTML = '<li style="color:var(--mut);border:none">Nothing yet tonight.</li>'; return; }
         ul.innerHTML = recent.map(function (r) {
-          var badge = r.paid ? '<span class="badge p">Paid</span>' : '<span class="badge u">Unpaid</span>';
+          var badge = r.paid ? ('<span class="badge p">' + (r.amt ? "₹" + r.amt : "Paid") + '</span>') : '<span class="badge u">Unpaid</span>';
           var nm = (r.n || "—") + (r.g > 1 ? " ·" + r.g : "");
           return '<li><span class="nm">' + esc(nm) + '</span>' + badge + '</li>';
         }).join("");
@@ -258,9 +307,10 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         }
         delete $("f").dataset.force;
 
+        var amt = paid ? (parseInt(amount, 10) || 0) : 0;
         var row = {
           event: EVENT_SLUG, name: name, phone: phone, guests: heads,
-          paid: paid, source: "door", attended: true, entry_type: "walk-in",
+          paid: paid, cover_amount: paid ? amt : null, source: "door", attended: true, entry_type: "walk-in",
           user_agent: (navigator.userAgent || "").slice(0, 300)
         };
 
@@ -271,14 +321,14 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
             var q = queue(); q.push(row); setQueue(q);   // any failure → retry queue
             flash("Saved offline — will sync when back online.", "warn");
           } else {
-            flash("✓ " + name + (paid ? " · paid" : " · not paid"), "ok");
+            flash("✓ " + name + (paid ? (amt ? " · ₹" + amt : " · paid") : " · not paid"), "ok");
           }
           // record locally either way (so the tally + recent are instant)
           var l = todayLog();
-          l.push({ n: name, pk: pk, g: heads, paid: paid, ts: now });
+          l.push({ n: name, pk: pk, g: heads, paid: paid, amt: amt, ts: now });
           saveLog(l); render();
           // reset for next guest
-          $("name").value = ""; $("phone").value = ""; setPaid(true); setHeads(1);
+          $("name").value = ""; $("phone").value = ""; setHeads(1); setPaid(true);
           $("name").focus();
         });
       });
