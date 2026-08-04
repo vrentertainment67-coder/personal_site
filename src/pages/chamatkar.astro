@@ -7,19 +7,21 @@ import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
-// Event details (Vol. 3). Mirror the live row in the Supabase `events` table
-// (slug chamatkar-2026-08-01); the RSVP writes against `slug`.
-// `mediaSlug` points the recap gallery at the PREVIOUS edition's photos/videos —
-// the new edition has none yet, and the point of the recap is to show the vibe.
+// Upcoming edition (Vol. 4). Mirrors the live row in the Supabase `events`
+// table (slug chamatkar-2026-08-22 — a placeholder; the date is not yet set).
+// The RSVP writes against `slug`, so early sign-ups are tagged to Vol. 4 and
+// notified once the date lands.
 const EVENT = {
-  slug: 'chamatkar-2026-08-01',
-  mediaSlug: 'chamatkar-2026-07-11',   // Vol. 2 media for the "vibe" recap
+  slug: 'chamatkar-2026-08-22',
   title: 'Chamatkar',
-  edition: 'Vol. 3',
+  edition: 'Vol. 4',
   tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
-  dateLabel: 'Saturday 1 August',
+  // Date not decided yet — dateTBA hides the countdown, the calendar links and
+  // the RSVP cutoff, and shows a "date announced soon" treatment instead.
+  dateTBA: true,
+  dateLabel: 'Date to be announced',
   timeLabel: '9:00 PM onwards',
   lineup: 'DJ VIC',
   genre: 'Bollywood × Global — Audio-Visual Set',
@@ -29,11 +31,14 @@ const EVENT = {
   // heroBg = a clean, text-safe static background behind the hero copy. Null =
   // a plain dark gradient (no busy creative behind the text).
   heroBg: '/images/chamatkar-hero-bg.jpg',
-  // flyer = the horizontal creative for the upcoming edition, shown below the hero.
-  flyer: '/images/chamatkar-vol3-banner.jpg',
+  // flyer = the horizontal creative for the upcoming edition, shown below the
+  // hero. Null (Vol. 4 creative not designed yet) hides the flyer section.
+  flyer: null,
   ics: '/chamatkar.ics',
-  rsvpCutoff: '2026-08-01T12:30:00+00:00',
-  expiry: '2026-08-01T19:30:00+00:00',
+  // No cutoff/expiry while the date is TBA — the RSVP stays open as an
+  // early-interest list.
+  rsvpCutoff: null,
+  expiry: null,
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -50,17 +55,18 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // `poster` (landscape cover) is optional — the block just shows text + gallery
 // until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
+  { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
   { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
 ];
 ---
 
 <Layout
-  title="Chamatkar Vol. 3 — Guest List | DJ VIC"
+  title="Chamatkar Vol. 4 — Guest List | DJ VIC"
   description={desc}
-  ogTitle="Chamatkar Vol. 3 — You're Invited"
-  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/chamatkar-vol3-square.jpg"
+  ogTitle="Chamatkar Vol. 4 — You're Invited"
+  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. Date announced soon. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
+  ogImage="https://djvicofficial.com/images/chamatkar-hero-bg.jpg"
   canonical="https://djvicofficial.com/chamatkar/"
 >
   <Nav />
@@ -81,19 +87,21 @@ const PAST_EDITIONS = [
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
-        <p class="ck-proof">🔥 The last two editions packed the floor — get on the list early.</p>
+        <p class="ck-proof">🔥 Three editions in — every one packed the floor. Get on the list early.</p>
         <div class="ck-ctas">
           <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
           <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
         </div>
-        <a class="ck-cal" href={EVENT.ics} download>＋ Add to calendar</a>
+        {!EVENT.dateTBA && <a class="ck-cal" href={EVENT.ics} download>＋ Add to calendar</a>}
       </div>
     </section>
 
-    <!-- ── FLYER ── -->
-    <section class="ck-flyer">
-      <img src={EVENT.flyer} alt={`Chamatkar ${EVENT.edition} — DJ VIC · ${EVENT.dateLabel} · ${EVENT.venue}, ${EVENT.area}`} width="1448" height="1086" loading="eager" />
-    </section>
+    <!-- ── FLYER (only when the edition has a creative) ── -->
+    {EVENT.flyer && (
+      <section class="ck-flyer">
+        <img src={EVENT.flyer} alt={`Chamatkar ${EVENT.edition} — DJ VIC · ${EVENT.venue}, ${EVENT.area}`} width="1448" height="1086" loading="eager" />
+      </section>
+    )}
 
     <!-- ── ENTRY & COVER ── -->
     <section class="ck-entry">
@@ -122,7 +130,7 @@ const PAST_EDITIONS = [
           <span class="ck-etype">Tables</span>
           <span class="ck-eprice">On availability</span>
           <span class="ck-enote">Advance reservation accepted</span>
-          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%203%20on%201%20August." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
+          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20the%20next%20Chamatkar%20(Vol.%204)." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
         </div>
       </div>
     </section>
@@ -133,7 +141,7 @@ const PAST_EDITIONS = [
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Two editions in</strong> · limited guest-list spots · <span id="ck-countdown">counting…</span></p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Three editions in</strong> · limited guest-list spots · date announced soon</p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -151,7 +159,7 @@ const PAST_EDITIONS = [
     <section class="ck-details">
       <div class="ck-sec-head"><span class="ck-kicker">The details</span><h2>Know before you go</h2></div>
       <div class="ck-dgrid">
-        <div class="ck-dcard"><span class="ck-dlabel">When</span><span class="ck-dval">{EVENT.dateLabel}</span><span class="ck-dsub">{EVENT.timeLabel}</span><a class="ck-dlink" href={EVENT.ics} download>＋ Add to calendar</a></div>
+        <div class="ck-dcard"><span class="ck-dlabel">When</span><span class="ck-dval">{EVENT.dateLabel}</span><span class="ck-dsub">{EVENT.dateTBA ? 'Join the list — we\'ll tell you first' : EVENT.timeLabel}</span>{!EVENT.dateTBA && <a class="ck-dlink" href={EVENT.ics} download>＋ Add to calendar</a>}</div>
         <div class="ck-dcard"><span class="ck-dlabel">Where</span><span class="ck-dval">{EVENT.venue}</span><span class="ck-dsub">{EVENT.area}</span><a class="ck-dlink" href={mapsHref} target="_blank" rel="noopener noreferrer">Open in Maps →</a></div>
         <div class="ck-dcard ck-dcard--theme"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.theme}</span><span class="ck-dsub">{EVENT.themeLine}.</span></div>
         <div class="ck-dcard"><span class="ck-dlabel">Sound</span><span class="ck-dval">{EVENT.lineup}</span><span class="ck-dsub">Live audio-visual set</span></div>
@@ -195,21 +203,7 @@ const PAST_EDITIONS = [
         window.dispatchEvent(new CustomEvent('play-track', { detail: { slug: 'besharam-rang-mwaki' } }));
       });
     }
-    // Countdown to doors — gentle urgency near the form
-    const cd = document.getElementById('ck-countdown');
-    if (cd) {
-      const target = new Date('2026-08-01T21:00:00+05:30').getTime();
-      const tick = () => {
-        const diff = target - Date.now();
-        if (diff <= 0) { cd.textContent = 'happening now'; return; }
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        cd.textContent = d > 0 ? `${d} day${d === 1 ? '' : 's'} to go` : (h > 0 ? `${h} hr ${m} min to go` : `${m} min to go`);
-      };
-      tick();
-      if (!cd.dataset.timer) { cd.dataset.timer = '1'; setInterval(tick, 60000); }
-    }
+    // (Countdown removed while the date is TBA — re-add when Vol. 4 is dated.)
   }
   document.addEventListener('astro:page-load', ckInit);
 </script>
