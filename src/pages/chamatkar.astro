@@ -8,21 +8,20 @@ import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
 // Upcoming edition (Vol. 4). Mirrors the live row in the Supabase `events`
-// table (slug chamatkar-2026-08-22 — a placeholder; the date is not yet set).
-// The RSVP writes against `slug`, so early sign-ups are tagged to Vol. 4 and
-// notified once the date lands.
+// table (slug chamatkar-2026-09-05); the RSVP writes against `slug`.
 const EVENT = {
-  slug: 'chamatkar-2026-08-22',
+  slug: 'chamatkar-2026-09-05',
   title: 'Chamatkar',
   edition: 'Vol. 4',
   tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
-  // Date not decided yet — dateTBA hides the countdown, the calendar links and
-  // the RSVP cutoff, and shows a "date announced soon" treatment instead.
-  dateTBA: true,
-  dateLabel: 'Date to be announced',
+  // Set dateTBA:true when the next date isn't decided — it hides the countdown,
+  // calendar links and RSVP cutoff and shows a "date announced soon" treatment.
+  dateTBA: false,
+  dateLabel: 'Saturday 5 September',
   timeLabel: '9:00 PM onwards',
+  doorsAt: '2026-09-05T21:00:00+05:30',   // countdown target (doors, IST)
   lineup: 'DJ VIC',
   genre: 'Bollywood × Global — Audio-Visual Set',
   theme: 'Bollywood × Global',
@@ -35,10 +34,8 @@ const EVENT = {
   // hero. Null (Vol. 4 creative not designed yet) hides the flyer section.
   flyer: null,
   ics: '/chamatkar.ics',
-  // No cutoff/expiry while the date is TBA — the RSVP stays open as an
-  // early-interest list.
-  rsvpCutoff: null,
-  expiry: null,
+  rsvpCutoff: '2026-09-05T12:30:00+00:00',
+  expiry: '2026-09-05T19:30:00+00:00',
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -65,7 +62,7 @@ const PAST_EDITIONS = [
   title="Chamatkar Vol. 4 — Guest List | DJ VIC"
   description={desc}
   ogTitle="Chamatkar Vol. 4 — You're Invited"
-  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. Date announced soon. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
+  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
   ogImage="https://djvicofficial.com/images/chamatkar-hero-bg.jpg"
   canonical="https://djvicofficial.com/chamatkar/"
 >
@@ -130,7 +127,7 @@ const PAST_EDITIONS = [
           <span class="ck-etype">Tables</span>
           <span class="ck-eprice">On availability</span>
           <span class="ck-enote">Advance reservation accepted</span>
-          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20the%20next%20Chamatkar%20(Vol.%204)." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
+          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%204%20on%205%20September." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
         </div>
       </div>
     </section>
@@ -141,7 +138,7 @@ const PAST_EDITIONS = [
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Three editions in</strong> · limited guest-list spots · date announced soon</p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Three editions in</strong> · limited guest-list spots · {EVENT.dateTBA ? 'date announced soon' : <span id="ck-countdown" data-doors={EVENT.doorsAt}>counting…</span>}</p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -203,7 +200,22 @@ const PAST_EDITIONS = [
         window.dispatchEvent(new CustomEvent('play-track', { detail: { slug: 'besharam-rang-mwaki' } }));
       });
     }
-    // (Countdown removed while the date is TBA — re-add when Vol. 4 is dated.)
+    // Countdown to doors — gentle urgency near the form. Target comes from the
+    // element's data-doors (set from EVENT.doorsAt), so there's no hardcoded date.
+    const cd = document.getElementById('ck-countdown');
+    if (cd && cd.dataset.doors) {
+      const target = new Date(cd.dataset.doors).getTime();
+      const tick = () => {
+        const diff = target - Date.now();
+        if (diff <= 0) { cd.textContent = 'happening now'; return; }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        cd.textContent = d > 0 ? `${d} day${d === 1 ? '' : 's'} to go` : (h > 0 ? `${h} hr ${m} min to go` : `${m} min to go`);
+      };
+      tick();
+      if (!cd.dataset.timer) { cd.dataset.timer = '1'; setInterval(tick, 60000); }
+    }
   }
   document.addEventListener('astro:page-load', ckInit);
 </script>
