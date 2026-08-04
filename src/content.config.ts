@@ -79,7 +79,9 @@ const remixes = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/remixes' }),
   schema: z.object({
     title: z.string(),
-    youtubeId: z.string(),
+    // YouTube showcase tracks set this. Download-only tracks leave it blank
+    // (defaults to '') and render from `artwork` instead of a video embed.
+    youtubeId: z.string().default(''),
     type: z.enum(['mashup', 'remix', 'edit', 'rework']).default('mashup'),
     genre: z.array(z.string()).default([]),
     tracks: z.array(z.string()).default([]),
@@ -87,6 +89,23 @@ const remixes = defineCollection({
     description: z.string(),
     releaseDate: z.string(),
     audiomackSlug: z.string().optional(),
+
+    // ── Optional free-download block ──────────────────────────────────────
+    // When `mp3Url` is set, the detail page shows a download button + email
+    // capture. Host MP3s on Supabase Storage (public bucket: remixes) — never
+    // commit audio to the repo. The page appends ?download= automatically so
+    // Supabase sends Content-Disposition: attachment.
+    mp3Url: z.string().url().optional(),
+    downloadName: z.string().optional(),   // "DJ VIC - Title.mp3"
+    fileSize: z.string().optional(),       // "10.5 MB"
+    artwork: z.string().optional(),        // "/images/remixes/<slug>.jpg" (public/)
+    bpm: z.number().int().positive().optional(),
+    musicalKey: z.string().optional(),
+    duration: z.string().optional(),       // "4:12"
+    keyword: z.string().optional(),        // the Instagram keyword that sends people here
+    // Search visibility, per track. Existing showcase tracks stay indexed
+    // (default false = indexed); flip true to keep a page out of search.
+    noindex: z.boolean().default(false),
   }),
 });
 

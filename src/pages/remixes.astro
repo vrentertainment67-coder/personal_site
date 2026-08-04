@@ -1,7 +1,14 @@
 ---
+import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+
+// Free-download tracks (collection entries with an MP3) — surfaced above the
+// YouTube grid. Any remix that gets an mp3Url shows here automatically.
+const downloads = (await getCollection('remixes'))
+  .filter(r => r.data.mp3Url)
+  .sort((a, b) => new Date(b.data.releaseDate).getTime() - new Date(a.data.releaseDate).getTime());
 
 const remixes = [
   // ── Tracks with full detail pages (detail: true) ──────────────────────────
@@ -107,6 +114,35 @@ const platforms = [
         <p class="hero-sub">From the dance floor to your playlist — remixed and reimagined.</p>
       </div>
     </section>
+
+    {downloads.length > 0 && (
+      <section id="remixes-downloads">
+        <div class="section-label">Free Downloads</div>
+        <h2>Grab the edits</h2>
+        <div class="dl-grid">
+          {downloads.map((r) => (
+            <a href={`/remixes/${r.id}/`} class="dl-card">
+              <div class="dl-art">
+                <img
+                  src={r.data.artwork || `https://img.youtube.com/vi/${r.data.youtubeId}/hqdefault.jpg`}
+                  alt={r.data.title}
+                  loading="lazy"
+                  width="600"
+                  height="600"
+                />
+                <span class="dl-badge">Free MP3</span>
+              </div>
+              <div class="dl-body">
+                <h3>{r.data.title}</h3>
+                <p class="dl-meta">
+                  {[r.data.bpm && `${r.data.bpm} BPM`, r.data.musicalKey, r.data.genre[0]].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
 
     <section id="remixes-grid">
       <div class="section-label">Latest Tracks</div>
@@ -286,6 +322,88 @@ const platforms = [
   .platform-card:hover .platform-arrow {
     opacity: 1;
     transform: translateX(0);
+  }
+
+  /* ─── Free downloads grid ─────────────────────── */
+  #remixes-downloads {
+    border-bottom: 1px solid #111;
+  }
+
+  .dl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .dl-card {
+    display: flex;
+    flex-direction: column;
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    color: var(--white);
+    overflow: hidden;
+    border-radius: 4px;
+    transition: border-color 0.25s, transform 0.2s;
+  }
+
+  .dl-card:hover {
+    border-color: rgba(201,168,76,0.35);
+    transform: translateY(-2px);
+  }
+
+  .dl-art {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .dl-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .dl-card:hover .dl-art img { transform: scale(1.04); }
+
+  .dl-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--gold);
+    padding: 0.25rem 0.55rem;
+    border-radius: 2px;
+  }
+
+  .dl-body {
+    padding: 0.9rem 1rem 1.1rem;
+  }
+
+  .dl-body h3 {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.35;
+    margin: 0 0 0.4rem;
+  }
+
+  .dl-meta {
+    margin: 0;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.85;
   }
 
   /* ─── YouTube grid ────────────────────────────── */

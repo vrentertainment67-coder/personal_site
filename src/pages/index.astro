@@ -45,6 +45,9 @@ try {
 } catch (e) { /* no rich snippets if the fetch fails */ }
 
 const allRemixes = (await getCollection('remixes'))
+  // Home cards are built from YouTube thumbnails — download-only tracks (no
+  // youtubeId) live on /remixes/ and their own page, not in this strip.
+  .filter(r => r.data.youtubeId)
   .sort((a, b) => new Date(b.data.releaseDate).getTime() - new Date(a.data.releaseDate).getTime());
 
 const latestRemixes  = allRemixes.slice(0, 3);
