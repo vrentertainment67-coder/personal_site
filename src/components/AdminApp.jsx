@@ -1572,7 +1572,24 @@ function GigMailer({ booking, payments, onChange, showToast }) {
         }),
       }).then((x) => x.json()).catch(() => ({ error: "Network error" }));
       if (res.error) showToast("Send failed: " + JSON.stringify(res.error).slice(0, 140));
-      else { showToast(`${mode === "invoice" ? "Invoice" : mode === "confirmation" ? "Confirmation" : mode === "receipt" ? "Payment receipt" : "Follow-up"} sent ✓`); persist(); }
+      else {
+        // Record the send ourselves so the Sent / Outbox view is reliable —
+        // the edge function's own service-role logging isn't landing. The
+        // signed-in admin has insert rights on gig_emails (see gig_emails_admin_log.sql).
+        supabase.from("gig_emails").insert({
+          booking_id: booking.id,
+          kind: mode,
+          biller: mode === "invoice" ? biller.name : null,
+          invoice_no: mode === "invoice" ? invNo : null,
+          amount: mode === "invoice" ? total : null,
+          to_email: email,
+          subject,
+          status: "sent",
+          detail: res.id || null,
+        }).then(() => onChange && onChange(), () => {}); // best-effort; refresh so Sent updates
+        showToast(`${mode === "invoice" ? "Invoice" : mode === "confirmation" ? "Confirmation" : mode === "receipt" ? "Payment receipt" : "Follow-up"} sent ✓`);
+        persist();
+      }
     } catch (e) { showToast("Error: " + String(e.message || e)); }
     setBusy(false);
   }
@@ -2538,6 +2555,7 @@ function MailTab({ showToast }) {
   const [needScope, setNeedScope] = useState(false); const [err, setErr] = useState(null);
   const [query, setQuery] = useState(""); const [q, setQ] = useState("");
   const [openT, setOpenT] = useState(null); const [tLoading, setTLoading] = useState(false);
+  const [box, setBox] = useState("inbox");   // inbox (Gmail) | sent (our own log)
 
   const load = useCallback(async () => {
     setLoading(true); setErr(null); setNeedScope(false);
@@ -2591,8 +2609,16 @@ function MailTab({ showToast }) {
     <>
       <div className="row-between">
         <h1 className="h1">Mail</h1>
-        <button className="btn sm" onClick={load} disabled={loading}>{loading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />} Refresh</button>
+        {box === "inbox" && <button className="btn sm" onClick={load} disabled={loading}>{loading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />} Refresh</button>}
       </div>
+      <div className="chips" style={{ margin: "2px 0 12px" }}>
+        <button className={box === "inbox" ? "chip on" : "chip"} onClick={() => setBox("inbox")}>Inbox</button>
+        <button className={box === "sent" ? "chip on" : "chip"} onClick={() => setBox("sent")}>Sent · Outbox</button>
+      </div>
+
+      {box === "sent" && <SentBox showToast={showToast} />}
+
+      {box === "inbox" && (<>
       <p className="sub">Everything to and from <b>bookings@djvicofficial.com</b>, read from your Google inbox.</p>
 
       {needScope ? (
@@ -2624,6 +2650,68 @@ function MailTab({ showToast }) {
             </div>
           )}
         </>
+      )}
+      </>)}
+    </>
+  );
+}
+
+// ── Sent / Outbox: every invoice, receipt, confirmation & follow-up we sent ──
+// Reads gig_emails, which the admin now writes to on each send (the edge
+// function's own logging isn't landing). Resend-sent mail never appears in the
+// Gmail mailbox, so this is the only reliable record of what went out.
+function SentBox({ showToast }) {
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("gig_emails").select("*").order("created_at", { ascending: false }).limit(300);
+    setLoading(false);
+    if (error) return showToast("Couldn't load sent mail.");
+    setRows(data || []);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const KIND = { invoice: "Invoice", proforma: "Proforma", receipt: "Payment receipt", confirmation: "Confirmation", followup: "Follow-up", email: "Email" };
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const q = query.trim().toLowerCase();
+  const filtered = rows.filter((r) => !q || [r.to_email, r.subject, r.invoice_no, KIND[r.kind]].some((v) => (v || "").toLowerCase().includes(q)));
+
+  return (
+    <>
+      <div className="row-between">
+        <p className="sub" style={{ margin: 0 }}>Every invoice, receipt and message sent from the admin.</p>
+        <button className="btn sm" onClick={load} disabled={loading}>{loading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />} Refresh</button>
+      </div>
+      <input className="search" placeholder="Search sent (client, subject, invoice #)…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ margin: "10px 0" }} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
+        <div className="list">
+          {filtered.length === 0 && <p className="empty">Nothing sent yet{q ? " for that search." : "."}</p>}
+          {filtered.map((r) => {
+            const d = new Date(r.created_at);
+            return (
+              <div key={r.id} className="req">
+                <div className="req-top">
+                  <div>
+                    <h3 style={{ fontSize: 15 }}>{r.subject || KIND[r.kind] || "Email"}</h3>
+                    <p className="req-meta">
+                      <span className="tag">{KIND[r.kind] || r.kind}</span>
+                      <span>→ {r.to_email}</span>
+                      {r.invoice_no && <span>#{r.invoice_no}</span>}
+                      {r.amount != null && <span className="gold">{inr(r.amount)}</span>}
+                      {r.biller && <span>{r.biller}</span>}
+                    </p>
+                  </div>
+                  <span className="req-meta" style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+                    {MONTHS[d.getMonth()]} {d.getDate()}, {pad(d.getHours())}:{pad(d.getMinutes())}
+                    {r.status === "sent" && <><br /><span style={{ color: "#4ea765" }}>sent ✓</span></>}
+                    {r.status === "error" && <><br /><span style={{ color: "#e0574a" }}>failed</span></>}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </>
   );
