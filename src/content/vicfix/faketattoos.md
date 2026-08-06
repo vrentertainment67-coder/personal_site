@@ -3,7 +3,7 @@ guestName: "Fake Tattoos"
 guestTitle: "Samprukt Mohanty · DJ & Producer"
 season: 2
 episode: 18
-youtubeId: ""
+youtubeId: "jGMReaV_tdw"
 category: "behind-the-decks"
 categoryLabel: "Behind the Decks"
 premiereWhen: "this Sunday"
@@ -14,7 +14,7 @@ guestPhoto: ""
 guestInstagram: ""
 topics: ["Self-Taught", "Independent Artist", "House Music", "Melodic Techno", "Indian Vocals", "Sampling", "Tiësto", "Haseen Raatein", "Bloom", "Touring", "Bengaluru", "5AMP"]
 duration: ""
-publishDate: "2026-08-09"
+publishDate: "2026-08-07"
 seoDescription: "Fake Tattoos (Samprukt Mohanty) on The VIC Fix S2E18 — the self-taught Bengaluru producer whose bedroom Tiësto edit went global, now touring the world on house built from forgotten Indian voices. No label, no manager."
 viewCount: "0"
 featured: false
