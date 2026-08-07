@@ -10,5 +10,6 @@ releaseDate: "2025-02-11"
 mp3Url: "https://jftnhuutttmccmqnnybf.supabase.co/storage/v1/object/public/remixes/tera-hone-laga-hoon-viva-la-vida.mp3"
 downloadName: "DJ VIC - Tera Hone Laga Hoon x Viva La Vida.mp3"
 fileSize: "10.7 MB"
-keyword: "TERA"
+artwork: "/images/remixes/tera-hone-laga-hoon-viva-la-vida.jpg"
+keyword: "coldplay"
 ---

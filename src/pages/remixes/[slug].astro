@@ -18,11 +18,12 @@ const { data: t } = track;
 const hasVideo = !!t.youtubeId;
 const hasDownload = !!t.mp3Url;
 
-// Hero / OG image: YouTube thumbnail for showcase tracks, cover artwork for
-// download-only tracks (no video).
-const ytThumb = hasVideo
-  ? `https://img.youtube.com/vi/${t.youtubeId}/maxresdefault.jpg`
-  : (t.artwork || '/images/og-default.jpg');
+// OG / share + schema image: prefer a custom cover (artwork) when set — even
+// for tracks that also have a video, so the shared link previews the cover.
+// Else the YouTube thumbnail for showcase tracks; else the default.
+const ytThumb = t.artwork
+  ? t.artwork
+  : (hasVideo ? `https://img.youtube.com/vi/${t.youtubeId}/maxresdefault.jpg` : '/images/og-default.jpg');
 
 // Supabase honours ?download= by setting Content-Disposition: attachment.
 // Without it the browser streams the file instead of saving it, because the
@@ -142,6 +143,9 @@ const schema = [
 
         {hasDownload && (
           <div class="dl-block">
+            {hasVideo && t.artwork && (
+              <img class="dl-cover" src={t.artwork} alt={`${t.title} — cover art`} width="180" height="180" loading="lazy" />
+            )}
             <p class="dl-eyebrow">Free download</p>
             <dl class="dl-spec">
               {t.bpm && <div><dt>BPM</dt><dd>{t.bpm}</dd></div>}
@@ -527,6 +531,17 @@ const schema = [
     background: rgba(201,168,76,0.03);
     border-radius: 6px;
     max-width: 560px;
+  }
+
+  .dl-cover {
+    display: block;
+    width: 180px;
+    max-width: 45%;
+    aspect-ratio: 1;
+    height: auto;
+    border-radius: 6px;
+    margin: 0 0 1.25rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
 
   .dl-eyebrow {
