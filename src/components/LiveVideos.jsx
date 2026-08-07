@@ -15,6 +15,28 @@ const SUPABASE_KEY =
 // Preferred tab order; anything else falls in after these, alphabetically.
 const LANG_ORDER = ["Tamil", "Telugu", "Kannada", "Malayalam", "Hindi", "English", "Punjabi", "Marathi", "Bengali"];
 
+// A clip's URL can be an uploaded file (Cloudinary mp4) OR a pasted link
+// (YouTube / Vimeo / Google Drive) — for clips too big to upload. Work out
+// which so the player embeds links and uses the <video> tag for files.
+function classify(url) {
+  const s = String(url || "");
+  const yt = s.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (yt) return { kind: "youtube", id: yt[1] };
+  const vm = s.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vm) return { kind: "vimeo", id: vm[1] };
+  if (/drive\.google\.com/.test(s)) {
+    const dr = s.match(/\/file\/d\/([A-Za-z0-9_-]+)/) || s.match(/[?&]id=([A-Za-z0-9_-]+)/);
+    if (dr) return { kind: "drive", id: dr[1] };
+  }
+  return { kind: "file" };
+}
+function thumbFor(clip) {
+  if (clip.thumbnail_url) return clip.thumbnail_url;
+  const c = classify(clip.url);
+  if (c.kind === "youtube") return `https://img.youtube.com/vi/${c.id}/hqdefault.jpg`;
+  return null;
+}
+
 export default function LiveVideos() {
   const [rows, setRows] = useState(null);   // null = loading
   const [lang, setLang] = useState(null);
@@ -99,28 +121,39 @@ export default function LiveVideos() {
 
       {/* Thumbnail strip */}
       <div className="lv-strip">
-        {clips.map((c) => (
-          <button key={c.id} className={sel && c.id === sel.id ? "lv-thumb on" : "lv-thumb"} onClick={() => play(c)}
-            title={c.title || ""}>
-            <span className="lv-thumb-img">
-              {c.thumbnail_url
-                ? <img src={c.thumbnail_url} alt="" loading="lazy" />
-                : <span className="lv-thumb-ph">▶</span>}
-              <span className="lv-thumb-play">▶</span>
-            </span>
-            {c.title && <span className="lv-thumb-t">{c.title}</span>}
-          </button>
-        ))}
+        {clips.map((c) => {
+          const th = thumbFor(c);
+          return (
+            <button key={c.id} className={sel && c.id === sel.id ? "lv-thumb on" : "lv-thumb"} onClick={() => play(c)}
+              title={c.title || ""}>
+              <span className="lv-thumb-img">
+                {th ? <img src={th} alt="" loading="lazy" /> : <span className="lv-thumb-ph">▶</span>}
+                <span className="lv-thumb-play">▶</span>
+              </span>
+              {c.title && <span className="lv-thumb-t">{c.title}</span>}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Primary player */}
+      {/* Primary player — embed for links, native <video> for uploaded files */}
       <div className="lv-player">
-        {sel ? (
-          <video ref={videoRef} key={sel.id} src={sel.url} poster={sel.thumbnail_url || undefined}
-            controls playsInline preload="metadata" />
-        ) : (
+        {!sel ? (
           <div className="lv-player-empty">No clips in {lang} yet.</div>
-        )}
+        ) : (() => {
+          const c = classify(sel.url);
+          if (c.kind === "youtube")
+            return <iframe key={sel.id} src={`https://www.youtube.com/embed/${c.id}?rel=0&modestbranding=1&playsinline=1&autoplay=1`}
+              title={sel.title || "Live footage"} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />;
+          if (c.kind === "vimeo")
+            return <iframe key={sel.id} src={`https://player.vimeo.com/video/${c.id}?autoplay=1`}
+              title={sel.title || "Live footage"} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />;
+          if (c.kind === "drive")
+            return <iframe key={sel.id} src={`https://drive.google.com/file/d/${c.id}/preview`}
+              title={sel.title || "Live footage"} allow="autoplay" allowFullScreen />;
+          return <video ref={videoRef} key={sel.id} src={sel.url} poster={sel.thumbnail_url || undefined}
+            controls playsInline preload="metadata" />;
+        })()}
       </div>
       {sel && sel.title && <p className="lv-caption">{sel.title}</p>}
     </div>
@@ -154,7 +187,7 @@ const styles = `
 .lv-thumb.on .lv-thumb-t { color: #e8e8e0; }
 .lv-player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px;
   overflow: hidden; border: 1px solid #1e1e1e; }
-.lv-player video { width: 100%; height: 100%; display: block; background: #000; }
+.lv-player video, .lv-player iframe { width: 100%; height: 100%; display: block; background: #000; border: 0; }
 .lv-player-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,.4); }
 .lv-caption { text-align: center; color: #b8b4a8; font-size: .9rem; margin: .9rem 0 0; }
 @media (max-width: 560px) { .lv-thumb, .lv-thumb-img { width: 116px; } .lv-thumb-img { height: 70px; } }

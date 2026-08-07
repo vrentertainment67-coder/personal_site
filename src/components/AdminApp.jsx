@@ -3821,6 +3821,10 @@ function LiveVideosAdmin({ showToast }) {
   const [pTitle, setPTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
+  const [link, setLink] = useState("");        // paste-a-link (for clips over the 100MB upload cap)
+  const [lLang, setLLang] = useState("");
+  const [lTitle, setLTitle] = useState("");
+  const [lBusy, setLBusy] = useState(false);
   const fileRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -3880,6 +3884,23 @@ function LiveVideosAdmin({ showToast }) {
     load();
   };
 
+  // Paste a link instead of uploading — for clips bigger than the 100MB
+  // Cloudinary cap (host on YouTube / Vimeo / Google Drive, unlisted).
+  const addLink = async () => {
+    const u = link.trim(); const lang = lLang.trim();
+    if (!u) return showToast("Paste a video link (YouTube, Vimeo or Google Drive).");
+    if (!lang) return showToast("Pick a language for it.");
+    const base = rows.filter((r) => r.language === lang);
+    const nextOrder = base.length ? Math.max(...base.map((r) => r.sort_order || 0)) + 1 : 0;
+    setLBusy(true);
+    const { error } = await supabase.from("live_videos").insert({
+      language: lang, title: lTitle.trim() || null, url: u, thumbnail_url: ytThumb(u), sort_order: nextOrder,
+    });
+    setLBusy(false);
+    if (error) return showToast("Couldn't add — " + error.message);
+    setLink(""); setLTitle(""); showToast(`Link added to ${lang}.`); load();
+  };
+
   const del = async (r) => {
     if (!window.confirm("Remove this clip?")) return;
     const { error } = await supabase.from("live_videos").delete().eq("id", r.id);
@@ -3925,9 +3946,29 @@ function LiveVideosAdmin({ showToast }) {
         style={{ marginTop: 14, border: `2px dashed ${dragOver ? "#c9a84c" : "#2f2f2f"}`, background: dragOver ? "rgba(201,168,76,.06)" : "rgba(255,255,255,.015)", borderRadius: 10, padding: "2.2rem 1rem", textAlign: "center", cursor: "pointer", transition: ".15s" }}>
         <Upload size={22} color={dragOver ? "#c9a84c" : "#66665e"} />
         <p style={{ margin: "8px 0 2px", color: "#e8e8e0", fontSize: ".9rem" }}>Drag &amp; drop videos here, or click to choose</p>
-        <p style={{ margin: 0, color: "#66665e", fontSize: ".72rem" }}>mp4 / mov / webm · you'll pick the language next · large files upload in chunks</p>
+        <p style={{ margin: 0, color: "#66665e", fontSize: ".72rem" }}>mp4 / mov / webm · you'll pick the language next · up to 100&nbsp;MB per file — bigger clips, paste a link below</p>
         <input ref={fileRef} type="file" accept="video/*" multiple hidden onChange={onPick} />
       </div>
+
+      {/* Paste a link — for clips over the 100MB upload cap (YouTube / Vimeo / Drive, unlisted) */}
+      <details className="card" style={{ marginTop: 10 }}>
+        <summary style={{ cursor: "pointer", fontSize: ".85rem", color: "#cfcabf" }}>Too big to upload? Paste a link instead <span style={{ color: "#66665e" }}>(YouTube / Vimeo / Google Drive — for clips over 100&nbsp;MB)</span></summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+          <input style={{ ...inp, width: "100%" }} value={link} onChange={(e) => setLink(e.target.value)} placeholder="Paste a YouTube / Vimeo / Google-Drive (unlisted) link" onKeyDown={(e) => { if (e.key === "Enter") addLink(); }} />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {allLangs.map((l) => (<button key={l} onClick={() => setLLang(l)} className={lLang === l ? "chip on" : "chip"}>{l}</button>))}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input style={{ ...inp, flex: "1 1 150px" }} value={lLang} onChange={(e) => setLLang(e.target.value)} placeholder="…or type a language" />
+            <input style={{ ...inp, flex: "2 1 220px" }} value={lTitle} onChange={(e) => setLTitle(e.target.value)} placeholder="Title / venue (optional)" onKeyDown={(e) => { if (e.key === "Enter") addLink(); }} />
+          </div>
+          <div>
+            <button className="btn" disabled={lBusy || !link.trim() || !lLang.trim()} onClick={addLink}>
+              {lBusy ? <><Loader2 className="spin" size={15} /> Adding…</> : <><Plus size={15} /> Add link to {lLang.trim() || "…"}</>}
+            </button>
+          </div>
+        </div>
+      </details>
 
       {pending.length > 0 && (
         <div className="card" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
