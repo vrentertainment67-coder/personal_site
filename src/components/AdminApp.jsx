@@ -151,6 +151,7 @@ export default function Admin() {
     ["mail", "Mail", Inbox],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
+    ["livevideos", "Live videos", Film],
     ["pageimages", "Page Images", Images],
     ["testimonials", "Reviews", Quote],
     ["marketing", "Marketing", TrendingUp],
@@ -182,6 +183,7 @@ export default function Admin() {
         {tab === "mail" && <MailTab showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
+        {tab === "livevideos" && <LiveVideosAdmin showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
         {tab === "testimonials" && <Testimonials showToast={showToast} />}
         {tab === "marketing" && <Marketing showToast={showToast} />}
@@ -3793,6 +3795,192 @@ function EventMediaManager({ event, onBack, showToast }) {
               </div>
             );
           })}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Live videos admin: drag-drop upload → pick language → reorder / re-route ──
+const LV_LANGS = ["Tamil", "Telugu", "Kannada", "Malayalam", "Hindi", "English", "Punjabi", "Marathi", "Bengali"];
+
+// Cloudinary video URL → first-frame poster (.jpg via so_0). Null if not one.
+function lvPoster(secureUrl) {
+  try {
+    if (!secureUrl || !/\/video\/upload\//.test(secureUrl)) return null;
+    return secureUrl.replace("/video/upload/", "/video/upload/so_0/").replace(/\.(mp4|mov|webm|m4v|mkv|avi)$/i, ".jpg");
+  } catch { return null; }
+}
+
+function LiveVideosAdmin({ showToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dragOver, setDragOver] = useState(false);
+  const [pending, setPending] = useState([]);     // File[] awaiting a language
+  const [pLang, setPLang] = useState("");
+  const [pTitle, setPTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState("");
+  const fileRef = useRef(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("live_videos")
+      .select("*").order("language", { ascending: true }).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
+    if (error) showToast("Couldn't load — run live_videos.sql in Supabase.");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const langsPresent = [...new Set(rows.map((r) => r.language))];
+  const allLangs = [...new Set([...LV_LANGS, ...langsPresent])];
+
+  const onDrop = (e) => {
+    e.preventDefault(); setDragOver(false);
+    const files = [...(e.dataTransfer?.files || [])].filter((f) => /^video\//.test(f.type) || /\.(mp4|mov|webm|m4v|mkv)$/i.test(f.name));
+    if (!files.length) return showToast("Drop video files (mp4, mov, webm…).");
+    setPending(files);
+  };
+  const onPick = (e) => {
+    const files = [...(e.target.files || [])];
+    if (files.length) setPending(files);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const doUpload = async () => {
+    const lang = pLang.trim();
+    if (!lang) return showToast("Pick or type a language first.");
+    setUploading(true);
+    let ok = 0;
+    const base = rows.filter((r) => r.language === lang);
+    let nextOrder = base.length ? Math.max(...base.map((r) => r.sort_order || 0)) + 1 : 0;
+    for (let i = 0; i < pending.length; i++) {
+      const file = pending[i];
+      setProgress(`Uploading ${i + 1} of ${pending.length}…`);
+      try {
+        const sign = await fetch(`${FN}/admin-api?action=sign-upload`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+          body: JSON.stringify({ folder: "djvic/live-videos" }),
+        }).then((r) => r.json());
+        if (sign.error) throw new Error(sign.error);
+        const up = await cloudinaryUpload(file, sign);
+        const { error } = await supabase.from("live_videos").insert({
+          language: lang,
+          title: (pending.length === 1 ? pTitle.trim() : "") || null,
+          url: up.secure_url,
+          thumbnail_url: lvPoster(up.secure_url),
+          sort_order: nextOrder++,
+        });
+        if (error) throw new Error(error.message);
+        ok++;
+      } catch (e) { showToast(`Upload failed (${file.name}) — ${String(e.message || e)}`); }
+    }
+    setUploading(false); setProgress(""); setPending([]); setPTitle("");
+    if (ok) showToast(`${ok} video${ok > 1 ? "s" : ""} added to ${lang}.`);
+    load();
+  };
+
+  const del = async (r) => {
+    if (!window.confirm("Remove this clip?")) return;
+    const { error } = await supabase.from("live_videos").delete().eq("id", r.id);
+    if (error) return showToast("Delete failed — " + error.message);
+    load();
+  };
+  const move = async (r, dir, group) => {
+    const i = group.findIndex((x) => x.id === r.id);
+    const j = i + dir;
+    if (j < 0 || j >= group.length) return;
+    const a = group[i], b = group[j];
+    await Promise.all([
+      supabase.from("live_videos").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("live_videos").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    load();
+  };
+  const relang = async (r, newLang) => {
+    if (newLang === r.language) return;
+    const base = rows.filter((x) => x.language === newLang);
+    const nextOrder = base.length ? Math.max(...base.map((x) => x.sort_order || 0)) + 1 : 0;
+    const { error } = await supabase.from("live_videos").update({ language: newLang, sort_order: nextOrder }).eq("id", r.id);
+    if (error) return showToast("Couldn't move — " + error.message);
+    showToast(`Moved to ${newLang}.`); load();
+  };
+
+  const order = (l) => { const i = LV_LANGS.indexOf(l); return i === -1 ? 999 : i; };
+  const groups = langsPresent.sort((a, b) => order(a) - order(b) || a.localeCompare(b)).map((l) => [l, rows.filter((r) => r.language === l)]);
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter" };
+  const icBtn = { background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#cfcabf", cursor: "pointer", lineHeight: 0, minHeight: 30 };
+
+  return (
+    <>
+      <h1 className="h1">Live videos</h1>
+      <p className="sub" style={{ margin: 0 }}>Client showreel at <a href="/live/" target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>/live</a> — unlisted; share the link directly. Drop clips below and pick a language; they appear under that tab instantly.</p>
+
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        onClick={() => fileRef.current?.click()}
+        style={{ marginTop: 14, border: `2px dashed ${dragOver ? "#c9a84c" : "#2f2f2f"}`, background: dragOver ? "rgba(201,168,76,.06)" : "rgba(255,255,255,.015)", borderRadius: 10, padding: "2.2rem 1rem", textAlign: "center", cursor: "pointer", transition: ".15s" }}>
+        <Upload size={22} color={dragOver ? "#c9a84c" : "#66665e"} />
+        <p style={{ margin: "8px 0 2px", color: "#e8e8e0", fontSize: ".9rem" }}>Drag &amp; drop videos here, or click to choose</p>
+        <p style={{ margin: 0, color: "#66665e", fontSize: ".72rem" }}>mp4 / mov / webm · you'll pick the language next · large files upload in chunks</p>
+        <input ref={fileRef} type="file" accept="video/*" multiple hidden onChange={onPick} />
+      </div>
+
+      {pending.length > 0 && (
+        <div className="card" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: ".9rem", color: "#e8e8e0" }}>{pending.length} video{pending.length > 1 ? "s" : ""} ready — which language?</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {allLangs.map((l) => (<button key={l} onClick={() => setPLang(l)} className={pLang === l ? "chip on" : "chip"}>{l}</button>))}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input style={{ ...inp, flex: "1 1 160px" }} value={pLang} onChange={(e) => setPLang(e.target.value)} placeholder="…or type a language" />
+            {pending.length === 1 && <input style={{ ...inp, flex: "2 1 220px" }} value={pTitle} onChange={(e) => setPTitle(e.target.value)} placeholder="Title / venue (optional)" />}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button className="btn" disabled={uploading || !pLang.trim()} onClick={doUpload}>
+              {uploading ? <><Loader2 className="spin" size={15} /> {progress || "Uploading…"}</> : <><Upload size={15} /> Upload {pending.length} to {pLang.trim() || "…"}</>}
+            </button>
+            {!uploading && <button className="btn sm ghost" onClick={() => { setPending([]); setPTitle(""); }}>Cancel</button>}
+          </div>
+        </div>
+      )}
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
+        <p className="empty" style={{ marginTop: 16 }}>No live videos yet — drop your first clip above.</p>
+      ) : (
+        <div style={{ marginTop: 18 }}>
+          {groups.map(([l, items]) => (
+            <div key={l} style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+                <h3 style={{ margin: 0, fontSize: 15, color: "#e8e8e0" }}>{l}</h3>
+                <span style={{ fontSize: 12, color: "#66665e" }}>{items.length} clip{items.length > 1 ? "s" : ""}</span>
+              </div>
+              <div className="list">
+                {items.map((r, i) => (
+                  <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 92, height: 58, flexShrink: 0, borderRadius: 5, overflow: "hidden", background: "#050505", border: "1px solid #222", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {r.thumbnail_url ? <img src={r.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Film size={18} color="#666" />}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12.5, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "(untitled clip)"}</div>
+                      <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: "#8a8878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{r.url}</a>
+                    </div>
+                    <select value={r.language} onChange={(e) => relang(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12 }} title="Move to language">
+                      {[...new Set([...allLangs, r.language])].map((x) => <option key={x} value={x}>{x}</option>)}
+                    </select>
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                      <button style={icBtn} title="Move up" disabled={i === 0} onClick={() => move(r, -1, items)}>↑</button>
+                      <button style={icBtn} title="Move down" disabled={i === items.length - 1} onClick={() => move(r, 1, items)}>↓</button>
+                      <button style={{ ...icBtn, color: "#e0574a" }} title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>

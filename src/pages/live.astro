@@ -1,0 +1,50 @@
+---
+// Unlisted live-footage showreel for prospective clients. noindex — reachable
+// via the footer "Live Videos" link and by direct share, kept out of search.
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import LiveVideos from '../components/LiveVideos.jsx';
+---
+
+<Layout
+  title="Live Footage — DJ VIC"
+  description="Live footage of DJ VIC playing weddings and events, by language."
+  noindex={true}
+>
+  <Nav />
+
+  <main id="main-content" class="lv-page">
+    <section class="lv-hero">
+      <span class="lv-eyebrow">Live Footage</span>
+      <h1>See the floor, live</h1>
+      <p class="lv-lede">Real sets from real events — pick the language you're planning for and watch VIC read the room.</p>
+    </section>
+
+    <section class="lv-wrap">
+      <LiveVideos client:load />
+    </section>
+
+    <section class="lv-cta">
+      <p>Planning something? Let's talk dates.</p>
+      <a class="lv-book" href="/book/">Book DJ VIC →</a>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .lv-page { background: #080808; color: #e8e8e0; }
+  .lv-hero { max-width: 1000px; margin: 0 auto; padding: clamp(3rem, 7vw, 5rem) 1.25rem 1.5rem; text-align: center; }
+  .lv-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold, #c9a84c); }
+  .lv-hero h1 { font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; margin: .5rem 0 .8rem; color: #fff; }
+  .lv-lede { max-width: 40rem; margin: 0 auto; color: rgba(255,255,255,.6); line-height: 1.6; }
+  .lv-wrap { padding: 1rem 1.25rem 2rem; }
+  .lv-cta { text-align: center; padding: 2.5rem 1.25rem 4rem; }
+  .lv-cta p { color: rgba(255,255,255,.6); margin: 0 0 1rem; }
+  .lv-book { display: inline-block; background: var(--gold, #c9a84c); color: #161208; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; font-size: .8rem; padding: .85rem 1.9rem; border-radius: 3px;
+    text-decoration: none; transition: background .2s; }
+  .lv-book:hover { background: var(--gold-light, #d9bd6a); }
+</style>
