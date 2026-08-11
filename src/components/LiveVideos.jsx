@@ -14,6 +14,8 @@ const SUPABASE_KEY =
 
 // Preferred tab order; anything else falls in after these, alphabetically.
 const LANG_ORDER = ["Tamil", "Telugu", "Kannada", "Malayalam", "Hindi", "English", "Punjabi", "Marathi", "Bengali"];
+const CEREMONY_ORDER = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night"];
+const GROUPINGS = [{ key: "language", label: "By language" }, { key: "ceremony", label: "By ceremony" }];
 
 // A clip's URL can be an uploaded file (Cloudinary mp4) OR a pasted link
 // (YouTube / Vimeo / Google Drive) — for clips too big to upload. Work out
@@ -39,7 +41,8 @@ function thumbFor(clip) {
 
 export default function LiveVideos() {
   const [rows, setRows] = useState(null);   // null = loading
-  const [lang, setLang] = useState(null);
+  const [groupBy, setGroupBy] = useState("language");   // "language" | "ceremony"
+  const [cat, setCat] = useState(null);                  // selected tab value
   const [sel, setSel] = useState(null);
   const videoRef = useRef(null);
 
@@ -58,31 +61,40 @@ export default function LiveVideos() {
     return () => { on = false; };
   }, []);
 
-  // Languages present, in preferred order.
-  const langs = useMemo(() => {
+  // Which groupings actually have any tagged videos (so we only show a switcher
+  // that leads somewhere). Language is always present; ceremony only once tagged.
+  const available = useMemo(() => {
+    if (!rows) return ["language"];
+    const hasCeremony = rows.some((r) => r.ceremony);
+    return hasCeremony ? ["language", "ceremony"] : ["language"];
+  }, [rows]);
+
+  // Tab values for the active grouping, in preferred order.
+  const ORDER = groupBy === "ceremony" ? CEREMONY_ORDER : LANG_ORDER;
+  const cats = useMemo(() => {
     if (!rows) return [];
-    const present = [...new Set(rows.map((r) => r.language).filter(Boolean))];
+    const present = [...new Set(rows.map((r) => r[groupBy]).filter(Boolean))];
     return present.sort((a, b) => {
-      const ia = LANG_ORDER.indexOf(a), ib = LANG_ORDER.indexOf(b);
+      const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
       if (ia !== -1 && ib !== -1) return ia - ib;
       if (ia !== -1) return -1;
       if (ib !== -1) return 1;
       return a.localeCompare(b);
     });
-  }, [rows]);
+  }, [rows, groupBy]);
 
-  // Pick the first language + its first clip once loaded.
+  // Pick the first tab whenever the grouping changes / loads.
   useEffect(() => {
-    if (langs.length && !lang) setLang(langs[0]);
-  }, [langs, lang]);
+    if (cats.length && !cats.includes(cat)) setCat(cats[0]);
+  }, [cats, cat]);
 
   const clips = useMemo(
-    () => (rows && lang ? rows.filter((r) => r.language === lang) : []),
-    [rows, lang]
+    () => (rows && cat ? rows.filter((r) => r[groupBy] === cat) : []),
+    [rows, cat, groupBy]
   );
 
   useEffect(() => {
-    // When the language changes, jump to its first clip.
+    // When the tab changes, jump to its first clip.
     if (clips.length) setSel((prev) => (prev && clips.some((c) => c.id === prev.id) ? prev : clips[0]));
     else setSel(null);
   }, [clips]);
@@ -109,11 +121,21 @@ export default function LiveVideos() {
     <div className="lv">
       <style>{styles}</style>
 
-      {/* Language tabs */}
+      {/* Group-by switcher (only when there's more than one way to group) */}
+      {available.length > 1 && (
+        <div className="lv-groupby">
+          {GROUPINGS.filter((g) => available.includes(g.key)).map((g) => (
+            <button key={g.key} className={groupBy === g.key ? "lv-gb on" : "lv-gb"}
+              onClick={() => { setGroupBy(g.key); setCat(null); }}>{g.label}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Category tabs (language or ceremony) */}
       <div className="lv-tabs" role="tablist">
-        {langs.map((l) => (
-          <button key={l} role="tab" aria-selected={l === lang}
-            className={l === lang ? "lv-tab on" : "lv-tab"} onClick={() => setLang(l)}>
+        {cats.map((l) => (
+          <button key={l} role="tab" aria-selected={l === cat}
+            className={l === cat ? "lv-tab on" : "lv-tab"} onClick={() => setCat(l)}>
             {l}
           </button>
         ))}
@@ -139,7 +161,7 @@ export default function LiveVideos() {
       {/* Primary player — embed for links, native <video> for uploaded files */}
       <div className="lv-player">
         {!sel ? (
-          <div className="lv-player-empty">No clips in {lang} yet.</div>
+          <div className="lv-player-empty">No clips in {cat} yet.</div>
         ) : (() => {
           const c = classify(sel.url);
           if (c.kind === "youtube")
@@ -163,6 +185,11 @@ export default function LiveVideos() {
 const styles = `
 .lv { max-width: 1000px; margin: 0 auto; }
 .lv-load, .lv-empty { text-align: center; color: rgba(255,255,255,.5); padding: 3rem 1rem; font-size: .95rem; }
+.lv-groupby { display: flex; justify-content: center; gap: .4rem; margin-bottom: .9rem; }
+.lv-gb { background: none; border: 1px solid #2a2a2a; color: #8a8878; font: inherit; font-size: .68rem;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: .4rem .85rem; border-radius: 99px; cursor: pointer; transition: .15s; }
+.lv-gb:hover { color: #cfcabf; border-color: #444; }
+.lv-gb.on { color: var(--gold, #c9a84c); border-color: rgba(201,168,76,.5); background: rgba(201,168,76,.08); }
 .lv-tabs { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin-bottom: 1.25rem; }
 .lv-tab { background: #0e0e10; border: 1.5px solid #262626; color: #b8b4a8; font: inherit; font-size: .82rem;
   font-weight: 600; letter-spacing: .04em; padding: .55rem 1.15rem; border-radius: 99px; cursor: pointer; transition: .15s; }

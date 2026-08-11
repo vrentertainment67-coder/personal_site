@@ -14,6 +14,10 @@ create table if not exists public.live_videos (
   created_at    timestamptz not null default now()
 );
 
+-- Optional second grouping dimension (ceremony/type): Sangeet, Baraat,
+-- Haldi/Mehendi, After Party, Club Night. Null until tagged.
+alter table public.live_videos add column if not exists ceremony text;
+
 create index if not exists live_videos_lang_idx on public.live_videos (language, sort_order);
 
 alter table public.live_videos enable row level security;

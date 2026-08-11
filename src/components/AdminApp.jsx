@@ -3803,6 +3803,7 @@ function EventMediaManager({ event, onBack, showToast }) {
 
 // ── Live videos admin: drag-drop upload → pick language → reorder / re-route ──
 const LV_LANGS = ["Tamil", "Telugu", "Kannada", "Malayalam", "Hindi", "English", "Punjabi", "Marathi", "Bengali"];
+const LV_CEREMONIES = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night"];
 
 // Cloudinary video URL → first-frame poster (.jpg via so_0). Null if not one.
 function lvPoster(secureUrl) {
@@ -3818,11 +3819,13 @@ function LiveVideosAdmin({ showToast }) {
   const [dragOver, setDragOver] = useState(false);
   const [pending, setPending] = useState([]);     // File[] awaiting a language
   const [pLang, setPLang] = useState("");
+  const [pCeremony, setPCeremony] = useState(""); // optional ceremony/type
   const [pTitle, setPTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
   const [link, setLink] = useState("");        // paste-a-link (for clips over the 100MB upload cap)
   const [lLang, setLLang] = useState("");
+  const [lCeremony, setLCeremony] = useState("");
   const [lTitle, setLTitle] = useState("");
   const [lBusy, setLBusy] = useState(false);
   const fileRef = useRef(null);
@@ -3838,6 +3841,7 @@ function LiveVideosAdmin({ showToast }) {
 
   const langsPresent = [...new Set(rows.map((r) => r.language))];
   const allLangs = [...new Set([...LV_LANGS, ...langsPresent])];
+  const allCers = [...new Set([...LV_CEREMONIES, ...rows.map((r) => r.ceremony).filter(Boolean)])];
 
   const onDrop = (e) => {
     e.preventDefault(); setDragOver(false);
@@ -3870,6 +3874,7 @@ function LiveVideosAdmin({ showToast }) {
         const up = await cloudinaryUpload(file, sign);
         const { error } = await supabase.from("live_videos").insert({
           language: lang,
+          ceremony: pCeremony.trim() || null,
           title: (pending.length === 1 ? pTitle.trim() : "") || null,
           url: up.secure_url,
           thumbnail_url: lvPoster(up.secure_url),
@@ -3880,7 +3885,7 @@ function LiveVideosAdmin({ showToast }) {
       } catch (e) { showToast(`Upload failed (${file.name}) — ${String(e.message || e)}`); }
     }
     setUploading(false); setProgress(""); setPending([]); setPTitle("");
-    if (ok) showToast(`${ok} video${ok > 1 ? "s" : ""} added to ${lang}.`);
+    if (ok) showToast(`${ok} video${ok > 1 ? "s" : ""} added to ${lang}${pCeremony.trim() ? " · " + pCeremony.trim() : ""}.`);
     load();
   };
 
@@ -3894,7 +3899,7 @@ function LiveVideosAdmin({ showToast }) {
     const nextOrder = base.length ? Math.max(...base.map((r) => r.sort_order || 0)) + 1 : 0;
     setLBusy(true);
     const { error } = await supabase.from("live_videos").insert({
-      language: lang, title: lTitle.trim() || null, url: u, thumbnail_url: ytThumb(u), sort_order: nextOrder,
+      language: lang, ceremony: lCeremony.trim() || null, title: lTitle.trim() || null, url: u, thumbnail_url: ytThumb(u), sort_order: nextOrder,
     });
     setLBusy(false);
     if (error) return showToast("Couldn't add — " + error.message);
@@ -3925,6 +3930,13 @@ function LiveVideosAdmin({ showToast }) {
     const { error } = await supabase.from("live_videos").update({ language: newLang, sort_order: nextOrder }).eq("id", r.id);
     if (error) return showToast("Couldn't move — " + error.message);
     showToast(`Moved to ${newLang}.`); load();
+  };
+  const setCeremony = async (r, newCer) => {
+    const val = newCer || null;
+    if (val === (r.ceremony || null)) return;
+    const { error } = await supabase.from("live_videos").update({ ceremony: val }).eq("id", r.id);
+    if (error) return showToast("Couldn't tag — " + error.message);
+    showToast(val ? `Tagged “${val}”.` : "Ceremony cleared."); load();
   };
 
   const order = (l) => { const i = LV_LANGS.indexOf(l); return i === -1 ? 999 : i; };
@@ -3962,6 +3974,9 @@ function LiveVideosAdmin({ showToast }) {
             <input style={{ ...inp, flex: "1 1 150px" }} value={lLang} onChange={(e) => setLLang(e.target.value)} placeholder="…or type a language" />
             <input style={{ ...inp, flex: "2 1 220px" }} value={lTitle} onChange={(e) => setLTitle(e.target.value)} placeholder="Title / venue (optional)" onKeyDown={(e) => { if (e.key === "Enter") addLink(); }} />
           </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {allCers.map((c) => (<button key={c} onClick={() => setLCeremony(lCeremony === c ? "" : c)} className={lCeremony === c ? "chip on" : "chip"}>{c}</button>))}
+          </div>
           <div>
             <button className="btn" disabled={lBusy || !link.trim() || !lLang.trim()} onClick={addLink}>
               {lBusy ? <><Loader2 className="spin" size={15} /> Adding…</> : <><Plus size={15} /> Add link to {lLang.trim() || "…"}</>}
@@ -3979,6 +3994,10 @@ function LiveVideosAdmin({ showToast }) {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input style={{ ...inp, flex: "1 1 160px" }} value={pLang} onChange={(e) => setPLang(e.target.value)} placeholder="…or type a language" />
             {pending.length === 1 && <input style={{ ...inp, flex: "2 1 220px" }} value={pTitle} onChange={(e) => setPTitle(e.target.value)} placeholder="Title / venue (optional)" />}
+          </div>
+          <div style={{ fontSize: ".75rem", color: "#8a8878" }}>Ceremony / type <span style={{ color: "#66665e" }}>(optional)</span></div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {allCers.map((c) => (<button key={c} onClick={() => setPCeremony(pCeremony === c ? "" : c)} className={pCeremony === c ? "chip on" : "chip"}>{c}</button>))}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button className="btn" disabled={uploading || !pLang.trim()} onClick={doUpload}>
@@ -4011,6 +4030,10 @@ function LiveVideosAdmin({ showToast }) {
                     </div>
                     <select value={r.language} onChange={(e) => relang(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12 }} title="Move to language">
                       {[...new Set([...allLangs, r.language])].map((x) => <option key={x} value={x}>{x}</option>)}
+                    </select>
+                    <select value={r.ceremony || ""} onChange={(e) => setCeremony(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12, color: r.ceremony ? "var(--off)" : "#8a8878" }} title="Ceremony / type">
+                      <option value="">— ceremony —</option>
+                      {[...new Set([...allCers, r.ceremony].filter(Boolean))].map((x) => <option key={x} value={x}>{x}</option>)}
                     </select>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                       <button style={icBtn} title="Move up" disabled={i === 0} onClick={() => move(r, -1, items)}>↑</button>
