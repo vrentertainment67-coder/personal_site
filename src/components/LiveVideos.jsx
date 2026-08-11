@@ -13,8 +13,8 @@ const SUPABASE_KEY =
   import.meta.env?.PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
 
 // Preferred tab order; anything else falls in after these, alphabetically.
-const LANG_ORDER = ["Tamil", "Telugu", "Kannada", "Malayalam", "Hindi", "English", "Punjabi", "Marathi", "Bengali"];
-const CEREMONY_ORDER = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night"];
+const LANG_ORDER = ["Hindi", "Tamil", "Telugu", "Kannada", "Malayalam", "English", "Punjabi", "Marathi", "Bengali"];
+const CEREMONY_ORDER = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night", "Cruise Party"];
 const GROUPINGS = [{ key: "language", label: "By language" }, { key: "ceremony", label: "By ceremony" }];
 
 // A clip's URL can be an uploaded file (Cloudinary mp4) OR a pasted link
