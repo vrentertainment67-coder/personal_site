@@ -8,25 +8,25 @@ import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
 // Upcoming edition (Vol. 4). Mirrors the live row in the Supabase `events`
-// table (slug chamatkar-2026-09-05); the RSVP writes against `slug`.
+// table (slug chamatkar-2026-08-22); the RSVP writes against `slug`.
 const EVENT = {
-  slug: 'chamatkar-2026-09-05',
+  slug: 'chamatkar-2026-08-22',
   title: 'Chamatkar',
   edition: 'Vol. 4',
-  tagline: 'The Mashup Edition',
+  tagline: 'The 90s / 2000s Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
   // Set dateTBA:true when the next date isn't decided — it hides the countdown,
   // calendar links and RSVP cutoff and shows a "date announced soon" treatment.
   dateTBA: false,
-  dateLabel: 'Saturday 5 September',
+  dateLabel: 'Saturday 22 August',
   timeLabel: '9:00 PM onwards',
-  doorsAt: '2026-09-05T21:00:00+05:30',   // countdown target (doors, IST)
+  doorsAt: '2026-08-22T21:00:00+05:30',   // countdown target (doors, IST)
   lineup: 'DJ VIC',
-  genre: 'Bollywood × Global — Audio-Visual Set',
-  theme: 'Bollywood × Global',
+  genre: '90s / 2000s Bollywood × Global — Audio-Visual Set',
+  theme: '90s / 2000s Bollywood',
   themeLine: 'Live Audio-Visual Set',
-  intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
+  intro: "The 90s and 2000s Bollywood you grew up on — mixed live against global records, visuals locked to every drop.",
   // heroBg = a clean, text-safe static background behind the hero copy. Null =
   // a plain dark gradient (no busy creative behind the text).
   heroBg: '/images/chamatkar-hero-bg.jpg',
@@ -34,8 +34,8 @@ const EVENT = {
   // hero. Null (Vol. 4 creative not designed yet) hides the flyer section.
   flyer: null,
   ics: '/chamatkar.ics',
-  rsvpCutoff: '2026-09-05T12:30:00+00:00',
-  expiry: '2026-09-05T19:30:00+00:00',
+  rsvpCutoff: '2026-08-22T12:30:00+00:00',
+  expiry: '2026-08-22T19:30:00+00:00',
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -127,7 +127,7 @@ const PAST_EDITIONS = [
           <span class="ck-etype">Tables</span>
           <span class="ck-eprice">On availability</span>
           <span class="ck-enote">Advance reservation accepted</span>
-          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%204%20on%205%20September." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
+          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%204%20on%2022%20August." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
         </div>
       </div>
     </section>
