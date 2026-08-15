@@ -3,7 +3,7 @@ guestName: "Goapu Da Groove"
 guestTitle: "DJ & Producer · 27 years freelance in Bengaluru"
 season: 2
 episode: 19
-youtubeId: ""
+youtubeId: "CPPqi1CQdrY"
 category: "behind-the-decks"
 categoryLabel: "Behind the Decks"
 premiereWhen: "this Sunday"
