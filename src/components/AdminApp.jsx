@@ -2741,6 +2741,101 @@ function MiniBars({ title, rows, sub }) {
 // Rendered as a sub-tab inside the Collective view. Moderation: approve /
 // reject, plus a silent ban that rejects the row AND blocks that
 // device/network from ever surfacing again (they still see "Got it.").
+// ── DJ Swap moderation — the /swap gear marketplace ──
+function CollectiveSwap({ showToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("live");
+  const [busy, setBusy] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("dj_swap_listings").select("*").order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load listings — run supabase/010_dj_swap_admin.sql (admin policies).");
+    setRows(data || []); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const setListingStatus = async (r, s) => {
+    setBusy(r.id);
+    const { error } = await supabase.from("dj_swap_listings").update({ status: s }).eq("id", r.id);
+    setBusy(null);
+    if (error) return showToast("Update failed — " + error.message);
+    showToast(s === "sold" ? "Marked sold." : s === "hidden" ? "Hidden from /swap." : "Back to live.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, status: s } : x)));
+  };
+  const del = async (r) => {
+    if (!window.confirm(`Delete "${r.title}" for good?`)) return;
+    setBusy(r.id);
+    const { error } = await supabase.from("dj_swap_listings").delete().eq("id", r.id);
+    setBusy(null);
+    if (error) return showToast("Delete failed — " + error.message);
+    showToast("Deleted."); setRows((rs) => rs.filter((x) => x.id !== r.id));
+  };
+  const waFor = (r) => { let n = (r.contact || "").replace(/\D/g, ""); if (n.length === 10) n = "91" + n; if (n.length >= 10) window.open(`https://wa.me/${n}`, "_blank"); };
+  const fmtWhen = (s) => { const d = new Date(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+
+  const counts = {
+    live: rows.filter((r) => r.status === "live").length,
+    sold: rows.filter((r) => r.status === "sold").length,
+    hidden: rows.filter((r) => r.status === "hidden").length,
+    all: rows.length,
+  };
+  const filtered = filter === "all" ? rows : rows.filter((r) => r.status === filter);
+
+  return (
+    <>
+      <p className="sub">Gear posted to <b>/swap</b> — hide anything off, mark sold, or delete. Tap a photo to open it full-size.</p>
+      <div className="chips" style={{ marginBottom: 12 }}>
+        {[["live", "Live"], ["sold", "Sold"], ["hidden", "Hidden"], ["all", "All"]].map(([f, l]) => (
+          <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>{l} ({counts[f]})</button>
+        ))}
+      </div>
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center>
+        : filtered.length === 0 ? <p className="empty">Nothing here.</p>
+        : (
+        <div className="dca-list">
+          {filtered.map((r) => {
+            const photos = Array.isArray(r.photos) ? r.photos : [];
+            return (
+              <div key={r.id} className="dca-card" style={r.status === "hidden" ? { opacity: 0.6 } : undefined}>
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  {photos.length > 0 && (
+                    <div style={{ display: "flex", gap: 5 }}>
+                      {photos.slice(0, 3).map((p, i) => (
+                        <a key={i} href={p} target="_blank" rel="noopener noreferrer">
+                          <img src={p} alt="" loading="lazy" style={{ width: 58, height: 58, objectFit: "cover", borderRadius: 6, border: "1px solid #2a2a2a", display: "block" }} />
+                        </a>
+                      ))}
+                      {photos.length > 3 && <span style={{ alignSelf: "center", color: "#8a8878", fontSize: 12 }}>+{photos.length - 3}</span>}
+                    </div>
+                  )}
+                  <div style={{ flex: "1 1 180px", minWidth: 0 }}>
+                    <div style={{ color: "#e8e8e0", fontWeight: 600 }}>{r.title}{r.price ? <span style={{ color: "#c9a84c", marginLeft: 8 }}>{r.price}</span> : ""}</div>
+                    <div style={{ color: "#8a8878", fontSize: 12.5, marginTop: 2 }}>
+                      {[r.condition, r.seller_name, fmtWhen(r.created_at)].filter(Boolean).join(" · ")}
+                      {r.status !== "live" && <span style={{ marginLeft: 8, textTransform: "uppercase", fontSize: 10, letterSpacing: ".05em", color: r.status === "sold" ? "#5a8f8a" : "#e0a03a" }}>{r.status}</span>}
+                    </div>
+                    {r.description && <div style={{ color: "#cfcabf", fontSize: 13, marginTop: 4 }}>{r.description}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    <button className="act wa" onClick={() => waFor(r)}><MessageCircle size={14} /> Seller</button>
+                    {r.status !== "sold" && <button className="act" onClick={() => setListingStatus(r, "sold")} disabled={busy === r.id}>Mark sold</button>}
+                    {r.status === "hidden"
+                      ? <button className="act" onClick={() => setListingStatus(r, "live")} disabled={busy === r.id}>Unhide</button>
+                      : <button className="act" onClick={() => setListingStatus(r, "hidden")} disabled={busy === r.id}>Hide</button>}
+                    <button className="act" style={{ color: "#e08a8a" }} onClick={() => del(r)} disabled={busy === r.id}>Delete</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 function CollectiveFeedback({ showToast }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3182,9 +3277,12 @@ function DJCollective({ showToast }) {
       <div className="dca-vt" style={{ margin: "2px 0 14px" }}>
         <button className={panel === "rsvps" ? "on" : ""} onClick={() => setPanel("rsvps")}>RSVPs ({rows.length})</button>
         <button className={panel === "feedback" ? "on" : ""} onClick={() => setPanel("feedback")}>Feedback</button>
+        <button className={panel === "swap" ? "on" : ""} onClick={() => setPanel("swap")}>Swap</button>
       </div>
 
-      {panel === "feedback" ? <CollectiveFeedback showToast={showToast} /> : (
+      {panel === "feedback" ? <CollectiveFeedback showToast={showToast} />
+       : panel === "swap" ? <CollectiveSwap showToast={showToast} />
+       : (
       <>
       <p className="sub">RSVPs for the Bengaluru DJ meetup{sess !== "all" ? ` — ${sess}` : ""}.</p>
 
