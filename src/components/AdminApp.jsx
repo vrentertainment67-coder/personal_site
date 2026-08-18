@@ -2751,7 +2751,7 @@ function CollectiveSwap({ showToast }) {
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase.from("dj_swap_listings").select("*").order("created_at", { ascending: false });
-    if (error) showToast("Couldn't load listings — run supabase/010_dj_swap_admin.sql (admin policies).");
+    if (error) showToast("Swap load failed — " + error.message + " (run supabase/010).");
     setRows(data || []); setLoading(false);
   }, [showToast]);
   useEffect(() => { load(); }, [load]);
