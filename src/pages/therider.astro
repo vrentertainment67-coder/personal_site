@@ -1,0 +1,141 @@
+---
+// The Rider — hub page listing DJ VIC's free field guides for DJs.
+// Each edition is a downloadable PDF (hosted at the site root). The guides
+// themselves link here in their footer (DJVICOFFICIAL.COM/THERIDER).
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+// Newest first. `file` is the public PDF path.
+const EDITIONS = [
+  {
+    no: '06',
+    file: '/TheRider-Ep06-BrainFieldGuide.pdf',
+    title: 'Your Brain On DJing',
+    sub: 'A field guide to what’s actually happening behind the decks — and the science behind it.',
+    inside: [
+      'The Prediction Problem — how your brain beatmatches before you consciously notice',
+      'Your four memory systems, running in parallel every set',
+      'The room-reading loop: why a good set is literally a conversation',
+      'Why DJing sharpens skills that carry far beyond the booth',
+      'Further reading — peer-reviewed papers, books and lectures',
+    ],
+  },
+  {
+    no: '05',
+    file: '/TheRider-Ep05-Ears-Toolkit.pdf',
+    title: 'Protect Your Ears',
+    sub: 'The DJ’s hearing toolkit — the habits, the earplug brands, and the audiologist checklist.',
+    inside: [
+      'The five habits that protect your hearing behind the booth',
+      'Custom musician’s earplug brands — India + international, where to actually buy',
+      'The audiologist appointment checklist — what to ask, what to test',
+      'The warning signs — when to skip the wait and see someone',
+    ],
+  },
+  {
+    no: '04',
+    file: '/TheRider-Ep04-Contract.pdf',
+    title: 'The One-Page Contract',
+    sub: 'The single sheet that turns a WhatsApp gig into a professional booking. India & beyond.',
+    inside: [
+      'A fill-in DJ performance contract — parties, fee, cancellation tiers, force majeure',
+      'The soft-launch script for sending it without friction',
+      'Handling pushback — what to say when they resist',
+      'How to adapt it for your region (US / UK / EU)',
+    ],
+  },
+  {
+    no: '03',
+    file: '/TheRider-Ep03-TDS-Toolkit.pdf',
+    title: 'The Cut Nobody Explained',
+    sub: 'The DJ’s TDS toolkit — invoice template + checklist, so you never lose a rupee to bad paperwork.',
+    inside: [
+      'The one-page TDS cheat sheet — rates, thresholds, when it kicks in',
+      'The DJ invoice template — fill it in, send it, get paid right',
+      'The five-move checklist that actually protects you',
+      'Form 16A + Form 26AS — what they are and how to get them',
+    ],
+  },
+];
+
+const desc = 'The Rider — free field guides for working DJs from DJ VIC. Contracts, tax, hearing protection, the psychology of the booth. The stuff nobody explains, no paywall.';
+---
+
+<Layout title="The Rider — Free Field Guides for DJs | DJ VIC" description={desc} ogTitle="The Rider — Free DJ Field Guides">
+  <Nav />
+
+  <main id="main-content" class="tr">
+    <section class="tr-hero">
+      <span class="tr-eyebrow">The Rider · for DJs</span>
+      <h1>Free field guides<br />for working DJs.</h1>
+      <p class="tr-lede">The stuff nobody explains — money, contracts, your ears, your brain. Written for DJs in India and beyond. No fluff, no paywall. Download what you need.</p>
+    </section>
+
+    <section class="tr-list">
+      {EDITIONS.map((e) => (
+        <article class="tr-card">
+          <div class="tr-card-head">
+            <span class="tr-no">No.{e.no}</span>
+            <div>
+              <h2>{e.title}</h2>
+              <p class="tr-sub">{e.sub}</p>
+            </div>
+          </div>
+          <p class="tr-inside-label">Inside</p>
+          <ul class="tr-inside">
+            {e.inside.map((i) => <li>{i}</li>)}
+          </ul>
+          <a class="tr-dl" href={e.file} target="_blank" rel="noopener noreferrer">Get the PDF →</a>
+        </article>
+      ))}
+    </section>
+
+    <section class="tr-note">
+      <p><strong>Earlier in the series</strong> — No.01 <em>The Cover Nobody Buys</em> (health insurance for DJs) and No.02 <em>You’re Undercharging. Here’s Proof.</em> (pricing your set) live on Instagram <a href="https://instagram.djvicofficial.com" target="_blank" rel="noopener noreferrer">@thevicfix</a> — downloadable versions land here soon.</p>
+      <p class="tr-disclaimer">These are awareness resources and templates, not legal, tax or medical advice. Every situation is different — confirm your specifics with the right professional before acting.</p>
+    </section>
+
+    <section class="tr-cta">
+      <p>New editions drop on Instagram first.</p>
+      <a class="tr-follow" href="https://instagram.djvicofficial.com" target="_blank" rel="noopener noreferrer">Follow @thevicfix →</a>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .tr { --red: #ff4d3d; background: #080808; color: #e8e8e0; }
+  .tr-hero { max-width: 60rem; margin: 0 auto; padding: clamp(3rem, 7vw, 5.5rem) 1.25rem 1.5rem; }
+  .tr-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .28em; text-transform: uppercase; color: var(--red); }
+  .tr-hero h1 { font-family: var(--font-display, sans-serif); font-size: clamp(2.2rem, 6.5vw, 4rem); line-height: 1.02; margin: .5rem 0 1rem; color: #fff; text-transform: uppercase; letter-spacing: .01em; }
+  .tr-lede { max-width: 42rem; color: rgba(255,255,255,.6); line-height: 1.65; font-size: 1.02rem; margin: 0; }
+
+  .tr-list { max-width: 60rem; margin: 2rem auto 0; padding: 0 1.25rem; display: grid; gap: 1.1rem; }
+  .tr-card { border: 1px solid #1e1e1e; border-left: 3px solid var(--red); background: rgba(255,255,255,.015); border-radius: 8px; padding: 1.6rem 1.5rem; transition: border-color .2s, background .2s; }
+  .tr-card:hover { border-color: #2e2e2e; border-left-color: var(--red); background: rgba(255,77,61,.03); }
+  .tr-card-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
+  .tr-no { flex: 0 0 auto; font-family: var(--font-display, sans-serif); font-size: 1rem; font-weight: 700; letter-spacing: .05em; color: var(--red); border: 1px solid rgba(255,77,61,.35); border-radius: 5px; padding: .3rem .55rem; margin-top: .15rem; }
+  .tr-card h2 { font-family: var(--font-display, sans-serif); font-size: clamp(1.4rem, 3.5vw, 1.9rem); line-height: 1.1; margin: 0 0 .4rem; color: #fff; text-transform: uppercase; letter-spacing: .01em; }
+  .tr-sub { margin: 0; color: rgba(255,255,255,.62); line-height: 1.5; font-size: .95rem; }
+  .tr-inside-label { font-size: .62rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin: 0 0 .5rem; opacity: .85; }
+  .tr-inside { margin: 0 0 1.4rem; padding: 0; list-style: none; }
+  .tr-inside li { position: relative; padding: .28rem 0 .28rem 1.1rem; color: rgba(255,255,255,.72); font-size: .92rem; line-height: 1.5; border-bottom: 1px solid #161616; }
+  .tr-inside li:last-child { border-bottom: 0; }
+  .tr-inside li::before { content: '·'; position: absolute; left: .2rem; color: var(--red); font-weight: 700; }
+  .tr-dl { display: inline-block; background: var(--red); color: #160504; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: .78rem; padding: .75rem 1.5rem; border-radius: 4px; text-decoration: none; transition: filter .15s, transform .15s; }
+  .tr-dl:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .tr-note { max-width: 60rem; margin: 2.2rem auto 0; padding: 1.4rem 1.5rem; border-top: 1px solid #1a1a1a; }
+  .tr-note p { color: rgba(255,255,255,.55); font-size: .88rem; line-height: 1.6; margin: 0 0 .8rem; }
+  .tr-note strong { color: rgba(255,255,255,.8); }
+  .tr-note em { color: rgba(255,255,255,.72); font-style: italic; }
+  .tr-note a { color: var(--red); text-decoration: none; }
+  .tr-disclaimer { font-size: .78rem !important; color: rgba(255,255,255,.4) !important; margin: 0 !important; }
+
+  .tr-cta { text-align: center; padding: 2.5rem 1.25rem 4rem; }
+  .tr-cta p { color: rgba(255,255,255,.6); margin: 0 0 1rem; }
+  .tr-follow { display: inline-block; border: 1px solid var(--red); color: var(--red); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: .78rem; padding: .8rem 1.7rem; border-radius: 4px; text-decoration: none; transition: background .2s, color .2s; }
+  .tr-follow:hover { background: var(--red); color: #160504; }
+</style>
