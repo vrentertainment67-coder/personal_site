@@ -1,60 +1,83 @@
 ---
 // The Rider — hub page listing DJ VIC's free field guides for DJs.
-// Each edition is a downloadable PDF (hosted at the site root). The guides
-// themselves link here in their footer (DJVICOFFICIAL.COM/THERIDER).
+// Horizontal rail of editions; pick one to highlight it and show its detail.
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
-// Newest first. `file` is the public PDF path.
+// Newest first (left → right). `icon` is a themed emoji; `file` is the public PDF.
 const EDITIONS = [
   {
-    no: '06',
-    file: '/TheRider-Ep06-BrainFieldGuide.pdf',
+    no: '06', icon: '🧠', file: '/TheRider-Ep06-BrainFieldGuide.pdf',
     title: 'Your Brain On DJing',
-    sub: 'A field guide to what’s actually happening behind the decks — and the science behind it.',
+    kicker: 'The Field Guide',
+    sub: 'What’s actually happening behind the decks — and the neuroscience behind it.',
     inside: [
-      'The Prediction Problem — how your brain beatmatches before you consciously notice',
+      'The Prediction Problem — how you beatmatch before you consciously notice',
       'Your four memory systems, running in parallel every set',
       'The room-reading loop: why a good set is literally a conversation',
-      'Why DJing sharpens skills that carry far beyond the booth',
-      'Further reading — peer-reviewed papers, books and lectures',
+      'Why DJing sharpens skills that carry beyond the booth',
+      'Further reading — papers, books and lectures',
     ],
   },
   {
-    no: '05',
-    file: '/TheRider-Ep05-Ears-Toolkit.pdf',
+    no: '05', icon: '🎧', file: '/TheRider-Ep05-Ears-Toolkit.pdf',
     title: 'Protect Your Ears',
-    sub: 'The DJ’s hearing toolkit — the habits, the earplug brands, and the audiologist checklist.',
+    kicker: 'Hearing Toolkit',
+    sub: 'The habits, the earplug brands, and the audiologist checklist.',
     inside: [
       'The five habits that protect your hearing behind the booth',
-      'Custom musician’s earplug brands — India + international, where to actually buy',
+      'Custom musician’s earplug brands — India + international',
       'The audiologist appointment checklist — what to ask, what to test',
       'The warning signs — when to skip the wait and see someone',
     ],
   },
   {
-    no: '04',
-    file: '/TheRider-Ep04-Contract.pdf',
+    no: '04', icon: '📝', file: '/TheRider-Ep04-Contract.pdf',
     title: 'The One-Page Contract',
+    kicker: 'Booking Sheet',
     sub: 'The single sheet that turns a WhatsApp gig into a professional booking. India & beyond.',
     inside: [
-      'A fill-in DJ performance contract — parties, fee, cancellation tiers, force majeure',
+      'A fill-in DJ contract — parties, fee, cancellation tiers, force majeure',
       'The soft-launch script for sending it without friction',
       'Handling pushback — what to say when they resist',
       'How to adapt it for your region (US / UK / EU)',
     ],
   },
   {
-    no: '03',
-    file: '/TheRider-Ep03-TDS-Toolkit.pdf',
+    no: '03', icon: '🧾', file: '/TheRider-Ep03-TDS-Toolkit.pdf',
     title: 'The Cut Nobody Explained',
-    sub: 'The DJ’s TDS toolkit — invoice template + checklist, so you never lose a rupee to bad paperwork.',
+    kicker: 'TDS Toolkit',
+    sub: 'Invoice template + checklist, so you never lose a rupee to bad paperwork.',
     inside: [
       'The one-page TDS cheat sheet — rates, thresholds, when it kicks in',
       'The DJ invoice template — fill it in, send it, get paid right',
       'The five-move checklist that actually protects you',
       'Form 16A + Form 26AS — what they are and how to get them',
+    ],
+  },
+  {
+    no: '02', icon: '📊', file: '/TheRider-Ep02-FeeFloorWorksheet.pdf',
+    title: 'Know Your Floor',
+    kicker: 'Fee-Floor Worksheet',
+    sub: 'The worksheet that tells you the number below which every gig is losing you money.',
+    inside: [
+      'The three questions your fee floor answers',
+      'The worksheet — real hours + real costs = your minimum viable fee',
+      'Two worked examples — a club DJ and a wedding DJ',
+      'How to actually quote higher — anchor high, cut scope not price',
+    ],
+  },
+  {
+    no: '01', icon: '🛡️', file: '/TheRider-Ep01-InsuranceStarter.pdf',
+    title: 'The Cover Nobody Buys',
+    kicker: 'Insurance Starter',
+    sub: 'The DJ’s starter guide to insurance — what to buy, what to skip, how not to overpay.',
+    inside: [
+      'The three covers every DJ needs — health, accident, term life',
+      'The five questions to ask before you buy',
+      'The comparison-shopping playbook — India + global',
+      'The red flags in the fine print that void your claim',
     ],
   },
 ];
@@ -69,31 +92,44 @@ const desc = 'The Rider — free field guides for working DJs from DJ VIC. Contr
     <section class="tr-hero">
       <span class="tr-eyebrow">The Rider · for DJs</span>
       <h1>Free field guides<br />for working DJs.</h1>
-      <p class="tr-lede">The stuff nobody explains — money, contracts, your ears, your brain. Written for DJs in India and beyond. No fluff, no paywall. Download what you need.</p>
+      <p class="tr-lede">The stuff nobody explains — money, contracts, your ears, your brain. Pick an edition, grab the PDF.</p>
     </section>
 
-    <section class="tr-list">
-      {EDITIONS.map((e) => (
-        <article class="tr-card">
-          <div class="tr-card-head">
-            <span class="tr-no">No.{e.no}</span>
-            <div>
-              <h2>{e.title}</h2>
-              <p class="tr-sub">{e.sub}</p>
-            </div>
+    <!-- Rail: scroll left → right, tap to select -->
+    <div class="tr-rail" role="tablist" aria-label="The Rider editions">
+      {EDITIONS.map((e, i) => (
+        <button class="tr-tile" data-ed={i} role="tab" aria-selected={i === 0}>
+          <span class="tr-tile-ic">{e.icon}</span>
+          <span class="tr-tile-no">No.{e.no}</span>
+          <span class="tr-tile-kick">{e.kicker}</span>
+          <span class="tr-tile-title">{e.title}</span>
+        </button>
+      ))}
+      <span class="tr-rail-hint">swipe →</span>
+    </div>
+
+    <!-- Detail for the selected edition -->
+    <div class="tr-details">
+      {EDITIONS.map((e, i) => (
+        <article class="tr-detail" data-ed={i} hidden={i !== 0}>
+          <div class="tr-detail-side">
+            <span class="tr-detail-ic">{e.icon}</span>
+            <span class="tr-detail-no">No.{e.no}</span>
+            <span class="tr-detail-kick">{e.kicker}</span>
           </div>
-          <p class="tr-inside-label">Inside</p>
-          <ul class="tr-inside">
-            {e.inside.map((i) => <li>{i}</li>)}
-          </ul>
-          <a class="tr-dl" href={e.file} target="_blank" rel="noopener noreferrer">Get the PDF →</a>
+          <div class="tr-detail-body">
+            <h2>{e.title}</h2>
+            <p class="tr-sub">{e.sub}</p>
+            <p class="tr-inside-label">Inside</p>
+            <ul class="tr-inside">{e.inside.map((i) => <li>{i}</li>)}</ul>
+            <a class="tr-dl" href={e.file} target="_blank" rel="noopener noreferrer">Get the PDF →</a>
+          </div>
         </article>
       ))}
-    </section>
+    </div>
 
     <section class="tr-note">
-      <p><strong>Earlier in the series</strong> — No.01 <em>The Cover Nobody Buys</em> (health insurance for DJs) and No.02 <em>You’re Undercharging. Here’s Proof.</em> (pricing your set) live on Instagram <a href="https://instagram.djvicofficial.com" target="_blank" rel="noopener noreferrer">@thevicfix</a> — downloadable versions land here soon.</p>
-      <p class="tr-disclaimer">These are awareness resources and templates, not legal, tax or medical advice. Every situation is different — confirm your specifics with the right professional before acting.</p>
+      <p class="tr-disclaimer">Awareness resources and templates — not legal, tax, financial or medical advice. Every situation is different; confirm your specifics with the right professional before acting.</p>
     </section>
 
     <section class="tr-cta">
@@ -105,37 +141,95 @@ const desc = 'The Rider — free field guides for working DJs from DJ VIC. Contr
   <Footer />
 </Layout>
 
-<style>
-  .tr { --red: #ff4d3d; background: #080808; color: #e8e8e0; }
-  .tr-hero { max-width: 60rem; margin: 0 auto; padding: clamp(3rem, 7vw, 5.5rem) 1.25rem 1.5rem; }
-  .tr-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .28em; text-transform: uppercase; color: var(--red); }
-  .tr-hero h1 { font-family: var(--font-display, sans-serif); font-size: clamp(2.2rem, 6.5vw, 4rem); line-height: 1.02; margin: .5rem 0 1rem; color: #fff; text-transform: uppercase; letter-spacing: .01em; }
-  .tr-lede { max-width: 42rem; color: rgba(255,255,255,.6); line-height: 1.65; font-size: 1.02rem; margin: 0; }
+<script>
+  function initRider() {
+    const tiles = [...document.querySelectorAll('.tr-tile')];
+    if (!tiles.length) return;
+    const details = [...document.querySelectorAll('.tr-detail')];
+    tiles.forEach((t) => {
+      if (t.dataset.bound) return;
+      t.dataset.bound = '1';
+      t.addEventListener('click', () => {
+        const i = t.dataset.ed;
+        tiles.forEach((x) => x.setAttribute('aria-selected', String(x.dataset.ed === i)));
+        details.forEach((d) => { d.hidden = d.dataset.ed !== i; });
+        t.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+      });
+    });
+  }
+  initRider();
+  document.addEventListener('astro:page-load', initRider);
+</script>
 
-  .tr-list { max-width: 60rem; margin: 2rem auto 0; padding: 0 1.25rem; display: grid; gap: 1.1rem; }
-  .tr-card { border: 1px solid #1e1e1e; border-left: 3px solid var(--red); background: rgba(255,255,255,.015); border-radius: 8px; padding: 1.6rem 1.5rem; transition: border-color .2s, background .2s; }
-  .tr-card:hover { border-color: #2e2e2e; border-left-color: var(--red); background: rgba(255,77,61,.03); }
-  .tr-card-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
-  .tr-no { flex: 0 0 auto; font-family: var(--font-display, sans-serif); font-size: 1rem; font-weight: 700; letter-spacing: .05em; color: var(--red); border: 1px solid rgba(255,77,61,.35); border-radius: 5px; padding: .3rem .55rem; margin-top: .15rem; }
-  .tr-card h2 { font-family: var(--font-display, sans-serif); font-size: clamp(1.4rem, 3.5vw, 1.9rem); line-height: 1.1; margin: 0 0 .4rem; color: #fff; text-transform: uppercase; letter-spacing: .01em; }
-  .tr-sub { margin: 0; color: rgba(255,255,255,.62); line-height: 1.5; font-size: .95rem; }
-  .tr-inside-label { font-size: .62rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin: 0 0 .5rem; opacity: .85; }
-  .tr-inside { margin: 0 0 1.4rem; padding: 0; list-style: none; }
-  .tr-inside li { position: relative; padding: .28rem 0 .28rem 1.1rem; color: rgba(255,255,255,.72); font-size: .92rem; line-height: 1.5; border-bottom: 1px solid #161616; }
+<style>
+  .tr { --red: #ff4d3d; background: #080808; color: #e8e8e0; overflow-x: hidden; }
+  .tr-hero { max-width: 60rem; margin: 0 auto; padding: clamp(2.6rem, 6vw, 4.5rem) 1.25rem 1.4rem; }
+  .tr-eyebrow { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; letter-spacing: .28em; text-transform: uppercase; color: var(--red); }
+  .tr-hero h1 { font-family: var(--font-display, sans-serif); font-size: clamp(2.1rem, 6.5vw, 3.8rem); line-height: 1.02; margin: .5rem 0 .9rem; color: #fff; text-transform: uppercase; }
+  .tr-lede { max-width: 40rem; color: rgba(255,255,255,.6); line-height: 1.6; margin: 0; }
+
+  /* ── Rail ── */
+  .tr-rail {
+    display: flex; gap: .9rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: .5rem clamp(1.25rem, 4vw, 3rem) 1.4rem;
+    max-width: 66rem; margin: .6rem auto 0;
+    scrollbar-width: thin;
+  }
+  .tr-rail::-webkit-scrollbar { height: 6px; }
+  .tr-rail::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  .tr-tile {
+    flex: 0 0 auto; width: 12.5rem; scroll-snap-align: start; text-align: left; cursor: pointer;
+    background: #101010; border: 1px solid #232323; border-radius: 12px; padding: 1.2rem 1.1rem;
+    display: flex; flex-direction: column; gap: .35rem; transition: .18s; color: inherit;
+  }
+  .tr-tile:hover { border-color: #3a3a3a; transform: translateY(-2px); }
+  .tr-tile[aria-selected='true'] {
+    border-color: var(--red); background: linear-gradient(180deg, rgba(255,77,61,.10), rgba(255,77,61,.02));
+    box-shadow: 0 8px 30px rgba(255,77,61,.12);
+  }
+  .tr-tile-ic {
+    font-size: 1.7rem; line-height: 1; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center;
+    background: #191919; border-radius: 50%; margin-bottom: .35rem;
+  }
+  .tr-tile[aria-selected='true'] .tr-tile-ic { background: rgba(255,77,61,.14); }
+  .tr-tile-no { font-family: var(--font-display, sans-serif); font-size: .78rem; font-weight: 700; letter-spacing: .06em; color: var(--red); }
+  .tr-tile-kick { font-size: .58rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+  .tr-tile-title { font-family: var(--font-display, sans-serif); font-size: 1.02rem; line-height: 1.12; color: #fff; text-transform: uppercase; }
+  .tr-rail-hint { flex: 0 0 auto; align-self: center; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: #444; padding-right: .5rem; }
+  @media (min-width: 900px) { .tr-rail-hint { display: none; } }
+
+  /* ── Detail ── */
+  .tr-details { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+  .tr-detail { display: grid; grid-template-columns: 1fr; gap: 1.2rem;
+    border: 1px solid #1e1e1e; border-top: 3px solid var(--red); background: rgba(255,255,255,.015);
+    border-radius: 10px; padding: 1.7rem 1.6rem; }
+  @media (min-width: 620px) { .tr-detail { grid-template-columns: 8.5rem 1fr; gap: 1.8rem; } }
+  .tr-detail-side { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .tr-detail-ic {
+    font-size: 2.6rem; line-height: 1; width: 5rem; height: 5rem; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,77,61,.1); border: 1px solid rgba(255,77,61,.25); border-radius: 16px;
+  }
+  .tr-detail-no { font-family: var(--font-display, sans-serif); font-size: 1.1rem; font-weight: 700; color: var(--red); letter-spacing: .05em; }
+  .tr-detail-kick { font-size: .6rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+  .tr-detail-body h2 { font-family: var(--font-display, sans-serif); font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.08; margin: 0 0 .5rem; color: #fff; text-transform: uppercase; }
+  .tr-sub { margin: 0 0 1.2rem; color: rgba(255,255,255,.62); line-height: 1.55; }
+  .tr-inside-label { font-size: .62rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin: 0 0 .5rem; opacity: .9; }
+  .tr-inside { margin: 0 0 1.5rem; padding: 0; list-style: none; }
+  .tr-inside li { position: relative; padding: .3rem 0 .3rem 1.2rem; color: rgba(255,255,255,.74); font-size: .92rem; line-height: 1.5; border-bottom: 1px solid #161616; }
   .tr-inside li:last-child { border-bottom: 0; }
-  .tr-inside li::before { content: '·'; position: absolute; left: .2rem; color: var(--red); font-weight: 700; }
-  .tr-dl { display: inline-block; background: var(--red); color: #160504; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: .78rem; padding: .75rem 1.5rem; border-radius: 4px; text-decoration: none; transition: filter .15s, transform .15s; }
+  .tr-inside li::before { content: '›'; position: absolute; left: .1rem; color: var(--red); font-weight: 700; }
+  .tr-dl { display: inline-block; background: var(--red); color: #160504; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: .8rem; padding: .8rem 1.6rem; border-radius: 5px; text-decoration: none; transition: filter .15s, transform .15s; }
   .tr-dl:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-  .tr-note { max-width: 60rem; margin: 2.2rem auto 0; padding: 1.4rem 1.5rem; border-top: 1px solid #1a1a1a; }
-  .tr-note p { color: rgba(255,255,255,.55); font-size: .88rem; line-height: 1.6; margin: 0 0 .8rem; }
+  /* ── Note / CTA ── */
+  .tr-note { max-width: 60rem; margin: 2rem auto 0; padding: 1.4rem 1.5rem; border-top: 1px solid #1a1a1a; }
+  .tr-note p { color: rgba(255,255,255,.55); font-size: .87rem; line-height: 1.6; margin: 0 0 .8rem; }
   .tr-note strong { color: rgba(255,255,255,.8); }
   .tr-note em { color: rgba(255,255,255,.72); font-style: italic; }
   .tr-note a { color: var(--red); text-decoration: none; }
-  .tr-disclaimer { font-size: .78rem !important; color: rgba(255,255,255,.4) !important; margin: 0 !important; }
-
-  .tr-cta { text-align: center; padding: 2.5rem 1.25rem 4rem; }
+  .tr-disclaimer { font-size: .76rem !important; color: rgba(255,255,255,.4) !important; margin: 0 !important; }
+  .tr-cta { text-align: center; padding: 2.4rem 1.25rem 4rem; }
   .tr-cta p { color: rgba(255,255,255,.6); margin: 0 0 1rem; }
-  .tr-follow { display: inline-block; border: 1px solid var(--red); color: var(--red); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: .78rem; padding: .8rem 1.7rem; border-radius: 4px; text-decoration: none; transition: background .2s, color .2s; }
+  .tr-follow { display: inline-block; border: 1px solid var(--red); color: var(--red); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: .78rem; padding: .8rem 1.7rem; border-radius: 5px; text-decoration: none; transition: background .2s, color .2s; }
   .tr-follow:hover { background: var(--red); color: #160504; }
 </style>
