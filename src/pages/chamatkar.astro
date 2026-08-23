@@ -7,35 +7,34 @@ import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
-// Upcoming edition (Vol. 4). Mirrors the live row in the Supabase `events`
-// table (slug chamatkar-2026-08-22); the RSVP writes against `slug`.
+// Next edition (Vol. 5) — date not announced yet (Vol. 4 has wrapped). The RSVP
+// stays open as an early-interest list, tagged to `slug`.
 const EVENT = {
-  slug: 'chamatkar-2026-08-22',
+  slug: 'chamatkar-vol5',
   title: 'Chamatkar',
-  edition: 'Vol. 4',
-  tagline: 'The 90s / 2000s Edition',
+  edition: 'Vol. 5',
+  tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
   // Set dateTBA:true when the next date isn't decided — it hides the countdown,
   // calendar links and RSVP cutoff and shows a "date announced soon" treatment.
-  dateTBA: false,
-  dateLabel: 'Saturday 22 August',
+  dateTBA: true,
+  dateLabel: 'Date to be announced',
   timeLabel: '9:00 PM onwards',
-  doorsAt: '2026-08-22T21:00:00+05:30',   // countdown target (doors, IST)
   lineup: 'DJ VIC',
-  genre: '90s / 2000s Bollywood × Global — Audio-Visual Set',
-  theme: '90s / 2000s Bollywood',
+  genre: 'Bollywood × Global — Audio-Visual Set',
+  theme: 'Bollywood × Global',
   themeLine: 'Live Audio-Visual Set',
-  intro: "The 90s and 2000s Bollywood you grew up on — mixed live against global records, visuals locked to every drop.",
+  intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
   // heroBg = a clean, text-safe static background behind the hero copy. Null =
   // a plain dark gradient (no busy creative behind the text).
   heroBg: '/images/chamatkar-hero-bg.jpg',
   // flyer = the horizontal creative for the upcoming edition, shown below the
-  // hero. Null hides the flyer section.
-  flyer: '/images/chamatkar-vol4-banner.jpg',
+  // hero. Null hides the flyer section (no Vol. 5 creative yet).
+  flyer: null,
   ics: '/chamatkar.ics',
-  rsvpCutoff: '2026-08-22T12:30:00+00:00',
-  expiry: '2026-08-22T19:30:00+00:00',
+  rsvpCutoff: null,
+  expiry: null,
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -52,6 +51,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // `poster` (landscape cover) is optional — the block just shows text + gallery
 // until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
+  { slug: 'chamatkar-2026-08-22', edition: 'Vol. 4', dateLabel: 'Saturday, 22 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol4-banner.jpg', blurb: 'The 90s / 2000s Edition — the Bollywood you grew up on, mixed live against global records. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
   { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
@@ -59,11 +59,11 @@ const PAST_EDITIONS = [
 ---
 
 <Layout
-  title="Chamatkar Vol. 4 — Guest List | DJ VIC"
+  title="Chamatkar — Guest List | DJ VIC"
   description={desc}
-  ogTitle="Chamatkar Vol. 4 — You're Invited"
-  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/chamatkar-vol4-square.jpg"
+  ogTitle="Chamatkar — You're Invited"
+  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. Next edition announced soon. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
+  ogImage="https://djvicofficial.com/images/chamatkar-hero-bg.jpg"
   canonical="https://djvicofficial.com/chamatkar/"
 >
   <Nav />
@@ -127,7 +127,7 @@ const PAST_EDITIONS = [
           <span class="ck-etype">Tables</span>
           <span class="ck-eprice">On availability</span>
           <span class="ck-enote">Advance reservation accepted</span>
-          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20Chamatkar%20Vol.%204%20on%2022%20August." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
+          <a class="ck-ereserve" href="https://wa.me/919611711677?text=Hi!%20I'd%20like%20to%20reserve%20a%20table%20for%20the%20next%20Chamatkar%20(Vol.%205)." target="_blank" rel="noopener noreferrer">Reserve a table →</a>
         </div>
       </div>
     </section>
