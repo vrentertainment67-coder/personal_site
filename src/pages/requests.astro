@@ -1,0 +1,187 @@
+---
+// /requests?c=<slug> — guests at a wedding drop song requests (up to 3 each).
+// The couple is chosen by the ?c= query param and its name is loaded live from
+// Supabase (request_couples), so one page serves every wedding — no redeploy to
+// add a couple. Requests write to song_requests (anon insert only); VIC reviews
+// them in the admin. Standalone kiosk-style page, unlisted (noindex).
+const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+const CAP = 3;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Song Requests</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --gold:#c9a84c; --gold2:#b8912f; --bg:#0c0b0a; --card:#151311; --line:#2a261f;
+      --off:#efe9dd; --mut:#a09884; --green:#39b56a; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--off);
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100dvh; }
+    body{ background-image: radial-gradient(ellipse 90% 55% at 50% -10%, rgba(201,168,76,.10), transparent 70%);
+      padding:max(20px,env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom)); }
+    .wrap{ max-width:460px; margin:0 auto; }
+    header{ text-align:center; padding:14px 0 22px; }
+    .k{ font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    .names{ font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,10vw,3rem); line-height:1.05; margin:.5rem 0 .1rem; color:#fff; }
+    .occ{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.05rem; color:var(--mut); }
+    .intro{ text-align:center; color:var(--mut); font-size:.92rem; line-height:1.6; margin:0 auto 1.6rem; max-width:22rem; }
+    label.fld{ display:block; margin:0 0 13px; }
+    label.fld > span{ display:block; font-size:12px; color:var(--mut); margin:0 0 6px; letter-spacing:.02em; }
+    input[type=text],input[type=email]{ width:100%; background:#100e0c; border:1.5px solid var(--line);
+      border-radius:12px; padding:14px; color:var(--off); font-size:16px; outline:none; font-family:inherit; }
+    input:focus{ border-color:var(--gold); }
+    .songs-h{ font-size:12px; color:var(--mut); margin:6px 0 8px; letter-spacing:.02em; display:flex; justify-content:space-between; }
+    .songrow{ position:relative; margin:0 0 10px; }
+    .songrow .n{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--gold); font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; pointer-events:none; }
+    .songrow input{ padding-left:34px; }
+    .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+    .go{ width:100%; padding:16px; border:none; border-radius:14px; font-size:16px; font-weight:700;
+      color:#1a1407; background:linear-gradient(90deg,var(--gold2),var(--gold)); cursor:pointer; letter-spacing:.02em; margin-top:6px; }
+    .go:disabled{ opacity:.55; }
+    .msg{ text-align:center; font-size:.9rem; padding:11px; border-radius:11px; margin:0 0 12px; display:none; }
+    .msg.err{ display:block; background:rgba(224,87,74,.12); color:#ff9a90; border:1px solid #7a2e28; }
+    .foot{ text-align:center; color:#5c554a; font-size:11px; margin-top:22px; letter-spacing:.04em; }
+    /* thank you / states */
+    .state{ text-align:center; padding:2rem 1rem; }
+    .state .big{ font-family:'Cormorant Garamond',serif; font-size:2rem; color:#fff; margin:.4rem 0 .6rem; }
+    .state p{ color:var(--mut); line-height:1.6; }
+    .tick{ font-size:2.4rem; }
+    .hidden{ display:none !important; }
+    .spin{ display:inline-block; width:15px; height:15px; border:2px solid rgba(0,0,0,.3); border-top-color:#1a1407; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; }
+    @keyframes sp{ to{ transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <!-- loading -->
+    <div id="loading" class="state"><p>Loading…</p></div>
+
+    <!-- invalid / no couple -->
+    <div id="invalid" class="state hidden">
+      <div class="big">Nothing to see here yet</div>
+      <p>This request link isn’t active. Please use the exact link the couple shared with you.</p>
+    </div>
+
+    <!-- capped -->
+    <div id="capped" class="state hidden">
+      <div class="tick">🎶</div>
+      <div class="big">You’re all set</div>
+      <p>You’ve already sent your requests. Thank you — see you on the dancefloor!</p>
+    </div>
+
+    <!-- thanks -->
+    <div id="thanks" class="state hidden">
+      <div class="tick">✓</div>
+      <div class="big">Request received</div>
+      <p id="thanks-sub">Thank you! VIC will weave your picks into the night.</p>
+    </div>
+
+    <!-- form -->
+    <div id="app" class="hidden">
+      <header>
+        <div class="k">Song Requests</div>
+        <div class="names" id="names">—</div>
+        <div class="occ">on their wedding day</div>
+      </header>
+      <p class="intro">Help build the soundtrack. Drop up to <b id="cap-n">3</b> songs you’d love to hear — VIC takes it from there.</p>
+
+      <div id="msg" class="msg"></div>
+
+      <form id="f" autocomplete="off" novalidate>
+        <input class="hp" type="text" id="company" tabindex="-1" aria-hidden="true" />
+        <label class="fld"><span>Your name</span>
+          <input type="text" id="name" autocapitalize="words" placeholder="Who’s asking?" /></label>
+        <label class="fld"><span>Email <span style="color:#5c554a">(optional)</span></span>
+          <input type="email" id="email" inputmode="email" placeholder="you@email.com" /></label>
+
+        <div class="songs-h"><span>Your requests</span><span id="left"></span></div>
+        <div id="songs"></div>
+
+        <button type="submit" id="go" class="go">Send my requests</button>
+      </form>
+      <div class="foot">Powered by DJ VIC · djvicofficial.com</div>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ SUPABASE_URL, SUPABASE_KEY, CAP }}>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var show = function (id) { ['loading','invalid','capped','thanks','app'].forEach(function(x){ $(x).classList.toggle('hidden', x!==id); }); };
+
+      var params = new URLSearchParams(location.search);
+      var slug = (params.get('c') || '').trim().toLowerCase();
+      if (!slug) { show('invalid'); return; }
+
+      var LSKEY = 'req_' + slug;           // songs already sent from this device
+      function sent() { return parseInt(localStorage.getItem(LSKEY) || '0', 10) || 0; }
+      function remaining() { return Math.max(0, CAP - sent()); }
+
+      // Load the couple name (public read).
+      fetch(SUPABASE_URL + '/rest/v1/request_couples?slug=eq.' + encodeURIComponent(slug) + '&select=couple_names,active', {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+      }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+        var c = rows && rows[0];
+        if (!c || c.active === false) { show('invalid'); return; }
+        $('names').textContent = c.couple_names;
+        $('cap-n').textContent = CAP;
+        if (remaining() <= 0) { show('capped'); return; }
+        buildSongRows();
+        show('app');
+      }).catch(function () { show('invalid'); });
+
+      function buildSongRows() {
+        var rem = remaining();
+        $('left').textContent = rem < CAP ? (rem + ' left') : ('up to ' + CAP);
+        var host = $('songs'); host.innerHTML = '';
+        for (var i = 0; i < rem; i++) {
+          var row = document.createElement('div'); row.className = 'songrow';
+          row.innerHTML = '<span class="n">' + (i + 1) + '</span>';
+          var inp = document.createElement('input');
+          inp.type = 'text'; inp.className = 'song';
+          inp.placeholder = i === 0 ? 'Song name — artist (required)' : 'Another song (optional)';
+          row.appendChild(inp); host.appendChild(row);
+        }
+      }
+
+      function msg(t) { var m = $('msg'); m.textContent = t; m.className = 'msg err'; }
+
+      $('f').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if ($('company').value) { show('thanks'); return; } // honeypot
+        var name = $('name').value.trim();
+        var email = $('email').value.trim();
+        var songs = [].slice.call(document.querySelectorAll('.song')).map(function (s) { return s.value.trim(); }).filter(Boolean);
+        if (name.length < 2) return msg('Please add your name.');
+        if (!songs.length) return msg('Add at least one song.');
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return msg('That email doesn’t look right — leave it blank if unsure.');
+
+        var rows = songs.slice(0, remaining()).map(function (song) {
+          return { couple_slug: slug, guest_name: name, guest_email: email || null, song: song };
+        });
+
+        var go = $('go'); go.disabled = true; go.innerHTML = '<span class="spin"></span> Sending…';
+        fetch(SUPABASE_URL + '/rest/v1/song_requests', {
+          method: 'POST',
+          headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify(rows)
+        }).then(function (r) {
+          if (!r.ok) throw new Error(String(r.status));
+          localStorage.setItem(LSKEY, String(sent() + rows.length));
+          $('thanks-sub').textContent = 'Thank you, ' + name.split(' ')[0] + '! ' + (rows.length === 1 ? 'Your song is' : 'Your ' + rows.length + ' songs are') + ' in — VIC will weave them into the night.';
+          show('thanks');
+        }).catch(function () {
+          go.disabled = false; go.textContent = 'Send my requests';
+          msg('Couldn’t send — please check your connection and try again.');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

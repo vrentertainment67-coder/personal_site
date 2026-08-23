@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
-  AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles,
+  AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -151,6 +151,7 @@ export default function Admin() {
     ["mail", "Mail", Inbox],
     ["calendar", "Calendar", CalendarDays],
     ["media", "Media", ImageIcon],
+    ["requests", "Requests", ListMusic],
     ["livevideos", "Live videos", Film],
     ["pageimages", "Page Images", Images],
     ["testimonials", "Reviews", Quote],
@@ -183,6 +184,7 @@ export default function Admin() {
         {tab === "mail" && <MailTab showToast={showToast} />}
         {tab === "calendar" && <CalendarTab showToast={showToast} />}
         {tab === "media" && <Media showToast={showToast} />}
+        {tab === "requests" && <RequestsAdmin showToast={showToast} />}
         {tab === "livevideos" && <LiveVideosAdmin showToast={showToast} />}
         {tab === "pageimages" && <PageImages showToast={showToast} />}
         {tab === "testimonials" && <Testimonials showToast={showToast} />}
@@ -3894,6 +3896,178 @@ function EventMediaManager({ event, onBack, showToast }) {
             );
           })}
         </div>
+      )}
+    </>
+  );
+}
+
+// ── Song requests admin: per-couple request inbox + playlist builder ──
+function RequestsAdmin({ showToast }) {
+  const [couples, setCouples] = useState([]);
+  const [sel, setSel] = useState("");
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [reqLoading, setReqLoading] = useState(false);
+  const [view, setView] = useState("playlist");   // playlist | all
+  const [query, setQuery] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [nName, setNName] = useState(""); const [nSlug, setNSlug] = useState(""); const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(false);
+
+  const loadCouples = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("request_couples").select("*").order("created_at", { ascending: false });
+    if (error) { setErr(true); showToast("Couldn't load — run song_requests.sql in Supabase."); }
+    const list = data || [];
+    setCouples(list);
+    setSel((s) => s || (list[0] ? list[0].slug : ""));
+    setLoading(false);
+  }, [showToast]);
+  useEffect(() => { loadCouples(); }, [loadCouples]);
+
+  const loadReqs = useCallback(async () => {
+    if (!sel) { setRows([]); return; }
+    setReqLoading(true);
+    const { data, error } = await supabase.from("song_requests").select("*").eq("couple_slug", sel).order("created_at", { ascending: false });
+    if (error) showToast("Couldn't load requests — " + error.message);
+    setRows(data || []); setReqLoading(false);
+  }, [sel, showToast]);
+  useEffect(() => { loadReqs(); }, [loadReqs]);
+
+  const couple = couples.find((c) => c.slug === sel);
+  const shareUrl = sel ? `https://djvicofficial.com/requests?c=${sel}` : "";
+
+  // Aggregate by normalised song for the playlist view (duplicates → counts).
+  const agg = useMemo(() => {
+    const map = new Map();
+    rows.forEach((r) => {
+      const key = (r.song || "").toLowerCase().replace(/\s+/g, " ").trim();
+      if (!key) return;
+      if (!map.has(key)) map.set(key, { song: r.song, count: 0, by: [] });
+      const e = map.get(key); e.count++; if (r.guest_name && !e.by.includes(r.guest_name)) e.by.push(r.guest_name);
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count || a.song.localeCompare(b.song));
+  }, [rows]);
+  const guests = new Set(rows.map((r) => (r.guest_name || "").toLowerCase().trim()).filter(Boolean)).size;
+  const dupes = agg.filter((a) => a.count > 1).length;
+
+  const addCouple = async () => {
+    const name = nName.trim();
+    const slug = (nSlug.trim() || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (!name) return showToast("Enter the couple's name.");
+    if (!slug) return showToast("Enter a valid link name.");
+    setSaving(true);
+    const { error } = await supabase.from("request_couples").insert({ slug, couple_names: name });
+    setSaving(false);
+    if (error) return showToast(/duplicate|unique/i.test(error.message) ? "That link name is taken — pick another." : error.message);
+    setNName(""); setNSlug(""); setAdding(false); showToast("Couple added.");
+    await loadCouples(); setSel(slug);
+  };
+  const delReq = async (r) => {
+    if (!window.confirm(`Remove “${r.song}” from ${r.guest_name}?`)) return;
+    const { error } = await supabase.from("song_requests").delete().eq("id", r.id);
+    if (error) return showToast("Delete failed — " + error.message);
+    loadReqs();
+  };
+  const copyPlaylist = () => {
+    if (!agg.length) return showToast("No requests yet.");
+    const text = `${couple ? couple.couple_names + " — " : ""}Song requests (${rows.length})\n\n` +
+      agg.map((a, i) => `${i + 1}. ${a.song}${a.count > 1 ? `  (×${a.count})` : ""}`).join("\n");
+    navigator.clipboard?.writeText(text).then(() => showToast("Playlist copied ✓"), () => showToast("Couldn't copy."));
+  };
+  const copyLink = () => navigator.clipboard?.writeText(shareUrl).then(() => showToast("Link copied ✓"), () => {});
+
+  const q = query.trim().toLowerCase();
+  const filtered = rows.filter((r) => !q || [r.guest_name, r.guest_email, r.song].some((v) => (v || "").toLowerCase().includes(q)));
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter" };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Requests</h1>
+        <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add couple</button>
+      </div>
+      <p className="sub" style={{ margin: 0 }}>Crowd-sourced song requests from wedding guests. Share the couple's link; requests land here to build the playlist.</p>
+
+      {adding && (
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, margin: "12px 0 0" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input className="search" style={{ flex: "2 1 180px", margin: 0 }} placeholder="Couple's name — e.g. Ram & Priya (or just Ram)" value={nName} onChange={(e) => setNName(e.target.value)} />
+            <input className="search" style={{ flex: "1 1 120px", margin: 0 }} placeholder="link name (optional)" value={nSlug} onChange={(e) => setNSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} />
+          </div>
+          <div style={{ fontSize: 12, color: "#66665e" }}>Guests visit <b>djvicofficial.com/requests?c={(nSlug.trim() || nName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")) || "…"}</b></div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn sm" disabled={saving || !nName.trim()} onClick={addCouple}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Create</button>
+            <button className="btn sm ghost" onClick={() => setAdding(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : couples.length === 0 ? (
+        <p className="empty" style={{ marginTop: 16 }}>{err ? "Run song_requests.sql in Supabase, then refresh." : "No couples yet — add one above."}</p>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", margin: "14px 0 6px" }}>
+            <select value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, padding: "8px 10px" }}>
+              {couples.map((c) => <option key={c.slug} value={c.slug}>{c.couple_names}{c.active === false ? " (off)" : ""}</option>)}
+            </select>
+            <button className="btn sm ghost" onClick={copyLink} title={shareUrl}><Copy size={14} /> Copy guest link</button>
+            <a className="btn sm ghost" href={shareUrl} target="_blank" rel="noopener noreferrer"><Eye size={14} /> Open</a>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, margin: "10px 0 12px", flexWrap: "wrap" }}>
+            <div style={glStat}><strong style={glNum}>{rows.length}</strong><span style={glLbl}>Requests</span></div>
+            <div style={glStat}><strong style={glNum}>{agg.length}</strong><span style={glLbl}>Unique songs</span></div>
+            <div style={glStat}><strong style={glNum}>{guests}</strong><span style={glLbl}>Guests</span></div>
+            {dupes > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#e0b13c" }}>{dupes}</strong><span style={glLbl}>Repeated</span></div>}
+          </div>
+
+          <div className="chips" style={{ marginBottom: 10 }}>
+            <button className={view === "playlist" ? "chip on" : "chip"} onClick={() => setView("playlist")}>Playlist ({agg.length})</button>
+            <button className={view === "all" ? "chip on" : "chip"} onClick={() => setView("all")}>All requests ({rows.length})</button>
+            <button className="btn sm" style={{ marginLeft: "auto" }} onClick={copyPlaylist}><Copy size={14} /> Copy playlist</button>
+            <button className="btn sm ghost" onClick={loadReqs} disabled={reqLoading}>{reqLoading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />}</button>
+          </div>
+
+          {reqLoading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
+            <p className="empty">No requests yet for {couple?.couple_names}. Share the link above.</p>
+          ) : view === "playlist" ? (
+            <div className="list">
+              {agg.map((a, i) => (
+                <div key={i} className="req" style={{ display: "flex", alignItems: "center", gap: 12, borderLeft: a.count > 1 ? "3px solid #e0b13c" : "3px solid transparent", paddingLeft: 10 }}>
+                  <span style={{ fontSize: 13, color: "#66665e", width: 22, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14, color: "#e8e8e0" }}>{a.song}</div>
+                    <div className="bk-sub" style={{ fontSize: 11.5 }}>{a.by.slice(0, 4).join(", ")}{a.by.length > 4 ? ` +${a.by.length - 4}` : ""}</div>
+                  </div>
+                  {a.count > 1 && <span className="tag" style={{ background: "rgba(224,177,60,.14)", color: "#e0b13c", borderColor: "#7a5a1e" }}>×{a.count} requested</span>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <input className="search" placeholder="Search name, email, song…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <div className="list">
+                {filtered.map((r) => {
+                  const t = new Date(r.created_at);
+                  return (
+                    <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, color: "#e8e8e0" }}>{r.song}</div>
+                        <p className="req-meta" style={{ margin: "2px 0 0" }}>
+                          <span>{r.guest_name}</span>
+                          {r.guest_email && <span>{r.guest_email}</span>}
+                          <span>{MONTHS[t.getMonth()]} {t.getDate()}, {pad(t.getHours())}:{pad(t.getMinutes())}</span>
+                        </p>
+                      </div>
+                      <button style={{ background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#e0574a", cursor: "pointer", lineHeight: 0 }} title="Remove" onClick={() => delReq(r)}><Trash2 size={14} /></button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
       )}
     </>
   );
