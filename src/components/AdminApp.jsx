@@ -3064,7 +3064,13 @@ function DJCollective({ showToast }) {
       : "You were in the room for a past edition — here's the next one.";
     return `Hi${first ? " " + first : ""}! Edition 02 of the Bengaluru DJs Collective is locked in — Monday 24 August, doors from 8 PM. ${hook} RSVP (free): ${ED2_RSVP}`;
   };
-  const inviteLink = (r) => { const base = waLink(r.phone); return base ? `${base}?text=${encodeURIComponent(inviteMsg(r))}` : null; };
+  const inviteLink = (r) => {
+    let n = waDigits(r.phone || ""); if (n.length === 10) n = "91" + n;
+    return n.length >= 10 ? `https://web.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(inviteMsg(r))}` : null;
+  };
+  // Open the invite in ONE shared WhatsApp Web tab (reused across clicks, like
+  // the blast) instead of spawning a new tab every time, then mark them invited.
+  const openInvite = (r, il) => { if (il) window.open(il, "bdc_whatsapp"); markInvited(r); };
 
   // Deduped, opted-in recipients for the one-by-one WhatsApp invite. Respects
   // whatever session/role/search filters are active, one message per person
@@ -3451,7 +3457,7 @@ function DJCollective({ showToast }) {
                     <td style={{ whiteSpace: "nowrap" }}>{wl ? <a href={wl} target="_blank" rel="noopener noreferrer" style={{ color: "#c9a84c" }}>{r.phone}</a> : (r.phone || "—")}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(r.created_at)}</td>
                     <td className="dca-tact">
-                      {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" href={il} target="_blank" rel="noopener noreferrer" onClick={() => markInvited(r)}><Send size={14} /></a>}
+                      {isPrior(r) && il && <button className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" onClick={() => openInvite(r, il)}><Send size={14} /></button>}
                       <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                       <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                     </td>
@@ -3487,7 +3493,7 @@ function DJCollective({ showToast }) {
                     {r.invited_at && <span className="dca-flag inv" title={"Invited to Edition 02 · " + fmtWhen(r.invited_at)}>✈ invited</span>}
                   </div>
                   <div className="dca-acts">
-                    {isPrior(r) && il && <a className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" href={il} target="_blank" rel="noopener noreferrer" onClick={() => markInvited(r)}><Send size={14} /></a>}
+                    {isPrior(r) && il && <button className="dca-ic invite" title="Invite to Edition 02 on WhatsApp — marks them invited" onClick={() => openInvite(r, il)}><Send size={14} /></button>}
                     <button className="dca-ic" title="Edit" onClick={() => setEditRow(r)}><Pencil size={14} /></button>
                     <button className="dca-ic danger" title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
                   </div>
