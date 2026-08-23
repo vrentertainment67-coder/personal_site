@@ -3913,6 +3913,7 @@ function RequestsAdmin({ showToast }) {
   const [adding, setAdding] = useState(false);
   const [nName, setNName] = useState(""); const [nSlug, setNSlug] = useState(""); const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(false);
+  const [renaming, setRenaming] = useState(false); const [rVal, setRVal] = useState("");
 
   const loadCouples = useCallback(async () => {
     setLoading(true);
@@ -3963,6 +3964,13 @@ function RequestsAdmin({ showToast }) {
     setNName(""); setNSlug(""); setAdding(false); showToast("Couple added.");
     await loadCouples(); setSel(slug);
   };
+  const renameCouple = async () => {
+    const v = rVal.trim();
+    if (!v) return showToast("Enter a name.");
+    const { error } = await supabase.from("request_couples").update({ couple_names: v }).eq("slug", sel);
+    if (error) return showToast("Couldn't rename — " + error.message);
+    setRenaming(false); showToast("Couple name updated."); await loadCouples();
+  };
   const delReq = async (r) => {
     if (!window.confirm(`Remove “${r.song}” from ${r.guest_name}?`)) return;
     const { error } = await supabase.from("song_requests").delete().eq("id", r.id);
@@ -4011,9 +4019,17 @@ function RequestsAdmin({ showToast }) {
             <select value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, padding: "8px 10px" }}>
               {couples.map((c) => <option key={c.slug} value={c.slug}>{c.couple_names}{c.active === false ? " (off)" : ""}</option>)}
             </select>
+            <button className="btn sm ghost" onClick={() => { setRVal(couple?.couple_names || ""); setRenaming((v) => !v); }}><Pencil size={14} /> Rename</button>
             <button className="btn sm ghost" onClick={copyLink} title={shareUrl}><Copy size={14} /> Copy guest link</button>
             <a className="btn sm ghost" href={shareUrl} target="_blank" rel="noopener noreferrer"><Eye size={14} /> Open</a>
           </div>
+          {renaming && (
+            <div style={{ display: "flex", gap: 8, margin: "0 0 8px", flexWrap: "wrap" }}>
+              <input className="search" style={{ flex: "2 1 240px", margin: 0 }} value={rVal} onChange={(e) => setRVal(e.target.value)} placeholder="Displayed couple name — e.g. Ram & Nisha" onKeyDown={(e) => { if (e.key === "Enter") renameCouple(); }} autoFocus />
+              <button className="btn sm" onClick={renameCouple} disabled={!rVal.trim()}>Save</button>
+              <button className="btn sm ghost" onClick={() => setRenaming(false)}>Cancel</button>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, margin: "10px 0 12px", flexWrap: "wrap" }}>
             <div style={glStat}><strong style={glNum}>{rows.length}</strong><span style={glLbl}>Requests</span></div>
