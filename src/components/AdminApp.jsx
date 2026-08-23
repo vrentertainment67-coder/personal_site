@@ -3935,7 +3935,7 @@ function RequestsAdmin({ showToast }) {
   useEffect(() => { loadReqs(); }, [loadReqs]);
 
   const couple = couples.find((c) => c.slug === sel);
-  const shareUrl = sel ? `https://djvicofficial.com/requests?c=${sel}` : "";
+  const shareUrl = sel ? `https://djvicofficial.com/requests/?c=${sel}` : "";
 
   // Aggregate by normalised song for the playlist view (duplicates → counts).
   const agg = useMemo(() => {
