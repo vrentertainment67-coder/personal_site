@@ -3068,9 +3068,16 @@ function DJCollective({ showToast }) {
     let n = waDigits(r.phone || ""); if (n.length === 10) n = "91" + n;
     return n.length >= 10 ? `https://web.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(inviteMsg(r))}` : null;
   };
-  // Open the invite in ONE shared WhatsApp Web tab (reused across clicks, like
-  // the blast) instead of spawning a new tab every time, then mark them invited.
-  const openInvite = (r, il) => { if (il) window.open(il, "bdc_whatsapp"); markInvited(r); };
+  // Keep invites to ONE WhatsApp Web tab: close the previous invite tab we
+  // opened (if still around), then open the next in the same-named window.
+  const waWinRef = useRef(null);
+  const openInvite = (r, il) => {
+    if (il) {
+      try { const w = waWinRef.current; if (w && !w.closed) w.close(); } catch {}
+      waWinRef.current = window.open(il, "bdc_whatsapp");
+    }
+    markInvited(r);
+  };
 
   // Deduped, opted-in recipients for the one-by-one WhatsApp invite. Respects
   // whatever session/role/search filters are active, one message per person
