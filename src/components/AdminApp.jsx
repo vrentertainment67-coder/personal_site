@@ -2822,7 +2822,9 @@ function CollectiveSwap({ showToast }) {
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                     <button className="act wa" onClick={() => waFor(r)}><MessageCircle size={14} /> Seller</button>
-                    {r.status !== "sold" && <button className="act" onClick={() => setListingStatus(r, "sold")} disabled={busy === r.id}>Mark sold</button>}
+                    {r.status !== "sold"
+                      ? <button className="act" onClick={() => setListingStatus(r, "sold")} disabled={busy === r.id}>Mark sold</button>
+                      : <button className="act" onClick={() => setListingStatus(r, "live")} disabled={busy === r.id}>Mark unsold</button>}
                     {r.status === "hidden"
                       ? <button className="act" onClick={() => setListingStatus(r, "live")} disabled={busy === r.id}>Unhide</button>
                       : <button className="act" onClick={() => setListingStatus(r, "hidden")} disabled={busy === r.id}>Hide</button>}
