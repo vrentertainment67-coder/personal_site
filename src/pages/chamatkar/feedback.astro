@@ -24,7 +24,12 @@ const RATINGS = [
 ];
 
 // Shown only when "Could be better" is picked — lets a guest point at what.
-const NIGGLES = ["Service", "Staff behaviour", "Valet", "Drinks", "Music", "Sound", "Crowd", "Wait time"];
+const NIGGLES = [
+  { key: "staff",   label: "Staff behaviour", subLabel: "Who?", subs: ["Bouncer", "Manager", "Bar staff", "Front desk"] },
+  { key: "food",    label: "Food & drinks" },
+  { key: "quality", label: "Quality & pricing" },
+  { key: "ent",     label: "Entertainment" },
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -73,6 +78,11 @@ const NIGGLES = ["Service", "Staff behaviour", "Valet", "Drinks", "Music", "Soun
     .nchip{ appearance:none; background:#100e0c; border:1.5px solid var(--line); color:var(--mut);
       font-family:inherit; font-size:.88rem; font-weight:600; padding:10px 16px; border-radius:100px; cursor:pointer; transition:.14s; }
     .nchip[aria-pressed=true]{ border-color:var(--gold); background:rgba(201,168,76,.14); color:#fff; }
+    .subwrap{ margin:.7rem 0 .1rem; }
+    .niggles-lab.sub{ color:var(--gold2); font-size:11.5px; margin-bottom:7px; }
+    .subchip{ appearance:none; background:#0d0b0a; border:1.5px dashed var(--line); color:var(--mut);
+      font-family:inherit; font-size:.82rem; font-weight:600; padding:8px 14px; border-radius:100px; cursor:pointer; transition:.14s; }
+    .subchip[aria-pressed=true]{ border-style:solid; border-color:var(--gold); background:rgba(201,168,76,.14); color:#fff; }
     .go{ width:100%; padding:17px; border:none; border-radius:14px; font-size:17px; font-weight:700;
       color:#1a1407; background:linear-gradient(90deg,var(--gold-dim),var(--gold)); cursor:pointer;
       letter-spacing:.02em; margin-top:16px; }
@@ -115,9 +125,19 @@ const NIGGLES = ["Service", "Staff behaviour", "Valet", "Drinks", "Music", "Soun
         <span class="niggles-lab">What could be better? (tap any)</span>
         <div class="nchips" id="nchips">
           {NIGGLES.map((n) => (
-            <button type="button" class="nchip" data-n={n} aria-pressed="false">{n}</button>
+            <button type="button" class="nchip" data-key={n.key} aria-pressed="false">{n.label}</button>
           ))}
         </div>
+        {NIGGLES.filter((n) => n.subs).map((n) => (
+          <div class="subwrap hidden" data-parent={n.key}>
+            <span class="niggles-lab sub">{n.subLabel || `Which ${n.label.toLowerCase()}?`}</span>
+            <div class="nchips">
+              {n.subs.map((s) => (
+                <button type="button" class="subchip" data-parent={n.key} data-sub={s} aria-pressed="false">{s}</button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       <label class="fld"><span>Anything else? (optional)</span>
@@ -140,43 +160,58 @@ const NIGGLES = ["Service", "Staff behaviour", "Valet", "Drinks", "Music", "Soun
     (function () {
       var $ = function (id) { return document.getElementById(id); };
       var chosen = null;
-      var niggles = {};   // selected "could be better" categories
-
       var rates = $("rates");
       var nWrap = $("niggles");
       var nChips = $("nchips");
 
+      function clearNiggles() {
+        nWrap.querySelectorAll(".nchip, .subchip").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        nWrap.querySelectorAll(".subwrap").forEach(function (w) { w.classList.add("hidden"); });
+      }
+
       rates.addEventListener("click", function (e) {
         var b = e.target.closest(".rate"); if (!b) return;
         chosen = { key: b.dataset.key, emoji: b.dataset.emoji, label: b.dataset.label };
-        var all = rates.querySelectorAll(".rate");
-        for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", String(all[i] === b));
+        rates.querySelectorAll(".rate").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
         // Category chips only make sense under "Could be better".
         var showN = chosen.key === "meh";
         nWrap.classList.toggle("hidden", !showN);
-        if (!showN) {
-          niggles = {};
-          var cs = nChips.querySelectorAll(".nchip");
-          for (var k = 0; k < cs.length; k++) cs[k].setAttribute("aria-pressed", "false");
-        }
+        if (!showN) clearNiggles();
         $("go").disabled = false;
       });
 
+      // Top-level category chips — each toggles, and reveals its sub-row (if any).
       nChips.addEventListener("click", function (e) {
         var c = e.target.closest(".nchip"); if (!c) return;
-        var n = c.dataset.n;
-        if (niggles[n]) { delete niggles[n]; c.setAttribute("aria-pressed", "false"); }
-        else { niggles[n] = true; c.setAttribute("aria-pressed", "true"); }
+        var on = c.getAttribute("aria-pressed") !== "true";
+        c.setAttribute("aria-pressed", String(on));
+        var sub = nWrap.querySelector('.subwrap[data-parent="' + c.dataset.key + '"]');
+        if (sub) {
+          sub.classList.toggle("hidden", !on);
+          if (!on) sub.querySelectorAll(".subchip").forEach(function (s) { s.setAttribute("aria-pressed", "false"); });
+        }
+      });
+
+      // Sub-chips (delegated across the whole niggles block).
+      nWrap.addEventListener("click", function (e) {
+        var s = e.target.closest(".subchip"); if (!s) return;
+        s.setAttribute("aria-pressed", String(s.getAttribute("aria-pressed") !== "true"));
       });
 
       $("go").addEventListener("click", function () {
         if (!chosen) return;
         var comment = $("comment").value.trim();
-        var cats = Object.keys(niggles);
-        // The smiley rides in the message as a prefix (category is locked to 4
-        // values server-side); tapped categories + comment are appended.
+        // Build "[Category (sub, sub), Category…]" from the pressed chips. The
+        // smiley rides in the message prefix (category is locked server-side).
+        var parts = [];
+        nChips.querySelectorAll('.nchip[aria-pressed="true"]').forEach(function (chip) {
+          var subs = [];
+          nWrap.querySelectorAll('.subchip[data-parent="' + chip.dataset.key + '"][aria-pressed="true"]')
+            .forEach(function (sc) { subs.push(sc.dataset.sub); });
+          parts.push(chip.textContent.trim() + (subs.length ? " (" + subs.join(", ") + ")" : ""));
+        });
         var message = chosen.emoji + " " + chosen.label
-          + (cats.length ? " [" + cats.join(", ") + "]" : "")
+          + (parts.length ? " [" + parts.join(", ") + "]" : "")
           + (comment ? " — " + comment : "");
 
         var go = $("go"); go.disabled = true; go.innerHTML = '<span class="spin"></span> Sending…';
