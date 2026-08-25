@@ -4,13 +4,13 @@ PRODID:-//DJ VIC//Chamatkar//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
-UID:chamatkar-2026-08-22@djvicofficial.com
-DTSTAMP:20260808T000000Z
-DTSTART:20260822T153000Z
-DTEND:20260822T193000Z
-SUMMARY:Chamatkar Vol. 4 (90s / 2000s Edition) — DJ VIC
+UID:chamatkar-2026-09-05@djvicofficial.com
+DTSTAMP:20260826T000000Z
+DTSTART:20260905T153000Z
+DTEND:20260905T193000Z
+SUMMARY:Chamatkar Vol. 5 (The Mashup Edition) — DJ VIC
 LOCATION:Happy Brew Cocktail Club, Koramangala, Bangalore
-DESCRIPTION:90s / 2000s Bollywood x global, live audio-visual night with DJ VIC. Guest list: https://djvicofficial.com/chamatkar/
+DESCRIPTION:Bollywood x global, live audio-visual night with DJ VIC. Guest list: https://djvicofficial.com/chamatkar/
 URL:https://djvicofficial.com/chamatkar/
 END:VEVENT
 END:VCALENDAR
