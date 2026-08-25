@@ -203,6 +203,9 @@ const desc = 'The Rider — free field guides for working DJs from DJ VIC. Contr
   .tr-detail { display: grid; grid-template-columns: 1fr; gap: 1.2rem;
     border: 1px solid #1e1e1e; border-top: 3px solid var(--red); background: rgba(255,255,255,.015);
     border-radius: 10px; padding: 1.7rem 1.6rem; }
+  /* Only the selected edition shows. `.tr-detail` sets display:grid, which
+     outranks the UA `[hidden]` rule — so hidden ones need this to collapse. */
+  .tr-detail[hidden] { display: none; }
   @media (min-width: 620px) { .tr-detail { grid-template-columns: 8.5rem 1fr; gap: 1.8rem; } }
   .tr-detail-side { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
   .tr-detail-ic {
