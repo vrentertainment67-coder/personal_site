@@ -29,6 +29,20 @@ const eventsData = allEvents.map(e => ({
   description: e.data.description,
   tags: e.data.tags || [],
 }));
+
+// Nights VIC is playing that live on their own dedicated pages (Chamatkar), not
+// the events collection — merged in so every booked date shows on one calendar.
+// `href` points the modal + list link at that page instead of /events/<slug>/.
+const CHAMATKAR = { time: '9:00 PM onwards', venue: 'Happy Brew', address: 'Koramangala', city: 'Bangalore',
+  isPrivate: false, creativeImage: '', dresscode: '', genre: ['Bollywood', 'Audio-Visual'], hostedBy: '', videoSetBy: 'VIC', tags: [] };
+const externalBookings = [
+  { ...CHAMATKAR, slug: 'chamatkar-vol5', href: '/chamatkar/', title: 'Chamatkar Vol. 5', date: '2026-09-05', venue: 'Happy Brew Cocktail Club', guestListAvailable: true,  description: 'Bollywood × global, live audio-visual set.', tags: ['Bangalore', 'Bollywood'] },
+  { ...CHAMATKAR, slug: 'chamatkar-v4',   href: '/chamatkar/', title: 'Chamatkar Vol. 4', date: '2026-08-22', guestListAvailable: false, description: 'The 90s / 2000s Edition.' },
+  { ...CHAMATKAR, slug: 'chamatkar-v3',   href: '/chamatkar/', title: 'Chamatkar Vol. 3', date: '2026-08-01', guestListAvailable: false, description: 'The Mashup Edition.' },
+  { ...CHAMATKAR, slug: 'chamatkar-v2',   href: '/chamatkar/', title: 'Chamatkar Vol. 2', date: '2026-07-11', guestListAvailable: false, description: '90s & 2000s edition.' },
+  { ...CHAMATKAR, slug: 'chamatkar-v1',   href: '/chamatkar/', title: 'Chamatkar Vol. 1', date: '2026-06-13', guestListAvailable: false, description: 'The one that started it.' },
+];
+const calendarData = [...eventsData, ...externalBookings];
 ---
 
 <Layout
@@ -60,9 +74,9 @@ const eventsData = allEvents.map(e => ({
     <!-- ── Hero ─────────────────────────────────────── -->
     <section id="events-hero">
       <div class="hero-inner">
-        <span class="hero-label">Live &amp; In Person</span>
+        <span class="hero-label">Dates &amp; Availability</span>
         <h1>Events</h1>
-        <p class="hero-sub">Upcoming sets, club nights, and appearances.<br/>Click any highlighted date for event details and guest list.</p>
+        <p class="hero-sub"><b style="color:#39b56a">Green</b> means I'm open · <b style="color:#e0574a">red</b> means booked.<br/>Tap a free date to enquire, or a booked date to see what's on.</p>
       </div>
     </section>
 
@@ -95,23 +109,28 @@ const eventsData = allEvents.map(e => ({
 
       </div>
 
+      <div class="cal-legend">
+        <span class="leg-item"><span class="leg-dot leg-dot--free"></span> Available</span>
+        <span class="leg-item"><span class="leg-dot leg-dot--booked"></span> Booked</span>
+      </div>
+
       <p class="cal-no-events" id="cal-no-events" style="display:none">
         No events this month — check back soon.
       </p>
     </section>
 
     <!-- ── Upcoming Events (static list for search-engine discoverability) ── -->
-    {eventsData.filter(e => !e.isPrivate && e.date >= todayISO).length > 0 && (
+    {calendarData.filter(e => !e.isPrivate && e.date >= todayISO).length > 0 && (
       <section id="upcoming-events-list">
         <div class="upcoming-inner">
           <div class="uel-label">Upcoming Shows</div>
           <ul class="events-list" role="list">
-            {eventsData
+            {calendarData
               .filter(e => !e.isPrivate && e.date >= todayISO)
               .sort((a, b) => a.date.localeCompare(b.date))
               .map(e => (
                 <li>
-                  <a href={`${base}/events/${e.slug}/`} class="event-list-item">
+                  <a href={`${base}${e.href || `/events/${e.slug}/`}`} class="event-list-item">
                     <span class="eli-date">{new Date(e.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     <span class="eli-title">{e.title}</span>
                     <span class="eli-venue">{e.venue} &middot; {e.city}</span>
@@ -183,7 +202,7 @@ const eventsData = allEvents.map(e => ({
   <Footer />
 </Layout>
 
-<script define:vars={{ eventsData, base }}>
+<script define:vars={{ eventsData: calendarData, base }}>
   const MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
   const DAYS_LONG = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -197,6 +216,13 @@ const eventsData = allEvents.map(e => ({
   const today = new Date();
   let currentYear = today.getFullYear();
   let currentMonth = today.getMonth();
+
+  // Open on the month of the nearest upcoming booking, so the calendar never
+  // lands on an empty grid (which reads as "broken").
+  const _p = (n) => String(n).padStart(2, '0');
+  const _todayStr = `${today.getFullYear()}-${_p(today.getMonth()+1)}-${_p(today.getDate())}`;
+  const _next = eventsData.map(e => e.date).filter(d => d >= _todayStr).sort()[0];
+  if (_next) { const [_y, _m] = _next.split('-').map(Number); currentYear = _y; currentMonth = _m - 1; }
 
   const yearSelect = document.getElementById('year-select');
   yearSelect.value = currentYear;
@@ -219,7 +245,8 @@ const eventsData = allEvents.map(e => ({
     grid.style.animation = '';
 
     grid.innerHTML = '';
-    let hasEvents = false;
+    let hasBooking = false;
+    let hasAvailable = false;
 
     // Empty leading cells
     for (let i = 0; i < firstDay; i++) {
@@ -228,12 +255,13 @@ const eventsData = allEvents.map(e => ({
       grid.appendChild(empty);
     }
 
-    // Date cells
+    // Date cells — an availability view: green = open, red = booked.
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
-      const event   = eventMap[dateStr];
-      const isToday = dateStr === todayStr;
-      const isPast  = dateStr < todayStr;
+      const dateStr   = `${year}-${pad(month+1)}-${pad(d)}`;
+      const event     = eventMap[dateStr];
+      const isToday   = dateStr === todayStr;
+      const isPast    = dateStr < todayStr;
+      const available = !event && !isPast;   // future date with nothing booked
 
       const cell = document.createElement('div');
       const cls  = ['cal-cell'];
@@ -241,36 +269,64 @@ const eventsData = allEvents.map(e => ({
       if (isPast)  cls.push('cal-cell--past');
       if (event && !event.isPrivate) cls.push('cal-cell--event');
       if (event &&  event.isPrivate) cls.push('cal-cell--private');
+      if (available) cls.push('cal-cell--available');
       cell.className = cls.join(' ');
 
-      // Date number
       const num = document.createElement('span');
       num.className = 'cal-num';
       num.textContent = d;
       cell.appendChild(num);
 
-      // Event dot (no labels ever)
       if (event) {
-        hasEvents = true;
+        // Booked — red marker. Public bookings open details; private just block the date.
+        hasBooking = true;
         const dot = document.createElement('span');
-        dot.className = event.isPrivate ? 'cal-dot cal-dot--dim' : 'cal-dot';
+        dot.className = event.isPrivate ? 'cal-dot cal-dot--booked cal-dot--dim' : 'cal-dot cal-dot--booked';
         cell.appendChild(dot);
+
+        const label = document.createElement('span');
+        label.className = 'cal-label';
+        label.textContent = event.isPrivate ? 'Booked' : event.title;
+        cell.appendChild(label);
 
         if (!event.isPrivate) {
           cell.setAttribute('tabindex', '0');
           cell.setAttribute('role', 'button');
-          cell.setAttribute('aria-label', `${event.title} — ${dateStr}. Press Enter for details.`);
+          cell.setAttribute('aria-label', `${event.title} — ${dateStr}. Booked. Press Enter for details.`);
           cell.addEventListener('click', () => openModal(event));
           cell.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(event); }
           });
         }
+      } else if (available) {
+        // Open — green marker, taps through to the booking enquiry for that date.
+        hasAvailable = true;
+        const dot = document.createElement('span');
+        dot.className = 'cal-dot cal-dot--free';
+        cell.appendChild(dot);
+
+        const go = () => { window.location.href = `${base}/book/?date=${dateStr}`; };
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('aria-label', `${dateStr} — available. Press Enter to enquire about this date.`);
+        cell.addEventListener('click', go);
+        cell.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
       }
 
       grid.appendChild(cell);
     }
 
-    document.getElementById('cal-no-events').style.display = hasEvents ? 'none' : 'block';
+    const msg = document.getElementById('cal-no-events');
+    if (hasBooking) {
+      msg.style.display = 'none';
+    } else if (hasAvailable) {
+      msg.textContent = 'Fully open this month — every date available.';
+      msg.style.display = 'block';
+    } else {
+      msg.style.display = 'none';
+    }
   }
 
   function openModal(event) {
@@ -354,7 +410,7 @@ const eventsData = allEvents.map(e => ({
       const ctaWrap = document.getElementById('modal-cta-wrap');
       const divider = document.getElementById('modal-divider');
       if (event.guestListAvailable) {
-        document.getElementById('modal-cta').href = `${base}/events/${event.slug}/`;
+        document.getElementById('modal-cta').href = `${base}${event.href || `/events/${event.slug}/`}`;
         ctaWrap.style.display = 'block';
         divider.style.display = 'block';
       } else {
@@ -559,6 +615,65 @@ const eventsData = allEvents.map(e => ({
   #cal-grid .cal-cell--event:hover {
     background: #1a1500;
   }
+  /* Availability view — booked = red, open = green. */
+  #cal-grid .cal-cell--event:not(.cal-cell--past) {
+    background: rgba(224,87,74,0.09);
+    border-color: #4a2622;
+  }
+  #cal-grid .cal-cell--event:not(.cal-cell--past):hover { background: rgba(224,87,74,0.16); }
+  /* Private bookings: date is blocked, no details shown. */
+  #cal-grid .cal-cell--private:not(.cal-cell--past) {
+    background: rgba(224,87,74,0.05);
+    border-color: #3a2622;
+  }
+  /* Open dates — green, tap to enquire. */
+  #cal-grid .cal-cell--available {
+    cursor: pointer;
+    background: rgba(57,181,106,0.05);
+    border-color: #163a26;
+  }
+  #cal-grid .cal-cell--available:hover { background: rgba(57,181,106,0.14); border-color: #1f5c3b; }
+  /* Called-out booking name inside the cell. */
+  #cal-grid .cal-label {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    color: #c9a84c;
+    margin-top: 5px;
+    word-break: break-word;
+  }
+  #cal-grid .cal-cell--past .cal-label { color: #6a6a60; }
+  #cal-grid .cal-cell--private .cal-label { color: #7a6f50; }
+
+  /* Legend */
+  #calendar-section .cal-legend {
+    max-width: 860px;
+    margin: 1.1rem auto 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888880;
+  }
+  #calendar-section .cal-legend .leg-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+  #calendar-section .cal-legend .leg-dot--free { background: #39b56a; }
+  #calendar-section .cal-legend .leg-dot--booked { background: #e0574a; }
 
   /* Date number */
   #cal-grid .cal-num {
@@ -596,6 +711,9 @@ const eventsData = allEvents.map(e => ({
   #cal-grid .cal-dot--dim {
     background: #7a6330;
   }
+  #cal-grid .cal-dot--booked { background: #e0574a; }
+  #cal-grid .cal-dot--booked.cal-dot--dim { background: #8a3a33; }
+  #cal-grid .cal-dot--free { background: #39b56a; }
 
   /* ── No-events message ────────────────────────────── */
   #cal-no-events {
@@ -871,6 +989,7 @@ const eventsData = allEvents.map(e => ({
     #calendar-section .cal-arrow { width: 36px; height: 36px; font-size: 15px; }
     #cal-grid .cal-cell { min-height: 52px; padding: 6px 4px; }
     #cal-grid .cal-num { font-size: 12px; }
+    #cal-grid .cal-label { display: none; }  /* fill + dot carry it on small cells */
     #event-modal .modal-box { max-width: 95vw; max-height: 92vh; }
     #event-modal .modal-content { padding: 20px; }
     #event-modal .modal-title { font-size: 28px; }
