@@ -84,7 +84,7 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         <div class="title">{EVENT_TITLE}</div>
         <div class="ed">{EVENT_EDITION}</div>
       </header>
-      <p class="intro">Welcome in. Drop your name so we know you're here — that's all we need.</p>
+      <p class="intro">Welcome in. Drop your details — you're checked in <b style="color:var(--gold2)">and in the lucky draw</b>. A winner every 20 minutes, called out live on the screen.</p>
 
       <div id="msg" class="msg"></div>
 
@@ -93,8 +93,10 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         <label class="fld"><span>Your name</span>
           <input type="text" id="name" autocapitalize="words" placeholder="Who's here?" enterkeyhint="next" /></label>
         <label class="fld"><span>WhatsApp number</span>
-          <input type="tel" id="phone" inputmode="numeric" maxlength="15" placeholder="So we can say hi later" enterkeyhint="done" /></label>
-        <button type="submit" id="go" class="go">I'm here →</button>
+          <input type="tel" id="phone" inputmode="numeric" maxlength="15" placeholder="So we can reach you if you win" enterkeyhint="next" /></label>
+        <label class="fld"><span>Instagram <i style="opacity:.6">(optional)</i></span>
+          <input type="text" id="insta" autocapitalize="none" placeholder="@yourhandle" enterkeyhint="done" /></label>
+        <button type="submit" id="go" class="go">I'm here — enter me →</button>
         <div id="pend" class="pend"></div>
       </form>
       <div class="foot">{EVENT_TITLE} {EVENT_EDITION} · DJ VIC</div>
@@ -106,7 +108,7 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       <div class="big">Welcome to<br/>{EVENT_TITLE}</div>
       <div class="name" id="w-name"></div>
       <div class="rule"></div>
-      <p>You're checked in. Grab a drink, find the floor — the night's just getting started.</p>
+      <p>You're checked in — and in the draw. Winners are called out every 20 minutes on the screen. Grab a drink and keep an eye out for your name.</p>
     </div>
   </main>
 
@@ -160,11 +162,13 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         if ($("company").value) { showWelcome($("name").value.trim()); return; } // honeypot
         var name = $("name").value.trim();
         var phone = $("phone").value.trim();
+        var insta = ($("insta").value || "").trim().replace(/^@+/, "");
         if (name.length < 2) return msg("Please add your name.");
         if (phone.replace(/\D/g, "").length < 8) return msg("Please add a valid WhatsApp number.");
 
         var row = {
           event: EVENT_SLUG, name: name, phone: phone, guests: 1,
+          instagram: insta || null,
           source: "self-checkin", attended: true, entry_type: "self",
           user_agent: (navigator.userAgent || "").slice(0, 300)
         };

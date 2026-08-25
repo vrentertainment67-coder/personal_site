@@ -1,0 +1,178 @@
+---
+// Chamatkar — host control. Open on your phone: /chamatkar/draw?k=TOKEN
+// Press GO to draw a random checked-in guest who hasn't won yet; the winner is
+// broadcast to the TV (/chamatkar/screen) over Supabase Realtime. Winners are
+// remembered on this device so nobody wins twice.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout bare noindex title="Chamatkar — Draw (host)" description="Host draw control.">
+  <main id="main-content" class="cd">
+    <header class="cd-head">
+      <span class="cd-kicker">Chamatkar · Draw</span>
+      <div class="cd-meta">
+        <span><b id="cd-pool">0</b> in the draw</span>
+        <span id="cd-won-wrap" hidden>· <b id="cd-won">0</b> won</span>
+        <span id="cd-sync" class="cd-sync">○ Connecting…</span>
+        <button id="cd-refresh" class="cd-mini" type="button">↻</button>
+        <button id="cd-reset" class="cd-mini" type="button">Reset</button>
+      </div>
+    </header>
+
+    <section class="cd-stage">
+      <div id="cd-display" class="cd-display">
+        <span class="cd-idle" id="cd-idle">Press GO to draw a winner</span>
+        <span class="cd-name" id="cd-name" hidden></span>
+        <span class="cd-sub" id="cd-sub" hidden></span>
+      </div>
+      <button id="cd-go" class="cd-go" type="button">GO</button>
+      <p id="cd-status" class="cd-status"></p>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+  const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://jftnhuutttmccmqnnybf.supabase.co';
+  const SUPABASE_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
+  const $ = (id) => document.getElementById(id);
+  const token = new URLSearchParams(location.search).get('k') || '';
+  const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
+  const rpc = (fn, body) => fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: H, body: JSON.stringify(body) });
+
+  const WON_KEY = 'chamatkar_won_' + token.slice(0, 10);
+  const loadWon = () => { try { return new Set(JSON.parse(localStorage.getItem(WON_KEY) || '[]')); } catch { return new Set(); } };
+  const saveWon = () => { try { localStorage.setItem(WON_KEY, JSON.stringify([...won])); } catch {} };
+  let won = loadWon();
+  let entries = [];      // {id, name, instagram, phone_last4}
+  let spinning = false;
+  let lastWinner = null;
+
+  const pool = () => entries.filter((e) => !won.has(e.id));
+  const igOf = (e) => e && e.instagram ? '@' + String(e.instagram).replace(/^@/, '') : '';
+
+  function refreshMeta() {
+    $('cd-pool').textContent = pool().length;
+    $('cd-won').textContent = won.size;
+    $('cd-won-wrap').hidden = won.size === 0;
+  }
+  function setDisplay(name, sub, mode) {
+    const idle = $('cd-idle'), nm = $('cd-name'), sb = $('cd-sub');
+    if (mode === 'idle') { idle.hidden = false; nm.hidden = true; sb.hidden = true; idle.textContent = name; return; }
+    idle.hidden = true;
+    nm.hidden = false; nm.textContent = name; nm.className = 'cd-name' + (mode === 'winner' ? ' is-winner' : '');
+    sb.hidden = !sub; sb.textContent = sub || '';
+  }
+  const idleText = () => pool().length ? 'Press GO to draw a winner' : (entries.length ? 'Everyone has won — Reset to draw again' : 'No entries yet — get people scanning');
+
+  // ── Realtime (broadcast to the TV screen) ─────────────────────────────────
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  let channel = null;
+  const setSync = (on) => { const el = $('cd-sync'); el.classList.toggle('on', on); el.textContent = on ? '● Live' : '○ Connecting…'; };
+  function initRealtime() {
+    if (!token) return;
+    channel = supabase.channel('chamatkar-' + token.slice(0, 16), { config: { broadcast: { self: false } } })
+      .subscribe((s) => setSync(s === 'SUBSCRIBED'));
+  }
+  const send = (event, payload) => { try { if (channel) channel.send({ type: 'broadcast', event, payload }); } catch {} };
+
+  // ── Spin ──────────────────────────────────────────────────────────────────
+  function startSpin(winner, flashList) {
+    if (spinning || !winner) return;
+    spinning = true; lastWinner = winner;
+    $('cd-go').disabled = true; $('cd-go').textContent = '…'; $('cd-go').classList.remove('compact');
+    $('cd-status').classList.remove('show');
+    const flashes = (flashList && flashList.length) ? flashList : [winner];
+    let delay = 45;
+    const spin = () => {
+      const r = flashes[Math.floor(Math.random() * flashes.length)];
+      setDisplay(r.name, igOf(r), 'spin');
+      delay *= 1.11;
+      if (delay < 420) setTimeout(spin, delay); else reveal();
+    };
+    spin();
+  }
+  function reveal() {
+    setDisplay(lastWinner.name, igOf(lastWinner), 'winner');
+    won.add(lastWinner.id); saveWon(); refreshMeta();
+    spinning = false;
+    if (navigator.vibrate) navigator.vibrate([40, 30, 90]);
+    $('cd-go').disabled = false; $('cd-go').textContent = 'Draw again'; $('cd-go').classList.add('compact');
+    const s = $('cd-status');
+    s.innerHTML = 'Winner! <button id="cd-putback" class="cd-link" type="button">↩ put back</button>';
+    s.classList.add('show');
+    $('cd-putback').addEventListener('click', () => {
+      won.delete(lastWinner.id); saveWon(); refreshMeta();
+      send('putback', { id: lastWinner.id });
+      s.classList.remove('show');
+    });
+  }
+  function draw() {
+    if (spinning) return;
+    const p = pool();
+    if (!p.length) { setDisplay(idleText(), '', 'idle'); return; }
+    const w = p[Math.floor(Math.random() * p.length)];
+    send('go', { id: w.id, name: w.name, instagram: w.instagram || '' });
+    startSpin(w, p.slice());
+  }
+
+  async function load(quiet) {
+    if (!token) { $('cd-status').textContent = 'Missing access code — open the full draw link (with ?k=…).'; $('cd-status').classList.add('show', 'err'); return; }
+    try {
+      const res = await rpc('chamatkar_draw_list', { p_token: token });
+      if (!res.ok) throw new Error(await res.text());
+      entries = (await res.json()) || [];
+      refreshMeta();
+      if (!spinning && !lastWinner) setDisplay(idleText(), '', 'idle');
+    } catch {
+      $('cd-status').textContent = 'Wrong or expired link.'; $('cd-status').classList.add('show', 'err');
+    }
+  }
+
+  $('cd-go').addEventListener('click', draw);
+  $('cd-refresh').addEventListener('click', () => load(false));
+  $('cd-reset').addEventListener('click', () => {
+    if (!confirm('Put everyone back in the draw (clear all winners)?')) return;
+    won = new Set(); saveWon(); lastWinner = null; refreshMeta();
+    send('reset', {});
+    setDisplay(idleText(), '', 'idle');
+    $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact'); $('cd-status').classList.remove('show');
+  });
+  setInterval(() => { if (document.visibilityState === 'visible' && !spinning) load(true); }, 15000);
+  initRealtime();
+  load(false);
+</script>
+
+<style>
+  .cd { --gold: #ffd24a; --gold-hi: #ffe38a; --ink: #0a0a0c; --bone: #f4f1e8; --muted: #9a968c;
+    min-height: 100dvh; background: var(--ink); color: var(--bone); display: flex; flex-direction: column;
+    max-width: 40rem; margin: 0 auto; font-family: var(--font-body, system-ui, sans-serif); }
+  .cd-head { padding: 1rem 1.1rem .8rem; border-bottom: 1px solid #1c1c20; }
+  .cd-kicker { display: block; color: var(--gold); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; }
+  .cd-meta { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; margin-top: .5rem; color: var(--muted); font-size: .92rem; }
+  .cd-meta b { color: var(--bone); }
+  .cd-sync { font-size: .78rem; color: #5c5850; }
+  .cd-sync.on { color: #48d16a; }
+  .cd-mini { margin-left: auto; background: none; border: 1px solid #2a2a30; color: var(--muted); padding: .35rem .7rem; border-radius: 100px; font-size: .82rem; cursor: pointer; }
+  .cd-mini:last-child { margin-left: .4rem; }
+
+  .cd-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(1.6rem, 6vw, 2.6rem); padding: 2rem 1.2rem; text-align: center; }
+  .cd-display { min-height: clamp(90px, 22vw, 140px); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+  .cd-idle { color: var(--muted); font-size: clamp(1rem, 3.6vw, 1.2rem); }
+  .cd-name { font-family: var(--font-display, sans-serif); font-size: clamp(1.8rem, 8vw, 3.2rem); line-height: 1.05; text-transform: uppercase; color: var(--bone); overflow-wrap: anywhere; max-width: 100%; }
+  .cd-name.is-winner { animation: pop .5s cubic-bezier(.2,1.3,.4,1) both;
+    background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 40px rgba(255,210,74,.3); }
+  @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .cd-sub { margin-top: .5rem; color: var(--gold); font-size: clamp(.9rem, 3.4vw, 1.15rem); }
+
+  .cd-go { width: clamp(150px, 44vw, 200px); height: clamp(150px, 44vw, 200px); border-radius: 50%; border: none; cursor: pointer; color: #241a02;
+    font-family: var(--font-display, sans-serif); font-size: clamp(2.4rem, 9vw, 3.2rem); letter-spacing: .04em; text-transform: uppercase;
+    background: radial-gradient(120% 120% at 30% 25%, var(--gold-hi), var(--gold) 70%);
+    box-shadow: 0 0 0 8px rgba(255,210,74,.12), 0 18px 50px -12px rgba(255,210,74,.5); transition: transform .1s, box-shadow .2s; }
+  .cd-go:active { transform: scale(.95); }
+  .cd-go:disabled { cursor: default; filter: saturate(.85) brightness(.95); }
+  .cd-go.compact { font-size: clamp(1.2rem, 5.5vw, 1.6rem); line-height: 1.05; padding: 0 .55em; white-space: normal; }
+  .cd-status { color: var(--muted); font-size: .95rem; min-height: 1.4em; margin: 0; display: none; }
+  .cd-status.show { display: block; }
+  .cd-status.err { color: #ff8a8a; }
+  .cd-link { background: none; border: none; color: var(--gold); cursor: pointer; font-size: .95rem; text-decoration: underline; padding: 0 0 0 .3rem; }
+</style>
