@@ -1,0 +1,184 @@
+---
+// /chamatkar/checkin — guest self-check-in. This is the URL the entrance QR
+// points to. A guest scans it, drops just their name + WhatsApp number, and
+// gets an instant on-screen "Welcome to Chamatkar". No staff, no passcode, no
+// cover/heads — the deliberately-minimal replacement for the /guestlist door
+// tool. Each check-in writes to the shared Chamatkar guest list (event_rsvps),
+// tagged source='self-checkin', attended=true.
+//
+// Standalone kiosk page (no site nav/footer), noindex, vanilla JS so it loads
+// instantly on venue wifi; a failed save is queued and retried automatically.
+//
+// ---- SET PER EDITION ----------------------------------------------
+// EVENT_SLUG must match the current edition in src/pages/chamatkar.astro.
+// On event day, switch this to the dated slug (e.g. chamatkar-2026-09-05).
+// -------------------------------------------------------------------
+const EVENT_SLUG    = "chamatkar-vol5";
+const EVENT_TITLE   = "Chamatkar";
+const EVENT_EDITION = "Vol. 5";
+
+const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Welcome — {EVENT_TITLE} {EVENT_EDITION}</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root{ --gold:#c9a84c; --gold2:#e2c475; --gold-dim:#8a7433; --bg:#0a0908; --card:#151311;
+      --line:#2a261f; --off:#efe9dd; --mut:#a09884; --green:#39b56a; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--off);
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100dvh; }
+    body{ background-image: radial-gradient(ellipse 90% 50% at 50% -8%, rgba(201,168,76,.12), transparent 68%);
+      padding:max(22px,env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+      display:flex; align-items:center; justify-content:center; }
+    .wrap{ width:100%; max-width:440px; margin:0 auto; }
+    header{ text-align:center; padding:6px 0 20px; }
+    .k{ font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    .title{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:clamp(2.6rem,15vw,3.6rem);
+      line-height:.98; margin:.35rem 0 .1rem; color:#fff; letter-spacing:.01em; }
+    .ed{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.15rem; color:var(--gold2); }
+    .intro{ text-align:center; color:var(--mut); font-size:.95rem; line-height:1.6; margin:0 auto 1.7rem; max-width:20rem; }
+    label.fld{ display:block; margin:0 0 14px; }
+    label.fld > span{ display:block; font-size:12px; color:var(--mut); margin:0 0 7px; letter-spacing:.03em; }
+    input[type=text],input[type=tel]{ width:100%; background:#100e0c; border:1.5px solid var(--line);
+      border-radius:13px; padding:16px; color:var(--off); font-size:17px; outline:none; font-family:inherit; }
+    input:focus{ border-color:var(--gold); }
+    .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+    .go{ width:100%; padding:17px; border:none; border-radius:14px; font-size:17px; font-weight:700;
+      color:#1a1407; background:linear-gradient(90deg,var(--gold-dim),var(--gold)); cursor:pointer;
+      letter-spacing:.02em; margin-top:4px; }
+    .go:disabled{ opacity:.55; }
+    .msg{ text-align:center; font-size:.9rem; padding:11px; border-radius:11px; margin:0 0 14px; display:none; }
+    .msg.err{ display:block; background:rgba(224,87,74,.12); color:#ff9a90; border:1px solid #7a2e28; }
+    .pend{ font-size:12px; color:var(--gold); text-align:center; margin-top:10px; min-height:16px; }
+    .foot{ text-align:center; color:#5c554a; font-size:11px; margin-top:24px; letter-spacing:.04em; }
+    .hidden{ display:none !important; }
+    .spin{ display:inline-block; width:15px; height:15px; border:2px solid rgba(0,0,0,.3);
+      border-top-color:#1a1407; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; }
+    @keyframes sp{ to{ transform:rotate(360deg); } }
+    /* welcome state */
+    .welcome{ text-align:center; padding:1.5rem 0; }
+    .welcome .burst{ font-size:2.8rem; }
+    .welcome .big{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:clamp(2.4rem,12vw,3.4rem);
+      line-height:1; color:#fff; margin:.5rem 0 .2rem; }
+    .welcome .name{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.5rem; color:var(--gold2); margin-bottom:1rem; }
+    .welcome p{ color:var(--mut); line-height:1.65; font-size:1rem; max-width:20rem; margin:0 auto; }
+    .welcome .rule{ width:44px; height:2px; background:var(--gold); margin:1.4rem auto; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <!-- form -->
+    <div id="app">
+      <header>
+        <div class="k">You're on the list</div>
+        <div class="title">{EVENT_TITLE}</div>
+        <div class="ed">{EVENT_EDITION}</div>
+      </header>
+      <p class="intro">Welcome in. Drop your name so we know you're here — that's all we need.</p>
+
+      <div id="msg" class="msg"></div>
+
+      <form id="f" autocomplete="off" novalidate>
+        <input class="hp" type="text" id="company" tabindex="-1" aria-hidden="true" />
+        <label class="fld"><span>Your name</span>
+          <input type="text" id="name" autocapitalize="words" placeholder="Who's here?" enterkeyhint="next" /></label>
+        <label class="fld"><span>WhatsApp number</span>
+          <input type="tel" id="phone" inputmode="numeric" maxlength="15" placeholder="So we can say hi later" enterkeyhint="done" /></label>
+        <button type="submit" id="go" class="go">I'm here →</button>
+        <div id="pend" class="pend"></div>
+      </form>
+      <div class="foot">{EVENT_TITLE} {EVENT_EDITION} · DJ VIC</div>
+    </div>
+
+    <!-- welcome -->
+    <div id="welcome" class="welcome hidden">
+      <div class="burst">🎉</div>
+      <div class="big">Welcome to<br/>{EVENT_TITLE}</div>
+      <div class="name" id="w-name"></div>
+      <div class="rule"></div>
+      <p>You're checked in. Grab a drink, find the floor — the night's just getting started.</p>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ EVENT_SLUG, SUPABASE_URL, SUPABASE_KEY }}>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var LSKEY = "chamatkar_checkin_" + EVENT_SLUG;   // this device already checked in
+      var QKEY  = "chamatkar_ci_queue_" + EVENT_SLUG;  // offline retry queue
+
+      // Digits only for phone.
+      $("phone").addEventListener("input", function () {
+        var v = this.value.replace(/\D/g, "");
+        if (this.value !== v) this.value = v;
+      });
+
+      function showWelcome(name) {
+        $("w-name").textContent = name ? name.split(" ")[0] : "";
+        $("app").classList.add("hidden");
+        $("welcome").classList.remove("hidden");
+      }
+
+      // Already checked in on this device → straight to welcome.
+      try {
+        var prev = localStorage.getItem(LSKEY);
+        if (prev) showWelcome(prev);
+      } catch (e) {}
+
+      function msg(t) { var m = $("msg"); m.textContent = t; m.className = "msg err"; }
+
+      // ---- offline queue (a failed save retries automatically) ----
+      function queue() { try { return JSON.parse(localStorage.getItem(QKEY) || "[]"); } catch (e) { return []; } }
+      function setQueue(q) { try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch (e) {} showPend(); }
+      function showPend() { var n = queue().length; $("pend").textContent = n ? ("⏳ saving…") : ""; }
+      function post(row) {
+        return fetch(SUPABASE_URL + "/rest/v1/event_rsvps", {
+          method: "POST",
+          headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify(row)
+        }).then(function (r) { return r.ok; }).catch(function () { return false; });
+      }
+      function flush() {
+        var q = queue();
+        if (!q.length || !navigator.onLine) { showPend(); return; }
+        post(q[0]).then(function (ok) { if (ok) { var qq = queue(); qq.shift(); setQueue(qq); if (qq.length) flush(); } });
+      }
+      window.addEventListener("online", flush);
+      setInterval(flush, 12000);
+
+      $("f").addEventListener("submit", function (e) {
+        e.preventDefault();
+        if ($("company").value) { showWelcome($("name").value.trim()); return; } // honeypot
+        var name = $("name").value.trim();
+        var phone = $("phone").value.trim();
+        if (name.length < 2) return msg("Please add your name.");
+        if (phone.replace(/\D/g, "").length < 8) return msg("Please add a valid WhatsApp number.");
+
+        var row = {
+          event: EVENT_SLUG, name: name, phone: phone, guests: 1,
+          source: "self-checkin", attended: true, entry_type: "self",
+          user_agent: (navigator.userAgent || "").slice(0, 300)
+        };
+
+        var go = $("go"); go.disabled = true; go.innerHTML = '<span class="spin"></span> Checking you in…';
+        post(row).then(function (ok) {
+          if (!ok) { var q = queue(); q.push(row); setQueue(q); flush(); }   // save offline, retry
+          try { localStorage.setItem(LSKEY, name); } catch (e) {}
+          showWelcome(name);
+        });
+      });
+
+      showPend(); flush();
+    })();
+  </script>
+</body>
+</html>

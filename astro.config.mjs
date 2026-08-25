@@ -11,7 +11,7 @@ export default defineConfig({
     // Keep noindex pages out of the sitemap (admin, booking funnel, thank-you).
     // Keep noindex pages out (admin, booking funnel, thank-you) and the
     // /djcollective redirect stub — the Collective is indexed on its own domain.
-    filter: (page) => !/\/(admin|book|thanks|djcollective|live|requests)\/?$/.test(page),
+    filter: (page) => !/\/(admin|book|thanks|djcollective|live|requests|checkin|feedback)\/?$/.test(page),
     changefreq: 'weekly',
     priority: 0.7,
     lastmod: new Date(),
