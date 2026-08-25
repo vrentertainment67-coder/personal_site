@@ -81,7 +81,11 @@ const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
           ))}
         </div>
 
-        <h1>{event.data.title}</h1>
+        <h1 class:list={["event-h1", { "event-h1--logo": event.data.logoImage }]}>
+          {event.data.logoImage
+            ? <img src={event.data.logoImage} alt={event.data.title} class="event-logo" width="600" height="330" />
+            : event.data.title}
+        </h1>
 
         <div class="event-details">
           <div class="event-detail">
@@ -129,6 +133,13 @@ const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
         )}
 
         <p class="event-description">{event.data.description}</p>
+
+        {event.data.highlight && (
+          <div class="event-highlight">
+            <span class="hl-label">{event.data.highlight.label}</span>
+            <p>{event.data.highlight.text}</p>
+          </div>
+        )}
 
         {event.data.isPrivate ? (
           <div class="private-notice">
@@ -307,6 +318,37 @@ const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
     color: var(--white);
     margin-bottom: 2rem;
     line-height: 1.05;
+  }
+  /* Logo lockup: the wordmark stands in for the text heading. */
+  .event-h1--logo { margin-bottom: 1.5rem; }
+  .event-logo {
+    width: min(100%, 340px);
+    height: auto;
+    display: block;
+  }
+
+  /* Highlighted perk / note — tasteful gold callout above the CTA. */
+  .event-highlight {
+    background: linear-gradient(180deg, rgba(201,168,76,0.09), rgba(201,168,76,0.02));
+    border: 1px solid rgba(201,168,76,0.28);
+    border-radius: 4px;
+    padding: 1.1rem 1.35rem;
+    margin-bottom: 2rem;
+  }
+  .hl-label {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .event-highlight p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.65;
   }
 
   .event-details {

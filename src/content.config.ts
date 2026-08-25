@@ -38,6 +38,12 @@ const events = defineCollection({
     hostedBy: z.string().optional(),
     videoSetBy: z.string().optional(),
     creativeImage: z.string().optional(),
+    // Optional wordmark/logo. When set, it becomes the page's H1 lockup (with the
+    // title as its alt text) instead of plain-text heading.
+    logoImage: z.string().optional(),
+    // Optional highlighted note rendered as a gold callout above the CTA — e.g. a
+    // special offer or perk. Kept tasteful, one per event.
+    highlight: z.object({ label: z.string(), text: z.string() }).optional(),
     description: z.string(),
     tags: z.array(z.string()).default([]),
     guestListFormId: z.string().default('xbdqanrk'),
