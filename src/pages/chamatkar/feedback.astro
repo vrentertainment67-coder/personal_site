@@ -6,7 +6,7 @@
 // in), landing in the DJ VIC feedback admin under this event's slug.
 //
 // event_feedback.category is locked to 4 values, so the smiley rating rides in
-// the message as a clear prefix (e.g. "🔥 Loved it — great crowd"). Structured
+// the message as a clear prefix (e.g. "❤️ Loved it — great crowd"). Structured
 // rating stats would need a small dedicated table later.
 //
 // Standalone kiosk page, noindex. ---- SET PER EDITION: EVENT_SLUG ----
@@ -18,10 +18,13 @@ const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
 const FEEDBACK_ENDPOINT = SUPABASE_URL + "/functions/v1/submit-feedback";
 
 const RATINGS = [
-  { key: "loved",  emoji: "🔥", label: "Loved it" },
+  { key: "loved",  emoji: "❤️", label: "Loved it" },
   { key: "good",   emoji: "😊", label: "Good night" },
   { key: "meh",    emoji: "😐", label: "Could be better" },
 ];
+
+// Shown only when "Could be better" is picked — lets a guest point at what.
+const NIGGLES = ["Service", "Valet", "Drinks", "Music", "Sound", "Crowd", "Wait time"];
 ---
 <!doctype html>
 <html lang="en">
@@ -64,6 +67,12 @@ const RATINGS = [
       line-height:1.55; padding:14px; outline:none; }
     textarea::placeholder{ color:#5c554a; font-style:italic; }
     textarea:focus{ border-color:var(--gold); }
+    .niggles{ margin:-.2rem 0 .3rem; }
+    .niggles-lab{ display:block; font-size:12px; color:var(--mut); margin:0 0 9px; letter-spacing:.03em; }
+    .nchips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .nchip{ appearance:none; background:#100e0c; border:1.5px solid var(--line); color:var(--mut);
+      font-family:inherit; font-size:.88rem; font-weight:600; padding:10px 16px; border-radius:100px; cursor:pointer; transition:.14s; }
+    .nchip[aria-pressed=true]{ border-color:var(--gold); background:rgba(201,168,76,.14); color:#fff; }
     .go{ width:100%; padding:17px; border:none; border-radius:14px; font-size:17px; font-weight:700;
       color:#1a1407; background:linear-gradient(90deg,var(--gold-dim),var(--gold)); cursor:pointer;
       letter-spacing:.02em; margin-top:16px; }
@@ -102,7 +111,16 @@ const RATINGS = [
         ))}
       </div>
 
-      <label class="fld"><span>Anything you'd tell us? (optional)</span>
+      <div class="niggles hidden" id="niggles">
+        <span class="niggles-lab">What could be better? (tap any)</span>
+        <div class="nchips" id="nchips">
+          {NIGGLES.map((n) => (
+            <button type="button" class="nchip" data-n={n} aria-pressed="false">{n}</button>
+          ))}
+        </div>
+      </div>
+
+      <label class="fld"><span>Anything else? (optional)</span>
         <textarea id="comment" maxlength="1200" placeholder="What made it — or what we could do better…"></textarea>
       </label>
 
@@ -122,22 +140,44 @@ const RATINGS = [
     (function () {
       var $ = function (id) { return document.getElementById(id); };
       var chosen = null;
+      var niggles = {};   // selected "could be better" categories
 
       var rates = $("rates");
+      var nWrap = $("niggles");
+      var nChips = $("nchips");
+
       rates.addEventListener("click", function (e) {
         var b = e.target.closest(".rate"); if (!b) return;
         chosen = { key: b.dataset.key, emoji: b.dataset.emoji, label: b.dataset.label };
         var all = rates.querySelectorAll(".rate");
         for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", String(all[i] === b));
+        // Category chips only make sense under "Could be better".
+        var showN = chosen.key === "meh";
+        nWrap.classList.toggle("hidden", !showN);
+        if (!showN) {
+          niggles = {};
+          var cs = nChips.querySelectorAll(".nchip");
+          for (var k = 0; k < cs.length; k++) cs[k].setAttribute("aria-pressed", "false");
+        }
         $("go").disabled = false;
+      });
+
+      nChips.addEventListener("click", function (e) {
+        var c = e.target.closest(".nchip"); if (!c) return;
+        var n = c.dataset.n;
+        if (niggles[n]) { delete niggles[n]; c.setAttribute("aria-pressed", "false"); }
+        else { niggles[n] = true; c.setAttribute("aria-pressed", "true"); }
       });
 
       $("go").addEventListener("click", function () {
         if (!chosen) return;
         var comment = $("comment").value.trim();
+        var cats = Object.keys(niggles);
         // The smiley rides in the message as a prefix (category is locked to 4
-        // values server-side). Comment is appended when given.
-        var message = chosen.emoji + " " + chosen.label + (comment ? " — " + comment : "");
+        // values server-side); tapped categories + comment are appended.
+        var message = chosen.emoji + " " + chosen.label
+          + (cats.length ? " [" + cats.join(", ") + "]" : "")
+          + (comment ? " — " + comment : "");
 
         var go = $("go"); go.disabled = true; go.innerHTML = '<span class="spin"></span> Sending…';
         fetch(FEEDBACK_ENDPOINT, {
