@@ -43,6 +43,11 @@ const externalBookings = [
   { ...CHAMATKAR, slug: 'chamatkar-v1',   href: '/chamatkar/', title: 'Chamatkar Vol. 1', date: '2026-06-13', guestListAvailable: false, description: 'The one that started it.' },
 ];
 const calendarData = [...eventsData, ...externalBookings];
+
+// Public anon key — safe to inline. Used only to pull live blocked/booked dates
+// (accepted gigs) from a DATES-ONLY function; no client details ever leave the DB.
+const SUPABASE_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
 ---
 
 <Layout
@@ -202,7 +207,7 @@ const calendarData = [...eventsData, ...externalBookings];
   <Footer />
 </Layout>
 
-<script define:vars={{ eventsData: calendarData, base }}>
+<script define:vars={{ eventsData: calendarData, base, SUPABASE_URL, SUPABASE_KEY }}>
   const MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
   const DAYS_LONG = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -455,6 +460,25 @@ const calendarData = [...eventsData, ...externalBookings];
   });
 
   renderCalendar(currentYear, currentMonth);
+
+  // Live availability: pull VIC's accepted-gig dates (dates ONLY — no client
+  // detail leaves the DB) and mark any not already shown as booked. Fails
+  // silently if the function isn't installed yet, so the calendar always renders.
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/vic_blocked_dates`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+    body: '{}'
+  })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      let added = false;
+      (rows || []).forEach(row => {
+        const d = typeof row === 'string' ? row : (row && row.d);
+        if (d && !eventMap[d]) { eventMap[d] = { date: d, title: 'Booked', isPrivate: true }; added = true; }
+      });
+      if (added) renderCalendar(currentYear, currentMonth);
+    })
+    .catch(() => {});
 </script>
 
 <style is:global>
