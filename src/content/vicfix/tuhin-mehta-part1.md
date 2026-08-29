@@ -3,7 +3,7 @@ guestName: "Tuhin Mehta"
 guestTitle: "Part 1 · DJ & Producer — 34 years in Indian dance music"
 season: 2
 episode: 20
-youtubeId: ""
+youtubeId: "2K5tbnurA64"
 category: "architects"
 categoryLabel: "The Architects"
 premiereWhen: "Sunday 30 August · 6 PM"
