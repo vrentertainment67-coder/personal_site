@@ -22,6 +22,8 @@ const FAQS = [
   { q: "Can you do an audio-visual DJ set at a wedding?", a: "Yes — it's one of the strongest uses of the format. Sangeet performances, the reception entrance, the first dance and family dedications all gain from visuals cut to the music. It turns key moments into set-pieces the couple and their guests remember." },
   { q: "Do you build the visuals, or do we supply them?", a: "DJ VIC develops the custom visual content as part of the booking — he has been building AV sets since 2007. For corporate events, brand assets, campaign themes and product footage can be woven into the show; for weddings, the couple's story and theme drive it." },
   { q: "Is DJ VIC available for audio-visual shows across India and abroad?", a: "Yes. DJ VIC performs across India and has played in 18 countries, including audio-visual formats for corporate launches, annual days, festivals and destination weddings." },
+  { q: "How much does an audio-visual DJ cost in India?", a: "It's a premium, quote-based format rather than a flat rate — the price tracks the scale of the custom content, the hardware and screens involved, the programming and rehearsal time, and the city. Because the visuals are built for your specific event, DJ VIC scopes each show against the moments you want to land and the venue's setup. Share your event, city and date for a tailored quote." },
+  { q: "How far in advance should you book an audio-visual set?", a: "Earlier than a standard DJ set. The custom content, sync programming and venue-AV coordination all need lead time — for weddings and large corporate shows, four to eight weeks is comfortable, and more for peak dates or heavy custom visuals. If your date is close it's still worth asking; some formats can be turned around faster." },
 ];
 
 const schema = [
@@ -61,10 +63,10 @@ const schema = [
 ---
 
 <Layout
-  title="Audio-Visual DJ — What It Is & How It Works | DJ VIC"
-  description="What is an audio-visual DJ? Live music mixing synced with custom, purpose-built visuals as one performance — not a DJ plus a VJ. The complete guide, plus AV DJ bookings across India by DJ VIC (since 2007)."
-  ogTitle="Audio-Visual DJ — The Format, Explained"
-  ogDescription="Live music mixed with synchronised, purpose-built visuals as one show. What an audio-visual DJ is, how it differs from a VJ, what venues need, and what it costs."
+  title="What Is an Audio-Visual DJ? The Format, Explained | DJ VIC"
+  description="An audio-visual DJ mixes live music with custom, beat-synced visuals as one show — not a DJ plus a VJ. What it is, how it differs, and what it costs. AV DJ bookings across India by DJ VIC."
+  ogTitle="What Is an Audio-Visual DJ?"
+  ogDescription="One performer mixing live music with custom, beat-synced visuals as a single show — not a DJ plus a VJ. The format, how it differs, what venues need, and what it costs."
   ogImage={ogImg}
   canonical="https://djvicofficial.com/audio-visual-dj/"
   schema={schema}
@@ -92,7 +94,7 @@ const schema = [
         <h2>What is an audio-visual DJ?</h2>
         <p class="av-def">{DEF}</p>
         <p class="av-body">Put simply: in a standard setup, a DJ plays the music and, if there's a screen at all, a separate visual jockey (VJ) runs generic loops that rarely line up with what you're hearing. An <strong>audio-visual DJ</strong> collapses that into one performance. The same person shapes the music and the imagery, and they're built together — so the drop, the reveal, the entrance and the dedication all hit at exactly the same moment on screen and in sound.</p>
-        <p class="av-body">DJ VIC has performed in this format since 2007, developing original music synced to custom visuals for launches, annual days, festivals and luxury weddings — across India and in 18 countries.</p>
+        <p class="av-body">DJ VIC has performed in this format since 2007, developing original music synced to custom visuals for launches, annual days, festivals and luxury weddings — across India and in 18 countries. For a deeper read on why Bollywood is built for this format, see <a href="/blog/what-is-an-audio-visual-dj-set/">the audio-visual set, explained</a> — or watch it live at <a href="/chamatkar/">Chamatkar</a>, VIC's Bollywood audio-visual night.</p>
       </div>
     </section>
 
@@ -204,6 +206,7 @@ const schema = [
           <a href="/corporate/">Corporate →</a>
           <a href="/weddings/">Weddings →</a>
           <a href="/festivals/">Festivals →</a>
+          <a href="/nightlife/">Nightlife →</a>
         </p>
       </div>
     </section>
@@ -235,6 +238,8 @@ const schema = [
   .av-sec h2 { font-family: var(--font-display, 'Bebas Neue'), sans-serif; font-weight: 400; font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.05; text-transform: uppercase; color: #fff; margin: 0 0 1.1rem; letter-spacing: .02em; }
   .av-body { font-size: 1rem; color: rgba(255,255,255,.72); line-height: 1.85; max-width: 68ch; margin: 0 0 1.1rem; }
   .av-body strong { color: #fff; }
+  .av-body a { color: var(--gold, #c9a84c); text-decoration: underline; text-underline-offset: 2px; }
+  .av-body a:hover { color: var(--gold-light, #e2c475); }
   .av-def { font-size: clamp(1.05rem, 2.2vw, 1.3rem); color: #f0ede4; line-height: 1.7; border-left: 3px solid var(--gold, #c9a84c); background: rgba(201,168,76,0.05); padding: 1.1rem 1.4rem; margin: 0 0 1.4rem; }
 
   .av-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .8rem; }
