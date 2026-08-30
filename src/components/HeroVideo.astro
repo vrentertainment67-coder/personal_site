@@ -7,14 +7,16 @@
     <video
       id="hero-vid"
       class="hero-video"
-      autoplay
       muted
       loop
       playsinline
-      preload="auto"
+      preload="none"
       poster="/hero-poster.webp"
+      data-src="/hero-video.mp4"
     >
-      <source src="/hero-video.mp4" type="video/mp4" />
+      <!-- Source is attached by JS after load (and skipped on slow/data-saver
+           connections) so the lightweight poster paints instantly instead of the
+           browser eagerly pulling the whole video on first render. -->
     </video>
     <div class="hero-overlay"></div>
   </div>
@@ -406,6 +408,9 @@
     btn.addEventListener('click', () => {
       isMuted = !isMuted;
 
+      // Make sure the video is actually loaded before we try to play/unmute it.
+      loadHeroVideo(true);
+
       // Video audio
       video.muted = isMuted;
       if (!isMuted) {
@@ -440,8 +445,34 @@
   }
   document.addEventListener('astro:page-load', initHeroSound);
 
-  // ── Force autoplay on iOS (needs user gesture) — re-query so it survives nav ──
+  // ── Lazy-load the hero video after the page is interactive, so the poster
+  //    paints instantly and the (large) video never blocks first render. Skipped
+  //    on data-saver / slow networks unless the user explicitly asks (unmute/tap). ──
+  function loadHeroVideo(force?: boolean) {
+    const v = document.getElementById('hero-vid') as HTMLVideoElement | null;
+    if (!v || v.dataset.loaded === '1' || !v.dataset.src) return;
+    const c = (navigator as any).connection;
+    if (!force && c && (c.saveData || /^(slow-2g|2g|3g)$/.test(c.effectiveType || ''))) return;
+    v.dataset.loaded = '1';
+    const s = document.createElement('source');
+    s.src = v.dataset.src; s.type = 'video/mp4';
+    v.appendChild(s);
+    v.load();
+    v.play().catch(() => {});
+  }
+  function scheduleHeroVideo() {
+    // setTimeout (not requestIdleCallback) so it fires reliably even if the tab
+    // starts hidden — rIC can be deferred indefinitely while a tab isn't visible.
+    const go = () => setTimeout(() => loadHeroVideo(), 250);
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+  }
+  document.addEventListener('astro:page-load', scheduleHeroVideo);
+
+  // ── Force play on first touch (iOS gesture) — also forces the load if a slow
+  //    network skipped it, since a tap is an explicit request to see the video. ──
   document.addEventListener('touchstart', () => {
+    loadHeroVideo(true);
     const v = document.getElementById('hero-vid') as HTMLVideoElement | null;
     if (v && v.paused) v.play().catch(() => {});
   });
