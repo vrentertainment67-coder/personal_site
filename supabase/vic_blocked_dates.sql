@@ -26,8 +26,10 @@ as $$
     interval '1 day'
   ) gs
   where b.status = 'accepted'
-    and b.event_date is not null
-    and coalesce(b.event_end_date, b.event_date) >= current_date;
+    and b.event_date is not null;
+  -- (returns ALL accepted-gig dates — past and future — so old booked dates
+  --  also show on the calendar. Add `and event_date >= current_date - interval
+  --  '18 months'` here if you ever want to cap how far back it goes.)
 $$;
 
 -- Lock it down to a dates-only read for the public key.

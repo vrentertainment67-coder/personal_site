@@ -30,7 +30,7 @@ const EVENT = {
   intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
   // heroBg = a clean, text-safe static background behind the hero copy. Null =
   // a plain dark gradient (no busy creative behind the text).
-  heroBg: '/images/chamatkar-hero-bg.jpg',
+  heroBg: null,
   // flyer = the horizontal creative for the upcoming edition, shown below the
   // hero. Null hides the flyer section (no Vol. 5 creative yet).
   flyer: '/images/chamatkar-vol5-poster.webp',
@@ -89,7 +89,7 @@ const PAST_EDITIONS = [
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
-        <p class="ck-proof">🔥 Three editions in — every one packed the floor. Get on the list early.</p>
+        <p class="ck-proof">🔥 Four editions in — every one packed the floor. Get on the list early.</p>
         <div class="ck-ctas">
           <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
           <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
@@ -143,7 +143,7 @@ const PAST_EDITIONS = [
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Three editions in</strong> · limited guest-list spots · {EVENT.dateTBA ? 'date announced soon' : <span id="ck-countdown" data-doors={EVENT.doorsAt}>counting…</span>}</p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Four editions in</strong> · limited guest-list spots · {EVENT.dateTBA ? 'date announced soon' : <span id="ck-countdown" data-doors={EVENT.doorsAt}>counting…</span>}</p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}

@@ -1,38 +1,72 @@
 ---
-// Homepage "Pick your night" popup — shows the upcoming nights (both, when
-// there are two) as a dismissible modal that links each to its series-page
-// RSVP. Replaces the old single-event EventPopup. Dates come from the page as
-// `events`; renders nothing when there's nothing upcoming.
-//
-// Visibility is a pure class toggle (.open → display:flex + keyframe fade), so
-// it can't get stuck the way an [hidden]-attribute + opacity-transition can.
+// Homepage "Pick your night" popup. Two-step: pick a night → fill the guest
+// list right there (event pre-filled). Submits straight to Supabase event_rsvps
+// (anon insert, same table the series pages + admin use), tagged with the chosen
+// event's slug, and pings VIC via ntfy — no bouncing to the event page.
 const { events = [] } = Astro.props;
-// Key by the actual dates so a NEW weekend re-shows even if a past one was dismissed.
 const key = events.length ? 'vic_weekend_' + events.map((e) => e.date).join('_') : '';
+const SUPABASE_URL = 'https://jftnhuutttmccmqnnybf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
+const NTFY_TOPIC = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
 ---
 {events.length > 0 && (
   <div class="wp-overlay" id="wp-overlay" role="dialog" aria-modal="true" aria-labelledby="wp-title">
     <div class="wp-card">
       <button class="wp-close" id="wp-close" type="button" aria-label="Close">&times;</button>
-      <span class="wp-eyebrow">{events.length > 1 ? 'This weekend · Two nights' : 'Next up'}</span>
-      <h2 class="wp-title" id="wp-title">{events.length > 1 ? 'Pick your night' : 'Catch VIC live'}</h2>
-      <p class="wp-sub">{events.length > 1 ? 'Two rooms, two vibes — come to one, or make a weekend of it.' : 'Get on the guest list.'}</p>
-      <div class="wp-grid">
-        {events.map((e) => (
-          <a href={e.href} class={`wp-ev wp-ev--${e.theme}`}>
-            <span class="wp-day">{e.day} · {e.dateLabel}</span>
-            <span class="wp-name">{e.name}</span>
-            <span class="wp-venue">📍 {e.venue}</span>
-            <span class="wp-tag">{e.tag}</span>
-            <span class="wp-rsvp">RSVP · Guest list &rarr;</span>
-          </a>
-        ))}
+
+      <!-- STEP 1 — pick -->
+      <div class="wp-step" id="wp-pick">
+        <span class="wp-eyebrow">{events.length > 1 ? 'This weekend · Two nights' : 'Next up'}</span>
+        <h2 class="wp-title" id="wp-title">{events.length > 1 ? 'Pick your night' : 'Catch VIC live'}</h2>
+        <p class="wp-sub">{events.length > 1 ? 'Two rooms, two vibes — get on the list for one, or both.' : 'Get on the guest list.'}</p>
+        <div class="wp-grid">
+          {events.map((e) => (
+            <button type="button" class={`wp-ev wp-ev--${e.theme}`}
+              data-slug={e.slug} data-name={e.name} data-day={e.day} data-datelabel={e.dateLabel} data-venue={e.venue}>
+              <span class="wp-day">{e.day} · {e.dateLabel}</span>
+              <span class="wp-name">{e.name}</span>
+              <span class="wp-venue">📍 {e.venue}</span>
+              <span class="wp-tag">{e.tag}</span>
+              <span class="wp-rsvp">Get on the list &rarr;</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- STEP 2 — guest-list form (event pre-filled) -->
+      <form class="wp-step" id="wp-form" hidden autocomplete="off" novalidate>
+        {events.length > 1 && <button type="button" class="wp-back" id="wp-back">&larr; Pick another night</button>}
+        <span class="wp-eyebrow">Guest list</span>
+        <h2 class="wp-title" id="wp-form-title">—</h2>
+        <p class="wp-sub" id="wp-form-sub">—</p>
+        <input class="wp-hp" type="text" id="wp-company" tabindex="-1" aria-hidden="true" autocomplete="off" />
+        <div class="wp-msg" id="wp-msg"></div>
+        <label class="wp-field"><span>Your name</span>
+          <input type="text" id="wp-name" autocapitalize="words" placeholder="Full name" /></label>
+        <label class="wp-field"><span>Phone / WhatsApp</span>
+          <input type="tel" id="wp-phone" inputmode="tel" placeholder="+91 ..." /></label>
+        <div class="wp-row">
+          <label class="wp-field"><span>Guests</span>
+            <select id="wp-guests">{['1','2','3','4','5','6','7','8+'].map((n) => <option value={n}>{n}</option>)}</select></label>
+          <label class="wp-field"><span>Entry</span>
+            <select id="wp-entry"><option value="">—</option><option value="couple">Couple</option><option value="stag">Stag</option><option value="mixed">Mixed group</option></select></label>
+        </div>
+        <button type="submit" class="wp-submit" id="wp-submit">Get on the guest list &rarr;</button>
+        <p class="wp-fine">We'll WhatsApp you the details before the night.</p>
+      </form>
+
+      <!-- STEP 3 — thanks -->
+      <div class="wp-step" id="wp-thanks" hidden>
+        <div class="wp-tick">✓</div>
+        <h2 class="wp-title">You're on the list!</h2>
+        <p class="wp-sub" id="wp-thanks-sub">—</p>
+        <button type="button" class="wp-done" id="wp-done">Done</button>
       </div>
     </div>
   </div>
 )}
 
-<script is:inline define:vars={{ key }}>
+<script is:inline define:vars={{ key, SUPABASE_URL, SUPABASE_KEY, NTFY_TOPIC }}>
   function initWeekendPopup() {
     if (!key) return;
     var ov = document.getElementById('wp-overlay');
@@ -41,14 +75,75 @@ const key = events.length ? 'vic_weekend_' + events.map((e) => e.date).join('_')
     var seen = false;
     try { seen = localStorage.getItem(key) === '1'; } catch (e) {}
     if (seen) return;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var chosen = null;
+
     function done() { try { localStorage.setItem(key, '1'); } catch (e) {} }
     function open() { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
     function close() { ov.classList.remove('open'); document.body.style.overflow = ''; done(); }
+    function show(step) { ['wp-pick', 'wp-form', 'wp-thanks'].forEach(function (s) { var el = $(s); if (el) el.hidden = s !== step; }); }
+
     setTimeout(open, 1200);
-    var c = document.getElementById('wp-close'); if (c) c.addEventListener('click', close);
+    $('wp-close').addEventListener('click', close);
     ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ov.classList.contains('open')) close(); });
-    [].forEach.call(ov.querySelectorAll('.wp-ev'), function (a) { a.addEventListener('click', done); });
+    if ($('wp-done')) $('wp-done').addEventListener('click', close);
+    if ($('wp-back')) $('wp-back').addEventListener('click', function () { show('wp-pick'); });
+
+    // Pick a night → open the form pre-filled for that event.
+    [].forEach.call(ov.querySelectorAll('.wp-ev'), function (btn) {
+      btn.addEventListener('click', function () {
+        chosen = { slug: btn.dataset.slug, name: btn.dataset.name, day: btn.dataset.day, dateLabel: btn.dataset.datelabel, venue: btn.dataset.venue };
+        $('wp-form-title').textContent = chosen.name;
+        $('wp-form-sub').textContent = chosen.day + ' ' + chosen.dateLabel + ' · ' + chosen.venue;
+        $('wp-msg').textContent = ''; $('wp-msg').className = 'wp-msg';
+        show('wp-form');
+        $('wp-name').focus();
+      });
+    });
+
+    $('wp-phone').addEventListener('input', function () { this.value = this.value.replace(/[^\d+\s()-]/g, ''); });
+
+    $('wp-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!chosen) { show('wp-pick'); return; }
+      if ($('wp-company').value) { show('wp-thanks'); return; } // honeypot
+      var name = $('wp-name').value.trim();
+      var phone = $('wp-phone').value.trim();
+      var msg = $('wp-msg');
+      if (name.length < 2) { msg.textContent = 'Please enter your name.'; msg.className = 'wp-msg err'; return; }
+      if (phone.replace(/\D/g, '').length < 8) { msg.textContent = 'Please enter a valid phone number.'; msg.className = 'wp-msg err'; return; }
+
+      var row = {
+        event: chosen.slug, name: name, phone: phone,
+        guests: parseInt($('wp-guests').value, 10) || 1,
+        entry_type: $('wp-entry').value || null,
+        source: 'homepage-popup',
+        user_agent: (navigator.userAgent || '').slice(0, 300)
+      };
+
+      var btn = $('wp-submit'); btn.disabled = true; btn.textContent = 'Adding you…';
+      fetch(SUPABASE_URL + '/rest/v1/event_rsvps', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(row)
+      }).then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        // Ping VIC (best-effort).
+        try {
+          var body = 'Name: ' + name + '\nPhone: ' + phone + '\nGuests: ' + row.guests + (row.entry_type ? '\nEntry: ' + row.entry_type : '') + '\n\n' + chosen.name + ' @ ' + chosen.venue;
+          navigator.sendBeacon('https://ntfy.sh/' + NTFY_TOPIC + '?title=' + encodeURIComponent('🎉 ' + chosen.name + ' RSVP — ' + name) + '&priority=4&tags=tada', new Blob([body], { type: 'text/plain' }));
+        } catch (e2) {}
+        $('wp-thanks-sub').textContent = "We've got you for " + chosen.name + ' on ' + chosen.dateLabel + '. We\'ll WhatsApp the details before the night.';
+        done();
+        show('wp-thanks');
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = 'Get on the guest list →';
+        msg.textContent = "Couldn't submit — please check your connection and try again.";
+        msg.className = 'wp-msg err';
+      });
+    });
   }
   document.addEventListener('astro:page-load', initWeekendPopup);
 </script>
@@ -60,29 +155,20 @@ const key = events.length ? 'vic_weekend_' + events.map((e) => e.date).join('_')
     align-items: center; justify-content: center; padding: 1.5rem;
   }
   .wp-overlay.open { display: flex; opacity: 1; }
-
   .wp-card {
-    position: relative; width: 100%; max-width: 560px;
+    position: relative; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
     background: #111; border: 1px solid #1e1e1e; border-top: 3px solid #c9a84c;
     border-radius: 12px; padding: 2rem 1.8rem 1.8rem; text-align: center;
     box-shadow: 0 32px 100px rgba(0,0,0,0.9);
   }
-
-  .wp-close {
-    position: absolute; top: 12px; right: 14px; background: transparent; border: none;
-    color: #888880; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; transition: color 0.15s;
-  }
+  .wp-close { position: absolute; top: 12px; right: 14px; background: transparent; border: none; color: #888880; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; transition: color 0.15s; }
   .wp-close:hover { color: #e0dccf; }
   .wp-eyebrow { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: #c9a84c; margin-bottom: 0.4rem; }
-  .wp-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 7vw, 2.8rem); letter-spacing: 0.03em; text-transform: uppercase; color: #fff; margin: 0 0 0.35rem; line-height: 1; }
+  .wp-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.9rem, 6vw, 2.6rem); letter-spacing: 0.03em; text-transform: uppercase; color: #fff; margin: 0 0 0.35rem; line-height: 1; }
   .wp-sub { color: rgba(255,255,255,0.55); font-size: 0.9rem; margin: 0 0 1.3rem; }
+
   .wp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-  .wp-ev {
-    display: flex; flex-direction: column; gap: 0.3rem; text-align: left;
-    padding: 1.2rem 1.2rem 1.1rem 1.35rem; border-radius: 10px; text-decoration: none;
-    background: #0d0d0d; border: 1px solid #1e1e1e; position: relative; overflow: hidden;
-    transition: transform 0.15s, border-color 0.15s;
-  }
+  .wp-ev { display: flex; flex-direction: column; gap: 0.3rem; text-align: left; padding: 1.2rem 1.2rem 1.1rem 1.35rem; border-radius: 10px; background: #0d0d0d; border: 1px solid #1e1e1e; position: relative; overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; font-family: inherit; }
   .wp-ev:hover { transform: translateY(-3px); }
   .wp-ev::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; }
   .wp-ev--ff::before { background: linear-gradient(180deg, #e0402a, #f5872a); }
@@ -95,6 +181,28 @@ const key = events.length ? 'vic_weekend_' + events.map((e) => e.date).join('_')
   .wp-venue { font-size: 0.8rem; color: rgba(255,255,255,0.55); }
   .wp-tag { font-size: 0.74rem; color: rgba(255,255,255,0.4); }
   .wp-rsvp { margin-top: 0.5rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; }
+
+  /* Form */
+  .wp-back { display: inline-block; background: none; border: none; color: #888880; font-size: 0.78rem; cursor: pointer; margin-bottom: 0.6rem; padding: 0; }
+  .wp-back:hover { color: #c9a84c; }
+  .wp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .wp-msg { display: none; }
+  .wp-msg.err { display: block; font-size: 0.82rem; color: #ff9a90; margin: 0 0 0.7rem; }
+  .wp-field { display: flex; flex-direction: column; gap: 0.3rem; text-align: left; margin-bottom: 0.7rem; }
+  .wp-field > span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .wp-field input, .wp-field select { background: #080808; border: 1px solid #2a2a2a; color: #fff; padding: 0.7rem 0.8rem; font-size: 0.92rem; font-family: inherit; border-radius: 5px; outline: none; transition: border-color 0.15s; width: 100%; }
+  .wp-field input:focus, .wp-field select:focus { border-color: #c9a84c; }
+  .wp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .wp-submit { margin-top: 0.5rem; width: 100%; background: #c9a84c; color: #000; border: none; padding: 0.9rem 1rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
+  .wp-submit:hover { background: #e2c475; }
+  .wp-submit:disabled { opacity: 0.6; cursor: default; }
+  .wp-fine { font-size: 0.68rem; color: rgba(255,255,255,0.4); text-align: center; margin: 0.6rem 0 0; }
+
+  /* Thanks */
+  .wp-tick { width: 54px; height: 54px; margin: 0 auto 0.6rem; border-radius: 50%; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.5); color: #c9a84c; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+  .wp-done { margin-top: 1rem; background: transparent; border: 1px solid #2a2a2a; color: #e0dccf; font-family: inherit; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.7rem 1.6rem; border-radius: 100px; cursor: pointer; }
+  .wp-done:hover { border-color: #c9a84c; color: #c9a84c; }
+
   @media (max-width: 480px) {
     .wp-grid { grid-template-columns: 1fr; }
     .wp-card { padding: 1.8rem 1.3rem 1.4rem; }
