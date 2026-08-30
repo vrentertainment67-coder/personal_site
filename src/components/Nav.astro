@@ -18,9 +18,10 @@ const isServices = startsWith('/weddings') || startsWith('/corporate') || starts
 
 const events = [
   { href: `${base}/chamatkar/`, label: 'Chamatkar' },
+  { href: `${base}/filmy-fridays/`, label: 'Filmy Fridays' },
   { href: `${base}/events/`, label: 'All Events' },
 ];
-const isEvents = startsWith('/events') || startsWith('/chamatkar');
+const isEvents = startsWith('/events') || startsWith('/chamatkar') || startsWith('/filmy-fridays');
 ---
 
 <header id="site-header">
@@ -114,6 +115,7 @@ const isEvents = startsWith('/events') || startsWith('/chamatkar');
     <a href={`${base}/corporate/`} aria-current={startsWith('/corporate') ? 'page' : undefined}>Corporate</a>
     <a href={`${base}/nightlife/`} aria-current={startsWith('/nightlife') ? 'page' : undefined}>Club &amp; Nightlife</a>
     <a href={`${base}/chamatkar/`} aria-current={is('/chamatkar') ? 'page' : undefined}>Chamatkar</a>
+    <a href={`${base}/filmy-fridays/`} aria-current={is('/filmy-fridays') ? 'page' : undefined}>Filmy Fridays</a>
     <a href={`${base}/thevicfix/`} aria-current={startsWith('/thevicfix') ? 'page' : undefined}>The VIC Fix</a>
     <a href={`${base}/remixes/`} aria-current={startsWith('/remixes') ? 'page' : undefined}>Remixes</a>
     <a href={`${base}/photos/`} aria-current={startsWith('/photos') ? 'page' : undefined}>Gallery</a>

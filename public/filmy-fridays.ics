@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DJ VIC//Filmy Fridays//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:filmy-fridays-2026-09-04@djvicofficial.com
+DTSTAMP:20260831T000000Z
+DTSTART:20260904T143000Z
+DTEND:20260904T193000Z
+SUMMARY:Filmy Fridays (Edition 01) — DJ VIC at No Limmits
+LOCATION:No Limmits Lounge & Club, Opposite Garuda Mall, Bengaluru
+DESCRIPTION:Bollywood audio-visual night with DJ VIC, support DJ Harsh. Guest list: https://djvicofficial.com/filmy-fridays/
+URL:https://djvicofficial.com/filmy-fridays/
+END:VEVENT
+END:VCALENDAR

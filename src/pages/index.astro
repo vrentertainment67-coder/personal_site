@@ -7,6 +7,14 @@ import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
 import EventPopup from '../components/EventPopup.jsx';
 import { getCollection } from 'astro:content';
 
+// This-weekend promo — the upcoming nights shown on the homepage with RSVP.
+// Each links to its own series page; a night auto-hides once its date passes.
+const _todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+const weekend = [
+  { day: 'Friday',   dateLabel: '4 Sep', date: '2026-09-04', name: 'Filmy Fridays',    venue: 'No Limmits', tag: 'Bollywood · audio-visual',    href: '/filmy-fridays/', theme: 'ff' },
+  { day: 'Saturday', dateLabel: '5 Sep', date: '2026-09-05', name: 'Chamatkar Vol. 5', venue: 'Happy Brew', tag: 'Bollywood × global · live AV', href: '/chamatkar/',     theme: 'ck' },
+].filter(e => e.date >= _todayISO);
+
 const BASE = '/images/rf/';
 
 // Build-time: pull reviews for AggregateRating rich snippets (mirrors the homepage strip).
@@ -189,6 +197,30 @@ const trustLogos = [
 
     <!-- ════════════════════════════════ HERO ════════════════════════════════ -->
     <HeroVideo />
+
+    <!-- ── THIS WEEKEND — both upcoming nights, pick your RSVP ── -->
+    {weekend.length > 0 && (
+      <section class="home-weekend" aria-label="Upcoming events">
+        <div class="hw-inner">
+          <div class="hw-head">
+            <span class="hw-eyebrow">{weekend.length > 1 ? 'This weekend · Two nights' : 'Next up'}</span>
+            <h2 class="hw-title">{weekend.length > 1 ? 'Pick your night' : 'Catch VIC live'}</h2>
+            <p class="hw-sub">{weekend.length > 1 ? 'Two rooms, two vibes — come to one, or make a weekend of it.' : 'Get on the guest list below.'}</p>
+          </div>
+          <div class="hw-grid">
+            {weekend.map((e) => (
+              <a href={e.href} class={`hw-card hw-card--${e.theme}`}>
+                <span class="hw-day">{e.day} · {e.dateLabel}</span>
+                <span class="hw-name">{e.name}</span>
+                <span class="hw-venue">📍 {e.venue}</span>
+                <span class="hw-tag">{e.tag}</span>
+                <span class="hw-rsvp">RSVP · Guest list &rarr;</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- ══════════════════════════ TRUST / CLIENT LOGOS ══════════════════════════ -->
     <section class="home-logos" aria-label="Performed at events for teams at these brands">
@@ -445,6 +477,28 @@ const trustLogos = [
   /* ══════════════════════════════════════════════
      SIGNATURE STATEMENT
      ══════════════════════════════════════════════ */
+  /* ── This weekend ── */
+  .home-weekend { padding: 3rem 1.5rem 1.5rem; }
+  .hw-inner { max-width: 1000px; margin-inline: auto; }
+  .hw-head { text-align: center; margin-bottom: 1.4rem; }
+  .hw-eyebrow { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: #c9a84c; margin-bottom: 0.5rem; }
+  .hw-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 6vw, 3rem); text-transform: uppercase; letter-spacing: 0.03em; color: #fff; margin: 0 0 0.4rem; line-height: 1; }
+  .hw-sub { color: rgba(255,255,255,0.55); font-size: 0.95rem; margin: 0; }
+  .hw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.4rem; }
+  .hw-card { display: flex; flex-direction: column; gap: 0.35rem; padding: 1.6rem 1.5rem 1.4rem 1.7rem; border-radius: 10px; text-decoration: none; border: 1px solid #1e1e1e; background: #111; position: relative; overflow: hidden; transition: transform 0.15s, border-color 0.15s; }
+  .hw-card:hover { transform: translateY(-3px); }
+  .hw-card::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; }
+  .hw-card--ff::before { background: linear-gradient(180deg, #e0402a, #f5872a); }
+  .hw-card--ff:hover { border-color: #5a2a1e; }
+  .hw-card--ck::before { background: linear-gradient(180deg, #c9a84c, #8a7433); }
+  .hw-card--ck:hover { border-color: #3a2e00; }
+  .hw-day { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #c9a84c; }
+  .hw-card--ff .hw-day { color: #f5872a; }
+  .hw-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 0.03em; text-transform: uppercase; color: #fff; line-height: 1; }
+  .hw-venue { font-size: 0.85rem; color: rgba(255,255,255,0.55); }
+  .hw-tag { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+  .hw-rsvp { margin-top: 0.6rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; }
+
   .home-logos {
     background: #0a0a0a;
     padding: 20px 0;

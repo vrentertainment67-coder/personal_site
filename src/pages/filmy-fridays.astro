@@ -1,0 +1,204 @@
+---
+// Filmy Fridays — the recurring Bollywood audio-visual club night at No Limmits.
+// Its own series page (like /chamatkar): current edition, RSVP, details, and the
+// recurring framing. Edition 01 is 4 Sep 2026. RSVPs write to event_rsvps under
+// `slug`, so they stay unified with the calendar entry.
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import EventRSVP from '../components/EventRSVP.jsx';
+
+const EVENT = {
+  slug: 'filmy-fridays-sep-2026',
+  title: 'Filmy Fridays',
+  edition: 'Edition 01',
+  venue: 'No Limmits Lounge & Club',
+  area: 'Opposite Garuda Mall, Bengaluru',
+  dateLabel: 'Friday, 4 September 2026',
+  timeLabel: '8:00 PM onwards',
+  doorsAt: '2026-09-04T20:00:00+05:30',
+  rsvpCutoff: '2026-09-04T20:00:00+05:30',
+  expiry: '2026-09-05T02:00:00+05:30',
+  headliner: 'DJ VIC',
+  support: 'DJ Harsh',
+  logo: '/images/filmy-fridays-logo.webp',
+  ics: '/filmy-fridays.ics',
+  mapsQuery: 'No Limmits Lounge and Club, Garuda Mall, Bangalore',
+};
+
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
+const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. A full Bollywood audio-visual night, every Friday. Get on the guest list.`;
+---
+<Layout
+  title="Filmy Fridays — Bollywood Night at No Limmits | DJ VIC"
+  description={desc}
+  ogTitle="Filmy Fridays — You're Invited"
+  ogDescription={`${EVENT.headliner} · ${EVENT.venue}. ${EVENT.dateLabel}. Bollywood, mixed live to picture. Tap to get on the guest list.`}
+  ogImage="https://djvicofficial.com/images/events/filmy-fridays-nolimmits-sep2026.jpg"
+  canonical="https://djvicofficial.com/filmy-fridays/"
+  schema={[
+    {
+      "@context": "https://schema.org", "@type": "Event", "name": "Filmy Fridays — Edition 01",
+      "startDate": "2026-09-04T20:00:00+05:30",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "location": { "@type": "Place", "name": EVENT.venue, "address": EVENT.area },
+      "performer": { "@type": "Person", "name": "DJ VIC" },
+      "description": desc, "organizer": { "@id": "https://djvicofficial.com/#person" }
+    }
+  ]}
+>
+  <Nav />
+
+  <main id="main-content" class="ff">
+    <!-- ── HERO ── -->
+    <section class="ff-hero">
+      <div class="ff-hero-inner">
+        <span class="ff-eyebrow">Guest List · {EVENT.edition}</span>
+        <img class="ff-logo" src={EVENT.logo} alt="Filmy Fridays" width="900" height="507" loading="eager" />
+        <p class="ff-tagline">Bollywood — mixed live to picture. Every Friday.</p>
+        <p class="ff-lineup"><span class="ff-feat">Featuring</span> {EVENT.headliner}<span class="ff-sup"> · Support: {EVENT.support}</span></p>
+        <div class="ff-meta">
+          <span>🗓 {EVENT.dateLabel}</span>
+          <span>🕗 {EVENT.timeLabel}</span>
+          <span>📍 {EVENT.venue}</span>
+        </div>
+        <div class="ff-ctas">
+          <a href="#rsvp" class="ff-cta">Get on the guest list ↓</a>
+          <a class="ff-cta ff-cta--ghost" href={EVENT.ics} download>＋ Add to calendar</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LADIES ── -->
+    <section class="ff-ladies">
+      <span class="ff-ladies-label">Celebrating the ladies</span>
+      <p>Every lady walks in to <b>three drink vouchers</b> at the door — redeemable for any IML drink between <b>9:30 and 11 PM</b>. Our way of raising a glass to the women in the room.</p>
+    </section>
+
+    <!-- ── RSVP ── -->
+    <section id="rsvp" class="ff-rsvp">
+      <div class="ff-sec-head">
+        <span class="ff-kicker">RSVP</span>
+        <h2>Get on the guest list</h2>
+        <p class="ff-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
+        <p class="ff-fomo"><span class="ff-dot"></span><strong>Edition 01</strong> · limited guest-list spots · <span id="ff-countdown" data-doors={EVENT.doorsAt}>counting…</span></p>
+      </div>
+      <EventRSVP client:load
+        slug={EVENT.slug}
+        title={EVENT.title}
+        venue={EVENT.venue}
+        area={EVENT.area}
+        dateLabel={EVENT.dateLabel}
+        timeLabel={EVENT.timeLabel}
+        rsvpCutoff={EVENT.rsvpCutoff}
+        expiry={EVENT.expiry}
+      />
+    </section>
+
+    <!-- ── DETAILS ── -->
+    <section class="ff-details">
+      <div class="ff-sec-head"><span class="ff-kicker">The details</span><h2>Know before you go</h2></div>
+      <div class="ff-dgrid">
+        <div class="ff-dcard"><span class="ff-dlabel">When</span><span class="ff-dval">{EVENT.dateLabel}</span><span class="ff-dsub">{EVENT.timeLabel}</span><a class="ff-dlink" href={EVENT.ics} download>＋ Add to calendar</a></div>
+        <div class="ff-dcard"><span class="ff-dlabel">Where</span><span class="ff-dval">{EVENT.venue}</span><span class="ff-dsub">{EVENT.area}</span><a class="ff-dlink" href={mapsHref} target="_blank" rel="noopener noreferrer">Open in Maps →</a></div>
+        <div class="ff-dcard"><span class="ff-dlabel">Sound</span><span class="ff-dval">Bollywood · Audio-Visual</span><span class="ff-dsub">Mixed live to visuals all night</span></div>
+        <div class="ff-dcard"><span class="ff-dlabel">Line-up</span><span class="ff-dval">{EVENT.headliner}</span><span class="ff-dsub">Support: {EVENT.support}</span></div>
+      </div>
+    </section>
+
+    <!-- ── RECURRING ── -->
+    <section class="ff-recurring">
+      <span class="ff-kicker">The residency</span>
+      <h2>A new Friday, every Friday</h2>
+      <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 01 is the first of many. Get on the list once, and we'll tell you when the next one drops.</p>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  function ffInit() {
+    const cd = document.getElementById('ff-countdown');
+    if (cd && cd.dataset.doors && !cd.dataset.bound) {
+      cd.dataset.bound = '1';
+      const target = new Date(cd.dataset.doors).getTime();
+      const tick = () => {
+        const diff = target - Date.now();
+        if (diff <= 0) { cd.textContent = 'happening now'; return; }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        cd.textContent = d > 0 ? `${d}d ${h}h to doors` : `${h}h ${m}m to doors`;
+      };
+      tick();
+      setInterval(tick, 60000);
+    }
+  }
+  document.addEventListener('astro:page-load', ffInit);
+</script>
+
+<style>
+  .ff {
+    --ff-red: #e0402a;
+    --ff-orange: #f5872a;
+    --ff-gold: #ffcf5c;
+    --ff-ink: #0a0806;
+    --ff-card: #141009;
+    --ff-line: #2a2114;
+    --ff-off: #f0e9dd;
+    --ff-mut: #a89a86;
+    color: var(--ff-off);
+  }
+  .ff section { max-width: 900px; margin-inline: auto; }
+  .ff h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: 0.03em; color: #fff; text-transform: uppercase; margin: 0 0 0.5rem; }
+  .ff-kicker { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ff-orange); margin-bottom: 0.4rem; }
+  .ff-sub { color: var(--ff-mut); font-size: 0.95rem; line-height: 1.6; max-width: 34rem; }
+
+  /* Hero */
+  .ff-hero { padding: 6rem 1.5rem 3rem; text-align: center; }
+  .ff-hero-inner { max-width: 720px; margin-inline: auto; }
+  .ff-eyebrow { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ff-gold); margin-bottom: 1.2rem; }
+  .ff-logo { width: min(100%, 460px); height: auto; display: block; margin: 0 auto 1.2rem; filter: drop-shadow(0 8px 40px rgba(224,64,42,0.35)); }
+  .ff-tagline { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1rem, 3vw, 1.25rem); color: var(--ff-off); margin: 0 0 1rem; }
+  .ff-lineup { font-size: 1rem; color: var(--ff-off); margin: 0 0 1.4rem; }
+  .ff-feat { color: var(--ff-mut); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; }
+  .ff-sup { color: var(--ff-mut); }
+  .ff-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; justify-content: center; color: var(--ff-mut); font-size: 0.9rem; margin-bottom: 1.8rem; }
+  .ff-ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; }
+  .ff-cta { display: inline-block; padding: 0.9rem 1.8rem; border-radius: 4px; font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; background: linear-gradient(90deg, var(--ff-red), var(--ff-orange)); color: #150a04; border: 1px solid transparent; transition: transform 0.15s; }
+  .ff-cta:hover { transform: translateY(-1px); }
+  .ff-cta--ghost { background: transparent; color: var(--ff-off); border-color: var(--ff-line); }
+  .ff-cta--ghost:hover { border-color: var(--ff-orange); color: var(--ff-gold); }
+
+  /* Ladies */
+  .ff-ladies { margin: 1rem auto 3rem; padding: 1.4rem 1.6rem; background: linear-gradient(180deg, rgba(245,135,42,0.10), rgba(224,64,42,0.04)); border: 1px solid rgba(245,135,42,0.3); border-radius: 8px; text-align: center; }
+  .ff-ladies-label { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ff-gold); margin-bottom: 0.6rem; }
+  .ff-ladies p { margin: 0; color: var(--ff-off); line-height: 1.65; font-size: 0.95rem; max-width: 40rem; margin-inline: auto; }
+
+  /* Sections */
+  .ff-rsvp, .ff-details, .ff-recurring { padding: 2.5rem 1.5rem; }
+  .ff-sec-head { text-align: center; margin-bottom: 1.6rem; }
+  .ff-sec-head .ff-sub { margin-inline: auto; }
+  .ff-fomo { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: var(--ff-mut); }
+  .ff-fomo strong { color: var(--ff-off); }
+  .ff-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ff-red); box-shadow: 0 0 0 0 rgba(224,64,42,0.6); animation: ffpulse 2s infinite; }
+  @keyframes ffpulse { 0% { box-shadow: 0 0 0 0 rgba(224,64,42,0.5); } 70% { box-shadow: 0 0 0 8px rgba(224,64,42,0); } 100% { box-shadow: 0 0 0 0 rgba(224,64,42,0); } }
+
+  /* Details grid */
+  .ff-dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
+  .ff-dcard { background: var(--ff-card); border: 1px solid var(--ff-line); border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.25rem; }
+  .ff-dlabel { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ff-orange); }
+  .ff-dval { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 600; color: #fff; }
+  .ff-dsub { font-size: 0.85rem; color: var(--ff-mut); }
+  .ff-dlink { margin-top: 0.5rem; font-size: 0.8rem; color: var(--ff-gold); text-decoration: none; }
+  .ff-dlink:hover { text-decoration: underline; }
+
+  /* Recurring */
+  .ff-recurring { text-align: center; }
+  .ff-recurring p { color: var(--ff-mut); line-height: 1.7; max-width: 40rem; margin: 0.5rem auto 0; }
+
+  @media (max-width: 640px) {
+    .ff-hero { padding: 4.5rem 1.25rem 2rem; }
+  }
+</style>
