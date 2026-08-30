@@ -82,7 +82,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
       <div class="hero-inner">
         <span class="hero-label">Dates &amp; Availability</span>
         <h1>Events</h1>
-        <p class="hero-sub"><b style="color:#39b56a">Green</b> means I'm open · <b style="color:#e0574a">red</b> means booked.<br/>Tap a free date to enquire, or a booked date to see what's on.</p>
+        <p class="hero-sub"><b style="color:#39b56a">Green</b> = open · <b style="color:#e0b13c">amber</b> = on hold · <b style="color:#e0574a">red</b> = booked.<br/>Tap a free date to enquire, or a booked night to see what's on.</p>
       </div>
     </section>
 
@@ -117,6 +117,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
 
       <div class="cal-legend">
         <span class="leg-item"><span class="leg-dot leg-dot--free"></span> Available</span>
+        <span class="leg-item"><span class="leg-dot leg-dot--tentative"></span> On hold</span>
         <span class="leg-item"><span class="leg-dot leg-dot--booked"></span> Booked</span>
       </div>
 
@@ -274,7 +275,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
       if (isToday) cls.push('cal-cell--today');
       if (isPast)  cls.push('cal-cell--past');
       if (event && !event.isPrivate) cls.push('cal-cell--event');
-      if (event &&  event.isPrivate) cls.push('cal-cell--private');
+      if (event &&  event.isPrivate) { cls.push('cal-cell--private'); if (event.tentative) cls.push('cal-cell--tentative'); }
       if (available) cls.push('cal-cell--available');
       cell.className = cls.join(' ');
 
@@ -287,12 +288,13 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
         // Booked — red marker. Public bookings open details; private just block the date.
         hasBooking = true;
         const dot = document.createElement('span');
-        dot.className = event.isPrivate ? 'cal-dot cal-dot--booked cal-dot--dim' : 'cal-dot cal-dot--booked';
+        dot.className = !event.isPrivate ? 'cal-dot cal-dot--booked'
+          : (event.tentative ? 'cal-dot cal-dot--tentative' : 'cal-dot cal-dot--booked cal-dot--dim');
         cell.appendChild(dot);
 
         const label = document.createElement('span');
         label.className = 'cal-label';
-        label.textContent = event.isPrivate ? 'Booked' : event.title;
+        label.textContent = event.isPrivate ? (event.tentative ? 'On hold' : 'Booked') : event.title;
         cell.appendChild(label);
 
         if (!event.isPrivate) {
@@ -474,8 +476,9 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
     .then(rows => {
       let added = false;
       (rows || []).forEach(row => {
-        const d = typeof row === 'string' ? row : (row && row.d);
-        if (d && !eventMap[d]) { eventMap[d] = { date: d, title: 'Booked', isPrivate: true }; added = true; }
+        const d = (row && typeof row === 'object') ? row.d : row;
+        const tentative = (row && typeof row === 'object') ? !!row.tentative : false;
+        if (d && !eventMap[d]) { eventMap[d] = { date: d, title: tentative ? 'On hold' : 'Booked', isPrivate: true, tentative: tentative }; added = true; }
       });
       if (added) renderCalendar(currentYear, currentMonth);
     })
@@ -699,6 +702,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
   }
   #calendar-section .cal-legend .leg-dot--free { background: #39b56a; }
   #calendar-section .cal-legend .leg-dot--booked { background: #e0574a; }
+  #calendar-section .cal-legend .leg-dot--tentative { background: #e0b13c; }
 
   /* Date number */
   #cal-grid .cal-num {
@@ -739,6 +743,9 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
   #cal-grid .cal-dot--booked { background: #e0574a; }
   #cal-grid .cal-dot--booked.cal-dot--dim { background: #8a3a33; }
   #cal-grid .cal-dot--free { background: #39b56a; }
+  #cal-grid .cal-dot--tentative { background: #e0b13c; }
+  #cal-grid .cal-cell--tentative:not(.cal-cell--past) { background: rgba(224,177,60,0.08); border-color: #4a3c1a; }
+  #cal-grid .cal-cell--tentative .cal-label { color: #cda94a; }
 
   /* ── No-events message ────────────────────────────── */
   #cal-no-events {
