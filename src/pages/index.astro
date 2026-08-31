@@ -12,7 +12,7 @@ import { getCollection } from 'astro:content';
 const _todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const weekend = [
   { day: 'Friday',   dateLabel: '4 Sep', date: '2026-09-04', name: 'Filmy Fridays',    venue: 'No Limmits', tag: 'Bollywood · audio-visual',    href: '/filmy-fridays/', theme: 'ff', slug: 'filmy-fridays-sep-2026' },
-  { day: 'Saturday', dateLabel: '5 Sep', date: '2026-09-05', name: 'Chamatkar Vol. 5', venue: 'Happy Brew', tag: 'Bollywood × global · live AV', href: '/chamatkar/',     theme: 'ck', slug: 'chamatkar-vol5' },
+  { day: 'Saturday', dateLabel: '12 Sep', date: '2026-09-12', name: 'Chamatkar Vol. 5', venue: 'Happy Brew', tag: 'Bollywood × global · live AV', href: '/chamatkar/',     theme: 'ck', slug: 'chamatkar-vol5' },
 ].filter(e => e.date >= _todayISO);
 
 const BASE = '/images/rf/';
