@@ -182,15 +182,29 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
     const source = localStorage.getItem("vic_source") || "Direct";
     setSubmitting(true);
+    // STOPGAP until the DB is migrated (see supabase/booking_optional_date_wedding.sql):
+    //  • submit_booking's type whitelist doesn't include "wedding" yet → send "other" + tag the message.
+    //  • event_date is still NOT NULL → a date-less lead can't be null yet, so send today's date as a
+    //    placeholder AND tag the message "flexible". Once the ALTER runs, both fall back to the clean path.
+    const dbMigrated = false; // flip to true after running the SQL
+    const evType = (!dbMigrated && form.type === "wedding") ? "other" : form.type;
+    const realDate = form.day ? ymd(cursor.y, cursor.m, form.day) : null;
+    const today = new Date();
+    const evDate = realDate || (dbMigrated ? null : ymd(today.getFullYear(), today.getMonth(), today.getDate()));
+    const tags = [];
+    if (!dbMigrated && form.type === "wedding") tags.push("Event type: Wedding");
+    if (!dbMigrated && !realDate) tags.push("Preferred date: flexible / not set");
+    const msgBody = (tags.length ? tags.join("\n") + "\n" : "")
+      + (form.message ? form.message + "\n\n" : (tags.length ? "\n" : "")) + `Source: ${source}`;
     const { error } = await supabase.rpc("submit_booking", {
-      p_name: form.name, p_contact: form.contact, p_event_type: form.type,
-      p_event_date: form.day ? ymd(cursor.y, cursor.m, form.day) : null,
+      p_name: form.name, p_contact: form.contact, p_event_type: evType,
+      p_event_date: evDate,
       p_venue: form.venue || null, p_city: form.city || null,
       p_budget: form.budget,
-      p_message: (form.message ? form.message + "\n\n" : "") + `Source: ${source}`,
+      p_message: msgBody,
     });
     setSubmitting(false);
-    if (error) { showToast(error.message || "Could not send request."); return; }
+    if (error) { showToast("Couldn't send just now — tap “message on WhatsApp” below and I'll sort it out."); return; }
     localStorage.setItem("vic_last_book", String(Date.now()));
     // GA4 lead conversion — fired only on a real, completed submission (see Analytics.astro)
     if (typeof window !== "undefined" && typeof window.trackLead === "function") window.trackLead(form.type);
