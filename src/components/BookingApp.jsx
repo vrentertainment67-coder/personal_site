@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Calendar, CheckCircle2, XCircle, Clock, MapPin, Music2, Sparkles,
   Disc3, PartyPopper, ArrowRight, ChevronLeft, ChevronRight, LogOut, Loader2,
-  Briefcase, Music,
+  Briefcase, Music, Heart,
 } from "lucide-react";
 
 // ============================================================
@@ -22,15 +22,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const C = { gold: "#C9A84C" };
 const EVENT_TYPES = [
+  { key: "wedding", label: "Wedding", icon: Heart },
+  { key: "corporate", label: "Corporate", icon: Briefcase },
+  { key: "nightlife", label: "Club", icon: Disc3 },
   { key: "sangeet", label: "Sangeet", icon: Sparkles },
-  { key: "nightlife", label: "Nightlife / Club", icon: Disc3 },
   { key: "private", label: "Private Event", icon: Music2 },
   { key: "festival", label: "Festival", icon: PartyPopper },
-  { key: "corporate", label: "Corporate", icon: Briefcase },
   { key: "other", label: "Other", icon: Music },
 ];
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹2L", "₹2L+"];
 const SVC_COPY = {
+  wedding: "Weddings & receptions — the grand entrance, the first dance and the family floor, mixed live to picture.",
   sangeet: "Wedding sangeet & receptions — Bollywood, desi house, the family floor-fillers.",
   nightlife: "Club & lounge nights — Bollywood, Hip-Hop, House, Commercial. Resident-grade energy.",
   private: "Birthdays, anniversaries, brand parties — read the room, build the arc.",
@@ -154,10 +156,14 @@ export default function App() {
 // ------------------------------------------------------------
 function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatus, loadingCal, reload, showToast }) {
   const [form, setForm] = useState({
-    name: "", contact: "", type: "nightlife", day: null,
+    name: "", contact: "", type: "", day: null,
     venue: "", city: "", budget: BUDGETS[1], message: "", hp: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // WhatsApp CTA — same visual weight as Submit; prefilled from whatever's typed.
+  const waMsg = `Hi VIC! I'd like to book ${form.type ? typeLabel(form.type) + " — " : ""}DJ VIC${form.day ? ` for ${MONTHS[cursor.m]} ${form.day}` : ""}${form.city ? `, ${form.city}` : ""}.`;
+  const waHref = `https://wa.me/919611711677?text=${encodeURIComponent(waMsg)}`;
 
   const pickDate = (day) => {
     if (dateStatus(day) !== "open") return;
@@ -166,11 +172,11 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
   };
 
   const submit = async () => {
-    if (!form.name || !form.contact || !form.day) {
-      showToast("Add your name, contact, and pick an available date."); return;
+    if (!form.name || !form.contact || !form.type) {
+      showToast("Add your name, WhatsApp number, and pick an event type."); return;
     }
     // Honeypot: bots fill the hidden field. Fake a success so we don't reveal it.
-    if (form.hp) { showToast(`Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.`); return; }
+    if (form.hp) { showToast("Request sent. Vic will confirm soon."); return; }
     // Light client cooldown (the hard limit is the DB rate-limit trigger).
     const last = Number(localStorage.getItem("vic_last_book") || 0);
     if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
@@ -178,7 +184,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     setSubmitting(true);
     const { error } = await supabase.rpc("submit_booking", {
       p_name: form.name, p_contact: form.contact, p_event_type: form.type,
-      p_event_date: ymd(cursor.y, cursor.m, form.day),
+      p_event_date: form.day ? ymd(cursor.y, cursor.m, form.day) : null,
       p_venue: form.venue || null, p_city: form.city || null,
       p_budget: form.budget,
       p_message: (form.message ? form.message + "\n\n" : "") + `Source: ${source}`,
@@ -190,11 +196,11 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     if (typeof window !== "undefined" && typeof window.trackLead === "function") window.trackLead(form.type);
     notifyVic({
       name: form.name, contact: form.contact, type: form.type,
-      dateStr: `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}`,
+      dateStr: form.day ? `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}` : "Flexible / not set",
       venue: form.venue, city: form.city, budget: form.budget, message: form.message, source,
     });
-    showToast(`Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.`);
-    setForm({ name: "", contact: "", type: "nightlife", day: null, venue: "", city: "", budget: BUDGETS[1], message: "", hp: "" });
+    showToast(form.day ? `Request sent for ${MONTHS[cursor.m]} ${form.day}. Vic will confirm soon.` : "Request sent — Vic will confirm soon.");
+    setForm({ name: "", contact: "", type: "", day: null, venue: "", city: "", budget: BUDGETS[1], message: "", hp: "" });
     reload();
   };
 
@@ -277,38 +283,41 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
             value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })}
             style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
           />
-          <div className="field-row">
-            <div className="field"><label>Your name</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name / venue" /></div>
-            <div className="field"><label>Phone or email</label>
-              <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="So I can confirm" /></div>
-          </div>
-          <div className="field"><label>Type of set</label>
+          <div className="field"><label>Event type <span className="req">*</span></label>
             <div className="chips">
               {EVENT_TYPES.map((t) => (
-                <button key={t.key} className={form.type === t.key ? "chip on" : "chip"} onClick={() => setForm({ ...form, type: t.key })}>{t.label}</button>
+                <button key={t.key} type="button" className={form.type === t.key ? "chip on" : "chip"} onClick={() => setForm({ ...form, type: t.key })}>{t.label}</button>
               ))}
             </div>
           </div>
           <div className="field-row">
-            <div className="field"><label>Venue</label>
+            <div className="field"><label>Your name <span className="req">*</span></label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></div>
+            <div className="field"><label>WhatsApp <span className="req">*</span></label>
+              <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Number I can confirm on" /></div>
+          </div>
+          <div className="field-row">
+            <div className="field"><label>Venue <span className="opt">(optional)</span></label>
               <input value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} placeholder="Where's the party?" /></div>
-            <div className="field"><label>City</label>
+            <div className="field"><label>City <span className="opt">(optional)</span></label>
               <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" /></div>
           </div>
           <div className="field-row">
-            <div className="field"><label>Date</label>
-              <div className="date-pill">{form.day ? `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}` : "— pick above —"}</div></div>
-            <div className="field"><label>Budget</label>
+            <div className="field"><label>Date <span className="opt">(optional)</span></label>
+              <div className="date-pill">{form.day ? `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}` : "Pick above — or leave blank"}</div></div>
+            <div className="field"><label>Budget <span className="opt">(optional)</span></label>
               <select value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })}>
                 {BUDGETS.map((b) => <option key={b}>{b}</option>)}
               </select></div>
           </div>
-          <div className="field"><label>Anything else</label>
+          <div className="field"><label>Anything else <span className="opt">(optional)</span></label>
             <textarea rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Guest count, vibe, timings, special requests…" /></div>
-          <button className="btn-primary big" onClick={submit} disabled={submitting}>
-            {submitting ? <><Loader2 className="spin" size={16} /> Sending…</> : <>Send booking request <ArrowRight size={16} /></>}
-          </button>
+          <div className="form-cta-row">
+            <button className="btn-primary big" onClick={submit} disabled={submitting}>
+              {submitting ? <><Loader2 className="spin" size={16} /> Sending…</> : <>Send booking request <ArrowRight size={16} /></>}
+            </button>
+            <a className="btn-wa big" href={waHref} target="_blank" rel="noopener noreferrer" data-loc="book_form">Or message on WhatsApp</a>
+          </div>
         </div>
       </section>
 
@@ -488,6 +497,13 @@ const styles = `
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(255,59,59,0.35);}
 .btn-primary:disabled{opacity:.6;cursor:default;transform:none;}
 .btn-primary.big{width:100%;justify-content:center;padding:16px;font-size:15px;margin-top:8px;}
+.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#07210f;text-decoration:none;font-weight:700;font-size:14px;padding:13px 24px;border-radius:8px;border:none;cursor:pointer;transition:transform .2s,filter .2s;box-shadow:0 8px 30px rgba(37,211,102,0.22);}
+.btn-wa:hover{filter:brightness(1.05);transform:translateY(-2px);box-shadow:0 12px 36px rgba(37,211,102,0.32);}
+.btn-wa.big{padding:16px;font-size:15px;}
+.form-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.form-cta-row .btn-primary.big,.form-cta-row .btn-wa.big{flex:1 1 200px;width:auto;margin-top:0;}
+.req{color:var(--red);}
+.opt{color:var(--grey);font-weight:400;font-size:.85em;}
 .btn-ghost{display:inline-flex;align-items:center;color:var(--off);text-decoration:none;font-weight:500;font-size:14px;padding:13px 24px;border-radius:8px;border:1px solid var(--line);transition:.2s;}
 .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
 .cred-strip{display:flex;align-items:center;justify-content:center;gap:26px;margin:64px auto 0;padding:22px;max-width:560px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
