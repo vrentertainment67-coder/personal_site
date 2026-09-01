@@ -190,6 +190,19 @@ const PAST_EDITIONS = [
         </div>
       ))}
     </section>
+
+    <section class="ck-book">
+      <div class="ck-sec-head">
+        <span class="ck-kicker">Want this at your event?</span>
+        <h2>The Chamatkar sound, booked private</h2>
+        <p class="ck-sub">
+          Chamatkar is DJ VIC's Bollywood <a href="/audio-visual-dj/">audio-visual format</a> — the same
+          live, visuals-synced show he brings to <a href="/weddings/">weddings and sangeets</a> and
+          <a href="/corporate/">corporate nights</a> across India.
+        </p>
+        <a href="/book/" class="ck-cta">Check a date &amp; enquire ↓</a>
+      </div>
+    </section>
   </main>
 
   <Footer />
@@ -275,7 +288,10 @@ const PAST_EDITIONS = [
   .ck-dcard--theme { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.06); }
 
   /* ── Section shells ── */
-  .ck-rsvp, .ck-recap, .ck-details, .ck-past { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); }
+  .ck-rsvp, .ck-recap, .ck-details, .ck-past, .ck-book { max-width: 1080px; margin: 0 auto; padding: clamp(3rem, 6vw, 4.5rem) clamp(16px, 4vw, 40px); }
+  .ck-book { border-top: 1px solid #141414; text-align: center; }
+  .ck-book .ck-cta { margin-top: 1.4rem; }
+  .ck-sub a { color: var(--gold, #c9a84c); text-decoration: underline; text-underline-offset: 3px; }
   .ck-rsvp { border-top: 1px solid #141414; }
   .ck-sec-head { text-align: center; max-width: 640px; margin: 0 auto clamp(1.6rem, 3vw, 2.2rem); }
   .ck-kicker { font-family: 'Bebas Neue', sans-serif; font-size: .78rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold, #c9a84c); }
