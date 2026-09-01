@@ -3,17 +3,18 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import EmailCapture from '../components/EmailCapture.jsx';
+import { siteConfig as cfg } from '../config/siteConfig';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const stats = [
-  { num: '2005', label: 'Performing Since', count: false },
-  { num: '18', label: 'Countries', count: true },
+  { num: String(cfg.careerStart), label: 'Performing Since', count: false },
+  { num: String(cfg.countries), label: 'Countries', count: true },
   { num: '1400+', label: 'Nights Performed', count: true },
   { num: '50+', label: 'VIC Fix Episodes', count: true },
 ];
 
 const journey = [
-  { year: '2005', title: 'The First Booth', body: 'VIC starts spinning across Bangalore’s club circuit — learning to read a room one night at a time.' },
+  { year: String(cfg.careerStart), title: 'The First Booth', body: 'VIC starts spinning across Bangalore’s club circuit — learning to read a room one night at a time.' },
   { year: '2010s', title: 'Going International', body: 'Residencies and guest sets take the sound across 18 countries, from intimate lounges to open-air stages.' },
   { year: 'Today', title: 'Audio-Visual Performance', body: 'A signature format that fuses music, light and visuals — built for weddings, brands and festivals alike.' },
   { year: 'Now', title: 'The VIC Fix', body: 'Long-form conversations with the artists, founders and characters who shaped the scene — 50+ episodes and counting.' },
@@ -22,7 +23,7 @@ const journey = [
 
 <Layout
   title="About DJ VIC | International DJ, Producer & Remixer — Bangalore"
-  description="The story of DJ VIC — 20+ years, 18 countries, 1400+ performances. International DJ, producer and Universal Music partner based in Bangalore, known for audio-visual performances."
+  description={`The story of DJ VIC — ${cfg.yearsActive}+ years, ${cfg.countries} countries, ${cfg.performances} performances. International DJ, producer and Universal Music partner based in Bangalore, known for audio-visual performances.`}
   schema={[
     {
       "@context": "https://schema.org",
@@ -49,7 +50,7 @@ const journey = [
       <h1 class="fx-split">Every set tells a story. This one's mine.</h1>
       <p class="tagline">DJ · Producer · Remixer</p>
       <p class="about-hero-sub">
-        Twenty years on stage. Eighteen countries. Over fourteen hundred nights —
+        On stage since {cfg.careerStart}. Eighteen countries. Over fourteen hundred nights —
         and a signature audio-visual format that turns a set into a performance.
       </p>
       <a href={`${base}/book/`} class="cta-btn cta-btn--gold magnetic" data-mag="0.25">Book DJ VIC &rarr;</a>
@@ -73,8 +74,8 @@ const journey = [
         <div class="bio-copy fx-reveal" data-fx-delay="1">
           <p>
             VIC is an international DJ, producer and remixer based in Bangalore — a Universal Music
-            partner whose work spans Bollywood, house, hip-hop and commercial dance. Since 2005 he has
-            performed across 18 countries and more than 1,400 nights, building a reputation for sets that
+            partner whose work spans Bollywood, house, hip-hop and commercial dance. Since {cfg.careerStart} he has
+            performed across {cfg.countries} countries and more than 1,400 nights, building a reputation for sets that
             read the room and never let the energy drop.
           </p>
           <p>
@@ -104,7 +105,7 @@ const journey = [
 
     <section id="about-journey" class="section-alt">
       <div class="section-label fx-reveal">The Journey</div>
-      <h2 class="fx-reveal" data-fx-delay="1">Two decades, one through-line.</h2>
+      <h2 class="fx-reveal" data-fx-delay="1">Nearly two decades, one through-line.</h2>
       <div class="journey-grid">
         {journey.map((j, i) => (
           <div class="journey-item fx-reveal" data-fx-delay={(i % 4) + 1}>

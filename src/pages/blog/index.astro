@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import { getCollection } from 'astro:content';
+import { siteConfig as cfg } from '../../config/siteConfig';
 
 const posts = (await getCollection('blog')).sort((a, b) => {
   const da = a.data.publishDate ?? (a.data.date ? new Date(a.data.date) : new Date(0));
@@ -15,7 +16,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 <Layout
   title="DJ VIC Blog — Nightlife, Music & Event Insights"
-  description="Insights on nightlife, DJ culture, weddings, and events from DJ VIC — Bangalore's leading international DJ with 20+ years of experience."
+  description={`Insights on nightlife, DJ culture, weddings, and events from DJ VIC — Bangalore's leading international DJ with ${cfg.yearsActive}+ years of experience.`}
   canonical="https://djvicofficial.com/blog/"
   schema={[
     {

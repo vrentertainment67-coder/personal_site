@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
+import { siteConfig as cfg } from '../config/siteConfig';
 
 // Section 7 — Client reviews (fallback until DB-driven; managed in /admin → Reviews)
 const weddingReviews = [
@@ -35,7 +36,7 @@ const avVideoId = "3FJl0cbpOYY";
 
 <Layout
   title="Wedding DJ Bangalore | Luxury Wedding DJ | DJ VIC"
-  description="DJ VIC performs at weddings across India — sangeet nights, receptions, and destination weddings. 20+ years, 300+ weddings performed. Enquire now."
+  description={`DJ VIC performs at weddings across India — sangeet nights, receptions, and destination weddings. ${cfg.yearsActive}+ years, ${cfg.weddings} weddings performed. Enquire now.`}
   ogTitle="DJ VIC — Wedding DJ · Sangeet, Reception & Destination Weddings Across India"
   ogDescription="Premium wedding DJ for celebrations across India and internationally. Sangeet nights, cocktail hours, receptions, and destination weddings. Trusted at JW Marriott, Leela, Taj and beyond."
   ogImage="https://djvicofficial.com/images/og-weddings.jpg"
@@ -96,7 +97,7 @@ const avVideoId = "3FJl0cbpOYY";
       <div class="hero-inner">
         <div class="section-label">Wedding DJ</div>
         <h1>Your Love Story,<br/>Our Soundtrack</h1>
-        <p class="hero-sub">20+ years of unforgettable celebrations across India &amp; beyond.</p>
+        <p class="hero-sub">{cfg.yearsActive}+ years of unforgettable celebrations across India &amp; beyond.</p>
         <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC for Your Wedding</a>
       </div>
     </section>
@@ -299,15 +300,15 @@ const avVideoId = "3FJl0cbpOYY";
 
         <div class="destination-stats">
           <div class="d-stat">
-            <span class="d-num">18</span>
+            <span class="d-num">{cfg.countries}</span>
             <span class="d-lbl">Countries Performed In</span>
           </div>
           <div class="d-stat">
-            <span class="d-num">300+</span>
+            <span class="d-num">{cfg.weddings}</span>
             <span class="d-lbl">Weddings Performed</span>
           </div>
           <div class="d-stat">
-            <span class="d-num">20+</span>
+            <span class="d-num">{cfg.yearsActive}+</span>
             <span class="d-lbl">Years of Experience</span>
           </div>
         </div>
@@ -362,7 +363,7 @@ const avVideoId = "3FJl0cbpOYY";
           </details>
           <details class="faq-item">
             <summary>What makes DJ VIC different from other wedding DJs?</summary>
-            <p>The <a href="/audio-visual-dj/" style="color:var(--gold);text-decoration:underline;text-underline-offset:3px;">audio-visual format</a> — original music compositions synced with custom visuals, developed since 2007. Combined with 300+ weddings across 20+ years, and a reputation built on couples who trust VIC to be the emotional anchor of their celebration, not just background music.</p>
+            <p>The <a href="/audio-visual-dj/" style="color:var(--gold);text-decoration:underline;text-underline-offset:3px;">audio-visual format</a> — original music compositions synced with custom visuals, developed since 2007. Combined with {cfg.weddings} weddings across {cfg.yearsActive}+ years, and a reputation built on couples who trust VIC to be the emotional anchor of their celebration, not just background music.</p>
           </details>
         </div>
       </div>

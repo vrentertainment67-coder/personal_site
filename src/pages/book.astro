@@ -11,10 +11,11 @@ import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import BookingApp from "../components/BookingApp.jsx";
+import { siteConfig as cfg } from "../config/siteConfig";
 
 const title = "Book DJ VIC — Live Availability & Booking";
 const description =
-  "Check DJ Vic's live availability and send a booking request for your sangeet, nightlife, private event, or festival. 20+ years, 18 countries, Universal Music partner.";
+  `Check DJ VIC's live availability and send a booking request for your wedding, corporate event, sangeet, club night, or festival. ${cfg.yearsActive}+ years, ${cfg.countries} countries, Universal Music partner.`;
 ---
 
 <Layout

@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { getCollection } from 'astro:content';
+import { siteConfig as cfg } from '../config/siteConfig';
 
 const allEpisodes = await getCollection('vicfixEpisodes');
 // Reverse chronological — latest episode (highest season, highest episode) first
@@ -225,7 +226,7 @@ const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).
       <div class="section-label">About the Show</div>
       <h2>Beyond the Music</h2>
       <p class="section-sub">
-        Hosted by DJ VIC — two decades in nightlife across 18 countries — The VIC
+        Hosted by DJ VIC — nearly two decades in nightlife across {cfg.countries} countries — The VIC
         Fix goes beyond the music to document the people, places, and moments that shaped
         India's after-dark culture. DJs, bartenders, venue founders, promoters, artists:
         the ones who built the scene, told in their own words.
@@ -240,7 +241,7 @@ const featured = FEATURED_SLUGS.map((s) => allEpisodes.find((e) => e.id === s)).
           <span class="stat-label">Episodes</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">20<span class="stat-plus">+</span></span>
+          <span class="stat-num">{cfg.yearsActive}<span class="stat-plus">+</span></span>
           <span class="stat-label">Years in Nightlife</span>
         </div>
       </div>
