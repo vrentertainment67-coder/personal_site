@@ -15,16 +15,49 @@ alter table public.bookings alter column event_date drop not null;
 -- vic_blocked_dates() already filters `event_date is not null`, so date-less
 -- enquiries correctly DON'T appear as blocked days on the public calendar.
 
--- PART 2 — allow the "wedding" event type in submit_booking ------------------
--- The bookings.event_type CHECK already allows 'wedding' (see bookings_admin.sql),
--- but the submit_booking() RPC has its OWN stricter whitelist that rejects it
--- (P0001 "Invalid event type."). That whitelist lives only in the DB, not in
--- this repo, so I can't edit it blind without clobbering the rest of the function
--- (rate-limit guard, insert, notify, etc.).
---
--- >>> To finish this cleanly: open Supabase → Database → Functions → submit_booking,
--- >>> copy the whole definition, and paste it back to me. I'll return the exact
--- >>> one-line whitelist edit (add 'wedding') so nothing else changes.
---
--- Until then the client sends Wedding leads as event_type 'other' with
--- "Event type: Wedding" tagged into the message, so no wedding enquiry is lost.
+-- PART 2 — widen submit_booking's event-type whitelist ----------------------
+-- The old RPC only accepted ('sangeet','nightlife','private','festival') — so
+-- wedding, corporate AND other were ALL rejected ("Invalid event type."), even
+-- though the bookings.event_type CHECK allows the full set. This recreates the
+-- function with the whitelist matched to that CHECK, and makes the date checks
+-- null-safe (event_date is now optional). Everything else is byte-for-byte the
+-- original. Run once; then flip weddingMigrated=true in BookingApp.jsx.
+CREATE OR REPLACE FUNCTION public.submit_booking(p_name text, p_contact text, p_event_type text, p_event_date date, p_venue text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_budget text DEFAULT NULL::text, p_message text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  new_id uuid;
+begin
+  if coalesce(trim(p_name), '') = '' or coalesce(trim(p_contact), '') = '' then
+    raise exception 'Name and contact are required.';
+  end if;
+
+  if p_event_type not in ('sangeet','wedding','nightlife','private','festival','corporate','dj class','training','other') then
+    raise exception 'Invalid event type.';
+  end if;
+
+  -- date is optional now; only validate/gate when one was actually given
+  if p_event_date is not null and p_event_date < current_date then
+    raise exception 'That date has already passed.';
+  end if;
+
+  if p_event_date is not null and (exists (
+        select 1 from public.bookings
+         where event_date = p_event_date and status = 'accepted'
+      ) or exists (
+        select 1 from public.availability_blocks
+         where block_date = p_event_date
+      )) then
+    raise exception 'That date is no longer available.';
+  end if;
+
+  insert into public.bookings (name, contact, event_type, event_date, venue, city, budget, message, status)
+  values (p_name, p_contact, p_event_type, p_event_date, p_venue, p_city, p_budget, p_message, 'pending')
+  returning id into new_id;
+
+  return new_id;
+end;
+$function$;
