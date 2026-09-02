@@ -5,7 +5,7 @@
 -- (one line, ~185) so the client drops its stopgaps and writes clean data.
 -- ============================================================================
 
--- PART 1 — make event_date optional (safe, exact) ---------------------------
+-- PART 1 — make event_date optional  ✅ DONE 2026-09-02 -----------------------
 -- The booking funnel now lets a lead enquire WITHOUT locking a date (the #1
 -- reason the old form converted zero: if their date was booked/on-hold the
 -- calendar disabled it and they couldn't submit at all). The column is NOT NULL

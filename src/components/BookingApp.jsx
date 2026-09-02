@@ -182,18 +182,20 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
     const source = localStorage.getItem("vic_source") || "Direct";
     setSubmitting(true);
-    // STOPGAP until the DB is migrated (see supabase/booking_optional_date_wedding.sql):
-    //  • submit_booking's type whitelist doesn't include "wedding" yet → send "other" + tag the message.
-    //  • event_date is still NOT NULL → a date-less lead can't be null yet, so send today's date as a
-    //    placeholder AND tag the message "flexible". Once the ALTER runs, both fall back to the clean path.
-    const dbMigrated = false; // flip to true after running the SQL
-    const evType = (!dbMigrated && form.type === "wedding") ? "other" : form.type;
+    // Two independent DB migrations gate the funnel (see supabase/booking_optional_date_wedding.sql):
+    //  • dateMigrated  — event_date is now NULLABLE (ALTER run 2026-09-02), so date-less leads send a
+    //    true null (correctly excluded from the calendar). No more placeholder-date workaround.
+    //  • weddingMigrated — submit_booking's type whitelist still rejects "wedding"; until it's updated,
+    //    Wedding leads submit as "other" with the real type tagged in the message. Flip when Part 2 ships.
+    const dateMigrated = true;
+    const weddingMigrated = false;
+    const evType = (!weddingMigrated && form.type === "wedding") ? "other" : form.type;
     const realDate = form.day ? ymd(cursor.y, cursor.m, form.day) : null;
     const today = new Date();
-    const evDate = realDate || (dbMigrated ? null : ymd(today.getFullYear(), today.getMonth(), today.getDate()));
+    const evDate = realDate || (dateMigrated ? null : ymd(today.getFullYear(), today.getMonth(), today.getDate()));
     const tags = [];
-    if (!dbMigrated && form.type === "wedding") tags.push("Event type: Wedding");
-    if (!dbMigrated && !realDate) tags.push("Preferred date: flexible / not set");
+    if (!weddingMigrated && form.type === "wedding") tags.push("Event type: Wedding");
+    if (!dateMigrated && !realDate) tags.push("Preferred date: flexible / not set");
     const msgBody = (tags.length ? tags.join("\n") + "\n" : "")
       + (form.message ? form.message + "\n\n" : (tags.length ? "\n" : "")) + `Source: ${source}`;
     const { error } = await supabase.rpc("submit_booking", {
