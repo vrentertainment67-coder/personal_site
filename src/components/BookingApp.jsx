@@ -182,24 +182,13 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
     if (Date.now() - last < 45000) { showToast("You've just sent a request — give it a moment."); return; }
     const source = localStorage.getItem("vic_source") || "Direct";
     setSubmitting(true);
-    // Two independent DB migrations gate the funnel (see supabase/booking_optional_date_wedding.sql):
-    //  • dateMigrated  — event_date is now NULLABLE (ALTER run 2026-09-02), so date-less leads send a
-    //    true null (correctly excluded from the calendar). No more placeholder-date workaround.
-    //  • weddingMigrated — submit_booking's type whitelist still rejects "wedding"; until it's updated,
-    //    Wedding leads submit as "other" with the real type tagged in the message. Flip when Part 2 ships.
-    const dateMigrated = true;
-    const weddingMigrated = false;
-    const evType = (!weddingMigrated && form.type === "wedding") ? "other" : form.type;
-    const realDate = form.day ? ymd(cursor.y, cursor.m, form.day) : null;
-    const today = new Date();
-    const evDate = realDate || (dateMigrated ? null : ymd(today.getFullYear(), today.getMonth(), today.getDate()));
-    const tags = [];
-    if (!weddingMigrated && form.type === "wedding") tags.push("Event type: Wedding");
-    if (!dateMigrated && !realDate) tags.push("Preferred date: flexible / not set");
-    const msgBody = (tags.length ? tags.join("\n") + "\n" : "")
-      + (form.message ? form.message + "\n\n" : (tags.length ? "\n" : "")) + `Source: ${source}`;
+    // DB migrations complete 2026-09-02 (supabase/booking_optional_date_wedding.sql):
+    // event_date is nullable and submit_booking accepts the full event-type set,
+    // so the funnel submits its real values directly — no stopgap remapping.
+    const evDate = form.day ? ymd(cursor.y, cursor.m, form.day) : null;
+    const msgBody = (form.message ? form.message + "\n\n" : "") + `Source: ${source}`;
     const { error } = await supabase.rpc("submit_booking", {
-      p_name: form.name, p_contact: form.contact, p_event_type: evType,
+      p_name: form.name, p_contact: form.contact, p_event_type: form.type,
       p_event_date: evDate,
       p_venue: form.venue || null, p_city: form.city || null,
       p_budget: form.budget,
