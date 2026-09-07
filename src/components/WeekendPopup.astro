@@ -92,16 +92,19 @@ const NTFY_TOPIC = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
     if ($('wp-back')) $('wp-back').addEventListener('click', function () { show('wp-pick'); });
 
     // Pick a night → open the form pre-filled for that event.
-    [].forEach.call(ov.querySelectorAll('.wp-ev'), function (btn) {
-      btn.addEventListener('click', function () {
-        chosen = { slug: btn.dataset.slug, name: btn.dataset.name, day: btn.dataset.day, dateLabel: btn.dataset.datelabel, venue: btn.dataset.venue };
-        $('wp-form-title').textContent = chosen.name;
-        $('wp-form-sub').textContent = chosen.day + ' ' + chosen.dateLabel + ' · ' + chosen.venue;
-        $('wp-msg').textContent = ''; $('wp-msg').className = 'wp-msg';
-        show('wp-form');
-        $('wp-name').focus();
-      });
+    function pick(btn) {
+      chosen = { slug: btn.dataset.slug, name: btn.dataset.name, day: btn.dataset.day, dateLabel: btn.dataset.datelabel, venue: btn.dataset.venue };
+      $('wp-form-title').textContent = chosen.name;
+      $('wp-form-sub').textContent = chosen.day + ' ' + chosen.dateLabel + ' · ' + chosen.venue;
+      $('wp-msg').textContent = ''; $('wp-msg').className = 'wp-msg';
+    }
+    var evBtns = ov.querySelectorAll('.wp-ev');
+    [].forEach.call(evBtns, function (btn) {
+      btn.addEventListener('click', function () { pick(btn); show('wp-form'); $('wp-name').focus(); });
     });
+    // Only one night live → the "pick a night" step is redundant. Pre-select it
+    // and open straight to the guest-list form (no back button in this mode).
+    if (evBtns.length === 1) { pick(evBtns[0]); show('wp-form'); }
 
     $('wp-phone').addEventListener('input', function () { this.value = this.value.replace(/[^\d+\s()-]/g, ''); });
 
