@@ -211,38 +211,6 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
 
   return (
     <main>
-      <section className="hero">
-        <div className="hero-glow" /><div className="hero-grain" />
-        <div className="hero-inner">
-          <p className="kicker fade" style={{ animationDelay: ".05s" }}>International DJ · Based in Bangalore</p>
-          <h1 className="hero-title fade" style={{ animationDelay: ".15s" }}>BOOK<br /><span className="hero-title-gold">DJ VIC</span></h1>
-          <p className="hero-line fade" style={{ animationDelay: ".28s" }}>
-            <em>Twenty years behind the decks.</em> Eighteen countries.<br />
-            One booking away from your dancefloor.
-          </p>
-          <div className="hero-cta fade" style={{ animationDelay: ".4s" }}>
-            <a href="#availability" className="btn-primary">Check a date <ArrowRight size={16} /></a>
-            <a href="#services" className="btn-ghost">What I play</a>
-          </div>
-        </div>
-      </section>
-
-      <section id="services" className="block">
-        <h2 className="block-h">The sets</h2>
-        <p className="block-sub">Pick what fits the room.</p>
-        <div className="svc-grid">
-          {EVENT_TYPES.map((t) => {
-            const Icon = t.icon;
-            return (
-              <div key={t.key} className="svc-card">
-                <Icon size={22} style={{ color: C.gold }} />
-                <h3>{t.label}</h3><p>{SVC_COPY[t.key]}</p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
       <section id="availability" className="block">
         <h2 className="block-h">Availability</h2>
         <div className="cal-topline">
@@ -270,7 +238,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
           </div>
           <div className="legend">
             <span><i className="dot open" /> Open</span>
-            <span><i className="dot held" /> On hold</span>
+            <span><i className="dot held" /> Blocked</span>
             <span><i className="dot booked" /> Booked / busy</span>
           </div>
         </div>
@@ -309,7 +277,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
           </div>
           <div className="field-row">
             <div className="field"><label>Date <span className="opt">(optional)</span></label>
-              <div className="date-pill">{form.day ? `${MONTHS[cursor.m]} ${form.day}, ${cursor.y}` : "Pick above — or leave blank"}</div></div>
+              <div className={form.day ? "date-pill picked" : "date-pill empty"}>{form.day ? `✓ ${MONTHS[cursor.m]} ${form.day}, ${cursor.y}` : "Pick a date on the calendar above — or leave blank"}</div></div>
             <div className="field"><label>Budget <span className="opt">(optional)</span></label>
               <select value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })}>
                 {BUDGETS.map((b) => <option key={b}>{b}</option>)}
@@ -553,7 +521,9 @@ const styles = `
 .field input,.field select,.field textarea{background:rgba(10,10,10,0.6);border:1px solid var(--line);border-radius:9px;padding:12px 14px;color:var(--off);font-family:'Inter';font-size:14px;outline:none;transition:.2s;resize:vertical;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
 .field input::placeholder,.field textarea::placeholder{color:#5c5c57;}
-.date-pill{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:9px;padding:12px 14px;font-size:14px;color:var(--gold);}
+.date-pill{border-radius:9px;padding:12px 14px;font-size:14px;transition:background .2s,border-color .2s,color .2s;}
+.date-pill.empty{background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.18);color:var(--grey);}
+.date-pill.picked{background:rgba(201,168,76,0.14);border:1px solid var(--gold);color:var(--gold);font-weight:600;}
 .chips{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{background:transparent;border:1px solid var(--line);border-radius:999px;color:var(--grey);font-size:13px;padding:8px 15px;cursor:pointer;transition:.18s;font-family:'Inter';}
 .chip:hover{border-color:var(--gold);color:var(--off);}
