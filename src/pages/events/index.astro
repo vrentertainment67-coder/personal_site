@@ -82,7 +82,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
       <div class="hero-inner">
         <span class="hero-label">Dates &amp; Availability</span>
         <h1>Events</h1>
-        <p class="hero-sub"><b style="color:#39b56a">Green</b> = open · <b style="color:#e0b13c">amber</b> = on hold · <b style="color:#e0574a">red</b> = booked.<br/>Tap a free date to enquire, or a booked night to see what's on.</p>
+        <p class="hero-sub"><b style="color:#39b56a">Green</b> = open · <b style="color:#e0b13c">amber</b> = blocked · <b style="color:#e0574a">red</b> = booked.<br/>Tap a free date to enquire, or a booked night to see what's on.</p>
       </div>
     </section>
 
@@ -117,7 +117,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
 
       <div class="cal-legend">
         <span class="leg-item"><span class="leg-dot leg-dot--free"></span> Available</span>
-        <span class="leg-item"><span class="leg-dot leg-dot--tentative"></span> On hold</span>
+        <span class="leg-item"><span class="leg-dot leg-dot--tentative"></span> Blocked</span>
         <span class="leg-item"><span class="leg-dot leg-dot--booked"></span> Booked</span>
       </div>
 
@@ -294,7 +294,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
 
         const label = document.createElement('span');
         label.className = 'cal-label';
-        label.textContent = event.isPrivate ? (event.tentative ? 'On hold' : 'Booked') : event.title;
+        label.textContent = event.isPrivate ? (event.tentative ? 'Blocked' : 'Booked') : event.title;
         cell.appendChild(label);
 
         if (!event.isPrivate) {
@@ -478,7 +478,7 @@ const SUPABASE_KEY = 'sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9';
       (rows || []).forEach(row => {
         const d = (row && typeof row === 'object') ? row.d : row;
         const tentative = (row && typeof row === 'object') ? !!row.tentative : false;
-        if (d && !eventMap[d]) { eventMap[d] = { date: d, title: tentative ? 'On hold' : 'Booked', isPrivate: true, tentative: tentative }; added = true; }
+        if (d && !eventMap[d]) { eventMap[d] = { date: d, title: tentative ? 'Blocked' : 'Booked', isPrivate: true, tentative: tentative }; added = true; }
       });
       if (added) renderCalendar(currentYear, currentMonth);
     })
