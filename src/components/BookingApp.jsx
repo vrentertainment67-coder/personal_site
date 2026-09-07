@@ -256,7 +256,7 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
             value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })}
             style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
           />
-          <div className="field"><label>Event type <span className="req">*</span></label>
+          <div className="field"><label>Event type <span className="reqd">*</span></label>
             <div className="chips">
               {EVENT_TYPES.map((t) => (
                 <button key={t.key} type="button" className={form.type === t.key ? "chip on" : "chip"} onClick={() => setForm({ ...form, type: t.key })}>{t.label}</button>
@@ -264,9 +264,9 @@ function ClientFunnel({ cursor, shiftMonth, daysInMonth, firstWeekday, dateStatu
             </div>
           </div>
           <div className="field-row">
-            <div className="field"><label>Your name <span className="req">*</span></label>
+            <div className="field"><label>Your name <span className="reqd">*</span></label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></div>
-            <div className="field"><label>WhatsApp <span className="req">*</span></label>
+            <div className="field"><label>WhatsApp <span className="reqd">*</span></label>
               <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Number I can confirm on" /></div>
           </div>
           <div className="field-row">
@@ -475,7 +475,7 @@ const styles = `
 .btn-wa.big{padding:16px;font-size:15px;}
 .form-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
 .form-cta-row .btn-primary.big,.form-cta-row .btn-wa.big{flex:1 1 200px;width:auto;margin-top:0;}
-.req{color:var(--red);}
+.reqd{color:var(--red);}
 .opt{color:var(--grey);font-weight:400;font-size:.85em;}
 .btn-ghost{display:inline-flex;align-items:center;color:var(--off);text-decoration:none;font-weight:500;font-size:14px;padding:13px 24px;border-radius:8px;border:1px solid var(--line);transition:.2s;}
 .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
