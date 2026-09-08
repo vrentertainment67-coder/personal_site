@@ -41,6 +41,16 @@ function upcomingSundays(count = 12) {
   for (let i = 0; i < count; i++) { out.push(ymdLocal(d)); d.setDate(d.getDate() + 7); }
   return out;
 }
+// Release-Sunday options for the pipeline dropdown: `back` recent PAST Sundays
+// (so already-aired episodes can be dated/corrected) plus `forward` upcoming
+// ones. Chronological, oldest → newest.
+function releaseSundayOptions(back = 12, forward = 16) {
+  const out = []; const d = new Date(); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // the coming Sunday (today if it is one)
+  d.setDate(d.getDate() - back * 7);               // rewind `back` Sundays into the past
+  for (let i = 0; i < back + forward; i++) { out.push(ymdLocal(d)); d.setDate(d.getDate() + 7); }
+  return out;
+}
 function popTier(n) { if (n == null || n === "") return null; n = Number(n); if (n >= 1e6) return { label: "Mega", stars: 5 }; if (n >= 5e5) return { label: "Macro", stars: 4 }; if (n >= 1e5) return { label: "Mid", stars: 3 }; if (n >= 1e4) return { label: "Micro", stars: 2 }; return { label: "Nano", stars: 1 }; }
 async function fetchIgStats(handle) {
   const r = await fetch(`${FN}/instagram-stats`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ handle }) });
@@ -2332,7 +2342,7 @@ function GuestForm({ guest, onDone, showToast }) {
 
   const tier = popTier(f.ig_followers);
   const ico = { width: 150, flex: "1 1 150px" };
-  const relSundays = upcomingSundays(16);
+  const relSundays = releaseSundayOptions(12, 16);
   return (
     <div className="req" style={{ borderColor: "#c9a84c" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
