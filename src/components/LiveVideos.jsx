@@ -14,7 +14,7 @@ const SUPABASE_KEY =
 
 // Preferred tab order; anything else falls in after these, alphabetically.
 const LANG_ORDER = ["Hindi", "Tamil", "Telugu", "Kannada", "Malayalam", "English", "Punjabi", "Marathi", "Bengali"];
-const CEREMONY_ORDER = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night", "Cruise Party"];
+const CEREMONY_ORDER = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night", "Cruise Party", "Corporate"];
 const GROUPINGS = [{ key: "language", label: "By language" }, { key: "ceremony", label: "By ceremony" }];
 
 // A clip's URL can be an uploaded file (Cloudinary mp4) OR a pasted link

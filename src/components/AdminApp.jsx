@@ -4116,7 +4116,7 @@ function RequestsAdmin({ showToast }) {
 
 // ── Live videos admin: drag-drop upload → pick language → reorder / re-route ──
 const LV_LANGS = ["Hindi", "Tamil", "Telugu", "Kannada", "Malayalam", "English", "Punjabi", "Marathi", "Bengali"];
-const LV_CEREMONIES = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night", "Cruise Party"];
+const LV_CEREMONIES = ["Sangeet", "Baraat", "Haldi/Mehendi", "After Party", "Club Night", "Cruise Party", "Corporate"];
 
 // Cloudinary video URL → first-frame poster (.jpg via so_0). Null if not one.
 function lvPoster(secureUrl) {
