@@ -146,6 +146,11 @@ const schemas = [
           </a>
         )}
         <p class="ep-tagline">{ep.tagline}</p>
+        {ep.partLinkSlug && (
+          <a class="ep-partlink" href={`/thevicfix/${ep.partLinkSlug}/`}>
+            <span class="ep-partlink-ic">&#9664;</span> Watch {ep.partLinkLabel || 'Part 1'} first
+          </a>
+        )}
       </div>
     </section>
 
@@ -668,6 +673,24 @@ const schemas = [
     max-width: 56ch;
     margin: 0;
   }
+
+  .ep-partlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1.2rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .ep-partlink:hover { background: rgba(201,168,76,0.12); border-color: var(--gold); }
+  .ep-partlink-ic { font-size: 0.7em; line-height: 1; }
 
   /* ─── Guest Photo ────────────────────────────── */
   #ep-photo { background: #060606; padding: 0; }
