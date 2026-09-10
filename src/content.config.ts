@@ -67,6 +67,7 @@ const vicfixEpisodes = defineCollection({
     // Cross-link to another part of a multi-part episode (e.g. Part 1 ↔ Part 2).
     partLinkSlug: z.string().optional(),   // the other episode's slug
     partLinkLabel: z.string().optional(),  // e.g. "Part 1" (defaults to "Part 1")
+    partLinkDir: z.enum(['prev', 'next']).optional(), // 'prev' → "◀ … first" (default); 'next' → "… next ▶"
     // When there's no video yet, the "premiering" placeholder says this (e.g.
     // "today", "this Sunday"). Defaults to "this Sunday".
     premiereWhen: z.string().optional(),

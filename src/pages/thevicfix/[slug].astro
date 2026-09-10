@@ -148,7 +148,9 @@ const schemas = [
         <p class="ep-tagline">{ep.tagline}</p>
         {ep.partLinkSlug && (
           <a class="ep-partlink" href={`/thevicfix/${ep.partLinkSlug}/`}>
-            <span class="ep-partlink-ic">&#9664;</span> Watch {ep.partLinkLabel || 'Part 1'} first
+            {ep.partLinkDir === 'next'
+              ? (<>Watch {ep.partLinkLabel || 'Part 2'} next <span class="ep-partlink-ic">&#9654;</span></>)
+              : (<><span class="ep-partlink-ic">&#9664;</span> Watch {ep.partLinkLabel || 'Part 1'} first</>)}
           </a>
         )}
       </div>
