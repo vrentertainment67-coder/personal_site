@@ -41,7 +41,6 @@ export default function TestimonialsStrip({ category = "home", fallback }) {
       <style>{rtStyles}</style>
       {items.map((t, i) => (
         <div className="rt-card" key={i}>
-          <div className="rt-mark">&ldquo;</div>
           {t.rating > 0 && (
             <div className="rt-stars" aria-label={`${t.rating} out of 5`}>
               {"★".repeat(Math.min(5, Math.max(1, t.rating)))}
@@ -62,9 +61,8 @@ const rtStyles = `
 .rt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem;}
 .rt-card{background:#0e0e0e;border:1px solid #1e1e1e;padding:2rem 1.75rem;display:flex;flex-direction:column;gap:1rem;transition:border-color .25s;}
 .rt-card:hover{border-color:rgba(201,168,76,0.3);}
-.rt-mark{font-family:Georgia,serif;font-size:3.5rem;line-height:.7;color:#c9a84c;opacity:.4;}
 .rt-stars{color:#c9a84c;font-size:.8rem;letter-spacing:3px;}
-.rt-text{font-family:'DM Sans',sans-serif;font-size:.9rem;font-style:italic;color:rgba(255,255,255,0.72);line-height:1.75;margin:0;flex:1;}
+.rt-text{font-family:'DM Sans',sans-serif;font-size:14.5px;color:rgba(255,255,255,0.78);line-height:1.75;margin:0;flex:1;}
 .rt-attr{border-top:1px solid #1e1e1e;padding-top:1rem;display:flex;flex-direction:column;gap:.2rem;}
 .rt-attr strong{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
 .rt-attr span{font-size:.8rem;color:rgba(255,255,255,0.45);}
