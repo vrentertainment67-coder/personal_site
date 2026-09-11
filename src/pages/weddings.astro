@@ -5,970 +5,537 @@ import Footer from '../components/Footer.astro';
 import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
 import { siteConfig as cfg } from '../config/siteConfig';
 
-// Section 7 — Client reviews (fallback until DB-driven; managed in /admin → Reviews)
+// Editor toggles (default on).
+const showProcess = true;
+const showGuides = true;
+
+const venues = ['JW Marriott', 'The Leela', 'Taj Hotels', 'ITC Hotels', 'Hyatt', 'Novotel', 'Golfshire, Nandi Hills'];
+
+const functions = [
+  { name: 'Mehendi & Haldi',       meta: 'Daytime · 2–3 hrs',    desc: 'Acoustic and Bollywood-light sets at conversation volume, scaled to a lawn or a living room.' },
+  { name: 'Sangeet Night',         meta: 'The big one · 4–5 hrs', desc: 'Family performances cued and mixed live, choreography tracks edited in advance, then the open floor. Three generations, one running order.' },
+  { name: 'Cocktail Evening',      meta: 'Evening · 3–4 hrs',    desc: 'Lounge and deep-house arrival, lifting into crossover as the room fills. Built for people who are still talking.' },
+  { name: 'Baraat & Wedding Day',  meta: 'Morning · on location', desc: 'Mobile sound for the procession, live dhol on request, and the timing discipline the ceremony schedule demands.' },
+  { name: 'Reception',             meta: 'Headline · 4–6 hrs',   desc: 'The grand entrance, the first dance and the family floor — mixed to picture in the full audio-visual format.' },
+  { name: 'After-party',           meta: 'Late · open-ended',    desc: 'Open-format club set for whoever is still standing. Separate rig, separate room.' },
+];
+const included = [
+  'Full professional sound and DJ rig, sized to the venue',
+  'Venue AV and sound-team coordination before the date',
+  'A planning call and a custom music brief per function',
+  'Setlists across Hindi, Punjabi, Kannada, Tamil, Telugu, Malayalam and English',
+  'On-site backup equipment and a run sheet shared with your planner',
+];
+const onRequest = ['Live dhol', 'Saxophone / percussion', 'LED visual wall', 'Custom couple mashup', 'Additional day / function', 'Destination travel'];
+
+const steps = [
+  { n: '01', t: 'Check the date', d: 'Send the date, the city and the functions. You get a yes or no on availability, usually the same day.' },
+  { n: '02', t: 'Planning call', d: 'VIC walks through each function — the families, the languages, the performances, the must-plays and the never-plays.' },
+  { n: '03', t: 'Run sheet', d: 'A per-function music brief and cue sheet goes to you and your planner, so nothing is improvised on the day.' },
+  { n: '04', t: 'The night', d: 'VIC arrives early, sound-checks with the venue, and plays the room in front of him rather than a template.' },
+];
+
+const videos = [
+  { id: 'bFWIs4dhvew', caption: 'Prachi & Mridhul',        place: 'Wedding Vlog · Wayanad',                        cat: 'Wedding Films' },
+  { id: 'sebNDm7uiWQ', caption: 'Visaaly & Sharan',        place: 'Destination Wedding · Colombo',                 cat: 'Wedding Films' },
+  { id: 'Dw5gerVqA7w', caption: 'Kanchana & Nihar',        place: 'Couple testimonial',                           cat: 'Couples Speak' },
+  { id: 'x9Q_nA4820w', caption: 'Diksha & Pranav',         place: 'Couple testimonial',                           cat: 'Couples Speak' },
+  { id: 'UCVpbps9hrk', caption: 'Raksha & Rahul',          place: 'Couple testimonial',                           cat: 'Couples Speak' },
+  { id: 'TU_R42SDuns', caption: 'Wedding showcase',        place: 'Reception & dancefloor',                       cat: 'The Set' },
+  { id: '3FJl0cbpOYY', caption: 'Audio-visual pool party', place: 'JW Marriott, Golfshire · Nandi Hills',         cat: 'The Set' },
+];
+const videoCats = ['All', 'Wedding Films', 'Couples Speak', 'The Set'];
+const catCount = (c) => (c === 'All' ? videos.length : videos.filter((v) => v.cat === c).length);
+
+const weddingFaqs = [
+  { q: 'How far in advance should we book?', a: 'For peak season — October to February, and April to May — six to twelve months ahead is right. VIC takes a limited number of weddings a month, so Saturdays go first. Reach out as soon as you have a date.' },
+  { q: 'Do you cover sangeet, cocktail and the reception?', a: 'Yes, and they are planned as three different nights. Each gets its own set, energy curve and run sheet. Multi-function bookings are the norm rather than the exception.' },
+  { q: 'Do you play South Indian and regional music?', a: 'Yes. Bengaluru weddings bring every family together and the floor should too. VIC reads the room across Kannada, Tamil, Telugu and Malayalam alongside the Bollywood and Punjabi crossover the cousins will demand, plus retro for the uncles. We play the family in front of us, not a template.' },
+  { q: 'Can we choose the music?', a: 'Completely. The setlist is built from your brief — must-plays, never-plays, family performance tracks and the first dance. VIC edits performance mixes in advance so choreography lands on the beat.' },
+  { q: 'Do you travel for destination weddings?', a: 'Yes. VIC has played weddings across India and in 18 countries, including Sri Lanka, Australia and the UK. Travel, freight and venue logistics are quoted with the booking.' },
+  { q: 'Do you bring your own equipment?', a: 'Yes — a full professional setup, sized to the venue, with on-site backup. VIC coordinates with the venue sound and AV team before the date so nothing is discovered on the day.' },
+  { q: 'What makes this different from other wedding DJs?', a: 'The audio-visual format: original music cut to custom visuals, mixed live. Developed since 2007 and refined across 300+ weddings. The music is treated as the emotional spine of the night, not background.' },
+];
+
+// Reviews fallback (DB-managed via /admin → Reviews; category="wedding").
 const weddingReviews = [
-  { quote: "Vic absolutely nailed our wedding! From the cocktail night to the reception, he read the room perfectly and kept everyone on the dancefloor all night. Couldn't have asked for better energy.", name: "Sarthak", event: "Groom · Dec 2024 · Kochi", rating: 5 },
-  { quote: "VIC played for my special day recently, and rocked our cocktail night! Being a North-South wedding, he chose the perfect energetic tunes to keep our guests going on the floor!", name: "Rashmi Jaiswal", event: "Bride · Jan 2025 · Bangalore", rating: 5 },
-  { quote: "I think no one left the dancefloor while Vic was playing! He executed the perfect blend of English and Bollywood songs for my entire wedding functions and it was spot on!", name: "Aryaman", event: "Groom · July 2025 · Bangalore", rating: 5 },
-  { quote: "VIC was recommended by my cousin and livened up our wedding parties with his music selection and engaging performances. A special mention on the live baraat with dhol performance!!", name: "Kruthi Singar", event: "Bride · Dec 2023 · Bangalore", rating: 5 },
-  { quote: "Working with Vic on multiple weddings has been seamless every time. He's professional, well-prepared, and genuinely elevates the experience. Highly recommended for any event.", name: "Manish Fitkariwala", event: "Wedding Planner · Catapultt", rating: 5 },
+  { quote: "Vic absolutely nailed our wedding! From the cocktail night to the reception, he read the room perfectly and kept everyone on the dancefloor all night. Couldn't have asked for better energy.", name: 'Sarthak', event: 'Groom · Dec 2024 · Kochi', rating: 5 },
+  { quote: 'VIC played for my special day recently, and rocked our cocktail night! Being a North-South wedding, he chose the perfect energetic tunes to keep our guests going on the floor!', name: 'Rashmi Jaiswal', event: 'Bride · Jan 2025 · Bangalore', rating: 5 },
+  { quote: 'I think no one left the dancefloor while Vic was playing! He executed the perfect blend of English and Bollywood songs for my entire wedding functions and it was spot on!', name: 'Aryaman', event: 'Groom · July 2025 · Bangalore', rating: 5 },
+  { quote: 'VIC was recommended by my cousin and livened up our wedding parties with his music selection and engaging performances. A special mention on the live baraat with dhol performance!!', name: 'Kruthi Singar', event: 'Bride · Dec 2023 · Bangalore', rating: 5 },
+  { quote: "Working with Vic on multiple weddings has been seamless every time. He's professional, well-prepared, and genuinely elevates the experience. Highly recommended for any event.", name: 'Manish Fitkariwala', event: 'Wedding Planner · Catapultt', rating: 5 },
 ];
 
-// Section 3 — Wedding Vlogs
-const weddingVlogs = [
-  { id: "bFWIs4dhvew", caption: "Prachi & Mridhul — Wedding Vlog, Wayanad" },
-  { id: "sebNDm7uiWQ", caption: "Visaaly & Sharan — Destination Wedding, Colombo" },
-];
+const guestBands = ['Under 150', '150–300', '300–600', '600–1,000', '1,000+'];
+const functionChips = ['Mehendi / Haldi', 'Sangeet', 'Cocktail', 'Baraat', 'Reception', 'After-party'];
 
-// Section 5 — Couple Testimonial Videos
-const coupleVideos = [
-  { id: "Dw5gerVqA7w", caption: "Kanchana & Nihar" },
-  { id: "x9Q_nA4820w", caption: "Diksha & Pranav" },
-  { id: "UCVpbps9hrk", caption: "Raksha & Rahul" },
-];
-
-// Section 4 — Wedding Showcase (replace SHOWCASE_VIDEO_ID with your video ID)
-const showcaseVideoId = "TU_R42SDuns";
-
-// Section 6 — Curated AV Showcase
-const avVideoId = "3FJl0cbpOYY";
+// FAQPage schema generated from the same array that renders the list (keeps them in sync).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: weddingFaqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  serviceType: 'Wedding DJ',
+  provider: { '@id': 'https://djvicofficial.com/#person' },
+  areaServed: ['Bangalore', 'India', 'International'],
+  description: `Wedding DJ services across India and internationally — sangeet, cocktail, reception and destination weddings. ${cfg.weddings} weddings performed since ${cfg.careerStart}.`,
+  url: 'https://djvicofficial.com/weddings/',
+};
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://djvicofficial.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Wedding DJ', item: 'https://djvicofficial.com/weddings/' },
+  ],
+};
 ---
 
 <Layout
   title="Wedding DJ Bangalore | Luxury Wedding DJ | DJ VIC"
   description={`DJ VIC performs at weddings across India — sangeet nights, receptions, and destination weddings. ${cfg.yearsActive}+ years, ${cfg.weddings} weddings performed. Enquire now.`}
-  ogTitle="DJ VIC — Wedding DJ · Sangeet, Reception & Destination Weddings Across India"
-  ogDescription="Premium wedding DJ for celebrations across India and internationally. Sangeet nights, cocktail hours, receptions, and destination weddings. Trusted at JW Marriott, Leela, Taj and beyond."
-  ogImage="https://djvicofficial.com/images/og-weddings.jpg"
-  schema={[
-    {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "name": "Wedding DJ Services Bangalore",
-      "provider": { "@id": "https://djvicofficial.com/#business" },
-      "description": "Luxury wedding DJ for sangeet, cocktail, and reception events in Bangalore.",
-      "areaServed": "Bangalore, India",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5.0",
-        "ratingCount": "47",
-        "bestRating": "5"
-      }
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How far in advance should I book DJ VIC for my wedding?",
-          "acceptedAnswer": { "@type": "Answer", "text": "We recommend booking at least 3–6 months in advance, especially for peak wedding season (October–February). Popular dates fill quickly." }
-        },
-        {
-          "@type": "Question",
-          "name": "Does DJ VIC perform at destination weddings?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. DJ VIC has performed at destination weddings across India and internationally, including Sri Lanka and beyond." }
-        },
-        {
-          "@type": "Question",
-          "name": "What events does DJ VIC cover at a wedding?",
-          "acceptedAnswer": { "@type": "Answer", "text": "DJ VIC covers all wedding events including sangeet nights, mehendi, cocktail hours, wedding receptions, and after-parties." }
-        }
-      ]
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home",     "item": "https://djvicofficial.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Weddings", "item": "https://djvicofficial.com/weddings/" }
-      ]
-    }
-  ]}
+  schema={[serviceSchema, faqSchema, breadcrumb]}
 >
   <Nav />
+  <main id="main-content" class="wd">
 
-  <main id="main-content">
-
-    <!-- ══════════════════════════════════════════
-         1. HERO
-    ══════════════════════════════════════════ -->
-    <section id="weddings-hero" class="hero-bg" data-img-slot="weddings.hero">
-      <div class="hero-inner">
-        <div class="section-label">Wedding DJ</div>
-        <h1>Your Love Story,<br/>Our Soundtrack</h1>
-        <p class="hero-sub">{cfg.yearsActive}+ years of unforgettable celebrations across India &amp; beyond.</p>
-        <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC for Your Wedding</a>
+    <!-- 1 · Hero -->
+    <section class="wd-hero" data-img-slot="weddings.hero" style="background-image: linear-gradient(180deg, rgba(5,10,8,.55), rgba(5,10,8,.86)), url('/images/home/wed-hero-placeholder.jpg')">
+      <div class="wd-hero-inner">
+        <span class="wd-eyebrow">Wedding DJ · Sangeet · Reception · Destination</span>
+        <h1 class="wd-hero-h1">Not a playlist.<br/>A night your family remembers.</h1>
+        <p class="wd-hero-sub">One DJ across every function — mehendi to the last dance — reading a room that spans three generations and four languages.</p>
+        <p class="wd-hero-meta">{cfg.weddings} weddings · Pan-India &amp; destination · Since {cfg.careerStart}</p>
+        <div class="wd-hero-cta">
+          <a class="wd-btn wd-btn--gold" href="#enquire" data-hero-cta>Check your date &rarr;</a>
+          <a class="wd-btn wd-btn--ghost" href="#covered">What's covered</a>
+        </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         3. FROM SUNRISE DRIVES TO THE LAST DANCE
-    ══════════════════════════════════════════ -->
-    <section id="weddings-vlogs">
-      <div class="section-label">Wedding Films</div>
-      <h2>From Sunrise Drives to the Last Dance</h2>
-      <p class="section-sub">
-        Real couples. Real celebrations. A glimpse into the magic we create together.
-      </p>
-      <div class="yt-grid yt-grid--2col">
-        {weddingVlogs.map((v) => (
-          <a
-            href={`https://youtu.be/${v.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="yt-card"
-          >
-            <div class="yt-thumb">
-              <img
-                src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`}
-                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`}
-                alt={v.caption}
-                loading="lazy"
-                width="480"
-                height="360"
-              />
-              <div class="yt-play">
-                <svg viewBox="0 0 68 48" width="52" height="37">
-                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
-                  <path d="M45 24 27 14v20" fill="#000"/>
-                </svg>
+    <!-- 2 · Proof bar -->
+    <section class="wd-proof">
+      <div class="wd-inner">
+        <div class="wd-stats">
+          <div class="wd-stat"><strong>{cfg.weddings}</strong><span>Weddings performed</span></div>
+          <div class="wd-stat"><strong>{cfg.countries}</strong><span>Countries</span></div>
+          <div class="wd-stat"><strong>Est. {cfg.careerStart}</strong><span>Nineteen seasons in</span></div>
+          <div class="wd-stat"><strong>{cfg.performances}</strong><span>Nights performed</span></div>
+        </div>
+        <div class="wd-venues">
+          <span class="wd-venues-label">Played weddings at</span>
+          <div class="wd-venues-row">{venues.map((v) => <span class="wd-venue">{v}</span>)}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · Every function, covered -->
+    <section id="covered" class="wd-block wd-covered">
+      <div class="wd-inner">
+        <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">What you're booking</span><h2 class="wd-h2">Every function, covered</h2></div>
+        <p class="wd-lead">Book the whole celebration or a single night. Each function gets its own set, its own energy, and its own run sheet.</p>
+        <div class="wd-covered-grid">
+          <div class="wd-functions">
+            {functions.map((f) => (
+              <div class="wd-func">
+                <div class="wd-func-top"><h3 class="wd-func-name">{f.name}</h3><span class="wd-func-meta">{f.meta}</span></div>
+                <p class="wd-func-desc">{f.desc}</p>
               </div>
+            ))}
+          </div>
+          <aside class="wd-aside">
+            <img class="wd-aside-img" src="/images/home/wed-functions-placeholder.jpg" data-img-slot="weddings.functions" alt="DJ VIC at a wedding function" loading="lazy" width="800" height="1000" />
+            <div class="wd-incl">
+              <span class="wd-incl-label">Included as standard</span>
+              <ul>{included.map((i) => <li>{i}</li>)}</ul>
+              <span class="wd-incl-label wd-incl-label--req">On request</span>
+              <div class="wd-req-chips">{onRequest.map((r) => <span class="wd-req-chip">{r}</span>)}</div>
             </div>
-            <p class="yt-caption">{v.caption}</p>
-          </a>
-        ))}
+          </aside>
+        </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         4. ROCKING WEDDINGS SINCE 2007
-    ══════════════════════════════════════════ -->
-    <section id="weddings-showcase" class="section-alt">
-      <div class="section-label">Wedding Showcase</div>
-      <h2>Rocking Weddings Since 2007</h2>
-      <p class="section-sub">
-        Nearly two decades of dancefloors, sangeet nights, and unforgettable receptions
-        — India and beyond. That instinct for reading a room is the same one VIC brings to
-        <a href="/thevicfix/" style="color:var(--gold);text-decoration:underline;text-underline-offset:3px;">The VIC Fix</a>, his podcast with the artists and founders who shaped India's scene.
-      </p>
-      {showcaseVideoId !== "SHOWCASE_VIDEO_ID" ? (
-        <div class="yt-grid yt-grid--1col">
-          <a
-            href={`https://youtu.be/${showcaseVideoId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="yt-card"
-          >
-            <div class="yt-thumb">
-              <img
-                src={`https://img.youtube.com/vi/${showcaseVideoId}/maxresdefault.jpg`}
-                alt="DJ VIC Wedding Showcase — Full Reception and Dance Floor Performance"
-                loading="lazy"
-                width="1280"
-                height="720"
-                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${showcaseVideoId}/hqdefault.jpg'`}
-              />
-              <div class="yt-play">
-                <svg viewBox="0 0 68 48" width="52" height="37">
-                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
-                  <path d="M45 24 27 14v20" fill="#000"/>
-                </svg>
+    {showProcess && (
+      <section class="wd-block wd-process">
+        <div class="wd-inner">
+          <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">How it works</span><h2 class="wd-h2">From enquiry to the last song</h2></div>
+          <div class="wd-steps">
+            {steps.map((s) => (
+              <div class="wd-step"><span class="wd-step-n">{s.n}</span><h3 class="wd-step-t">{s.t}</h3><p class="wd-step-d">{s.d}</p></div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- 5 · Real weddings, on film -->
+    <section class="wd-block wd-films">
+      <div class="wd-inner">
+        <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Watch</span><h2 class="wd-h2">Real weddings, on film</h2></div>
+        <div class="wd-filters" role="tablist">
+          {videoCats.map((c, i) => (
+            <button type="button" class={`wd-filter${i === 0 ? ' on' : ''}`} data-filter={c}>{c} <span class="wd-filter-n">{catCount(c)}</span></button>
+          ))}
+        </div>
+        <div class="wd-video-grid" id="wd-video-grid">
+          {videos.map((v) => (
+            <button type="button" class="wd-vcard" data-cat={v.cat} data-video={v.id} aria-label={`Play ${v.caption}`}>
+              <div class="wd-vthumb">
+                <img src={`https://img.youtube.com/vi/${v.id}/hqdefault.jpg`} alt={v.caption} loading="lazy" width="480" height="270" />
+                <span class="wd-vplay" aria-hidden="true">&#9658;</span>
               </div>
-            </div>
-            <p class="yt-caption">Wedding Showcase — DJ VIC</p>
-          </a>
+              <div class="wd-vmeta"><span class="wd-vcaption">{v.caption}</span><span class="wd-vplace">{v.place}</span></div>
+            </button>
+          ))}
         </div>
-      ) : (
-        <div class="placeholder-card">
-          <p><!-- TODO: Replace SHOWCASE_VIDEO_ID in weddings.astro with your Wedding Showcase YouTube video ID --></p>
-          <p class="placeholder-text">Wedding showcase video coming soon.</p>
-        </div>
-      )}
+      </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         5. TRUSTED BY COUPLES
-    ══════════════════════════════════════════ -->
-    <section id="weddings-couples">
-      <div class="section-label">Real Weddings</div>
-      <h2>Trusted by Couples</h2>
-      <p class="section-sub">Watch their stories — and hear what they have to say.</p>
-      <div class="yt-grid yt-grid--3col">
-        {coupleVideos.map((v) => (
-          <a
-            href={`https://youtu.be/${v.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="yt-card"
-          >
-            <div class="yt-thumb">
-              <img
-                src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`}
-                onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${v.id}/hqdefault.jpg'`}
-                alt={v.caption}
-                loading="lazy"
-                width="480"
-                height="360"
-              />
-              <div class="yt-play">
-                <svg viewBox="0 0 68 48" width="52" height="37">
-                  <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
-                  <path d="M45 24 27 14v20" fill="#000"/>
-                </svg>
+    <!-- 6 · Testimonials -->
+    <section class="wd-block wd-testi">
+      <div class="wd-inner">
+        <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Client voices</span><h2 class="wd-h2">What the couples say</h2></div>
+        <TestimonialsStrip client:visible category="wedding" fallback={weddingReviews} />
+      </div>
+    </section>
+
+    <!-- 7 · Destination & NRI -->
+    <section class="wd-block wd-dest">
+      <div class="wd-inner wd-dest-grid">
+        <div class="wd-dest-copy">
+          <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Destination &amp; NRI weddings</span><h2 class="wd-h2">Your wedding isn't in Bangalore? Neither is the boundary.</h2></div>
+          <p class="wd-lead">VIC has performed at weddings across India and internationally — Goa, Udaipur, Kochi, Wayanad, Colombo, the UK and Australia. Destination, NRI or multi-city: the travel, the gear and the venue coordination are handled directly.</p>
+          <div class="wd-dest-chips">{['Pan-India', 'Sri Lanka', 'Australia', 'United Kingdom', 'And more'].map((c) => <span class="wd-dest-chip">{c}</span>)}</div>
+          <a class="wd-btn wd-btn--gold" href="#enquire">Enquire for your destination &rarr;</a>
+        </div>
+        <img class="wd-dest-img" src="/images/home/wed-destination-placeholder.jpg" data-img-slot="weddings.destination" alt="Destination wedding" loading="lazy" width="1000" height="800" />
+      </div>
+    </section>
+
+    <!-- 8 · FAQ -->
+    <section class="wd-block wd-faq">
+      <div class="wd-inner">
+        <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Common questions</span><h2 class="wd-h2">Wedding DJ FAQ</h2></div>
+        <div class="wd-faq-grid">
+          {weddingFaqs.map((f, i) => (
+            <details class={`wd-faq-item${i === weddingFaqs.length - 1 ? ' wide' : ''}`}>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {showGuides && (
+      <section class="wd-block wd-guides">
+        <div class="wd-inner">
+          <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Planning guides</span></div>
+          <p class="wd-lead">Working out the budget, or planning away from home? Two honest guides: what a Bangalore wedding DJ actually costs, and how to brief a DJ for a destination wedding.</p>
+          <div class="wd-guide-links">
+            <a class="wd-guide" href="/blog/wedding-dj-cost-bangalore-2026/">Cost guide &rarr;</a>
+            <a class="wd-guide" href="/blog/destination-wedding-dj-india/">Destination guide &rarr;</a>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- 10 · Enquiry -->
+    <section id="enquire" class="wd-enquire">
+      <div class="wd-inner">
+        <div class="wd-head"><span class="wd-rule"></span><span class="wd-eyebrow">Check your date</span><h2 class="wd-h2">Tell VIC about the wedding</h2></div>
+        <p class="wd-lead">Dates for October through February go early. Send the date and the functions — every enquiry is read personally, no agency in between.</p>
+        <div class="wd-enquire-grid">
+          <div class="wd-enquire-left">
+            <div class="wd-assur">
+              <div class="wd-assur-cell"><span class="wd-assur-label">Response</span><span class="wd-assur-val">Every enquiry answered within 24 hours, by VIC.</span></div>
+              <div class="wd-assur-cell"><span class="wd-assur-label">Coverage</span><span class="wd-assur-val">Bangalore, pan-India and international. Destination logistics handled directly.</span></div>
+              <div class="wd-assur-cell"><span class="wd-assur-label">Peak season</span><span class="wd-assur-val">October–February dates are confirmed first come, first served.</span></div>
+            </div>
+            <a class="wd-wa" href="https://wa.me/919611711677" target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              Message on WhatsApp
+            </a>
+            <div class="wd-direct">
+              <a href="mailto:bookings@djvicofficial.com">bookings@djvicofficial.com</a>
+              <a href="tel:+919611711677">+91 96117 11677</a>
+            </div>
+          </div>
+
+          <div class="wd-enquire-right">
+            <form id="wd-form" class="wd-form" novalidate>
+              <div class="wd-form-row">
+                <div class="wd-field"><label for="wd-name">Your name <span class="wd-req">*</span></label><input type="text" id="wd-name" name="name" placeholder="Full name" required /></div>
+                <div class="wd-field"><label for="wd-phone">Phone / WhatsApp <span class="wd-req">*</span></label><input type="tel" id="wd-phone" name="phone" placeholder="+91 98765 43210" required /></div>
               </div>
-            </div>
-            <p class="yt-caption">{v.caption}</p>
-          </a>
-        ))}
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         6. CURATED MUSIC & AUDIO VISUAL
-    ══════════════════════════════════════════ -->
-    <section id="weddings-av" class="section-alt">
-      <div class="section-label">Performance Showcase</div>
-      <h2>Curated Music &amp; Audio Visual Experiences for Your Special Day</h2>
-      <p class="section-sub section-sub--gold">
-        A recent performance showcase at JW Marriott, Golfshire, Nandi Hills
-      </p>
-      <div class="yt-grid yt-grid--center">
-        <a
-          href={`https://youtu.be/${avVideoId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="yt-card"
-        >
-          <div class="yt-thumb">
-            <img
-              src="/images/av-thumbnail.jpg"
-              alt="DJ VIC audio-visual wedding pool party at JW Marriott, Golfshire, Nandi Hills"
-              loading="lazy"
-              width="1280"
-              height="720"
-            />
-            <div class="yt-play">
-              <svg viewBox="0 0 68 48" width="64" height="45">
-                <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="var(--gold)"/>
-                <path d="M45 24 27 14v20" fill="#000"/>
-              </svg>
-            </div>
-          </div>
-          <p class="yt-caption">Wedding Pool Party — JW Marriott, Golfshire, Nandi Hills</p>
-        </a>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         7. TESTIMONIALS
-    ══════════════════════════════════════════ -->
-    <section id="weddings-testimonials">
-      <div class="section-label">Client Reviews</div>
-      <h2>Here's What the Clients Have to Say</h2>
-      <p class="section-sub">Straight from the couples and planners who trusted DJ VIC with their big day.</p>
-      <TestimonialsStrip client:visible category="wedding" fallback={weddingReviews} />
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         8. DESTINATION & NRI WEDDINGS
-    ══════════════════════════════════════════ -->
-    <section class="destination-section" aria-labelledby="destination-heading">
-      <div class="destination-inner">
-
-        <div class="destination-text">
-          <p class="section-label">Destination &amp; NRI Weddings</p>
-          <h2 id="destination-heading">
-            Your wedding isn't<br/>in Bangalore?<br/>Neither is the boundary.
-          </h2>
-          <p class="destination-desc">
-            DJ VIC has performed at weddings across India and internationally —
-            from Goa and Udaipur to Sri Lanka, the UK, and Australia. Whether
-            you're planning a destination wedding, an NRI celebration, or a
-            multi-city function, the logistics are handled directly.
-          </p>
-          <div class="destination-locations">
-            <span>🇮🇳 Pan-India</span>
-            <span>🇱🇰 Sri Lanka</span>
-            <span>🇦🇺 Australia</span>
-            <span>🇬🇧 United Kingdom</span>
-            <span>+ More</span>
-          </div>
-          <a href="/book/" class="cta-btn cta-btn--gold destination-cta">
-            Enquire for Your Destination &rarr;
-          </a>
-        </div>
-
-        <div class="destination-stats">
-          <div class="d-stat">
-            <span class="d-num">{cfg.countries}</span>
-            <span class="d-lbl">Countries Performed In</span>
-          </div>
-          <div class="d-stat">
-            <span class="d-num">{cfg.weddings}</span>
-            <span class="d-lbl">Weddings Performed</span>
-          </div>
-          <div class="d-stat">
-            <span class="d-num">{cfg.yearsActive}+</span>
-            <span class="d-lbl">Years of Experience</span>
+              <div class="wd-form-row">
+                <div class="wd-field"><label for="wd-email">Email</label><input type="email" id="wd-email" name="email" placeholder="your@email.com" /></div>
+                <div class="wd-field"><label for="wd-date">Wedding date</label><input type="date" id="wd-date" name="date" /></div>
+              </div>
+              <div class="wd-form-row">
+                <div class="wd-field"><label for="wd-guests">Guests (approx.)</label>
+                  <select id="wd-guests" name="guests"><option value="" disabled selected>Select</option>{guestBands.map((g) => <option value={g}>{g}</option>)}</select></div>
+                <div class="wd-field"><label for="wd-venue">City or venue</label><input type="text" id="wd-venue" name="venue" placeholder="Bangalore, or the venue name" /></div>
+              </div>
+              <div class="wd-field">
+                <label>Functions you need</label>
+                <div class="wd-fn-chips">{functionChips.map((f) => <button type="button" class="wd-fn-chip" data-fn={f}>{f}</button>)}</div>
+              </div>
+              <div class="wd-field"><label for="wd-details">Anything else</label><textarea id="wd-details" name="details" rows="3" placeholder="Languages the floor will want, family performances, the vibe you're after."></textarea></div>
+              <input type="text" name="_company" id="wd-hp" style="display:none" tabindex="-1" autocomplete="off" />
+              <button type="submit" id="wd-submit" class="wd-btn wd-btn--gold wd-form-submit">Send enquiry &rarr;</button>
+              <p class="wd-form-msg" id="wd-msg" hidden></p>
+              <p class="wd-form-fine">Prefer to look around first? See the <a href="/photos/">gallery</a> or the <a href="/audio-visual-dj/">audio-visual format</a>.</p>
+            </form>
           </div>
         </div>
-
       </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         9. DESTINATION GUIDE LINK
-    ══════════════════════════════════════════ -->
-    <section id="weddings-guide">
-      <div class="guide-inner">
-        <span class="guide-label">Wedding Planning Guides</span>
-        <p class="guide-text">Working out your budget? Our honest 2026 guide breaks down real <a href="/blog/wedding-dj-cost-bangalore-2026/">wedding DJ costs in Bangalore</a> — every price tier, what each one delivers, and what should be in the quote.</p>
-        <a href="/blog/wedding-dj-cost-bangalore-2026/" class="guide-link">Wedding DJ Cost Guide &rarr;</a>
-        <p class="guide-text" style="margin-top:1.75rem;">Planning a destination wedding? Read our complete guide to hiring a DJ — sound logistics, multi-day planning, and what to brief your DJ before the event.</p>
-        <a href="/blog/destination-wedding-dj-india/" class="guide-link">Destination Wedding DJ Guide &rarr;</a>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         9. FAQ
-    ══════════════════════════════════════════ -->
-    <section id="weddings-faq">
-      <div class="faq-inner">
-        <div class="section-label">Common Questions</div>
-        <h2>Wedding DJ FAQ</h2>
-        <div class="faq-grid">
-          <details class="faq-item">
-            <summary>How far in advance should we book?</summary>
-            <p>For peak wedding seasons (October–February and April–May), 6–12 months in advance is recommended. DJ VIC takes a limited number of bookings per month, so popular Saturdays fill up quickly. Reach out as soon as you have a date in mind.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Do you cover both sangeet night and the reception?</summary>
-            <p>Yes — DJ VIC performs at all parts of the wedding celebration: sangeet night, cocktail hour, and reception. Each has a different energy and setlist. Packages covering multiple events are available.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Can we customise the music?</summary>
-            <p>Completely. The setlist is built around your preferences — Bollywood, international, retro, hip-hop, Punjabi, Kannada, Tamil, Telugu, Malayalam, or any mix. DJ VIC works with each couple to understand their story and translates that into the music.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Do you play South Indian and regional music?</summary>
-            <p>Yes. Bengaluru weddings bring every family together, and the floor should too. DJ VIC reads the room across <strong>Kannada, Tamil, Telugu and Malayalam</strong> alongside the Bollywood and Punjabi crossover the cousins will demand — plus retro for the uncles and the English sets that keep the night moving. We play the family in front of us, not a template.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Can you travel for destination weddings?</summary>
-            <p>Yes. DJ VIC has performed at weddings across India and in 18 countries, including Sri Lanka, Australia, and the UK. Travel and logistics are discussed as part of the booking. There is no location that is off the table.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Do you bring your own equipment?</summary>
-            <p>Yes — full professional setup is included. DJ VIC co-ordinates with the venue's sound and AV team before the event to ensure a seamless technical setup. You don't need to arrange separate equipment.</p>
-          </details>
-          <details class="faq-item">
-            <summary>What makes DJ VIC different from other wedding DJs?</summary>
-            <p>The <a href="/audio-visual-dj/" style="color:var(--gold);text-decoration:underline;text-underline-offset:3px;">audio-visual format</a> — original music compositions synced with custom visuals, developed since 2007. Combined with {cfg.weddings} weddings across {cfg.yearsActive}+ years, and a reputation built on couples who trust VIC to be the emotional anchor of their celebration, not just background music.</p>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         10. CLOSING CTA
-    ══════════════════════════════════════════ -->
-    <section id="weddings-cta" class="cta-section">
-      <h2>Ready to Make Your Wedding Unforgettable?</h2>
-      <p class="section-sub">Get in touch and let's plan the music for your special day.</p>
-      <a href="/book/" class="cta-btn cta-btn--gold">Book DJ VIC &rarr;</a>
     </section>
 
   </main>
 
-  <a href="/book/" class="sticky-quote-cta" id="sticky-quote-cta">Get a Quote &rarr;</a>
+  <!-- Mobile sticky CTA -->
+  <a class="wd-sticky" href="#enquire" id="wd-sticky" hidden>Check your date &rarr;</a>
+
+  <!-- Video lightbox -->
+  <div class="wd-lightbox" id="wd-lightbox" hidden>
+    <button class="wd-lb-close" id="wd-lb-close" type="button" aria-label="Close">&times;</button>
+    <div class="wd-lb-frame" id="wd-lb-frame"></div>
+  </div>
 
   <Footer />
-
-  <script>
-    // Show sticky CTA only after the hero CTA has scrolled out of view
-    document.addEventListener('astro:page-load', () => {
-      const heroBtn = document.querySelector('#weddings-hero .cta-btn');
-      const stickyBtn = document.getElementById('sticky-quote-cta');
-      if (!heroBtn || !stickyBtn) return;
-      // Only activate sticky behaviour on mobile
-      if (window.matchMedia('(min-width: 601px)').matches) return;
-
-      const show = () => { stickyBtn.style.opacity = '1'; stickyBtn.style.pointerEvents = 'auto'; };
-      const hide = () => { stickyBtn.style.opacity = '0'; stickyBtn.style.pointerEvents = 'none'; };
-
-      // Start hidden; JS controls visibility
-      stickyBtn.style.transition = 'opacity 0.3s';
-      hide();
-
-      const obs = new IntersectionObserver(([entry]) => {
-        entry.isIntersecting ? hide() : show();
-      }, { threshold: 0.1 });
-      obs.observe(heroBtn);
-    });
-  </script>
 </Layout>
 
+<script>
+  // Video filter + lightbox
+  const grid = document.getElementById('wd-video-grid');
+  const filters = document.querySelectorAll('.wd-filter');
+  filters.forEach((btn) => btn.addEventListener('click', () => {
+    filters.forEach((b) => b.classList.remove('on'));
+    btn.classList.add('on');
+    const f = btn.getAttribute('data-filter');
+    grid?.querySelectorAll('.wd-vcard').forEach((c) => {
+      c.hidden = !(f === 'All' || c.getAttribute('data-cat') === f);
+    });
+  }));
+
+  const lb = document.getElementById('wd-lightbox');
+  const lbFrame = document.getElementById('wd-lb-frame');
+  function openLb(id) {
+    if (!lb || !lbFrame) return;
+    lbFrame.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Wedding video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    lb.hidden = false; document.body.style.overflow = 'hidden';
+  }
+  function closeLb() { if (!lb || !lbFrame) return; lb.hidden = true; lbFrame.innerHTML = ''; document.body.style.overflow = ''; }
+  grid?.querySelectorAll('.wd-vcard').forEach((c) => c.addEventListener('click', () => openLb(c.getAttribute('data-video'))));
+  document.getElementById('wd-lb-close')?.addEventListener('click', closeLb);
+  lb?.addEventListener('click', (e) => { if (e.target === lb) closeLb(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && lb && !lb.hidden) closeLb(); });
+
+  // Function chips (multi-select)
+  document.querySelectorAll('.wd-fn-chip').forEach((c) => c.addEventListener('click', () => c.classList.toggle('on')));
+
+  // Mobile sticky CTA — appears once the hero CTA scrolls away
+  const sticky = document.getElementById('wd-sticky');
+  const heroCta = document.querySelector('[data-hero-cta]');
+  if (sticky && heroCta && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => { sticky.hidden = entries[0].isIntersecting; }, { rootMargin: '-40px 0px 0px 0px' }).observe(heroCta);
+  }
+
+  // Enquiry form → submit_booking (event type is always 'wedding' here)
+  const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL;
+  const SB_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+  const NTFY = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
+  const form = document.getElementById('wd-form');
+  function msg(text, ok) { const m = document.getElementById('wd-msg'); if (!m) return; m.textContent = text; m.hidden = false; m.className = 'wd-form-msg ' + (ok ? 'ok' : 'err'); }
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const val = (id) => (document.getElementById(id)?.value || '').trim();
+      if (document.getElementById('wd-hp')?.value) { msg('Thanks — enquiry received.', true); return; }
+      const name = val('wd-name'), phone = val('wd-phone');
+      if (!name || !phone) { msg('Add your name and a number VIC can reach you on.', false); return; }
+      const btn = document.getElementById('wd-submit');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      const fns = [...document.querySelectorAll('.wd-fn-chip.on')].map((c) => c.getAttribute('data-fn'));
+      const email = val('wd-email'), date = val('wd-date'), guests = val('wd-guests'), venue = val('wd-venue'), details = val('wd-details');
+      const message = [
+        fns.length ? `Functions: ${fns.join(', ')}` : '',
+        guests ? `Guests: ${guests}` : '',
+        details, email ? `Email: ${email}` : '', 'Source: Weddings page',
+      ].filter(Boolean).join('\n');
+      try {
+        const r = await fetch(`${SB_URL}/rest/v1/rpc/submit_booking`, {
+          method: 'POST',
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_name: name, p_contact: phone, p_event_type: 'wedding', p_event_date: date || null, p_venue: venue || null, p_city: venue || null, p_budget: null, p_message: message }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        try { navigator.sendBeacon(`https://ntfy.sh/${NTFY}?title=${encodeURIComponent('💍 Wedding enquiry — ' + name)}&priority=4&tags=tada`, new Blob([`${name}${date ? ' · ' + date : ''}${venue ? ' · ' + venue : ''}\n${phone}`], { type: 'text/plain' })); } catch (e) {}
+        if (typeof window.trackLead === 'function') window.trackLead('wedding');
+        form.reset();
+        document.querySelectorAll('.wd-fn-chip.on').forEach((c) => c.classList.remove('on'));
+        msg('Enquiry sent. VIC will get back to you within 24 hours — check WhatsApp.', true);
+      } catch (err) {
+        msg("Couldn't send just now — please message on WhatsApp and I'll sort it out.", false);
+        if (btn) { btn.disabled = false; btn.textContent = 'Send enquiry →'; }
+      }
+    });
+  }
+</script>
+
 <style>
-  /* ─── Hero ─────────────────────────────────────── */
-  #weddings-hero {
-    background-image:
-      linear-gradient(to right, rgba(0,0,0,0.82) 30%, rgba(0,0,0,0.45) 65%, rgba(0,0,0,0.25) 100%),
-      linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%),
-      url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=85');
-    background-position: center center;
-    /* Pull content into a constrained inner wrapper */
-    align-items: stretch;
-    padding: 0;
-  }
-
-  .hero-inner {
-    padding: 8rem 2.5rem 4rem;
-    max-width: var(--max-width);
-    width: 100%;
-    margin-inline: auto;
-  }
-
-  .hero-sub {
-    color: rgba(255,255,255,0.65);
-    font-size: 1rem;
-    max-width: 52ch;
-    margin: 0 0 0.5rem;
-    line-height: 1.6;
-  }
-
-  /* ─── Sticky mobile CTA ────────────────────────── */
-  .sticky-quote-cta {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 85;
-    background: var(--gold);
-    color: #000;
-    text-align: center;
-    padding: 1rem 2rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    text-decoration: none;
-    box-shadow: 0 -2px 16px rgba(0,0,0,0.5);
-    transition: background 0.2s;
-  }
-  .sticky-quote-cta:hover {
-    background: var(--gold-light);
-    color: #000;
-  }
-
-  /* ─── Gold CTA button ──────────────────────────── */
-  .cta-btn {
-    display: inline-block;
-    padding: 0.85rem 2rem;
-    font-family: var(--font-body);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, transform 0.15s;
-    border-radius: 2px;
-    margin-top: 2rem;
-  }
-  .cta-btn--gold {
-    background: var(--gold);
-    color: #000;
-    border: 1px solid var(--gold);
-  }
-  .cta-btn--gold:hover {
-    background: var(--gold-light);
-    color: #000;
-    transform: translateY(-1px);
-  }
-
-  /* ─── Section shared ──────────────────────────── */
-  .section-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.75rem;
-  }
-
-  h2 {
-    color: var(--white);
-  }
-
-  .section-sub {
-    color: rgba(255,255,255,0.65);
-    max-width: 760px;
-    margin-top: 0.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .section-sub--gold {
-    color: rgba(201,168,76,0.75);
-  }
-
-  .section-alt {
-    background: rgba(0,0,0,0.25);
-  }
-
-  /* ─── YouTube thumbnail cards ─────────────────── */
-  .yt-grid {
-    display: grid;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .yt-grid--2col {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .yt-grid--3col {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .yt-grid--1col {
-    grid-template-columns: 1fr;
-    max-width: 680px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .yt-grid--center {
-    grid-template-columns: 1fr;
-    max-width: 780px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .yt-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .yt-thumb {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #111;
-    border-radius: 10px;
-    border: 1px solid #1e1e1e;
-  }
-
-  .yt-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.35s ease;
-  }
-
-  .yt-card:hover .yt-thumb img {
-    transform: scale(1.04);
-  }
-
-  .yt-play {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.45);
-    opacity: 0;
-    transition: opacity 0.25s;
-  }
-
-  .yt-card:hover .yt-play {
-    opacity: 1;
-  }
-
-  .yt-caption {
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: var(--gold);
-    line-height: 1.4;
-    padding: 0 0.25rem;
-    max-width: none;
-    margin: 0;
-  }
-
-  /* ─── Placeholder card ────────────────────────── */
-  .placeholder-card {
-    background: #111;
-    border: 1px dashed #2a2a2a;
-    border-radius: 10px;
-    padding: 3rem 2rem;
-    text-align: center;
-    max-width: 680px;
-    margin-top: 2rem;
-  }
-
-  .placeholder-text {
-    color: var(--grey);
-    font-size: 0.85rem;
-  }
-
-  /* ─── Testimonials ────────────────────────────── */
-  .testimonial-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1.25rem;
-    margin-top: 2.5rem;
-  }
-
-  .testimonial-card {
-    position: relative;
-    background: #111;
-    border-radius: 10px;
-    border-left: 2px solid var(--gold);
-    padding: 1.75rem 1.5rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    flex: 0 1 calc(33.333% - 1rem);
-    min-width: 260px;
-  }
-
-  .t-quote {
-    font-family: Georgia, serif;
-    font-size: 3.5rem;
-    line-height: 1;
-    color: var(--gold);
-    opacity: 0.35;
-    display: block;
-    margin-bottom: -0.5rem;
-  }
-
-  .t-body {
-    font-size: 0.875rem;
-    line-height: 1.7;
-    color: var(--white);
-    flex: 1;
-    max-width: none;
-  }
-
-  .t-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .t-name {
-    color: var(--white);
-    font-size: 0.875rem;
-    font-weight: 600;
-  }
-
-  .t-role {
-    color: var(--gold);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-  }
-
-  /* ─── Destination guide link strip ───────────── */
-  #weddings-guide {
-    border-top: 1px solid rgba(201,168,76,0.12);
-    border-bottom: 1px solid rgba(201,168,76,0.12);
-  }
-
-  .guide-inner {
-    max-width: var(--max-width);
-    margin-inline: auto;
-    padding: 2.5rem 2.5rem;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem 2.5rem;
-  }
-
-  .guide-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-
-  .guide-text {
-    font-size: 0.875rem;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.6;
-    margin: 0;
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .guide-link {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--gold);
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: opacity 0.2s;
-  }
-
-  .guide-link:hover { opacity: 0.7; }
-
-  /* ─── FAQ ─────────────────────────────────────── */
-  #weddings-faq {
-    border-top: 1px solid rgba(201,168,76,0.08);
-    background: #060606;
-  }
-
-  #weddings-faq .faq-inner {
-    max-width: var(--max-width);
-    margin-inline: auto;
-    padding: 5rem 2.5rem;
-  }
-
-  #weddings-faq h2 { margin-bottom: 2.5rem; }
-
-  .faq-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0;
-    border: 1px solid rgba(201,168,76,0.1);
-  }
-
-  .faq-item {
-    border-bottom: 1px solid rgba(201,168,76,0.1);
-    border-right: 1px solid rgba(201,168,76,0.1);
-  }
-
-  .faq-item:nth-child(even) { border-right: none; }
-  .faq-item:nth-last-child(-n+2) { border-bottom: none; }
-
-  .faq-item summary {
-    padding: 1.4rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--white);
-    cursor: pointer;
-    list-style: none;
-    position: relative;
-    padding-right: 3rem;
-    line-height: 1.4;
-    transition: color 0.2s;
-  }
-
-  .faq-item summary::-webkit-details-marker { display: none; }
-
-  .faq-item summary::after {
-    content: '+';
-    position: absolute;
-    right: 1.25rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.25rem;
-    color: var(--gold);
-    font-weight: 400;
-    line-height: 1;
-    transition: transform 0.2s;
-  }
-
-  .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
-  .faq-item[open] summary { color: var(--gold); }
-
-  .faq-item p {
-    padding: 0 1.5rem 1.4rem;
-    font-size: 0.84rem;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.75;
-    margin: 0;
-  }
-
-  @media (max-width: 700px) {
-    .faq-grid { grid-template-columns: 1fr; }
-    .faq-item { border-right: none; }
-    .faq-item:nth-last-child(-n+2) { border-bottom: 1px solid rgba(201,168,76,0.1); }
-    .faq-item:last-child { border-bottom: none; }
-    #weddings-faq .faq-inner { padding-inline: 1.25rem; }
-  }
-
-  /* ─── Closing CTA section ─────────────────────── */
-  .cta-section {
-    text-align: center;
-    background: rgba(0,0,0,0.4);
-    border-top: 1px solid rgba(201,168,76,0.1);
-  }
-
-  .cta-section h2 {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-  }
-
-  .cta-section h2::before {
-    display: none;
-  }
-
-  .cta-section .section-sub {
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-  }
-
-  .cta-section .cta-btn {
-    margin-top: 2rem;
-  }
-
-  /* ─── Destination & NRI section ──────────────── */
-  .destination-section {
-    padding: 5rem 2.5rem;
-    background: #0a0a0a;
-    border-top: 1px solid #1e1e1e;
-    border-bottom: 1px solid #1e1e1e;
-    max-width: 100%;
-  }
-
-  .destination-inner {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 5rem;
-    align-items: center;
-  }
-
-  .destination-section h2 {
-    font-family: var(--font-display);
-    font-size: clamp(2.25rem, 5vw, 3.5rem);
-    color: var(--white);
-    line-height: 1.05;
-    margin-bottom: 1.25rem;
-    letter-spacing: 0.02em;
-    padding-top: 0;
-  }
-
-  .destination-section h2::before { display: none; }
-
-  .destination-desc {
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 300;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.8;
-    margin-bottom: 1.5rem;
-    max-width: 48ch;
-  }
-
-  .destination-locations {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .destination-locations span {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    color: var(--gold);
-    background: #1a1200;
-    border: 1px solid rgba(201,168,76,0.2);
-    padding: 0.3rem 0.75rem;
-    border-radius: 2px;
-  }
-
-  .destination-cta {
-    margin-top: 1.75rem;
-  }
-
-  .destination-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    border-left: 1px solid #1e1e1e;
-    padding-left: 3.75rem;
-  }
-
-  .d-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .d-num {
-    font-family: var(--font-display);
-    font-size: 3.5rem;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .d-lbl {
-    font-family: var(--font-body);
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-  }
-
-  /* ─── Responsive ──────────────────────────────── */
-  @media (max-width: 860px) {
-    .testimonial-card {
-      flex: 0 1 calc(50% - 1rem);
-    }
-    .yt-grid--3col {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 768px) {
-    .destination-inner {
-      grid-template-columns: 1fr;
-      gap: 3rem;
-    }
-    .destination-stats {
-      border-left: none;
-      padding-left: 0;
-      border-top: 1px solid #1e1e1e;
-      padding-top: 2.5rem;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-  }
-
-  @media (max-width: 600px) {
-    .destination-section { padding-inline: 1.25rem; }
-    .yt-grid--2col,
-    .yt-grid--3col {
-      grid-template-columns: 1fr;
-    }
-    .testimonial-card {
-      flex: 0 1 100%;
-    }
-
-    /* ── Mobile hero: smaller image, adjusted padding ── */
-    #weddings-hero {
-      background-image:
-        linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.88) 100%),
-        url('https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=75');
-    }
-    .hero-inner {
-      padding-top: 7rem;
-      padding-bottom: 5rem;
-      padding-inline: 1.25rem;
-    }
-
-    /* Prevent sticky bar from covering last-section content */
-    main {
-      padding-bottom: 3.5rem;
-    }
-
-    /* Show sticky CTA on mobile */
-    .sticky-quote-cta {
-      display: block;
-    }
+  .wd { color: #fff; }
+  .wd a { text-decoration: none; }
+  .wd-inner { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+  .wd-block { padding: 60px 0; }
+  .wd-head { margin-bottom: 8px; }
+  .wd-rule { display: block; width: 40px; height: 2px; background: var(--gold); margin-bottom: 16px; }
+  .wd-eyebrow { display: block; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+  .wd-h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(28px, 4vw, 44px); letter-spacing: .04em; line-height: 1.02; color: #fff; margin: 0; }
+  .wd-lead { font-family: 'Space Grotesk', sans-serif; font-size: clamp(14.5px, 1.6vw, 16px); line-height: 1.75; color: rgba(255,255,255,.62); max-width: 60ch; margin: 16px 0 26px; }
+
+  .wd-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 13px 22px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; transition: background .2s, color .2s, border-color .2s; }
+  .wd-btn--gold { background: var(--gold); color: #050a08; border-color: var(--gold); }
+  .wd-btn--gold:hover { background: var(--gold-light); border-color: var(--gold-light); }
+  .wd-btn--ghost { background: transparent; color: rgba(255,255,255,.85); border-color: #2a2a2a; }
+  .wd-btn--ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Hero */
+  .wd-hero { position: relative; min-height: 78vh; display: flex; align-items: flex-end; background-size: cover; background-position: center; }
+  .wd-hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; padding: 0 28px 64px; }
+  .wd-hero-h1 { font-family: 'Space Grotesk', sans-serif; font-weight: 300; font-size: clamp(34px, 6vw, 68px); line-height: 1.03; letter-spacing: -.02em; color: #fff; margin: 14px 0 0; }
+  .wd-hero-sub { font-family: 'Space Grotesk', sans-serif; font-size: clamp(15px, 1.8vw, 18px); line-height: 1.6; color: rgba(255,255,255,.74); max-width: 52ch; margin: 18px 0 0; }
+  .wd-hero-meta { font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(201,168,76,.85); margin: 16px 0 0; }
+  .wd-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+
+  /* Proof */
+  .wd-proof { border-top: 1px solid #141414; border-bottom: 1px solid #141414; background: rgba(0,0,0,.28); padding: 40px 0; }
+  .wd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(50%, 180px), 1fr)); gap: 1px; background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.15); }
+  .wd-stat { background: #0b0b0b; padding: 22px 20px; display: flex; flex-direction: column; gap: 5px; }
+  .wd-stat strong { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: clamp(30px, 4vw, 40px); line-height: 1; color: #fff; }
+  .wd-stat span { font-family: 'DM Sans', sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+  .wd-venues { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 22px; margin-top: 22px; }
+  .wd-venues-label { font-family: 'DM Sans', sans-serif; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+  .wd-venues-row { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+  .wd-venue { font-family: 'DM Mono', monospace; font-size: 12.5px; color: rgba(255,255,255,.6); }
+
+  /* Covered */
+  .wd-covered-grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
+  @media (min-width: 860px) { .wd-covered-grid { grid-template-columns: 1.35fr 1fr; align-items: start; } }
+  .wd-functions { display: grid; gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; }
+  .wd-func { background: #0c0c0c; padding: 20px 22px; transition: background .2s; }
+  .wd-func:hover { background: #121212; }
+  .wd-func-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .wd-func-name { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 24px; letter-spacing: .04em; color: #fff; margin: 0; }
+  .wd-func-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(201,168,76,.8); }
+  .wd-func-desc { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,.58); margin: 8px 0 0; }
+  .wd-aside { display: flex; flex-direction: column; gap: 1px; }
+  @media (min-width: 860px) { .wd-aside { position: sticky; top: 92px; } }
+  .wd-aside-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; filter: brightness(.9); }
+  .wd-incl { background: #0c0c0c; border: 1px solid #1a1a1a; padding: 22px; }
+  .wd-incl-label { display: block; font-family: 'DM Sans', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .wd-incl-label--req { margin-top: 22px; }
+  .wd-incl ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .wd-incl li { font-family: 'Space Grotesk', sans-serif; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.7); padding-left: 18px; position: relative; }
+  .wd-incl li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); }
+  .wd-req-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wd-req-chip { font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .04em; color: rgba(255,255,255,.66); border: 1px solid #242424; border-radius: 2px; padding: 6px 10px; }
+
+  /* Process */
+  .wd-process { background: rgba(0,0,0,.28); border-top: 1px solid #141414; }
+  .wd-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; }
+  .wd-step { background: #0c0c0c; padding: 26px 22px; }
+  .wd-step-n { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: rgba(201,168,76,.5); }
+  .wd-step-t { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 22px; letter-spacing: .04em; color: #fff; margin: 6px 0 8px; }
+  .wd-step-d { font-family: 'Space Grotesk', sans-serif; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,.58); margin: 0; }
+
+  /* Films */
+  .wd-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .wd-filter { display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 1px solid #232323; color: rgba(255,255,255,.6); font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 8px 14px; border-radius: 2px; cursor: pointer; transition: .2s; }
+  .wd-filter:hover { color: var(--gold); border-color: rgba(201,168,76,.4); }
+  .wd-filter.on { background: var(--gold); border-color: var(--gold); color: #050a08; }
+  .wd-filter-n { font-family: 'DM Mono', monospace; font-size: 10.5px; opacity: .7; }
+  .wd-video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; }
+  .wd-vcard { display: block; text-align: left; background: #0c0c0c; border: none; padding: 0; cursor: pointer; transition: background .2s; }
+  .wd-vcard:hover { background: #131313; }
+  .wd-vthumb { position: relative; aspect-ratio: 16/9; overflow: hidden; }
+  .wd-vthumb img { width: 100%; height: 100%; object-fit: cover; display: block; filter: brightness(.78); transition: filter .2s; }
+  .wd-vcard:hover .wd-vthumb img { filter: brightness(.92); }
+  .wd-vplay { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 46px; height: 46px; border-radius: 50%; background: rgba(201,168,76,.92); color: #050a08; display: flex; align-items: center; justify-content: center; font-size: 16px; padding-left: 3px; }
+  .wd-vmeta { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .wd-vcaption { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500; color: #fff; }
+  .wd-vplace { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(255,255,255,.45); }
+
+  /* Destination */
+  .wd-dest { background: rgba(0,0,0,.28); border-top: 1px solid #141414; }
+  .wd-dest-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 44px; align-items: center; }
+  .wd-dest-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+  .wd-dest-chip { font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.66); border: 1px solid #242424; border-radius: 2px; padding: 7px 12px; }
+  .wd-dest-img { width: 100%; aspect-ratio: 5/4; object-fit: cover; display: block; filter: brightness(.9); }
+
+  /* FAQ */
+  .wd-faq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; }
+  .wd-faq-item { background: #0c0c0c; padding: 18px 20px; }
+  .wd-faq-item.wide { grid-column: 1 / -1; }
+  .wd-faq-item summary { font-family: 'Space Grotesk', sans-serif; font-size: 14.5px; font-weight: 500; color: #fff; cursor: pointer; list-style: none; position: relative; padding-right: 24px; }
+  .wd-faq-item summary::-webkit-details-marker { display: none; }
+  .wd-faq-item summary::after { content: '+'; position: absolute; right: 0; top: -2px; color: var(--gold); font-size: 20px; line-height: 1; }
+  .wd-faq-item[open] summary::after { content: '–'; }
+  .wd-faq-item p { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; line-height: 1.7; color: rgba(255,255,255,.62); margin: 12px 0 0; }
+
+  /* Guides */
+  .wd-guide-links { display: flex; flex-wrap: wrap; gap: 12px; }
+  .wd-guide { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(201,168,76,.3); border-radius: 2px; padding: 12px 18px; transition: .2s; }
+  .wd-guide:hover { background: rgba(201,168,76,.1); border-color: var(--gold); }
+
+  /* Enquiry */
+  .wd-enquire { border-top: 1px solid rgba(201,168,76,.16); background: rgba(0,0,0,.32); padding: 60px 0 76px; }
+  .wd-enquire-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 48px; }
+  .wd-assur { display: grid; gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; margin-bottom: 20px; }
+  .wd-assur-cell { display: flex; flex-direction: column; gap: 5px; background: #0b0b0b; padding: 16px 18px; }
+  .wd-assur-label { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+  .wd-assur-val { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,.72); }
+  .wd-wa { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; background: #25D366; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .12em; text-transform: uppercase; padding: 14px; transition: background .2s; }
+  .wd-wa:hover { background: #1ebe5a; }
+  .wd-direct { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; padding-top: 18px; border-top: 1px solid #1e1e1e; }
+  .wd-direct a { font-family: 'DM Mono', monospace; font-size: 13px; color: rgba(255,255,255,.7); }
+  .wd-direct a:hover { color: var(--gold); }
+  .wd-form { background: #0b0b0b; border: 1px solid #1e1e1e; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .wd-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; }
+  .wd-field { display: flex; flex-direction: column; gap: 7px; }
+  .wd-field label { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .wd-req { color: var(--gold); }
+  .wd-field input, .wd-field select, .wd-field textarea { background: #0d0d0d; border: 1px solid #242424; border-radius: 2px; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; padding: 11px 13px; outline: none; transition: border-color .2s; width: 100%; resize: vertical; }
+  .wd-field input:focus, .wd-field select:focus, .wd-field textarea:focus { border-color: var(--gold); }
+  .wd-field input::placeholder, .wd-field textarea::placeholder { color: rgba(255,255,255,.32); }
+  .wd-fn-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wd-fn-chip { font-family: 'DM Sans', sans-serif; font-size: 11.5px; color: rgba(255,255,255,.6); background: transparent; border: 1px solid #242424; border-radius: 2px; padding: 8px 12px; cursor: pointer; transition: .2s; }
+  .wd-fn-chip.on { background: rgba(201,168,76,.14); border-color: var(--gold); color: var(--gold-light); }
+  .wd-form-submit { margin-top: 4px; width: 100%; }
+  .wd-form-msg { font-family: 'Space Grotesk', sans-serif; font-size: 13px; margin: 0; padding: 10px 12px; border-radius: 2px; }
+  .wd-form-msg.ok { color: #b8e6c8; background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.3); }
+  .wd-form-msg.err { color: #f0b8b8; background: rgba(255,59,59,.1); border: 1px solid rgba(255,59,59,.3); }
+  .wd-form-fine { font-family: 'Space Grotesk', sans-serif; font-size: 11.5px; color: rgba(255,255,255,.32); margin: 0; }
+  .wd-form-fine a { color: rgba(201,168,76,.75); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* Lightbox */
+  .wd-lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(3,5,4,.92); display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .wd-lb-frame { width: 100%; max-width: 1000px; aspect-ratio: 16/9; }
+  .wd-lb-frame iframe { width: 100%; height: 100%; border: 0; }
+  .wd-lb-close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; font-size: 34px; line-height: 1; cursor: pointer; }
+  .wd-lb-close:hover { color: var(--gold); }
+
+  /* Mobile sticky CTA */
+  .wd-sticky { display: none; }
+  @media (max-width: 760px) {
+    .wd-inner, .wd-hero-inner { padding-left: 16px; padding-right: 16px; }
+    .wd-sticky { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; background: var(--gold); color: #050a08; text-align: center; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 15px; }
+    .wd-lightbox { padding: 14px; }
+    main.wd { padding-bottom: 52px; }
   }
 </style>

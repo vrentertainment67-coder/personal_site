@@ -7,7 +7,9 @@
 export const IMAGE_SLOTS = [
   { slot: "home.weddings-bg", label: "Weddings card background", page: "Home", size: "1200 × 800 px · landscape", default: "/images/rf/fc1c338a80d635c2429d234301f2ba98.jpg" },
   { slot: "home.corporate-bg", label: "Corporate card background", page: "Home", size: "1200 × 800 px · landscape", default: "/images/rf/c26853944612fd45df1fe9d9f6d3417f.jpg" },
-  { slot: "weddings.hero", label: "Weddings — hero background", page: "Weddings", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=85" },
+  { slot: "weddings.hero", label: "Weddings — hero background", page: "Weddings", size: "1920 × 1080 px · landscape", default: "/images/home/wed-hero-placeholder.jpg" },
+  { slot: "weddings.functions", label: "Weddings — functions photo", page: "Weddings", size: "800 × 1000 px · vertical 4:5", default: "/images/home/wed-functions-placeholder.jpg" },
+  { slot: "weddings.destination", label: "Weddings — destination photo", page: "Weddings", size: "1000 × 800 px · 5:4", default: "/images/home/wed-destination-placeholder.jpg" },
   { slot: "corporate.hero", label: "Corporate — hero background", page: "Corporate", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1600&q=85" },
   { slot: "sangeet.hero", label: "Sangeet — hero background", page: "Sangeet", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&q=85" },
   { slot: "nightlife.hero", label: "Nightlife — hero background", page: "Nightlife", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=1600&q=85" },
