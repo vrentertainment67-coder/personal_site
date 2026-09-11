@@ -42,6 +42,8 @@ export async function getEpisodes() {
     duration: e.data.duration || '',
     featured: !!e.data.featured,
     yt: e.data.youtubeId || '',
+    date: e.data.publishDate || '',
+    premiere: e.data.premiereWhen || '',
   }));
 }
 
