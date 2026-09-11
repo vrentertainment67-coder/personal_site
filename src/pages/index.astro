@@ -79,9 +79,11 @@ const tiles = [
   { name: 'All Services',           href: '/book/',             desc: 'Every format, one booking flow.' },
 ];
 
+// Pre-whitened PNGs (rendered from the client SVGs) — some source SVGs lack a
+// viewBox and won't scale inside an <img>, so we rasterize to a uniform silhouette.
 const trustLogos = [
-  ['apple.svg', 'Apple'], ['jpmorgan.svg', 'JPMorgan'], ['kpmg.svg', 'KPMG'], ['ritz-carlton.svg', 'The Ritz-Carlton'], ['pepsico.svg', 'PepsiCo'],
-  ['decathlon.svg', 'Decathlon'], ['hdfc.svg', 'HDFC'], ['walmart.svg', 'Walmart'], ['sap.svg', 'SAP'], ['infosys.svg', 'Infosys'],
+  ['apple', 'Apple'], ['jpmorgan', 'JPMorgan'], ['kpmg', 'KPMG'], ['ritz-carlton', 'The Ritz-Carlton'], ['pepsico', 'PepsiCo'],
+  ['decathlon', 'Decathlon'], ['hdfc', 'HDFC'], ['walmart', 'Walmart'], ['sap', 'SAP'], ['infosys', 'Infosys'],
 ];
 
 const eventTypes = [
@@ -172,7 +174,7 @@ const eventTypes = [
           <span class="hm-logos-label">Performed at events for teams at — and for {cfg.weddings} couples across India and abroad</span>
           <div class="hm-logos">
             {trustLogos.map(([file, name]) => (
-              <img class="hm-logo" src={`/images/clients/${file}`} alt={name} loading="lazy" width="118" height="26" />
+              <img class="hm-logo" src={`/images/clients/white/${file}.png`} alt={name} loading="lazy" height="26" />
             ))}
           </div>
         </div>
@@ -440,7 +442,7 @@ const eventTypes = [
   .hm-stat span { font-family: 'DM Sans', sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.5); }
   .hm-logos-label { display: block; font-family: 'DM Sans', sans-serif; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.36); margin-bottom: 22px; }
   .hm-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 34px 44px; }
-  .hm-logo { height: 26px; width: auto; max-width: 118px; object-fit: contain; filter: brightness(0) invert(1); opacity: .48; transition: opacity .2s; }
+  .hm-logo { height: 26px; width: auto; max-width: 150px; object-fit: contain; opacity: .48; transition: opacity .2s; }
   .hm-logo:hover { opacity: 1; }
 
   /* 4 · Statement */
