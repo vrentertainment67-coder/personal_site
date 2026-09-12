@@ -22,7 +22,7 @@ const NTFY_TOPIC = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
         <div class="wp-grid">
           {events.map((e) => (
             <button type="button" class={`wp-ev wp-ev--${e.theme}`}
-              data-slug={e.slug} data-name={e.name} data-day={e.day} data-datelabel={e.dateLabel} data-venue={e.venue}>
+              data-date={e.date} data-slug={e.slug} data-name={e.name} data-day={e.day} data-datelabel={e.dateLabel} data-venue={e.venue}>
               <span class="wp-day">{e.day} · {e.dateLabel}</span>
               <span class="wp-name">{e.name}</span>
               <span class="wp-venue">📍 {e.venue}</span>
@@ -98,7 +98,16 @@ const NTFY_TOPIC = 'djvic-bookings-7k9f3hQ2pX8mN5vR';
       $('wp-form-sub').textContent = chosen.day + ' ' + chosen.dateLabel + ' · ' + chosen.venue;
       $('wp-msg').textContent = ''; $('wp-msg').className = 'wp-msg';
     }
+    // Client-side expiry: drop any night whose date has already passed, so the
+    // popup self-hides the day after the event even if the static build hasn't
+    // been redeployed since. (The build-time filter in index.astro is the first gate.)
+    var todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    [].forEach.call(ov.querySelectorAll('.wp-ev'), function (b) {
+      var d = b.getAttribute('data-date');
+      if (d && d < todayStr) b.remove();
+    });
     var evBtns = ov.querySelectorAll('.wp-ev');
+    if (!evBtns.length) return; // nothing upcoming → don't open
     [].forEach.call(evBtns, function (btn) {
       btn.addEventListener('click', function () { pick(btn); show('wp-form'); $('wp-name').focus(); });
     });
