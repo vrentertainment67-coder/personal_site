@@ -15,9 +15,24 @@ import Layout from '../../layouts/Layout.astro';
         <span id="cd-sync" class="cd-sync">○ Connecting…</span>
         <span id="cd-upd" class="cd-sync"></span>
         <button id="cd-refresh" class="cd-mini" type="button">↻</button>
+        <button id="cd-list" class="cd-mini" type="button">List</button>
         <button id="cd-reset" class="cd-mini" type="button">Reset</button>
       </div>
     </header>
+
+    <!-- Manual list: the draw still runs when the check-in list can't be read
+         (token pointing at the wrong event, Supabase down, venue wifi gone).
+         Type who's in the room and draw from that instead. -->
+    <section id="cd-panel" class="cd-panel" hidden>
+      <h2 class="cd-panel-h">Draw from a typed list</h2>
+      <p class="cd-panel-p">One name per line. This overrides the check-in list and stays on this device — clear it to go back to live check-ins.</p>
+      <textarea id="cd-names" class="cd-names" spellcheck="false" autocapitalize="words" placeholder="One name per line"></textarea>
+      <div class="cd-panel-foot">
+        <span class="cd-tally" id="cd-tally">0 names</span>
+        <button id="cd-clear" class="cd-mini" type="button">Clear</button>
+        <button id="cd-save" class="cd-save" type="button">Use this list</button>
+      </div>
+    </section>
 
     <section class="cd-stage">
       <div id="cd-display" class="cd-display">
@@ -48,6 +63,15 @@ import Layout from '../../layouts/Layout.astro';
   let spinning = false;
   let lastWinner = null;
 
+  // A typed list, when one is set, replaces the check-in list entirely — the
+  // escape hatch for a night where the RPC can't be read.
+  const MAN_KEY = 'chamatkar_manual_' + token.slice(0, 10);
+  const loadMan = () => { try { return JSON.parse(localStorage.getItem(MAN_KEY) || '[]'); } catch { return []; } };
+  const saveMan = () => { try { localStorage.setItem(MAN_KEY, JSON.stringify(manual)); } catch {} };
+  let manual = loadMan();
+  const parseNames = (raw) => raw.split('\n').map((s) => s.trim()).filter(Boolean);
+  const manEntries = () => manual.map((n, i) => ({ id: 'm' + i + '-' + n, name: n, instagram: '' }));
+
   const pool = () => entries.filter((e) => !won.has(e.id));
   const igOf = (e) => e && e.instagram ? '@' + String(e.instagram).replace(/^@/, '') : '';
 
@@ -63,7 +87,10 @@ import Layout from '../../layouts/Layout.astro';
     nm.hidden = false; nm.textContent = name; nm.className = 'cd-name' + (mode === 'winner' ? ' is-winner' : '');
     sb.hidden = !sub; sb.textContent = sub || '';
   }
-  const idleText = () => pool().length ? 'Press GO to draw a winner' : (entries.length ? 'Everyone has won — Reset to draw again' : 'No entries yet — get people scanning');
+  const idleText = () => pool().length ? 'Press GO to draw a winner'
+    : (entries.length ? 'Everyone has won — Reset to draw again'
+    : (manual.length ? 'Everyone on the list has won — Reset to draw again'
+    : 'No entries yet — get people scanning, or tap List to type them in'));
 
   // ── Realtime (broadcast to the TV screen) ─────────────────────────────────
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
@@ -117,6 +144,15 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   async function load(quiet) {
+    // A typed list wins: don't let a poll overwrite it with an empty RPC read.
+    if (manual.length) {
+      entries = manEntries();
+      refreshMeta();
+      $('cd-upd').textContent = '· typed list';
+      $('cd-status').classList.remove('show', 'err');
+      if (!spinning && !lastWinner) setDisplay(idleText(), '', 'idle');
+      return;
+    }
     if (!token) { $('cd-status').textContent = 'Missing access code — open the full draw link (with ?k=…).'; $('cd-status').classList.add('show', 'err'); return; }
     try {
       const res = await rpc('chamatkar_draw_list', { p_token: token });
@@ -134,6 +170,38 @@ import Layout from '../../layouts/Layout.astro';
 
   $('cd-go').addEventListener('click', draw);
   $('cd-refresh').addEventListener('click', () => load(false));
+
+  // ── Typed list ────────────────────────────────────────────────────────────
+  const tally = (n) => n + ' name' + (n === 1 ? '' : 's');
+  $('cd-list').addEventListener('click', () => {
+    const open = $('cd-panel').hidden;
+    if (open) {
+      $('cd-names').value = manual.join('\n');
+      $('cd-tally').textContent = tally(manual.length);
+    }
+    $('cd-panel').hidden = !open;
+    if (open) $('cd-names').focus();
+  });
+  $('cd-names').addEventListener('input', () => {
+    $('cd-tally').textContent = tally(parseNames($('cd-names').value).length);
+  });
+  $('cd-save').addEventListener('click', () => {
+    const next = parseNames($('cd-names').value);
+    if (!next.length) { $('cd-tally').textContent = 'Add at least one name'; return; }
+    manual = next; saveMan();
+    $('cd-panel').hidden = true;
+    lastWinner = null;
+    load(false);
+    $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact');
+  });
+  $('cd-clear').addEventListener('click', () => {
+    manual = []; saveMan();
+    $('cd-names').value = ''; $('cd-tally').textContent = tally(0);
+    $('cd-panel').hidden = true;
+    lastWinner = null;
+    load(false);
+    $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact');
+  });
   $('cd-reset').addEventListener('click', () => {
     if (!confirm('Put everyone back in the draw (clear all winners)?')) return;
     won = new Set(); saveWon(); lastWinner = null; refreshMeta();
@@ -165,6 +233,20 @@ import Layout from '../../layouts/Layout.astro';
   .cd-sync.on { color: #48d16a; }
   .cd-mini { margin-left: auto; background: none; border: 1px solid #2a2a30; color: var(--muted); padding: .35rem .7rem; border-radius: 100px; font-size: .82rem; cursor: pointer; }
   .cd-mini:last-child { margin-left: .4rem; }
+
+  /* Only the first button takes the auto margin — a second one would split the
+     free space between them instead of keeping the group flush right. */
+  .cd-meta .cd-mini ~ .cd-mini { margin-left: .4rem; }
+
+  .cd-panel { margin: 1rem 1.1rem 0; padding: 1rem; border: 1px solid #2a2a30; border-radius: 12px; background: #121216; display: flex; flex-direction: column; gap: .7rem; }
+  .cd-panel-h { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--bone); }
+  .cd-panel-p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+  .cd-names { width: 100%; min-height: 9rem; resize: vertical; background: #0a0a0c; color: var(--bone); border: 1px solid #2a2a30; border-radius: 9px; padding: .7rem .8rem; font: inherit; font-size: 1rem; line-height: 1.65; }
+  .cd-names::placeholder { color: #55535c; }
+  .cd-panel-foot { display: flex; align-items: center; gap: .5rem; }
+  .cd-tally { color: var(--muted); font-size: .85rem; margin-right: auto; }
+  .cd-panel-foot .cd-mini { margin-left: 0; }
+  .cd-save { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #241a02; border: none; border-radius: 100px; padding: .5rem 1.1rem; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
 
   .cd-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(1.6rem, 6vw, 2.6rem); padding: 2rem 1.2rem; text-align: center; }
   .cd-display { min-height: clamp(90px, 22vw, 140px); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
