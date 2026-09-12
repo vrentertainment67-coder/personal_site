@@ -118,6 +118,12 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   setInterval(() => { if (document.visibilityState === 'visible' && !spinning) load(); }, 12000);
+  // Same as the host page: the TV can be backgrounded or the venue wifi can
+  // drop, and the interval stops without saying so. Re-pull on the way back.
+  const revive = () => { if (document.visibilityState === 'visible' && !spinning) load(); };
+  document.addEventListener('visibilitychange', revive);
+  window.addEventListener('focus', revive);
+  window.addEventListener('online', revive);
   load();
 </script>
 

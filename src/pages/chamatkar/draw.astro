@@ -13,6 +13,7 @@ import Layout from '../../layouts/Layout.astro';
         <span><b id="cd-pool">0</b> in the draw</span>
         <span id="cd-won-wrap" hidden>· <b id="cd-won">0</b> won</span>
         <span id="cd-sync" class="cd-sync">○ Connecting…</span>
+        <span id="cd-upd" class="cd-sync"></span>
         <button id="cd-refresh" class="cd-mini" type="button">↻</button>
         <button id="cd-reset" class="cd-mini" type="button">Reset</button>
       </div>
@@ -122,6 +123,9 @@ import Layout from '../../layouts/Layout.astro';
       if (!res.ok) throw new Error(await res.text());
       entries = (await res.json()) || [];
       refreshMeta();
+      // Stamp every successful pull: a frozen clock is the only visible tell
+      // that the count went stale rather than genuinely stopped growing.
+      $('cd-upd').textContent = '· ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
       if (!spinning && !lastWinner) setDisplay(idleText(), '', 'idle');
     } catch {
       $('cd-status').textContent = 'Wrong or expired link.'; $('cd-status').classList.add('show', 'err');
@@ -138,6 +142,13 @@ import Layout from '../../layouts/Layout.astro';
     $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact'); $('cd-status').classList.remove('show');
   });
   setInterval(() => { if (document.visibilityState === 'visible' && !spinning) load(true); }, 15000);
+  // The interval only ticks while the page is visible, and iOS freezes a tab
+  // that has sat in the background — so an iPad picked up after a while shows
+  // a stale count with no hint it stopped. Re-pull whenever it comes back.
+  const revive = () => { if (document.visibilityState === 'visible' && !spinning) load(true); };
+  document.addEventListener('visibilitychange', revive);
+  window.addEventListener('focus', revive);
+  window.addEventListener('online', revive);
   initRealtime();
   load(false);
 </script>
