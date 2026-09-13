@@ -2107,45 +2107,49 @@ function InvitePastGuests({ event, showToast }) {
 }
 
 // ── Guests tab: the master deduped contact database (CRM) ──
+// How they RSVP'd — friendly labels for the event_rsvps.source column.
+const RSVP_SOURCE = { "self-checkin": "Door check-in", funnel: "Booking funnel", popup: "Homepage popup", weekend: "Homepage popup", form: "RSVP form", manual: "Added manually" };
+const rsvpSource = (s) => RSVP_SOURCE[s] || (s ? String(s).replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—");
+const prettyEvent = (slug) => (slug || "—").replace(/-/g, " ").replace(/\bvol\b/i, "Vol.").replace(/\b\w/g, (c) => c.toUpperCase());
+
 function Guests({ showToast }) {
-  const [contacts, setContacts] = useState([]); const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     let on = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("event_rsvps").select("name,phone,instagram,event,created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("event_rsvps").select("name,phone,instagram,event,source,guests,created_at").order("created_at", { ascending: false });
       if (error) showToast("Couldn't load guests.");
-      const byPhone = {};
-      (data || []).forEach((r) => {
-        const k = phoneKey(r.phone);
-        if (!k) return;
-        if (!byPhone[k]) byPhone[k] = { phone: k, name: r.name, instagram: r.instagram, events: new Set(), visits: 0, last: r.created_at };
-        const c = byPhone[k];
-        c.events.add(r.event); c.visits += 1;
-        if (r.created_at > c.last) { c.last = r.created_at; c.name = r.name || c.name; c.instagram = r.instagram || c.instagram; }
-      });
-      const list = Object.values(byPhone).map((c) => ({ ...c, eventsCount: c.events.size })).sort((a, b) => (b.last || "").localeCompare(a.last || ""));
-      if (on) { setContacts(list); setLoading(false); }
+      if (on) { setRows(data || []); setLoading(false); }
     })();
     return () => { on = false; };
   }, [showToast]);
 
   const q = query.trim().toLowerCase();
-  const filtered = contacts.filter((c) => !q || [c.name, c.phone, c.instagram].some((v) => (v || "").toLowerCase().includes(q)));
-  const totalRsvps = filtered.reduce((s, c) => s + c.visits, 0);
+  const filtered = rows.filter((r) => !q || [r.name, r.phone, r.instagram, r.event].some((v) => (v || "").toLowerCase().includes(q)));
 
+  // Group by event; newest event (by most recent RSVP in the group) first.
+  const groups = {};
+  filtered.forEach((r) => { const k = r.event || "—"; (groups[k] = groups[k] || []).push(r); });
+  const events = Object.entries(groups)
+    .map(([slug, list]) => ({ slug, list, latest: list[0]?.created_at || "" }))
+    .sort((a, b) => (b.latest || "").localeCompare(a.latest || ""));
+
+  const waFor = (r) => { const p = phoneKey(r.phone); if (p) window.open(`https://wa.me/${p}?text=${encodeURIComponent(`Hi${r.name ? " " + r.name.split(" ")[0] : ""}! DJ VIC here 🎧`)}`, "_blank"); };
   const exportCsv = () => {
-    const head = ["name", "phone", "instagram", "events_attended", "total_rsvps", "last_seen"];
+    const head = ["event", "name", "phone", "instagram", "rsvped_via", "date"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [head.join(","), ...filtered.map((c) => [esc(c.name), esc("+" + c.phone), esc(c.instagram), c.eventsCount, c.visits, esc(c.last)].join(","))].join("\n");
+    const csv = [head.join(","), ...filtered.map((r) => [esc(prettyEvent(r.event)), esc(r.name), esc(r.phone), esc(r.instagram), esc(rsvpSource(r.source)), esc(r.created_at)].join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `djvic-guests-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
-  const waFor = (c) => window.open(`https://wa.me/${c.phone}?text=${encodeURIComponent(`Hi${c.name ? " " + c.name.split(" ")[0] : ""}! DJ VIC here 🎧`)}`, "_blank");
+
+  const th = { textAlign: "left", padding: "7px 10px", color: "#8a8878", fontWeight: 600, fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", borderBottom: "1px solid #262626" };
+  const td = { padding: "9px 10px", borderBottom: "1px solid #1a1a1a", color: "#dcdcd4", fontSize: 13, verticalAlign: "top" };
 
   return (
     <>
@@ -2153,37 +2157,32 @@ function Guests({ showToast }) {
         <h1 className="h1">Guests</h1>
         <button className="btn sm" onClick={exportCsv}>Export CSV</button>
       </div>
-      <p className="sub">Your master guest database — everyone who's ever RSVP'd, deduplicated by phone. Grows with every event.</p>
-      <div style={{ display: "flex", gap: 10, margin: "0 0 14px" }}>
-        <div style={glStat}><strong style={glNum}>{filtered.length}</strong><span style={glLbl}>Unique guests</span></div>
-        <div style={glStat}><strong style={glNum}>{totalRsvps}</strong><span style={glLbl}>Total RSVPs</span></div>
-      </div>
-      <input className="search" placeholder="Search name, phone, instagram…" value={query} onChange={(e) => setQuery(e.target.value)} />
-      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (
-        <div className="list">
-          {filtered.length === 0 && <p className="empty">No guests yet.</p>}
-          {filtered.map((c) => {
-            const t = new Date(c.last);
-            return (
-              <div key={c.phone} className="req">
-                <div className="req-top">
-                  <div>
-                    <h3>{c.name || "Guest"} <span className="gold">· {c.eventsCount} {c.eventsCount === 1 ? "event" : "events"}</span></h3>
-                    <p className="req-meta">
-                      <span>+{c.phone}</span>
-                      {c.instagram && <span>{c.instagram}</span>}
-                      <span>{c.visits} RSVP{c.visits === 1 ? "" : "s"}</span>
-                      <span>last {MONTHS[t.getMonth()]} {t.getDate()}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="req-actions">
-                  <button className="act wa" onClick={() => waFor(c)}><MessageCircle size={15} /> WhatsApp</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <p className="sub">Everyone who RSVP'd or checked in, grouped by event.</p>
+      <input className="search" placeholder="Search name, phone, event…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : events.length === 0 ? <p className="empty">No guests yet.</p> : (
+        events.map(({ slug, list }) => (
+          <div key={slug} style={{ margin: "0 0 26px" }}>
+            <div className="row-between" style={{ margin: "0 0 8px", alignItems: "baseline" }}>
+              <h2 style={{ fontSize: 17, margin: 0, color: "#fff" }}>{prettyEvent(slug)}</h2>
+              <span className="gold" style={{ fontSize: 13, fontWeight: 600 }}>{list.length} {list.length === 1 ? "guest" : "guests"}</span>
+            </div>
+            <div style={{ overflowX: "auto", border: "1px solid #1e1e1e", borderRadius: 8 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", background: "#0d0d0d" }}>
+                <thead><tr><th style={th}>Name</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
+                <tbody>
+                  {list.map((r, i) => (
+                    <tr key={i}>
+                      <td style={td}>{r.name || "Guest"}{r.instagram ? <span style={{ color: "#8a8878", marginLeft: 6, fontSize: 12 }}>{r.instagram.startsWith("@") ? r.instagram : "@" + r.instagram}</span> : null}</td>
+                      <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>{r.phone || "—"}</td>
+                      <td style={{ ...td, whiteSpace: "nowrap", color: "#c9a84c" }}>{rsvpSource(r.source)}</td>
+                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>{phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))
       )}
     </>
   );
