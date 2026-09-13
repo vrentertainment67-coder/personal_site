@@ -11,33 +11,29 @@ import EventMedia from '../components/EventMedia.jsx';
 // RSVPs tagged to `slug`; door self-check-in + feedback live at
 // /chamatkar/checkin and /chamatkar/feedback (same slug).
 const EVENT = {
-  slug: 'chamatkar-vol5',
+  slug: 'chamatkar-vol6',
   title: 'Chamatkar',
-  edition: 'Vol. 5',
+  edition: 'Vol. 6',
   tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
-  // Set dateTBA:true when the next date isn't decided — it hides the countdown,
-  // calendar links and RSVP cutoff and shows a "date announced soon" treatment.
-  dateTBA: false,
-  dateLabel: 'Saturday, 12 September 2026',
+  // Vol. 5 (12 Sep) is done — next date not decided yet, so dateTBA hides the
+  // countdown, RSVP cutoff and calendar links and shows "date announced soon".
+  dateTBA: true,
+  dateLabel: '',
   timeLabel: '9:00 PM onwards',
-  doorsAt: '2026-09-12T21:00:00+05:30',
+  doorsAt: '',
   lineup: 'DJ VIC',
   genre: 'Bollywood × Global — Audio-Visual Set',
   theme: 'Bollywood × Global',
   themeLine: 'Live Audio-Visual Set',
   intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
-  // heroBg = a clean, text-safe static background behind the hero copy. Null =
-  // a plain dark gradient (no busy creative behind the text).
   heroBg: null,
-  // flyer = the horizontal creative for the upcoming edition, shown below the
-  // hero. Null hides the flyer section (no Vol. 5 creative yet).
-  flyer: '/images/chamatkar-vol5-poster.webp',
+  flyer: null,
   logo: '/images/chamatkar-logo.webp',
   ics: '/chamatkar.ics',
-  rsvpCutoff: '2026-09-12T21:00:00+05:30',
-  expiry: '2026-09-13T02:00:00+05:30',
+  rsvpCutoff: '',
+  expiry: '',
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -54,6 +50,7 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // `poster` (landscape cover) is optional — the block just shows text + gallery
 // until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
+  { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-poster.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-22', edition: 'Vol. 4', dateLabel: 'Saturday, 22 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol4-banner.jpg', blurb: 'The 90s / 2000s Edition — the Bollywood you grew up on, mixed live against global records. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
@@ -89,7 +86,7 @@ const PAST_EDITIONS = [
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
-        <p class="ck-proof">🔥 Four editions in — every one packed the floor. Get on the list early.</p>
+        <p class="ck-proof">🔥 Five editions in — every one packed the floor. Next date announced soon.</p>
         <div class="ck-ctas">
           <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
           <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
@@ -143,7 +140,7 @@ const PAST_EDITIONS = [
         <span class="ck-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ck-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Four editions in</strong> · limited guest-list spots · {EVENT.dateTBA ? 'date announced soon' : <span id="ck-countdown" data-doors={EVENT.doorsAt}>counting…</span>}</p>
+        <p class="ck-fomo"><span class="ck-fomo-dot"></span><strong>Five editions in</strong> · limited guest-list spots · {EVENT.dateTBA ? 'date announced soon' : <span id="ck-countdown" data-doors={EVENT.doorsAt}>counting…</span>}</p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
