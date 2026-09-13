@@ -52,10 +52,9 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
     input[type=text],input[type=tel]{ width:100%; background:#100e0c; border:1.5px solid var(--line);
       border-radius:13px; padding:16px; color:var(--off); font-size:17px; outline:none; font-family:inherit; }
     input:focus{ border-color:var(--gold); }
-    .phone-row{ display:flex; align-items:stretch; background:#100e0c; border:1.5px solid var(--line); border-radius:13px; overflow:hidden; }
-    .phone-row:focus-within{ border-color:var(--gold); }
-    .phone-cc{ display:flex; align-items:center; padding:0 12px 0 16px; color:var(--mut); font-size:17px; border-right:1.5px solid var(--line); white-space:nowrap; }
-    .phone-row input[type=tel]{ border:none; background:transparent; border-radius:0; padding:16px 16px 16px 12px; }
+    .phone-row{ display:flex; gap:10px; }
+    .phone-row .cc{ flex:none; width:78px; text-align:center; padding-left:6px; padding-right:6px; }
+    .phone-row #phone{ flex:1; min-width:0; }
     .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
     .go{ width:100%; padding:17px; border:none; border-radius:14px; font-size:17px; font-weight:700;
       color:#1a1407; background:linear-gradient(90deg,var(--gold-dim),var(--gold)); cursor:pointer;
@@ -97,7 +96,7 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         <label class="fld"><span>Your name</span>
           <input type="text" id="name" autocapitalize="words" placeholder="Who's here?" enterkeyhint="next" /></label>
         <label class="fld"><span>WhatsApp number</span>
-          <span class="phone-row"><span class="phone-cc">+91</span><input type="tel" id="phone" inputmode="numeric" maxlength="10" placeholder="98765 43210" enterkeyhint="next" /></span></label>
+          <span class="phone-row"><input type="text" id="cc" class="cc" value="+91" maxlength="5" inputmode="tel" aria-label="Country code" /><input type="tel" id="phone" inputmode="numeric" maxlength="12" placeholder="98765 43210" enterkeyhint="next" /></span></label>
         <label class="fld"><span>Instagram <i style="opacity:.6">(optional)</i></span>
           <input type="text" id="insta" autocapitalize="none" placeholder="@yourhandle" enterkeyhint="done" /></label>
         <button type="submit" id="go" class="go">I'm here — enter me →</button>
@@ -122,9 +121,14 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
       var LSKEY = "chamatkar_checkin_" + EVENT_SLUG;   // this device already checked in
       var QKEY  = "chamatkar_ci_queue_" + EVENT_SLUG;  // offline retry queue
 
-      // Digits only, 10 max (the +91 is a fixed prefix, not typed).
+      // Country code: a leading + and digits only (default +91, editable).
+      $("cc").addEventListener("input", function () {
+        var v = "+" + this.value.replace(/[^\d]/g, "");
+        if (this.value !== v) this.value = v;
+      });
+      // Phone: digits only (guests type just their number).
       $("phone").addEventListener("input", function () {
-        var v = this.value.replace(/\D/g, "").slice(0, 10);
+        var v = this.value.replace(/\D/g, "").slice(0, 12);
         if (this.value !== v) this.value = v;
       });
 
@@ -165,11 +169,12 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         e.preventDefault();
         if ($("company").value) { showWelcome($("name").value.trim()); return; } // honeypot
         var name = $("name").value.trim();
+        var cc = ($("cc").value || "").replace(/\D/g, "") || "91";
         var digits = $("phone").value.replace(/\D/g, "");
         var insta = ($("insta").value || "").trim().replace(/^@+/, "");
         if (name.length < 2) return msg("Please add your name.");
-        if (digits.length !== 10) return msg("Enter your 10-digit mobile number.");
-        var phone = "+91" + digits; // fixed country code + the 10 digits typed
+        if (digits.length < 7) return msg("Please enter your mobile number.");
+        var phone = "+" + cc + digits; // editable code (default +91) + the number typed
 
         var row = {
           event: EVENT_SLUG, name: name, phone: phone, guests: 1,
