@@ -2134,8 +2134,8 @@ const prettyEvent = (slug) => CHAMATKAR_EDITIONS[slug] || (slug || "—").replac
 function Guests({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [editId, setEditId] = useState(null); const [editField, setEditField] = useState(null);
-  const [editVal, setEditVal] = useState(""); const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editPhone, setEditPhone] = useState(""); const [editIg, setEditIg] = useState(""); const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -2148,26 +2148,22 @@ function Guests({ showToast }) {
     return () => { on = false; };
   }, [showToast]);
 
-  const startEdit = (r, field) => { setEditId(r.id); setEditField(field); setEditVal(field === "phone" ? (r.phone || "+91") : igHandle(r.instagram)); };
-  const cancelEdit = () => { setEditId(null); setEditField(null); setEditVal(""); };
+  // One Edit button per row opens the whole row for editing (number + handle).
+  const startEdit = (r) => { setEditId(r.id); setEditPhone(r.phone || "+91"); setEditIg(igHandle(r.instagram)); };
+  const cancelEdit = () => { setEditId(null); setEditPhone(""); setEditIg(""); };
   const saveEdit = async (r) => {
-    let patch;
-    if (editField === "phone") {
-      // Keep a leading + and digits only — the shape WhatsApp deep-links expect.
-      let v = editVal.trim().replace(/[^\d+]/g, "");
-      if (v && v[0] !== "+") v = "+" + v;
-      if (v.replace(/\D/g, "").length < 8) { showToast("That number looks too short."); return; }
-      patch = { phone: v };
-    } else {
-      // Store the bare handle only — never a pasted URL or a leading @.
-      patch = { instagram: igHandle(editVal) || null };
-    }
+    // Number: keep a leading + and digits only — the shape WhatsApp expects.
+    let phone = editPhone.trim().replace(/[^\d+]/g, "");
+    if (phone && phone[0] !== "+") phone = "+" + phone;
+    if (phone.replace(/\D/g, "").length < 8) { showToast("That number looks too short."); return; }
+    // Instagram: store the bare handle only — never a pasted URL or a leading @.
+    const patch = { phone, instagram: igHandle(editIg) || null };
     setSaving(true);
     const { error } = await supabase.from("event_rsvps").update(patch).eq("id", r.id);
     setSaving(false);
     if (error) { showToast("Update needs the admin update grant (re-run event_rsvps.sql)."); return; }
     setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
-    showToast(editField === "phone" ? "Number updated." : "Instagram updated.");
+    showToast("Guest updated.");
     cancelEdit();
   };
 
@@ -2215,52 +2211,44 @@ function Guests({ showToast }) {
                 <thead><tr><th style={th}>Name</th><th style={th}>Instagram</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
                 <tbody>
                   {list.map((r, i) => {
-                    const editingIg = editId === r.id && editField === "instagram";
-                    const editingPh = editId === r.id && editField === "phone";
+                    const editing = editId === r.id;
                     const handle = igHandle(r.instagram);
-                    const editBtns = (
-                      <span style={{ display: "inline-flex", gap: 6 }}>
-                        <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} disabled={saving} onClick={() => saveEdit(r)}>{saving ? "…" : "Save"}</button>
-                        <button className="act" style={{ padding: "4px 8px", fontSize: 12, opacity: .7 }} onClick={cancelEdit}>Cancel</button>
-                      </span>
-                    );
+                    const inp = { background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit" };
                     return (
-                    <tr key={r.id || i}>
+                    <tr key={r.id || i} style={editing ? { background: "#141414" } : undefined}>
                       <td style={td}>{r.name || "Guest"}</td>
                       <td style={{ ...td, whiteSpace: "nowrap" }}>
-                        {editingIg ? (
-                          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                        {editing ? (
+                          <span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
                             <span style={{ color: "#8a8878" }}>@</span>
-                            <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus placeholder="handle"
+                            <input value={editIg} onChange={(e) => setEditIg(e.target.value)} placeholder="handle"
                               onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
-                              style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit" }} />
-                            {editBtns}
+                              style={{ ...inp, width: 150 }} />
                           </span>
                         ) : (
-                          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                            {handle ? <a href={`https://instagram.com/${handle}`} target="_blank" rel="noreferrer" style={{ color: "#c9a84c", textDecoration: "none" }}>@{handle}</a> : <span style={{ color: "#55534b" }}>—</span>}
-                            <button className="act" style={{ padding: "3px 7px", fontSize: 12 }} onClick={() => startEdit(r, "instagram")} title="Edit Instagram handle"><Pencil size={12} /></button>
-                          </span>
+                          handle ? <a href={`https://instagram.com/${handle}`} target="_blank" rel="noreferrer" style={{ color: "#c9a84c", textDecoration: "none" }}>@{handle}</a> : <span style={{ color: "#55534b" }}>—</span>
                         )}
                       </td>
                       <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>
-                        {editingPh ? (
-                          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-                            <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus inputMode="tel"
-                              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
-                              style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit", fontFamily: "ui-monospace, monospace" }} />
-                            {editBtns}
-                          </span>
-                        ) : (
-                          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                            {r.phone || "—"}
-                            <button className="act" style={{ padding: "3px 7px", fontSize: 12 }} onClick={() => startEdit(r, "phone")} title="Edit number"><Pencil size={12} /></button>
-                          </span>
-                        )}
+                        {editing ? (
+                          <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} autoFocus inputMode="tel"
+                            onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
+                            style={{ ...inp, width: 150, fontFamily: "ui-monospace, monospace" }} />
+                        ) : (r.phone || "—")}
                       </td>
                       <td style={{ ...td, whiteSpace: "nowrap", color: "#c9a84c" }}>{rsvpSource(r.source)}</td>
                       <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
-                        {phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}
+                        {editing ? (
+                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} disabled={saving} onClick={() => saveEdit(r)}>{saving ? "…" : "Save"}</button>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12, opacity: .7 }} onClick={cancelEdit}>Cancel</button>
+                          </span>
+                        ) : (
+                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => startEdit(r)} title="Edit guest"><Pencil size={13} /> Edit</button>
+                            {phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ); })}
