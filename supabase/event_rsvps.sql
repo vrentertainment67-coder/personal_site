@@ -45,5 +45,13 @@ create policy "rsvp_admin_delete" on public.event_rsvps
   using (true);
 grant delete on public.event_rsvps to authenticated;
 
+-- Let the logged-in admin fix wrongly-typed numbers (and other fields) in the
+-- /admin Guest List before sending WhatsApp follow-ups.
+drop policy if exists "rsvp_admin_update" on public.event_rsvps;
+create policy "rsvp_admin_update" on public.event_rsvps
+  for update to authenticated
+  using (true) with check (true);
+grant update on public.event_rsvps to authenticated;
+
 -- Helpful index for the admin list (newest first)
 create index if not exists event_rsvps_created_idx on public.event_rsvps (created_at desc);

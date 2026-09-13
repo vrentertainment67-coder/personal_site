@@ -15,24 +15,9 @@ import Layout from '../../layouts/Layout.astro';
         <span id="cd-sync" class="cd-sync">○ Connecting…</span>
         <span id="cd-upd" class="cd-sync"></span>
         <button id="cd-refresh" class="cd-mini" type="button">↻</button>
-        <button id="cd-list" class="cd-mini" type="button">List</button>
         <button id="cd-reset" class="cd-mini" type="button">Reset</button>
       </div>
     </header>
-
-    <!-- Manual list: the draw still runs when the check-in list can't be read
-         (token pointing at the wrong event, Supabase down, venue wifi gone).
-         Type who's in the room and draw from that instead. -->
-    <section id="cd-panel" class="cd-panel" hidden>
-      <h2 class="cd-panel-h">Draw from a typed list</h2>
-      <p class="cd-panel-p">One name per line. This overrides the check-in list and stays on this device — clear it to go back to live check-ins.</p>
-      <textarea id="cd-names" class="cd-names" spellcheck="false" autocapitalize="words" placeholder="One name per line"></textarea>
-      <div class="cd-panel-foot">
-        <span class="cd-tally" id="cd-tally">0 names</span>
-        <button id="cd-clear" class="cd-mini" type="button">Clear</button>
-        <button id="cd-save" class="cd-save" type="button">Use this list</button>
-      </div>
-    </section>
 
     <section class="cd-stage">
       <div id="cd-display" class="cd-display">
@@ -63,34 +48,23 @@ import Layout from '../../layouts/Layout.astro';
   let spinning = false;
   let lastWinner = null;
 
-  // A typed list, when one is set, replaces the check-in list entirely — the
-  // escape hatch for a night where the RPC can't be read.
-  const MAN_KEY = 'chamatkar_manual_' + token.slice(0, 10);
-  const loadMan = () => { try { return JSON.parse(localStorage.getItem(MAN_KEY) || '[]'); } catch { return []; } };
-  const saveMan = () => { try { localStorage.setItem(MAN_KEY, JSON.stringify(manual)); } catch {} };
-  let manual = loadMan();
-  const parseNames = (raw) => raw.split('\n').map((s) => s.trim()).filter(Boolean);
-  const manEntries = () => manual.map((n, i) => ({ id: 'm' + i + '-' + n, name: n, instagram: '' }));
-
   const pool = () => entries.filter((e) => !won.has(e.id));
-  const igOf = (e) => e && e.instagram ? '@' + String(e.instagram).replace(/^@/, '') : '';
 
   function refreshMeta() {
     $('cd-pool').textContent = pool().length;
     $('cd-won').textContent = won.size;
     $('cd-won-wrap').hidden = won.size === 0;
   }
-  function setDisplay(name, sub, mode) {
+  function setDisplay(name, mode) {
     const idle = $('cd-idle'), nm = $('cd-name'), sb = $('cd-sub');
-    if (mode === 'idle') { idle.hidden = false; nm.hidden = true; sb.hidden = true; idle.textContent = name; return; }
+    sb.hidden = true;   // names only — no handle on the reveal
+    if (mode === 'idle') { idle.hidden = false; nm.hidden = true; idle.textContent = name; return; }
     idle.hidden = true;
     nm.hidden = false; nm.textContent = name; nm.className = 'cd-name' + (mode === 'winner' ? ' is-winner' : '');
-    sb.hidden = !sub; sb.textContent = sub || '';
   }
   const idleText = () => pool().length ? 'Press GO to draw a winner'
     : (entries.length ? 'Everyone has won — Reset to draw again'
-    : (manual.length ? 'Everyone on the list has won — Reset to draw again'
-    : 'No entries yet — get people scanning, or tap List to type them in'));
+    : 'No check-ins yet — winners are drawn from the live check-in list');
 
   // ── Realtime (broadcast to the TV screen) ─────────────────────────────────
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
@@ -113,14 +87,14 @@ import Layout from '../../layouts/Layout.astro';
     let delay = 45;
     const spin = () => {
       const r = flashes[Math.floor(Math.random() * flashes.length)];
-      setDisplay(r.name, igOf(r), 'spin');
+      setDisplay(r.name, 'spin');
       delay *= 1.11;
       if (delay < 420) setTimeout(spin, delay); else reveal();
     };
     spin();
   }
   function reveal() {
-    setDisplay(lastWinner.name, igOf(lastWinner), 'winner');
+    setDisplay(lastWinner.name, 'winner');
     won.add(lastWinner.id); saveWon(); refreshMeta();
     spinning = false;
     if (navigator.vibrate) navigator.vibrate([40, 30, 90]);
@@ -137,22 +111,13 @@ import Layout from '../../layouts/Layout.astro';
   function draw() {
     if (spinning) return;
     const p = pool();
-    if (!p.length) { setDisplay(idleText(), '', 'idle'); return; }
+    if (!p.length) { setDisplay(idleText(), 'idle'); return; }
     const w = p[Math.floor(Math.random() * p.length)];
-    send('go', { id: w.id, name: w.name, instagram: w.instagram || '' });
+    send('go', { id: w.id, name: w.name });
     startSpin(w, p.slice());
   }
 
   async function load(quiet) {
-    // A typed list wins: don't let a poll overwrite it with an empty RPC read.
-    if (manual.length) {
-      entries = manEntries();
-      refreshMeta();
-      $('cd-upd').textContent = '· typed list';
-      $('cd-status').classList.remove('show', 'err');
-      if (!spinning && !lastWinner) setDisplay(idleText(), '', 'idle');
-      return;
-    }
     if (!token) { $('cd-status').textContent = 'Missing access code — open the full draw link (with ?k=…).'; $('cd-status').classList.add('show', 'err'); return; }
     try {
       const res = await rpc('chamatkar_draw_list', { p_token: token });
@@ -162,7 +127,7 @@ import Layout from '../../layouts/Layout.astro';
       // Stamp every successful pull: a frozen clock is the only visible tell
       // that the count went stale rather than genuinely stopped growing.
       $('cd-upd').textContent = '· ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      if (!spinning && !lastWinner) setDisplay(idleText(), '', 'idle');
+      if (!spinning && !lastWinner) setDisplay(idleText(), 'idle');
     } catch {
       $('cd-status').textContent = 'Wrong or expired link.'; $('cd-status').classList.add('show', 'err');
     }
@@ -171,42 +136,11 @@ import Layout from '../../layouts/Layout.astro';
   $('cd-go').addEventListener('click', draw);
   $('cd-refresh').addEventListener('click', () => load(false));
 
-  // ── Typed list ────────────────────────────────────────────────────────────
-  const tally = (n) => n + ' name' + (n === 1 ? '' : 's');
-  $('cd-list').addEventListener('click', () => {
-    const open = $('cd-panel').hidden;
-    if (open) {
-      $('cd-names').value = manual.join('\n');
-      $('cd-tally').textContent = tally(manual.length);
-    }
-    $('cd-panel').hidden = !open;
-    if (open) $('cd-names').focus();
-  });
-  $('cd-names').addEventListener('input', () => {
-    $('cd-tally').textContent = tally(parseNames($('cd-names').value).length);
-  });
-  $('cd-save').addEventListener('click', () => {
-    const next = parseNames($('cd-names').value);
-    if (!next.length) { $('cd-tally').textContent = 'Add at least one name'; return; }
-    manual = next; saveMan();
-    $('cd-panel').hidden = true;
-    lastWinner = null;
-    load(false);
-    $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact');
-  });
-  $('cd-clear').addEventListener('click', () => {
-    manual = []; saveMan();
-    $('cd-names').value = ''; $('cd-tally').textContent = tally(0);
-    $('cd-panel').hidden = true;
-    lastWinner = null;
-    load(false);
-    $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact');
-  });
   $('cd-reset').addEventListener('click', () => {
     if (!confirm('Put everyone back in the draw (clear all winners)?')) return;
     won = new Set(); saveWon(); lastWinner = null; refreshMeta();
     send('reset', {});
-    setDisplay(idleText(), '', 'idle');
+    setDisplay(idleText(), 'idle');
     $('cd-go').textContent = 'GO'; $('cd-go').classList.remove('compact'); $('cd-status').classList.remove('show');
   });
   setInterval(() => { if (document.visibilityState === 'visible' && !spinning) load(true); }, 15000);

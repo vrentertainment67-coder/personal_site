@@ -23,11 +23,21 @@ import Layout from '../../layouts/Layout.astro';
       </div>
     </div>
 
-    <!-- Draw takeover -->
+    <!-- Draw takeover: spinning roulette wheel → names-only winner reveal -->
     <div class="cs-draw" id="cs-draw" hidden>
       <span class="cs-draw-k" id="cs-draw-k">Drawing a winner…</span>
-      <div class="cs-name-fit"><div class="cs-name" id="cs-name">—</div></div>
-      <div class="cs-ig" id="cs-ig"></div>
+      <div class="cs-wheel-wrap" id="cs-wheel-wrap">
+        <svg class="cs-wheel" id="cs-wheel-svg" viewBox="0 0 400 400" aria-hidden="true">
+          <g id="cs-wheel"></g>
+          <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
+          <circle cx="200" cy="200" r="30" fill="#0a0a0c" stroke="var(--gold)" stroke-width="3"/>
+        </svg>
+        <div class="cs-pointer" aria-hidden="true"></div>
+      </div>
+      <!-- big names-only reveal, overlaid once the wheel lands -->
+      <div class="cs-reveal" id="cs-reveal" hidden>
+        <div class="cs-name-fit"><div class="cs-name" id="cs-name">—</div></div>
+      </div>
     </div>
 
     <span class="cs-sync" id="cs-sync">○</span>
@@ -56,14 +66,13 @@ import Layout from '../../layouts/Layout.astro';
   let entries = [];
   let spinning = false;
   const pool = () => entries.filter((e) => !won.has(e.id));
-  const igOf = (e) => e && e.instagram ? '@' + String(e.instagram).replace(/^@/, '') : '';
   const refreshCount = () => { $('cs-pool').textContent = pool().length; };
 
   async function load() {
     if (!token) return;
     try { const res = await rpc('chamatkar_draw_list', { p_token: token }); if (res.ok) { entries = (await res.json()) || []; refreshCount(); } } catch {}
   }
-  const showQR = () => { $('cs-draw').hidden = true; $('cs-qr').hidden = false; };
+  const showQR = () => { $('cs-draw').hidden = true; $('cs-reveal').hidden = true; $('cs-qr').hidden = false; };
   const showDraw = () => { $('cs-qr').hidden = true; $('cs-draw').hidden = false; };
 
   // Shrink the winner name to fit the screen width; wrap only as a last resort.
@@ -80,38 +89,85 @@ import Layout from '../../layouts/Layout.astro';
     }
   }
 
+  // ── Roulette wheel ─────────────────────────────────────────────────────────
+  // The winner is already decided on the host phone and arrives over Realtime;
+  // the wheel is choreographed to land its pointer on that winner's slice.
+  const WHEEL_MAX = 16;                 // cap slices so names stay legible on a TV
+  const CX = 200, CY = 200, R = 196;
+  let rot = 0;                          // accumulated wheel rotation (deg), never reset
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const firstName = (n) => { const f = String(n || '').trim().split(/\s+/)[0] || ''; return f.length > 12 ? f.slice(0, 11) + '…' : f; };
+  const polar = (r, deg) => { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+  function slicePath(a0, a1) {
+    const [x0, y0] = polar(R, a0), [x1, y1] = polar(R, a1);
+    const large = (a1 - a0) > 180 ? 1 : 0;
+    return `M${CX} ${CY} L${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+  }
+  // Build the display set: always contains the winner; sampled down if the pool
+  // is bigger than the wheel can show legibly.
+  function displayList(winner) {
+    let list = pool().slice();
+    if (!list.some((e) => e.id === winner.id)) list.unshift(winner);
+    if (list.length > WHEEL_MAX) {
+      const others = shuffle(list.filter((e) => e.id !== winner.id)).slice(0, WHEEL_MAX - 1);
+      list = shuffle([winner, ...others]);
+    }
+    return list;
+  }
+  function buildWheel(list) {
+    const n = list.length, seg = 360 / n;
+    const fs = Math.max(11, Math.min(20, 150 / n + 7));
+    let svg = '';
+    for (let i = 0; i < n; i++) {
+      const a0 = i * seg, a1 = (i + 1) * seg, mid = a0 + seg / 2, gold = i % 2 === 0;
+      svg += `<path d="${slicePath(a0, a1)}" fill="${gold ? '#efc250' : '#2b2350'}" stroke="#0a0a0c" stroke-width="1.2" data-i="${i}"/>`;
+      const [tx, ty] = polar(R * 0.60, mid);
+      const flip = mid > 90 && mid < 270 ? 180 : 0;   // keep text upright on the left/bottom
+      svg += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" transform="rotate(${(mid + flip).toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})" text-anchor="middle" dominant-baseline="middle" fill="${gold ? '#1a1206' : '#f4f1e8'}" font-size="${fs.toFixed(1)}" font-weight="700" style="font-family:var(--font-display,system-ui,sans-serif)">${esc(firstName(list[i].name))}</text>`;
+    }
+    $('cs-wheel').innerHTML = svg;
+  }
   function runSpin(winner) {
     if (spinning || !winner) return;
-    spinning = true; showDraw();
+    spinning = true;
     $('cs-draw-k').textContent = 'Drawing a winner…';
-    $('cs-ig').textContent = '';
-    const nameEl = $('cs-name');
-    nameEl.style.fontSize = ''; nameEl.style.whiteSpace = 'nowrap'; nameEl.className = 'cs-name spinning';
-    const flashes = pool().length ? pool() : [winner];
-    let delay = 45;
-    const spin = () => {
-      const r = flashes[Math.floor(Math.random() * flashes.length)];
-      nameEl.textContent = r.name;
-      delay *= 1.11;
-      if (delay < 460) setTimeout(spin, delay); else reveal(winner);
-    };
-    spin();
+    $('cs-reveal').hidden = true;
+    const list = displayList(winner);
+    const n = list.length, seg = 360 / n;
+    const winIdx = Math.max(0, list.findIndex((e) => e.id === winner.id));
+    buildWheel(list);                    // rebuilt while the takeover is still hidden
+    showDraw();
+    const svg = $('cs-wheel-svg');
+    // Land the winner's slice centre under the top pointer, after several turns.
+    const want = ((-((winIdx + 0.5) * seg)) % 360 + 360) % 360;
+    const cur = ((rot % 360) + 360) % 360;
+    const jitter = (Math.random() * 0.5 - 0.25) * seg;   // stay well inside the slice
+    rot += (5 + (Math.random() * 2 | 0)) * 360 + ((want - cur + 360) % 360) + jitter;
+    let done = false;
+    const finish = () => { if (done) return; done = true; reveal(winner, winIdx); };
+    svg.addEventListener('transitionend', (e) => { if (e.propertyName === 'transform') finish(); }, { once: true });
+    setTimeout(finish, 6200);            // safety net if transitionend is missed
+    requestAnimationFrame(() => { svg.style.transition = 'transform 5.2s cubic-bezier(.14,.62,.08,1)'; svg.style.transform = `rotate(${rot}deg)`; });
   }
-  function reveal(winner) {
+  function reveal(winner, winIdx) {
+    const slice = $('cs-wheel').querySelector('path[data-i="' + winIdx + '"]');
+    if (slice) { slice.setAttribute('fill', '#ffe38a'); slice.classList.add('cs-slice-win'); }
+    $('cs-wheel-wrap').classList.add('is-landed');
     $('cs-draw-k').textContent = '🎉 Winner';
     const nameEl = $('cs-name');
     nameEl.textContent = winner.name; nameEl.className = 'cs-name is-winner';
     fitName(nameEl);
-    $('cs-ig').textContent = igOf(winner);
+    $('cs-reveal').hidden = false;
     spinning = false;
     won.add(winner.id); saveWon(); refreshCount();
-    setTimeout(() => { load(); showQR(); }, 9000);   // hold, then back to the QR
+    setTimeout(() => { $('cs-wheel-wrap').classList.remove('is-landed'); load(); showQR(); }, 9000);
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   if (token) {
     supabase.channel('chamatkar-' + token.slice(0, 16), { config: { broadcast: { self: false } } })
-      .on('broadcast', { event: 'go' }, ({ payload }) => runSpin({ id: payload.id, name: payload.name, instagram: payload.instagram }))
+      .on('broadcast', { event: 'go' }, ({ payload }) => runSpin({ id: payload.id, name: payload.name }))
       .on('broadcast', { event: 'putback' }, ({ payload }) => { if (payload && payload.id) { won.delete(payload.id); saveWon(); } load(); })
       .on('broadcast', { event: 'reset' }, () => { won = new Set(); saveWon(); load(); showQR(); })
       .subscribe((s) => { $('cs-sync').textContent = s === 'SUBSCRIBED' ? '●' : '○'; $('cs-sync').classList.toggle('on', s === 'SUBSCRIBED'); });
@@ -155,19 +211,31 @@ import Layout from '../../layouts/Layout.astro';
   .cs-scan { font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); font-size: clamp(1rem, 1.8vw, 1.5rem); }
 
   /* Draw takeover */
-  .cs-draw { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-    padding: clamp(2rem, 5vw, 4rem); gap: clamp(1rem, 3vw, 2rem); }
+  .cs-draw { position: relative; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: clamp(1.4rem, 4vw, 3rem); gap: clamp(1rem, 3vw, 2rem); }
   .cs-draw-k { font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); font-size: clamp(1.4rem, 3vw, 2.4rem); }
+
+  /* Roulette wheel */
+  .cs-wheel-wrap { --wsz: min(72vh, 88vw); position: relative; width: var(--wsz); height: var(--wsz); }
+  .cs-wheel { width: 100%; height: 100%; display: block; transform-origin: 50% 50%; will-change: transform;
+    filter: drop-shadow(0 24px 60px rgba(0,0,0,.55)); }
+  .cs-pointer { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; z-index: 3;
+    border-left: 22px solid transparent; border-right: 22px solid transparent; border-top: 36px solid var(--gold);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.55)); }
+  .cs-slice-win { filter: drop-shadow(0 0 14px rgba(255,210,74,.9)); }
+
+  /* Names-only reveal, overlaid on the landed wheel */
+  .cs-reveal { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 46%, rgba(10,10,12,.74), rgba(10,10,12,.93) 72%); animation: cs-fade .5s ease both; }
+  @keyframes cs-fade { from { opacity: 0; } to { opacity: 1; } }
   /* The fit box bounds the name; JS sets the exact px size so it never overflows. */
   .cs-name-fit { width: 92vw; display: flex; align-items: center; justify-content: center; }
   .cs-name { font-family: var(--font-display, sans-serif); line-height: 1; text-transform: uppercase; color: var(--bone);
     overflow-wrap: anywhere; max-width: 92vw; }
-  .cs-name.spinning { font-size: clamp(2.6rem, 8vw, 6.5rem); white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 92vw; }
   .cs-name.is-winner { animation: pop .55s cubic-bezier(.2,1.35,.35,1) both;
     background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent;
     text-shadow: 0 0 80px rgba(255,210,74,.35); }
   @keyframes pop { 0% { transform: scale(.55); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  .cs-ig { color: var(--gold); font-size: clamp(1.4rem, 3vw, 2.6rem); font-weight: 600; }
 
   .cs-sync { position: fixed; bottom: 12px; right: 16px; color: #35342e; font-size: 1rem; }
   .cs-sync.on { color: #48d16a; }

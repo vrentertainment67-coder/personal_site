@@ -2115,17 +2115,34 @@ const prettyEvent = (slug) => (slug || "—").replace(/-/g, " ").replace(/\bvol\
 function Guests({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [editId, setEditId] = useState(null); const [editVal, setEditVal] = useState(""); const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let on = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("event_rsvps").select("name,phone,instagram,event,source,guests,created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("event_rsvps").select("id,name,phone,instagram,event,source,guests,created_at").order("created_at", { ascending: false });
       if (error) showToast("Couldn't load guests.");
       if (on) { setRows(data || []); setLoading(false); }
     })();
     return () => { on = false; };
   }, [showToast]);
+
+  const startEdit = (r) => { setEditId(r.id); setEditVal(r.phone || "+91"); };
+  const cancelEdit = () => { setEditId(null); setEditVal(""); };
+  const saveEdit = async (r) => {
+    // Keep a leading + and digits only — the shape WhatsApp deep-links expect.
+    let v = editVal.trim().replace(/[^\d+]/g, "");
+    if (v && v[0] !== "+") v = "+" + v;
+    if (v.replace(/\D/g, "").length < 8) { showToast("That number looks too short."); return; }
+    setSaving(true);
+    const { error } = await supabase.from("event_rsvps").update({ phone: v }).eq("id", r.id);
+    setSaving(false);
+    if (error) { showToast("Update needs the admin update grant (re-run event_rsvps.sql)."); return; }
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, phone: v } : x)));
+    showToast("Number updated.");
+    cancelEdit();
+  };
 
   const q = query.trim().toLowerCase();
   const filtered = rows.filter((r) => !q || [r.name, r.phone, r.instagram, r.event].some((v) => (v || "").toLowerCase().includes(q)));
@@ -2171,11 +2188,29 @@ function Guests({ showToast }) {
                 <thead><tr><th style={th}>Name</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
                 <tbody>
                   {list.map((r, i) => (
-                    <tr key={i}>
+                    <tr key={r.id || i}>
                       <td style={td}>{r.name || "Guest"}{r.instagram ? <span style={{ color: "#8a8878", marginLeft: 6, fontSize: 12 }}>{r.instagram.startsWith("@") ? r.instagram : "@" + r.instagram}</span> : null}</td>
-                      <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>{r.phone || "—"}</td>
+                      <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>
+                        {editId === r.id ? (
+                          <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus inputMode="tel"
+                            onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
+                            style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit", fontFamily: "ui-monospace, monospace" }} />
+                        ) : (r.phone || "—")}
+                      </td>
                       <td style={{ ...td, whiteSpace: "nowrap", color: "#c9a84c" }}>{rsvpSource(r.source)}</td>
-                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>{phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}</td>
+                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                        {editId === r.id ? (
+                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} disabled={saving} onClick={() => saveEdit(r)}>{saving ? "…" : "Save"}</button>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12, opacity: .7 }} onClick={cancelEdit}>Cancel</button>
+                          </span>
+                        ) : (
+                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => startEdit(r)} title="Edit number"><Pencil size={13} /></button>
+                            {phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -52,7 +52,9 @@ const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
     input[type=text],input[type=tel]{ width:100%; background:#100e0c; border:1.5px solid var(--line);
       border-radius:13px; padding:16px; color:var(--off); font-size:17px; outline:none; font-family:inherit; }
     input:focus{ border-color:var(--gold); }
-    .phone-row{ display:flex; gap:10px; }
+    /* Must out-specify `label.fld > span{display:block}` above, which also
+       matches this span and would otherwise stack the two boxes. */
+    label.fld > span.phone-row{ display:flex; gap:10px; align-items:center; }
     .phone-row .cc{ flex:none; width:78px; text-align:center; padding-left:6px; padding-right:6px; }
     .phone-row #phone{ flex:1; min-width:0; }
     .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
