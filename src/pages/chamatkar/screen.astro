@@ -1,8 +1,10 @@
 ---
 // Chamatkar — the venue TV. Full-screen: /chamatkar/screen?k=TOKEN
-// Shows the big QR (→ /chamatkar/checkin) + live entry count. When the host
-// presses GO on /chamatkar/draw, this takes over: slot-machine spin → winner →
-// back to the QR. Winners come in over Realtime; the pool is the check-in list.
+// Shows the big QR (→ /chamatkar/checkin) + live entry count. When a winner is
+// drawn (host GO, or the fail-safe GO on this screen) it takes over and reveals
+// the name in the operator-selected style — a spinning wheel of names, or a
+// name reel — then returns to the QR. Winners arrive over Realtime; the pool is
+// the live check-in list. ?demo=N fills a synthetic pool for rehearsal.
 import Layout from '../../layouts/Layout.astro';
 ---
 <Layout bare noindex title="Chamatkar — Screen" description="Chamatkar draw screen.">
@@ -23,22 +25,49 @@ import Layout from '../../layouts/Layout.astro';
       </div>
     </div>
 
-    <!-- Draw takeover: spinning roulette wheel → names-only winner reveal -->
+    <!-- Draw takeover: two reveal styles (wheel / name reel), whichever the
+         operator has selected. The winner arrives over Realtime; the animation
+         is choreographed to land on that name. -->
     <div class="cs-draw" id="cs-draw" hidden>
       <span class="cs-draw-k" id="cs-draw-k">Drawing a winner…</span>
-      <div class="cs-wheel-wrap" id="cs-wheel-wrap">
+
+      <!-- STYLE: spinning wheel, names set radially -->
+      <div class="cs-wheel-wrap" id="cs-wheel-wrap" hidden>
         <svg class="cs-wheel" id="cs-wheel-svg" viewBox="0 0 400 400" aria-hidden="true">
           <g id="cs-wheel"></g>
           <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
-          <circle cx="200" cy="200" r="30" fill="#0a0a0c" stroke="var(--gold)" stroke-width="3"/>
+          <circle cx="200" cy="200" r="24" fill="#0a0a0c" stroke="var(--gold)" stroke-width="3"/>
         </svg>
         <div class="cs-pointer" aria-hidden="true"></div>
+        <!-- big names-only reveal, centred on the wheel once it lands -->
+        <div class="cs-reveal" id="cs-reveal" hidden>
+          <div class="cs-name-fit"><div class="cs-name" id="cs-name">—</div></div>
+        </div>
       </div>
-      <!-- big names-only reveal, overlaid once the wheel lands -->
-      <div class="cs-reveal" id="cs-reveal" hidden>
-        <div class="cs-name-fit"><div class="cs-name" id="cs-name">—</div></div>
+
+      <!-- STYLE: name reel — every name streams past, slows onto the winner -->
+      <div class="cs-reel" id="cs-reel" hidden>
+        <div class="cs-reelview"><div class="cs-track" id="cs-track"></div><div class="cs-reelmark" aria-hidden="true"><i></i></div></div>
       </div>
     </div>
+
+    <!-- Fail-safe operator control: sits below the QR fold. The operator picks
+         the reveal style here (used for host draws too), and can run the draw
+         from the screen itself if the host phone can't. -->
+    <section class="cs-ops" id="cs-ops">
+      <span class="cs-ops-k">Screen control</span>
+      <div class="cs-ops-style">
+        <span class="cs-ops-lbl">Reveal style</span>
+        <div class="cs-seg" id="cs-style">
+          <button data-s="wheel" type="button" aria-pressed="true">Wheel</button>
+          <button data-s="reel" type="button" aria-pressed="false">Name reel</button>
+        </div>
+      </div>
+      <p class="cs-ops-note">This style is used for every draw — including the host's GO. The GO below is a fail-safe: use it only if the host phone can't run the draw.</p>
+      <div class="cs-ops-count"><b id="cs-ops-pool">0</b> in the draw · <span id="cs-ops-won">0</span> won</div>
+      <button id="cs-ops-go" class="cs-ops-go" type="button">GO</button>
+      <button id="cs-ops-reset" class="cs-ops-reset" type="button">↺ Put everyone back</button>
+    </section>
 
     <span class="cs-sync" id="cs-sync">○</span>
   </main>
@@ -66,34 +95,64 @@ import Layout from '../../layouts/Layout.astro';
   let entries = [];
   let spinning = false;
   const pool = () => entries.filter((e) => !won.has(e.id));
-  const refreshCount = () => { $('cs-pool').textContent = pool().length; };
+
+  // Rehearsal / stress-test mode: open the screen with ?demo=150 to fill the
+  // pool with N synthetic names entirely in the browser. Nothing is written to
+  // the database, no token is needed, and a real check-in never sees it.
+  const demoN = parseInt(new URLSearchParams(location.search).get('demo') || '', 10);
+  const isDemo = Number.isFinite(demoN) && demoN > 0;
+  const DEMO_FIRST = ['Aarav','Priya','Rohan','Ananya','Vikram','Sneha','Karan','Divya','Arjun','Meera','Rahul','Isha','Nikhil','Pooja','Sanjay','Neha','Aditya','Kavya','Varun','Tara','Dev','Riya','Manish','Sana','Yash','Anjali','Kabir','Nisha','Sameer','Diya','Rishi','Gauri','Aman','Lakshmi','Vivek','Simran','Harsh','Zoya','Naveen','Preeti'];
+  const DEMO_LAST = ['Sharma','Rao','Nair','Iyer','Reddy','Menon','Gupta','Kapoor','Shetty','Bose','Das','Khan','Pillai','Mehta','Verma'];
+  const demoEntries = () => Array.from({ length: Math.min(demoN, 500) }, (_, i) => ({
+    id: 'demo' + i,
+    name: DEMO_FIRST[i % DEMO_FIRST.length] + ' ' + DEMO_LAST[(i * 7) % DEMO_LAST.length],
+    instagram: null,
+  }));
+  const refreshCount = () => {
+    $('cs-pool').textContent = pool().length;
+    $('cs-ops-pool').textContent = pool().length;
+    $('cs-ops-won').textContent = won.size;
+  };
 
   async function load() {
+    if (isDemo) { entries = demoEntries(); refreshCount(); return; }
     if (!token) return;
     try { const res = await rpc('chamatkar_draw_list', { p_token: token }); if (res.ok) { entries = (await res.json()) || []; refreshCount(); } } catch {}
   }
-  const showQR = () => { $('cs-draw').hidden = true; $('cs-reveal').hidden = true; $('cs-qr').hidden = false; };
+  const showQR = () => { $('cs-draw').hidden = true; $('cs-reveal').hidden = true; $('cs-wheel-wrap').hidden = true; $('cs-reel').hidden = true; $('cs-qr').hidden = false; };
   const showDraw = () => { $('cs-qr').hidden = true; $('cs-draw').hidden = false; };
 
-  // Shrink the winner name to fit the screen width; wrap only as a last resort.
-  function fitName(el) {
-    const maxW = document.documentElement.clientWidth * 0.9;
-    const maxH = document.documentElement.clientHeight * 0.5;
+  // Reveal style — chosen by the operator on the screen, applied to every draw
+  // (host GO included) and remembered on this device.
+  const STYLE_KEY = 'chamatkar_style_' + token.slice(0, 10);
+  let style = 'wheel';
+  try { const s = localStorage.getItem(STYLE_KEY); if (s === 'reel' || s === 'wheel') style = s; } catch {}
+  function setStyle(s) {
+    if (spinning) return;
+    style = s; try { localStorage.setItem(STYLE_KEY, s); } catch {}
+    document.querySelectorAll('#cs-style button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+  }
+
+  // Size the winner name to sit inside the wheel; wrap only as a last resort.
+  function fitName(el, name) {
+    el.textContent = name;
+    const box = $('cs-wheel-wrap').getBoundingClientRect();
+    const maxW = box.width * 0.80, maxH = box.height * 0.6;
     el.style.whiteSpace = 'nowrap';
-    let size = Math.min(window.innerHeight * 0.30, 180);
+    let size = Math.min(box.height * 0.26, 170);
     el.style.fontSize = size + 'px';
-    while (el.scrollWidth > maxW && size > 42) { size -= 4; el.style.fontSize = size + 'px'; }
-    if (el.scrollWidth > maxW) {            // single very long word — let it wrap
+    while (el.scrollWidth > maxW && size > 30) { size -= 4; el.style.fontSize = size + 'px'; }
+    if (el.scrollWidth > maxW) {            // long name — let it wrap
       el.style.whiteSpace = 'normal';
-      while ((el.scrollWidth > maxW || el.scrollHeight > maxH) && size > 32) { size -= 3; el.style.fontSize = size + 'px'; }
+      while ((el.scrollWidth > maxW || el.scrollHeight > maxH) && size > 22) { size -= 3; el.style.fontSize = size + 'px'; }
     }
   }
 
   // ── Roulette wheel ─────────────────────────────────────────────────────────
   // The winner is already decided on the host phone and arrives over Realtime;
   // the wheel is choreographed to land its pointer on that winner's slice.
-  const WHEEL_MAX = 16;                 // cap slices so names stay legible on a TV
-  const CX = 200, CY = 200, R = 196;
+  const WHEEL_MAX = 24;                 // radial names let more slices stay legible
+  const CX = 200, CY = 200, R = 192;
   let rot = 0;                          // accumulated wheel rotation (deg), never reset
   const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -117,61 +176,117 @@ import Layout from '../../layouts/Layout.astro';
   }
   function buildWheel(list) {
     const n = list.length, seg = 360 / n;
-    const fs = Math.max(11, Math.min(20, 150 / n + 7));
+    const fs = Math.max(6, Math.min(19, 300 / n));
+    const trim = n > 20 ? 10 : 14;
     let svg = '';
     for (let i = 0; i < n; i++) {
       const a0 = i * seg, a1 = (i + 1) * seg, mid = a0 + seg / 2, gold = i % 2 === 0;
-      svg += `<path d="${slicePath(a0, a1)}" fill="${gold ? '#efc250' : '#2b2350'}" stroke="#0a0a0c" stroke-width="1.2" data-i="${i}"/>`;
-      const [tx, ty] = polar(R * 0.60, mid);
-      const flip = mid > 90 && mid < 270 ? 180 : 0;   // keep text upright on the left/bottom
-      svg += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" transform="rotate(${(mid + flip).toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})" text-anchor="middle" dominant-baseline="middle" fill="${gold ? '#1a1206' : '#f4f1e8'}" font-size="${fs.toFixed(1)}" font-weight="700" style="font-family:var(--font-display,system-ui,sans-serif)">${esc(firstName(list[i].name))}</text>`;
+      svg += `<path d="${slicePath(a0, a1)}" fill="${gold ? '#efc250' : '#2b2350'}" stroke="#0a0a0c" stroke-width="${n > 40 ? .5 : 1.2}" data-i="${i}"/>`;
+      // Names set radially (reading out from the hub); flipped on the left half.
+      const left = mid > 180, rot = left ? mid + 90 : mid - 90;
+      const [tx, ty] = polar(R * (left ? 0.52 : 0.54), mid);
+      let nm = firstName(list[i].name); if (nm.length > trim) nm = nm.slice(0, trim - 1) + '…';
+      svg += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" transform="rotate(${rot.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})" text-anchor="middle" dominant-baseline="middle" fill="${gold ? '#1a1206' : '#efe6ff'}" font-size="${fs.toFixed(1)}" font-weight="700" style="font-family:var(--font-body,system-ui,sans-serif)">${esc(nm)}</text>`;
     }
     $('cs-wheel').innerHTML = svg;
   }
-  function runSpin(winner) {
+  // Common close-out: record the winner, hold on the reveal, back to the QR.
+  function finishReveal(winner) {
+    spinning = false;
+    won.add(winner.id); saveWon(); refreshCount();
+    setTimeout(() => { $('cs-wheel-wrap').classList.remove('is-landed'); load(); showQR(); }, 9000);
+  }
+
+  // Dispatch to the operator-selected style. Winner is already decided (host
+  // GO or the fail-safe below) — the animation is choreographed to land on it.
+  function runReveal(winner) {
     if (spinning || !winner) return;
     spinning = true;
     $('cs-draw-k').textContent = 'Drawing a winner…';
     $('cs-reveal').hidden = true;
+    if (style === 'reel') { $('cs-wheel-wrap').hidden = true; $('cs-reel').hidden = false; showDraw(); runReel(winner); }
+    else { $('cs-reel').hidden = true; $('cs-wheel-wrap').hidden = false; runWheel(winner); }
+  }
+
+  function runWheel(winner) {
     const list = displayList(winner);
     const n = list.length, seg = 360 / n;
     const winIdx = Math.max(0, list.findIndex((e) => e.id === winner.id));
     buildWheel(list);                    // rebuilt while the takeover is still hidden
     showDraw();
-    const svg = $('cs-wheel-svg');
+    const svg = $('cs-wheel-svg'), g = $('cs-wheel');
+    g.classList.remove('cs-spread'); void g.getBoundingClientRect(); g.classList.add('cs-spread');   // names spread out from the hub
     // Land the winner's slice centre under the top pointer, after several turns.
     const want = ((-((winIdx + 0.5) * seg)) % 360 + 360) % 360;
     const cur = ((rot % 360) + 360) % 360;
     const jitter = (Math.random() * 0.5 - 0.25) * seg;   // stay well inside the slice
     rot += (5 + (Math.random() * 2 | 0)) * 360 + ((want - cur + 360) % 360) + jitter;
     let done = false;
-    const finish = () => { if (done) return; done = true; reveal(winner, winIdx); };
+    const finish = () => { if (done) return; done = true; wheelReveal(winner, winIdx); };
     svg.addEventListener('transitionend', (e) => { if (e.propertyName === 'transform') finish(); }, { once: true });
-    setTimeout(finish, 6200);            // safety net if transitionend is missed
-    requestAnimationFrame(() => { svg.style.transition = 'transform 5.2s cubic-bezier(.14,.62,.08,1)'; svg.style.transform = `rotate(${rot}deg)`; });
+    setTimeout(finish, 6600);            // safety net if transitionend is missed
+    requestAnimationFrame(() => { setTimeout(() => { svg.style.transition = 'transform 5.4s cubic-bezier(.13,.62,.08,1)'; svg.style.transform = `rotate(${rot}deg)`; }, 460); });
   }
-  function reveal(winner, winIdx) {
+  function wheelReveal(winner, winIdx) {
     const slice = $('cs-wheel').querySelector('path[data-i="' + winIdx + '"]');
     if (slice) { slice.setAttribute('fill', '#ffe38a'); slice.classList.add('cs-slice-win'); }
     $('cs-wheel-wrap').classList.add('is-landed');
     $('cs-draw-k').textContent = '🎉 Winner';
-    const nameEl = $('cs-name');
-    nameEl.textContent = winner.name; nameEl.className = 'cs-name is-winner';
-    fitName(nameEl);
+    const nameEl = $('cs-name'); nameEl.className = 'cs-name is-winner';
+    fitName(nameEl, winner.name);
     $('cs-reveal').hidden = false;
-    spinning = false;
-    won.add(winner.id); saveWon(); refreshCount();
-    setTimeout(() => { $('cs-wheel-wrap').classList.remove('is-landed'); load(); showQR(); }, 9000);
+    finishReveal(winner);
+  }
+
+  // Name reel: every remaining name streams past and slows onto the winner.
+  function runReel(winner) {
+    const track = $('cs-track');
+    const p = pool(), reps = Math.max(45, p.length + 30), arr = [];
+    for (let i = 0; i < reps; i++) arr.push(p.length ? p[(Math.random() * p.length) | 0].name : winner.name);
+    const winIndex = arr.length - 7; arr[winIndex] = winner.name;
+    track.innerHTML = arr.map((nm, i) => `<div class="cs-card ${i === winIndex ? 'win' : (i % 2 ? 'alt' : '')}">${esc(nm)}</div>`).join('');
+    track.style.transition = 'none'; track.style.transform = 'translateX(0)';
+    const viewW = track.parentElement.clientWidth;
+    const stride = track.children.length > 1 ? (track.children[1].offsetLeft - track.children[0].offsetLeft) : 240;
+    const target = -(winIndex * stride + stride / 2 - viewW / 2) + (Math.random() * 30 - 15);
+    void track.offsetWidth;
+    let done = false;
+    const finish = () => { if (done) return; done = true; $('cs-draw-k').textContent = '🎉 Winner'; finishReveal(winner); };
+    track.addEventListener('transitionend', (e) => { if (e.propertyName === 'transform') finish(); }, { once: true });
+    setTimeout(finish, 6400);
+    requestAnimationFrame(() => { track.style.transition = 'transform 5.4s cubic-bezier(.12,.62,.06,1)'; track.style.transform = `translateX(${target}px)`; });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  let channel = null;
+  const send = (event, payload) => { try { if (channel) channel.send({ type: 'broadcast', event, payload }); } catch {} };
   if (token) {
-    supabase.channel('chamatkar-' + token.slice(0, 16), { config: { broadcast: { self: false } } })
-      .on('broadcast', { event: 'go' }, ({ payload }) => runSpin({ id: payload.id, name: payload.name }))
+    channel = supabase.channel('chamatkar-' + token.slice(0, 16), { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'go' }, ({ payload }) => runReveal({ id: payload.id, name: payload.name }))
       .on('broadcast', { event: 'putback' }, ({ payload }) => { if (payload && payload.id) { won.delete(payload.id); saveWon(); } load(); })
       .on('broadcast', { event: 'reset' }, () => { won = new Set(); saveWon(); load(); showQR(); })
       .subscribe((s) => { $('cs-sync').textContent = s === 'SUBSCRIBED' ? '●' : '○'; $('cs-sync').classList.toggle('on', s === 'SUBSCRIBED'); });
   }
+
+  // ── Fail-safe: draw straight from the TV if the host phone can't ──────────
+  // Picks a random remaining name and spins here; also broadcasts 'go' so any
+  // other open screen stays in sync. Same pool, same wheel as the host GO.
+  function localDraw() {
+    if (spinning) return;
+    const p = pool();
+    if (!p.length) { const b = $('cs-ops-go'); const t = b.textContent; b.textContent = 'No one to draw yet'; setTimeout(() => { b.textContent = t; }, 1500); return; }
+    const w = p[(Math.random() * p.length) | 0];
+    send('go', { id: w.id, name: w.name });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    runReveal(w);
+  }
+  $('cs-ops-go').addEventListener('click', localDraw);
+  $('cs-style').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setStyle(b.dataset.s); });
+  setStyle(style);
+  $('cs-ops-reset').addEventListener('click', () => {
+    if (!confirm('Put everyone back in the draw (clear all winners on this screen)?')) return;
+    won = new Set(); saveWon(); send('reset', {}); refreshCount(); load();
+  });
 
   setInterval(() => { if (document.visibilityState === 'visible' && !spinning) load(); }, 12000);
   // Same as the host page: the TV can be backgrounded or the venue wifi can
@@ -223,15 +338,40 @@ import Layout from '../../layouts/Layout.astro';
     border-left: 22px solid transparent; border-right: 22px solid transparent; border-top: 36px solid var(--gold);
     filter: drop-shadow(0 4px 6px rgba(0,0,0,.55)); }
   .cs-slice-win { filter: drop-shadow(0 0 14px rgba(255,210,74,.9)); }
+  #cs-wheel { transform-origin: 200px 200px; }
+  #cs-wheel.cs-spread { animation: cs-spread .5s cubic-bezier(.2,1.1,.3,1) both; }
+  @keyframes cs-spread { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* Name-reel style */
+  .cs-reel { width: min(1500px, 96vw); }
+  .cs-reelview { position: relative; overflow: hidden; border: 1px solid #241d33; border-radius: 20px;
+    background: linear-gradient(180deg, #0e0b14, #0a0810); box-shadow: inset 0 0 70px rgba(0,0,0,.6);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent); }
+  .cs-track { display: flex; will-change: transform; padding: clamp(1.6rem, 3vh, 3rem) 0; }
+  .cs-card { flex: 0 0 auto; width: clamp(200px, 24vw, 360px); margin: 0 8px; height: clamp(110px, 15vh, 200px);
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 16px; border-radius: 16px;
+    font-family: var(--font-display, sans-serif); text-transform: uppercase; line-height: .95; letter-spacing: .02em;
+    font-size: clamp(1.8rem, 4vw, 3.6rem); overflow-wrap: anywhere;
+    background: linear-gradient(180deg, #191320, #120d1b); border: 1px solid #241d33; color: var(--bone); }
+  .cs-card.alt { background: linear-gradient(180deg, #1c1522, #140e1c); }
+  .cs-card.win { background: radial-gradient(120% 120% at 50% 20%, var(--gold-hi), var(--gold) 78%); color: #241a02; border-color: var(--gold); }
+  .cs-reelmark { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; transform: translateX(-50%); z-index: 3; pointer-events: none; }
+  .cs-reelmark::before, .cs-reelmark::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+    border-left: 15px solid transparent; border-right: 15px solid transparent; filter: drop-shadow(0 0 5px rgba(255,210,74,.6)); }
+  .cs-reelmark::before { top: -1px; border-top: 22px solid var(--gold); }
+  .cs-reelmark::after { bottom: -1px; border-bottom: 22px solid var(--gold); }
+  .cs-reelmark i { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%);
+    background: linear-gradient(180deg, transparent, rgba(255,210,74,.55), transparent); }
 
   /* Names-only reveal, overlaid on the landed wheel */
   .cs-reveal { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 50% 46%, rgba(10,10,12,.74), rgba(10,10,12,.93) 72%); animation: cs-fade .5s ease both; }
   @keyframes cs-fade { from { opacity: 0; } to { opacity: 1; } }
   /* The fit box bounds the name; JS sets the exact px size so it never overflows. */
-  .cs-name-fit { width: 92vw; display: flex; align-items: center; justify-content: center; }
+  .cs-name-fit { width: 100%; display: flex; align-items: center; justify-content: center; }
   .cs-name { font-family: var(--font-display, sans-serif); line-height: 1; text-transform: uppercase; color: var(--bone);
-    overflow-wrap: anywhere; max-width: 92vw; }
+    overflow-wrap: anywhere; max-width: 100%; text-align: center; }
   .cs-name.is-winner { animation: pop .55s cubic-bezier(.2,1.35,.35,1) both;
     background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent;
     text-shadow: 0 0 80px rgba(255,210,74,.35); }
@@ -239,4 +379,24 @@ import Layout from '../../layouts/Layout.astro';
 
   .cs-sync { position: fixed; bottom: 12px; right: 16px; color: #35342e; font-size: 1rem; }
   .cs-sync.on { color: #48d16a; }
+
+  /* Fail-safe operator control (below the QR fold) */
+  .cs-ops { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    gap: 1.1rem; padding: clamp(2rem, 5vw, 4rem); border-top: 1px solid #1c1a24; background: rgba(0,0,0,.35); }
+  .cs-ops-k { font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); font-size: clamp(.9rem, 1.6vw, 1.2rem); }
+  .cs-ops-style { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+  .cs-ops-lbl { font-size: clamp(.75rem, 1.3vw, .95rem); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .cs-seg { display: inline-flex; background: #141019; border: 1px solid #241d33; border-radius: 100px; padding: 4px; }
+  .cs-seg button { border: none; background: none; color: var(--muted); font: inherit; font-weight: 700; font-size: clamp(1rem, 1.8vw, 1.3rem);
+    padding: .55rem 1.4rem; border-radius: 100px; cursor: pointer; transition: .15s; }
+  .cs-seg button[aria-pressed="true"] { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #241a02; }
+  .cs-ops-note { color: #6f6a60; font-size: clamp(.95rem, 1.7vw, 1.2rem); line-height: 1.5; max-width: 36ch; margin: 0; }
+  .cs-ops-count { color: var(--bone); font-size: clamp(1.1rem, 2.2vw, 1.6rem); }
+  .cs-ops-count b { color: var(--gold); }
+  .cs-ops-go { width: clamp(140px, 26vw, 220px); height: clamp(140px, 26vw, 220px); border-radius: 50%; border: none; cursor: pointer; color: #241a02; margin-top: .4rem;
+    font-family: var(--font-display, sans-serif); font-size: clamp(2.2rem, 6vw, 3.4rem); letter-spacing: .04em; text-transform: uppercase;
+    background: radial-gradient(120% 120% at 30% 25%, var(--gold-hi), var(--gold) 70%);
+    box-shadow: 0 0 0 8px rgba(255,210,74,.12), 0 18px 50px -12px rgba(255,210,74,.5); transition: transform .1s; }
+  .cs-ops-go:active { transform: scale(.95); }
+  .cs-ops-reset { background: none; border: 1px solid #2a2a30; color: var(--muted); padding: .5rem 1.1rem; border-radius: 100px; font-size: 1rem; cursor: pointer; }
 </style>
