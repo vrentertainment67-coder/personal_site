@@ -2110,12 +2110,32 @@ function InvitePastGuests({ event, showToast }) {
 // How they RSVP'd — friendly labels for the event_rsvps.source column.
 const RSVP_SOURCE = { "self-checkin": "Door check-in", funnel: "Booking funnel", popup: "Homepage popup", weekend: "Homepage popup", form: "RSVP form", manual: "Added manually" };
 const rsvpSource = (s) => RSVP_SOURCE[s] || (s ? String(s).replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—");
-const prettyEvent = (slug) => (slug || "—").replace(/-/g, " ").replace(/\bvol\b/i, "Vol.").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Reduce whatever got pasted (a full instagram.com URL, an @handle, a stray
+// space) down to the bare handle. Instagram handles are letters/digits/._ only.
+function igHandle(v) {
+  if (!v) return "";
+  let s = String(v).trim();
+  s = s.replace(/^.*instagram\.com\//i, "");   // drop everything up to instagram.com/
+  s = s.replace(/^@+/, "");                     // drop a leading @
+  s = s.replace(/[^A-Za-z0-9._].*$/, "");       // stop at the first illegal char (space, /, ?, …)
+  return s;
+}
+// The early Chamatkar editions were slugged by date; map them to their volume
+// numbers so the Guest List reads "Chamatkar Vol. 1" instead of a raw date.
+const CHAMATKAR_EDITIONS = {
+  "chamatkar-2026-06-13": "Chamatkar Vol. 1",
+  "chamatkar-2026-07-11": "Chamatkar Vol. 2",
+  "chamatkar-2026-08-01": "Chamatkar Vol. 3",
+  "chamatkar-2026-08-22": "Chamatkar Vol. 4",
+};
+const prettyEvent = (slug) => CHAMATKAR_EDITIONS[slug] || (slug || "—").replace(/-/g, " ").replace(/\bvol\s*(\d+)/i, "Vol. $1").replace(/\b\w/g, (c) => c.toUpperCase());
 
 function Guests({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [editId, setEditId] = useState(null); const [editVal, setEditVal] = useState(""); const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState(null); const [editField, setEditField] = useState(null);
+  const [editVal, setEditVal] = useState(""); const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -2128,19 +2148,26 @@ function Guests({ showToast }) {
     return () => { on = false; };
   }, [showToast]);
 
-  const startEdit = (r) => { setEditId(r.id); setEditVal(r.phone || "+91"); };
-  const cancelEdit = () => { setEditId(null); setEditVal(""); };
+  const startEdit = (r, field) => { setEditId(r.id); setEditField(field); setEditVal(field === "phone" ? (r.phone || "+91") : igHandle(r.instagram)); };
+  const cancelEdit = () => { setEditId(null); setEditField(null); setEditVal(""); };
   const saveEdit = async (r) => {
-    // Keep a leading + and digits only — the shape WhatsApp deep-links expect.
-    let v = editVal.trim().replace(/[^\d+]/g, "");
-    if (v && v[0] !== "+") v = "+" + v;
-    if (v.replace(/\D/g, "").length < 8) { showToast("That number looks too short."); return; }
+    let patch;
+    if (editField === "phone") {
+      // Keep a leading + and digits only — the shape WhatsApp deep-links expect.
+      let v = editVal.trim().replace(/[^\d+]/g, "");
+      if (v && v[0] !== "+") v = "+" + v;
+      if (v.replace(/\D/g, "").length < 8) { showToast("That number looks too short."); return; }
+      patch = { phone: v };
+    } else {
+      // Store the bare handle only — never a pasted URL or a leading @.
+      patch = { instagram: igHandle(editVal) || null };
+    }
     setSaving(true);
-    const { error } = await supabase.from("event_rsvps").update({ phone: v }).eq("id", r.id);
+    const { error } = await supabase.from("event_rsvps").update(patch).eq("id", r.id);
     setSaving(false);
     if (error) { showToast("Update needs the admin update grant (re-run event_rsvps.sql)."); return; }
-    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, phone: v } : x)));
-    showToast("Number updated.");
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
+    showToast(editField === "phone" ? "Number updated." : "Instagram updated.");
     cancelEdit();
   };
 
@@ -2158,7 +2185,7 @@ function Guests({ showToast }) {
   const exportCsv = () => {
     const head = ["event", "name", "phone", "instagram", "rsvped_via", "date"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [head.join(","), ...filtered.map((r) => [esc(prettyEvent(r.event)), esc(r.name), esc(r.phone), esc(r.instagram), esc(rsvpSource(r.source)), esc(r.created_at)].join(","))].join("\n");
+    const csv = [head.join(","), ...filtered.map((r) => [esc(prettyEvent(r.event)), esc(r.name), esc(r.phone), esc(igHandle(r.instagram) ? "@" + igHandle(r.instagram) : ""), esc(rsvpSource(r.source)), esc(r.created_at)].join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `djvic-guests-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -2185,34 +2212,58 @@ function Guests({ showToast }) {
             </div>
             <div style={{ overflowX: "auto", border: "1px solid #1e1e1e", borderRadius: 8 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", background: "#0d0d0d" }}>
-                <thead><tr><th style={th}>Name</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
+                <thead><tr><th style={th}>Name</th><th style={th}>Instagram</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
                 <tbody>
-                  {list.map((r, i) => (
+                  {list.map((r, i) => {
+                    const editingIg = editId === r.id && editField === "instagram";
+                    const editingPh = editId === r.id && editField === "phone";
+                    const handle = igHandle(r.instagram);
+                    const editBtns = (
+                      <span style={{ display: "inline-flex", gap: 6 }}>
+                        <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} disabled={saving} onClick={() => saveEdit(r)}>{saving ? "…" : "Save"}</button>
+                        <button className="act" style={{ padding: "4px 8px", fontSize: 12, opacity: .7 }} onClick={cancelEdit}>Cancel</button>
+                      </span>
+                    );
+                    return (
                     <tr key={r.id || i}>
-                      <td style={td}>{r.name || "Guest"}{r.instagram ? <span style={{ color: "#8a8878", marginLeft: 6, fontSize: 12 }}>{r.instagram.startsWith("@") ? r.instagram : "@" + r.instagram}</span> : null}</td>
-                      <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>
-                        {editId === r.id ? (
-                          <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus inputMode="tel"
-                            onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
-                            style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit", fontFamily: "ui-monospace, monospace" }} />
-                        ) : (r.phone || "—")}
-                      </td>
-                      <td style={{ ...td, whiteSpace: "nowrap", color: "#c9a84c" }}>{rsvpSource(r.source)}</td>
-                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
-                        {editId === r.id ? (
-                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
-                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} disabled={saving} onClick={() => saveEdit(r)}>{saving ? "…" : "Save"}</button>
-                            <button className="act" style={{ padding: "4px 8px", fontSize: 12, opacity: .7 }} onClick={cancelEdit}>Cancel</button>
+                      <td style={td}>{r.name || "Guest"}</td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>
+                        {editingIg ? (
+                          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                            <span style={{ color: "#8a8878" }}>@</span>
+                            <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus placeholder="handle"
+                              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
+                              style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit" }} />
+                            {editBtns}
                           </span>
                         ) : (
-                          <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
-                            <button className="act" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => startEdit(r)} title="Edit number"><Pencil size={13} /></button>
-                            {phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}
+                          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                            {handle ? <a href={`https://instagram.com/${handle}`} target="_blank" rel="noreferrer" style={{ color: "#c9a84c", textDecoration: "none" }}>@{handle}</a> : <span style={{ color: "#55534b" }}>—</span>}
+                            <button className="act" style={{ padding: "3px 7px", fontSize: 12 }} onClick={() => startEdit(r, "instagram")} title="Edit Instagram handle"><Pencil size={12} /></button>
                           </span>
                         )}
                       </td>
+                      <td style={{ ...td, whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace" }}>
+                        {editingPh ? (
+                          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                            <input value={editVal} onChange={(e) => setEditVal(e.target.value)} autoFocus inputMode="tel"
+                              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r); if (e.key === "Escape") cancelEdit(); }}
+                              style={{ width: 150, background: "#0a0a0a", border: "1px solid #3a3a3a", borderRadius: 6, color: "#fff", padding: "5px 8px", font: "inherit", fontFamily: "ui-monospace, monospace" }} />
+                            {editBtns}
+                          </span>
+                        ) : (
+                          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                            {r.phone || "—"}
+                            <button className="act" style={{ padding: "3px 7px", fontSize: 12 }} onClick={() => startEdit(r, "phone")} title="Edit number"><Pencil size={12} /></button>
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ ...td, whiteSpace: "nowrap", color: "#c9a84c" }}>{rsvpSource(r.source)}</td>
+                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                        {phoneKey(r.phone) ? <button className="act wa" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => waFor(r)}><MessageCircle size={13} /> WA</button> : null}
+                      </td>
                     </tr>
-                  ))}
+                  ); })}
                 </tbody>
               </table>
             </div>

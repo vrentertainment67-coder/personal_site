@@ -55,3 +55,16 @@ grant update on public.event_rsvps to authenticated;
 
 -- Helpful index for the admin list (newest first)
 create index if not exists event_rsvps_created_idx on public.event_rsvps (created_at desc);
+
+-- One-time cleanup: reduce pasted Instagram values (full instagram.com URLs,
+-- leading @, stray spaces) down to the bare handle. Safe to re-run — clean
+-- handles are left untouched; anything that reduces to nothing becomes NULL.
+update public.event_rsvps
+set instagram = nullif(
+  regexp_replace(                                         -- 3) stop at first illegal char
+    regexp_replace(                                       -- 2) drop a leading @
+      regexp_replace(instagram, '^.*instagram\.com/', '', 'i'),   -- 1) strip URL up to the handle
+    '^@+', ''),
+  '[^A-Za-z0-9._].*$', ''),
+  '')
+where instagram is not null;
