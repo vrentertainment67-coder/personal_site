@@ -557,7 +557,6 @@ function Overview({ onNavigate }) {
   const [bookings, setBookings] = useState([]);
   const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [checks, setChecks] = useState({});
   const [revRange, setRevRange] = useState("6m");
 
   useEffect(() => {
@@ -685,23 +684,6 @@ function Overview({ onNavigate }) {
       sources, pages, bookViews, funnel, hasTraffic: !!traffic };
   }, [vis, bookings, traffic]);
 
-  // Per-gig prep checklists — one map keyed by booking id, each persisted in
-  // localStorage (no schema change). Loaded for the three upcoming gigs.
-  const gigIds = d.gigs.map((g) => g.id).join(",");
-  useEffect(() => {
-    const ids = gigIds ? gigIds.split(",") : [];
-    const m = {};
-    ids.forEach((id) => { try { m[id] = JSON.parse(localStorage.getItem(gigKey(id)) || "{}"); } catch { m[id] = {}; } });
-    setChecks(m);
-  }, [gigIds]);
-  const toggleCheck = (id, k) => {
-    const cur = checks[id] || {};
-    const nx = { ...cur, [k]: !cur[k] };
-    setChecks((c) => ({ ...c, [id]: nx }));
-    try { localStorage.setItem(gigKey(id), JSON.stringify(nx)); } catch {}
-  };
-  const doneCount = (id) => GIG_CHECKS.filter(([k]) => (checks[id] || {})[k]).length;
-
   if (loading) return <Center><Loader2 className="spin" size={20} /> Loading…</Center>;
 
   const go = (t) => onNavigate && onNavigate(t);
@@ -710,7 +692,7 @@ function Overview({ onNavigate }) {
   // Needs-action items (shown only when non-zero).
   const actions = [];
   if (d.unrespCount > 0) actions.push({ text: `${d.unrespCount} inquir${d.unrespCount === 1 ? "y" : "ies"} unresponded${d.oldestAgeH ? ` — oldest ${fmtAge(d.oldestAgeH)}` : ""}`, cta: "View", go: "bookings" });
-  if (d.next && d.nextDays <= 14 && doneCount(d.next.id) < GIG_CHECKS.length) actions.push({ text: `${d.next.name} prep incomplete (${GIG_CHECKS.length - doneCount(d.next.id)} left) — ${d.nextDays} day${d.nextDays === 1 ? "" : "s"} away`, cta: "Open", go: "bookings" });
+  if (d.next && d.nextDays <= 3) actions.push({ text: `${d.next.name} is ${d.nextDays === 0 ? "today" : d.nextDays === 1 ? "tomorrow" : `in ${d.nextDays} days`}`, cta: "Open", go: "bookings" });
   const gigState = d.next ? (d.nextDays <= 2 ? "urgent" : d.nextDays <= 7 ? "soon" : "") : "";
 
   // Revenue chart series, sliced by the selected range.
@@ -755,35 +737,22 @@ function Overview({ onNavigate }) {
         <Stat label="New leads · 7d" value={d.newWeek} trend={d.leadsTrend} />
       </div>
 
-      {/* Next gigs — feature card (up to three upcoming, each with its prep) */}
+      {/* Next gigs — the three upcoming, side by side for an at-a-glance look */}
       <div className={"card nextgig " + gigState}>
         <div className="nextgig-top">
           <h3 className="card-h" style={{ margin: 0 }}>{d.gigs.length > 1 ? "Next gigs" : "Next gig"}</h3>
           {!d.gigs.length && <button className="open-link" onClick={() => go("bookings")}>Add one →</button>}
         </div>
         {d.gigs.length ? (
-          <div className="giglist">
-            {d.gigs.map((g, idx) => {
-              const gc = checks[g.id] || {};
-              return (
-                <div key={g.id} className="gigrow">
-                  <div className="gigrow-head">
-                    <div>
-                      <div className="nextgig-name" style={{ fontSize: idx === 0 ? 30 : 21 }}>{g.name}</div>
-                      <p className="nextgig-meta">{cap(g.event_type)} · {new Date(g.event_date).toDateString()} · <span className={"nextgig-count" + (g.days <= 2 ? " urg" : "")}>{g.days} day{g.days === 1 ? "" : "s"} away</span></p>
-                    </div>
-                    <button className="open-link" onClick={() => go("bookings")}>Open →</button>
-                  </div>
-                  <div className="gig-checks">
-                    {GIG_CHECKS.map(([k, lbl]) => (
-                      <button key={k} className={"gig-check" + (gc[k] ? " done" : "")} onClick={() => toggleCheck(g.id, k)}>
-                        {gc[k] ? <CheckSquare size={16} /> : <Square size={16} />} {lbl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="giggrid">
+            {d.gigs.map((g) => (
+              <button key={g.id} className={"gigtile" + (g.days <= 2 ? " urg" : g.days <= 7 ? " soon" : "")} onClick={() => go("bookings")}>
+                <div className="gigtile-name">{g.name}</div>
+                <div className="gigtile-meta">{cap(g.event_type)}</div>
+                <div className="gigtile-date">{new Date(g.event_date).toDateString()}</div>
+                <div className="gigtile-count">{g.days === 0 ? "Today" : g.days === 1 ? "Tomorrow" : `${g.days} days away`}</div>
+              </button>
+            ))}
           </div>
         ) : <p className="nextgig-meta" style={{ marginTop: 8 }}>No upcoming gigs confirmed.</p>}
         {d.gigs.length > 0 && <div className="nextgig-foot"><span className="link-gold" onClick={() => go("calendar")}>{d.next90} confirmed event{d.next90 === 1 ? "" : "s"} in the next 90 days → View calendar</span></div>}
@@ -5760,6 +5729,18 @@ function Styles() {
   .gigrow-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
   .gigrow .gig-checks{margin-top:12px;gap:7px;}
   .nextgig-count.urg{color:#ff8a8a;}
+  /* three upcoming gigs, side by side */
+  .giggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  .gigtile{display:flex;flex-direction:column;gap:3px;text-align:left;background:rgba(232,232,224,.02);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;transition:.15s;}
+  .gigtile:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+  .gigtile.soon{border-color:rgba(201,168,76,.5);}
+  .gigtile.urg{border-color:rgba(255,59,59,.5);}
+  .gigtile-name{font-family:'Bebas Neue';font-size:22px;letter-spacing:.4px;line-height:1.05;color:var(--off);}
+  .gigtile-meta{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);}
+  .gigtile-date{font-size:12.5px;color:rgba(232,232,224,.72);margin-top:2px;}
+  .gigtile-count{font-family:'Bebas Neue';font-size:17px;color:var(--gold);letter-spacing:.4px;margin-top:5px;}
+  .gigtile.urg .gigtile-count{color:#ff8a8a;}
+  @media(max-width:560px){.giggrid{grid-template-columns:1fr;}}
   .nextgig-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;}
   .link-gold{color:var(--gold);cursor:pointer;}.link-gold:hover{text-decoration:underline;}
   .open-link{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none;}
