@@ -897,9 +897,10 @@ function Bookings({ showToast }) {
   const [adding, setAdding] = useState(false); const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null); const [editing, setEditing] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
-  // Click a column header to sort by it; click again to flip direction.
-  const [sortKey, setSortKey] = useState("created"); // created | name | type | date | value | status
-  const [sortDir, setSortDir] = useState("desc");
+  // Default: organised by month & date (event_date, soonest first). Clicking a
+  // column header re-sorts by it; month headers show only in the date view.
+  const [sortKey, setSortKey] = useState("date"); // date | created | name | type | value | status
+  const [sortDir, setSortDir] = useState("asc");
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     // Sensible first direction per column: dates/names read forwards, money reads biggest-first.
@@ -1218,6 +1219,9 @@ function Bookings({ showToast }) {
         .bk-table th { text-align: left; padding: 8px 10px; color: #8a8878; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
         .bk-table td { padding: 10px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; }
         .bk-table tbody tr:hover td { background: #141414; }
+        .bk-month td { background: rgba(201,168,76,.07); color: #c9a84c; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: .5px; padding: 9px 12px; border-bottom: 1px solid #2a2a2a; }
+        .bk-month:hover td { background: rgba(201,168,76,.07); }
+        .bk-month-n { color: #8a8878; font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: .04em; }
         .bk-name { font-weight: 600; color: #e8e8e0; }
         .bk-sub { color: #8a8878; font-size: 12px; }
         .bk-st { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; display: inline-block; }
@@ -1353,41 +1357,62 @@ function Bookings({ showToast }) {
               <th></th>
             </tr></thead>
             <tbody>
-              {sorted.map((r) => {
-                const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
-                const owingAmt = (r.status === "accepted" || r.status === "completed") ? Math.max(0, balOf(r)) : 0;
-                const owing = owingAmt > 0;
-                const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
-                return (
-                  <tr key={r.id} style={{ cursor: "pointer" }} title={r.message || ""} onClick={() => setOpenId(r.id)}>
-                    {filter === "owing" && (
-                      <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
-                        <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggleSel(r.id)}
-                          title={`Outstanding ${inr(Math.max(0, balOf(r)))}`} style={{ accentColor: "#c9a84c", cursor: "pointer" }} />
-                      </td>
-                    )}
-                    <td>
-                      <div className="bk-name">{r.name} {r.source === "manual" && <span className="mini">manual</span>}</div>
-                      <div className="bk-sub">{[r.venue, r.city].filter(Boolean).join(", ") || "—"}</div>
-                    </td>
-                    <td><span className="tag">{r.event_type}</span></td>
-                    <td style={{ whiteSpace: "nowrap" }}>{fmtRange(r.event_date, r.event_end_date)}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{value}{owing && <div className="bk-sub" style={{ color: "#e0b13c" }}>{inr(owingAmt)} owing</div>}</td>
-                    <td><span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span></td>
-                    <td className="bk-actions" onClick={(e) => e.stopPropagation()}>
-                      {r.status === "pending" && (
-                        <>
-                          <button className="bk-ic green" title="Confirm" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>{acting === r.id ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />}</button>
-                          <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}><XCircle size={14} /></button>
-                        </>
+              {(() => {
+                // Organised by month & date: in the date view, drop a month
+                // header in whenever the event-month changes (undated last).
+                const colCount = filter === "owing" ? 7 : 6;
+                const showMonths = sortKey === "date";
+                const monthOf = (r) => (r.event_date ? r.event_date.slice(0, 7) : "none");
+                const out = []; let lastM = null;
+                sorted.forEach((r) => {
+                  if (showMonths) {
+                    const mk = monthOf(r);
+                    if (mk !== lastM) {
+                      lastM = mk;
+                      const cnt = sorted.filter((x) => monthOf(x) === mk).length;
+                      out.push(
+                        <tr key={"m-" + mk} className="bk-month"><td colSpan={colCount}>
+                          {r.event_date ? `${MONTHS[+r.event_date.slice(5, 7) - 1]} ${r.event_date.slice(0, 4)}` : "No date yet"}<span className="bk-month-n"> · {cnt}</span>
+                        </td></tr>
+                      );
+                    }
+                  }
+                  const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
+                  const owingAmt = (r.status === "accepted" || r.status === "completed") ? Math.max(0, balOf(r)) : 0;
+                  const owing = owingAmt > 0;
+                  const value = r.agreed_fee != null ? inr(r.agreed_fee) : (r.budget || "—");
+                  out.push(
+                    <tr key={r.id} style={{ cursor: "pointer" }} title={r.message || ""} onClick={() => setOpenId(r.id)}>
+                      {filter === "owing" && (
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                          <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggleSel(r.id)}
+                            title={`Outstanding ${inr(Math.max(0, balOf(r)))}`} style={{ accentColor: "#c9a84c", cursor: "pointer" }} />
+                        </td>
                       )}
-                      <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
-                      <button className="bk-ic" title="Open" onClick={() => setOpenId(r.id)}><Eye size={14} /></button>
-                      <button className="bk-ic danger" title="Delete" disabled={acting === r.id} onClick={() => delBooking(r)}><Trash2 size={14} /></button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      <td>
+                        <div className="bk-name">{r.name} {r.source === "manual" && <span className="mini">manual</span>}</div>
+                        <div className="bk-sub">{[r.venue, r.city].filter(Boolean).join(", ") || "—"}</div>
+                      </td>
+                      <td><span className="tag">{r.event_type}</span></td>
+                      <td style={{ whiteSpace: "nowrap" }}>{fmtRange(r.event_date, r.event_end_date)}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>{value}{owing && <div className="bk-sub" style={{ color: "#e0b13c" }}>{inr(owingAmt)} owing</div>}</td>
+                      <td><span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span></td>
+                      <td className="bk-actions" onClick={(e) => e.stopPropagation()}>
+                        {r.status === "pending" && (
+                          <>
+                            <button className="bk-ic green" title="Confirm" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>{acting === r.id ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />}</button>
+                            <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}><XCircle size={14} /></button>
+                          </>
+                        )}
+                        <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
+                        <button className="bk-ic" title="Open" onClick={() => setOpenId(r.id)}><Eye size={14} /></button>
+                        <button className="bk-ic danger" title="Delete" disabled={acting === r.id} onClick={() => delBooking(r)}><Trash2 size={14} /></button>
+                      </td>
+                    </tr>
+                  );
+                });
+                return out;
+              })()}
             </tbody>
           </table>
         </div>
