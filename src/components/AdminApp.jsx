@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
   AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy,
+  ChevronDown, Square, CheckSquare, Bell,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -150,23 +151,18 @@ export default function Admin() {
 
   if (!session) return <><Styles /><Login showToast={showToast} /></>;
 
-  const TABS = [
+  // Daily-use tabs stay visible; the rest fold into grouped dropdowns so the
+  // bar never overflows and the hierarchy is scannable in a second.
+  const PRIMARY = [
     ["overview", "Overview", LayoutDashboard],
     ["today", "Today", Zap],
     ["bookings", "Bookings", ClipboardList],
-    ["events", "Events", Star],
-    ["guests", "Guests", Users],
-    ["podcast", "Podcast", Mic],
-    ["collective", "Collective", Activity],
-    ["mail", "Mail", Inbox],
     ["calendar", "Calendar", CalendarDays],
-    ["media", "Media", ImageIcon],
-    ["requests", "Requests", ListMusic],
-    ["livevideos", "Live videos", Film],
-    ["pageimages", "Page Images", Images],
-    ["testimonials", "Reviews", Quote],
-    ["marketing", "Marketing", TrendingUp],
-    ["newsletter", "Newsletter", Mail],
+  ];
+  const GROUPS = [
+    { label: "Manage", Icon: Users, items: [["events", "Events", Star], ["guests", "Guests", Users], ["requests", "Requests", ListMusic], ["mail", "Mail", Inbox]] },
+    { label: "Content", Icon: TrendingUp, items: [["podcast", "Podcast", Mic], ["collective", "Collective", Activity], ["marketing", "Marketing", TrendingUp], ["newsletter", "Newsletter", Mail], ["testimonials", "Reviews", Quote]] },
+    { label: "Media", Icon: ImageIcon, items: [["media", "Media", ImageIcon], ["livevideos", "Live videos", Film], ["pageimages", "Page Images", Images]] },
   ];
 
   return (
@@ -177,14 +173,17 @@ export default function Admin() {
         <button className="logout" onClick={() => supabase.auth.signOut()}><LogOut size={14} /> Sign out</button>
       </header>
       <nav className="adm-nav">
-        {TABS.map(([k, label, Icon]) => (
+        {PRIMARY.map(([k, label, Icon]) => (
           <button key={k} className={tab === k ? "navb on" : "navb"} onClick={() => setTab(k)}>
             <Icon size={16} /> {label}
           </button>
         ))}
+        {GROUPS.map((g) => (
+          <NavDropdown key={g.label} label={g.label} Icon={g.Icon} items={g.items} tab={tab} setTab={setTab} />
+        ))}
       </nav>
       <main className="adm-main">
-        {tab === "overview" && <Overview />}
+        {tab === "overview" && <Overview onNavigate={setTab} />}
         {tab === "today" && <Today showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
@@ -202,6 +201,36 @@ export default function Admin() {
         {tab === "newsletter" && <Newsletter showToast={showToast} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+// Grouped nav dropdown — folds occasional-management tabs behind one button,
+// highlights itself when one of its tabs is active, closes on outside click.
+function NavDropdown({ label, Icon, items, tab, setTab }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const activeHere = items.some(([k]) => k === tab);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  return (
+    <div className="nav-dd" ref={ref}>
+      <button className={"navb" + (activeHere ? " on" : "")} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <Icon size={16} /> {label} <ChevronDown size={14} style={{ opacity: 0.7, transform: open ? "rotate(180deg)" : "none", transition: ".15s" }} />
+      </button>
+      {open && (
+        <div className="nav-dd-panel">
+          {items.map(([k, lbl, ItemIcon]) => (
+            <button key={k} className={"nav-dd-item" + (tab === k ? " on" : "")} onClick={() => { setTab(k); setOpen(false); }}>
+              <ItemIcon size={15} /> {lbl}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -502,20 +531,44 @@ function Today({ showToast }) {
   );
 }
 
-function Overview() {
+// Time-ago + trend helpers for the Overview dashboard.
+const agoStr = (ts) => {
+  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  const dd = Math.floor(h / 24); return dd === 1 ? "yesterday" : `${dd}d ago`;
+};
+const fmtAge = (h) => (h < 1 ? "under 1h" : h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`);
+// % change vs previous period → {arrow,text,good}. goodUp=false flips the colour.
+const pctTrend = (cur, prev, label, goodUp = true) => {
+  if (!prev && !cur) return null;
+  if (!prev) return { arrow: "↑", text: `new vs ${label}`, good: goodUp };
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  if (pct === 0) return { arrow: "→", text: `flat vs ${label}`, good: null };
+  const up = pct > 0;
+  return { arrow: up ? "↑" : "↓", text: `${Math.abs(pct)}% vs ${label}`, good: up === goodUp };
+};
+const GIG_CHECKS = [["rider", "Rider confirmed"], ["playlist", "Playlist finalised"], ["venue", "Venue contact saved"]];
+const gigKey = (id) => `vic_gig_checklist_${id}`;
+
+function Overview({ onNavigate }) {
   const [vis, setVis] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checks, setChecks] = useState({});
 
   useEffect(() => {
     (async () => {
-      const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 29);
+      // 60 days of visitor data so every stat can show a period-over-period trend.
+      const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 59);
+      const from30 = new Date(); from30.setDate(to.getDate() - 29);
       const f = (dt) => ymd(dt.getFullYear(), dt.getMonth(), dt.getDate());
       const [v, b, t] = await Promise.all([
         supabase.rpc("visitor_stats", { p_from: f(from), p_to: f(to) }),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-        supabase.rpc("overview_traffic", { p_from: f(from), p_to: f(to) }).then((r) => r.data).catch(() => null),
+        supabase.rpc("overview_traffic", { p_from: f(from30), p_to: f(to) }).then((r) => r.data).catch(() => null),
       ]);
       setVis((v.data || []).map((r) => ({ ...r, label: `${MONTHS[new Date(r.d).getMonth()]} ${new Date(r.d).getDate()}` })));
       setBookings(b.data || []);
@@ -527,20 +580,50 @@ function Overview() {
   const d = useMemo(() => {
     const now = Date.now(); const DAY = 864e5; const WEEK = 7 * DAY;
     const todayStr = new Date().toISOString().slice(0, 10);
-    const views30 = vis.reduce((s, r) => s + (r.views || 0), 0);
+    const at = (b) => new Date(b.created_at).getTime();
+    const inWin = (t, a, b) => now - t >= a && now - t < b;   // created a…b ago
+
+    // Visitors: current 30 vs previous 30 (vis holds ~60 days, oldest first).
+    const sumV = (arr) => arr.reduce((s, r) => s + (r.views || 0), 0);
+    const visCur = vis.slice(-30), visPrev = vis.slice(-60, -30);
+    const views30 = sumV(visCur);
     const todayViews = vis.length ? vis[vis.length - 1].views : 0;
+    const visTrend = pctTrend(views30, sumV(visPrev), "last month");
+
     // Funnel/lead metrics count ORGANIC (website) requests only — manually
     // logged gigs are existing contacts/references, not funnel leads.
     const organic = bookings.filter((b) => (b.source || "website") !== "manual");
-    const newWeek = organic.filter((b) => now - new Date(b.created_at).getTime() < WEEK).length;
-    const leads30 = organic.filter((b) => now - new Date(b.created_at).getTime() < 30 * DAY).length;
-    const pending = bookings.filter((b) => b.status === "pending").length;
+    const newWeek = organic.filter((b) => inWin(at(b), 0, WEEK)).length;
+    const leadsTrend = pctTrend(newWeek, organic.filter((b) => inWin(at(b), WEEK, 2 * WEEK)).length, "last week");
+    const leads30 = organic.filter((b) => inWin(at(b), 0, 30 * DAY)).length;
+    const org30 = organic.filter((b) => inWin(at(b), 0, 30 * DAY));
+    const org30prev = organic.filter((b) => inWin(at(b), 30 * DAY, 60 * DAY));
+
+    // Conversion — overall headline; trend on the last-30 vs prev-30 cohort (pts).
     const acceptedOrganic = organic.filter((b) => b.status === "accepted").length;
     const conv = organic.length ? Math.round((acceptedOrganic / organic.length) * 100) : 0;
-    const pipeline = bookings.filter((b) => b.status === "pending" || b.status === "accepted")
-      .reduce((s, b) => s + (BUDGET_MID[b.budget] || 0), 0);
+    const cohortConv = (arr) => (arr.length ? Math.round((arr.filter((b) => b.status === "accepted").length / arr.length) * 100) : 0);
+    const convDiff = cohortConv(org30) - cohortConv(org30prev);
+    const convTrend = (!org30.length && !org30prev.length) ? null
+      : { arrow: convDiff > 0 ? "↑" : convDiff < 0 ? "↓" : "→", text: `${Math.abs(convDiff)} pts vs last month`, good: convDiff === 0 ? null : convDiff > 0 };
 
-    const upcoming = bookings.filter((b) => b.status === "accepted" && b.event_date >= todayStr)
+    // Pipeline (open = pending+accepted). Headline all-time; trend = new open pipeline 30 vs prev 30.
+    const openBudget = (arr) => arr.filter((b) => b.status === "pending" || b.status === "accepted").reduce((s, b) => s + (BUDGET_MID[b.budget] || 0), 0);
+    const pipeline = openBudget(bookings);
+    const pipeTrend = pctTrend(openBudget(org30), openBudget(org30prev), "last month");
+
+    // Pending bookings — count now; trend on incoming pending this week vs last.
+    const pendingRows = bookings.filter((b) => b.status === "pending");
+    const pending = pendingRows.length;
+    const pendTrend = pctTrend(pendingRows.filter((b) => inWin(at(b), 0, WEEK)).length, pendingRows.filter((b) => inWin(at(b), WEEK, 2 * WEEK)).length, "last week");
+
+    // Unresponded inquiries — organic website leads still pending (need a reply).
+    const unresp = organic.filter((b) => b.status === "pending");
+    const unrespCount = unresp.length;
+    const oldest = unresp.reduce((m, b) => Math.min(m, at(b)), now);
+    const oldestAgeH = unrespCount ? Math.floor((now - oldest) / 36e5) : 0;
+
+    const upcoming = bookings.filter((b) => b.status === "accepted" && b.event_date && b.event_date >= todayStr)
       .sort((a, b) => a.event_date.localeCompare(b.event_date));
     const next = upcoming[0];
     const nextDays = next ? Math.max(0, Math.ceil((new Date(next.event_date).getTime() - now) / DAY)) : null;
@@ -555,10 +638,31 @@ function Overview() {
     const weeks = [];
     for (let i = 7; i >= 0; i--) {
       const start = now - (i + 1) * WEEK, end = now - i * WEEK;
-      const c = organic.filter((b) => { const x = new Date(b.created_at).getTime(); return x >= start && x < end; }).length;
+      const c = organic.filter((b) => { const x = at(b); return x >= start && x < end; }).length;
       const dt = new Date(end - DAY);
       weeks.push({ label: `${MONTHS[dt.getMonth()]} ${dt.getDate()}`, leads: c });
     }
+    const leadsEmpty = weeks.every((w) => !w.leads);
+
+    // Confirmed revenue by month (accepted/completed) on agreed fee, last 6 months.
+    const confirmed = bookings.filter((b) => (b.status === "accepted" || b.status === "completed") && b.event_date);
+    const revMonths = [];
+    for (let i = 5; i >= 0; i--) {
+      const dt = new Date(now); dt.setDate(1); dt.setMonth(dt.getMonth() - i);
+      const y = dt.getFullYear(), mo = dt.getMonth();
+      const revenue = confirmed.filter((b) => { const e = new Date(b.event_date); return e.getFullYear() === y && e.getMonth() === mo; })
+        .reduce((s, b) => s + (Number(b.agreed_fee) || BUDGET_MID[b.budget] || 0), 0);
+      revMonths.push({ label: MONTHS[mo], revenue });
+    }
+    const hasRevenue = revMonths.some((r) => r.revenue > 0);
+
+    // Activity feed — most recent bookings, labelled by current status.
+    const activity = bookings.slice(0, 10).map((b) => ({
+      id: b.id,
+      text: b.status === "accepted" ? `Confirmed: ${b.name}` : b.status === "completed" ? `Completed: ${b.name}`
+        : b.status === "rejected" ? `Declined: ${b.name}` : `New inquiry from ${b.name}`,
+      ago: agoStr(at(b)),
+    }));
 
     const sources = traffic ? (traffic.top_sources || []).map((s) => ({ name: s.source, label: s.source, value: s.views })) : [];
     const pages = traffic ? (traffic.top_pages || []).map((p) => ({ label: p.path, value: p.views })) : [];
@@ -566,34 +670,91 @@ function Overview() {
     const funnel = bookViews ? Math.round((leads30 / bookViews) * 100) : null;
 
     return { views30, todayViews, newWeek, leads30, pending, conv, pipeline, next, nextDays, next90,
-      types: byKey("event_type"), cities: byKey("city", 6), weeks, sources, pages, bookViews, funnel, hasTraffic: !!traffic };
+      visTrend, leadsTrend, convTrend, pipeTrend, pendTrend, unrespCount, oldestAgeH,
+      types: byKey("event_type"), cities: byKey("city", 6), weeks, leadsEmpty, revMonths, hasRevenue, activity,
+      sources, pages, bookViews, funnel, hasTraffic: !!traffic };
   }, [vis, bookings, traffic]);
+
+  // Next-gig checklist — persisted per booking in localStorage (no schema change).
+  const nextId = d.next && d.next.id;
+  useEffect(() => {
+    if (!nextId) { setChecks({}); return; }
+    try { setChecks(JSON.parse(localStorage.getItem(gigKey(nextId)) || "{}")); } catch { setChecks({}); }
+  }, [nextId]);
+  const toggleCheck = (k) => {
+    if (!nextId) return;
+    const nx = { ...checks, [k]: !checks[k] };
+    setChecks(nx);
+    try { localStorage.setItem(gigKey(nextId), JSON.stringify(nx)); } catch {}
+  };
+  const checksDone = GIG_CHECKS.filter(([k]) => checks[k]).length;
 
   if (loading) return <Center><Loader2 className="spin" size={20} /> Loading…</Center>;
 
+  const go = (t) => onNavigate && onNavigate(t);
   const trafficPlaceholder = <p className="empty" style={{ padding: 16 }}>Run <code>overview_traffic.sql</code> to enable.</p>;
+
+  // Needs-action items (shown only when non-zero).
+  const actions = [];
+  if (d.unrespCount > 0) actions.push({ text: `${d.unrespCount} inquir${d.unrespCount === 1 ? "y" : "ies"} unresponded${d.oldestAgeH ? ` — oldest ${fmtAge(d.oldestAgeH)}` : ""}`, cta: "View", go: "bookings" });
+  if (d.next && d.nextDays <= 14 && checksDone < GIG_CHECKS.length) actions.push({ text: `${d.next.name} prep incomplete (${GIG_CHECKS.length - checksDone} left) — ${d.nextDays} day${d.nextDays === 1 ? "" : "s"} away`, cta: "Open", go: "bookings" });
+  const gigState = d.next ? (d.nextDays <= 2 ? "urgent" : d.nextDays <= 7 ? "soon" : "") : "";
 
   return (
     <>
-      <h1 className="h1">Overview</h1>
-      <div className="cards">
-        <Stat label="Visitors today" value={d.todayViews} />
-        <Stat label="Visitors · 30d" value={d.views30} />
-        <Stat label="New leads · 7d" value={d.newWeek} />
-        <Stat label="Conversion" value={`${d.conv}%`} />
-        <Stat label="Pipeline (est)" value={fmtINR(d.pipeline)} />
-        <Stat label="Pending" value={d.pending} />
+      <div className="row-between" style={{ marginBottom: 18 }}>
+        <h1 className="h1" style={{ margin: 0 }}>Overview</h1>
+        <div className="qa">
+          <button className="qa-btn" onClick={() => go("bookings")}><Plus size={14} /> New Booking</button>
+          <button className={"qa-btn" + (d.unrespCount ? " alert" : "")} disabled={!d.unrespCount} onClick={() => go("bookings")}><Send size={14} /> Reply to Inquiry{d.unrespCount ? ` (${d.unrespCount})` : ""}</button>
+          <button className="qa-btn" onClick={() => go("events")}><Plus size={14} /> Add Event</button>
+        </div>
       </div>
 
-      <div className="card">
-        <h3 className="card-h">Next gig</h3>
-        {d.next ? (
-          <p className="sub" style={{ margin: 0 }}>
-            <strong style={{ color: "#C9A84C" }}>{d.next.name}</strong> · {cap(d.next.event_type)} · {new Date(d.next.event_date).toDateString()} — <strong>{d.nextDays} day{d.nextDays === 1 ? "" : "s"} away</strong> · {d.next90} confirmed in the next 90 days
-          </p>
-        ) : <p className="empty" style={{ padding: 16 }}>No upcoming confirmed gigs.</p>}
+      {/* Needs-action strip */}
+      <div className="needs">
+        {actions.length ? actions.map((a, i) => (
+          <button key={i} className="needs-item" onClick={() => go(a.go)}>
+            <span className="dot" /> <span>{a.text}</span> <span className="go">{a.cta} →</span>
+          </button>
+        )) : <div className="needs-clear"><CheckCircle2 size={16} /> All clear — nothing needs action right now</div>}
       </div>
 
+      {/* Stat grid — priority order, with trends */}
+      <div className="ov-grid">
+        <Stat urgent label="Unresponded inquiries" value={d.unrespCount} sub={d.unrespCount ? `oldest ${fmtAge(d.oldestAgeH)}` : "all answered"} />
+        <Stat label="Pipeline (est)" value={fmtINR(d.pipeline)} trend={d.pipeTrend} />
+        <Stat label="Pending bookings" value={d.pending} trend={d.pendTrend} />
+        <Stat label="Conversion" value={`${d.conv}%`} trend={d.convTrend} />
+        <Stat label="Visitors · 30d" value={d.views30} trend={d.visTrend} />
+        <Stat label="New leads · 7d" value={d.newWeek} trend={d.leadsTrend} />
+      </div>
+
+      {/* Next gig — feature card */}
+      <div className={"card nextgig " + gigState}>
+        <div className="nextgig-top">
+          <div>
+            <h3 className="card-h" style={{ margin: 0 }}>Next gig</h3>
+            {d.next ? <>
+              <div className="nextgig-name">{d.next.name}</div>
+              <p className="nextgig-meta">{cap(d.next.event_type)} · {new Date(d.next.event_date).toDateString()} · <span className="nextgig-count">{d.nextDays} day{d.nextDays === 1 ? "" : "s"} away</span></p>
+            </> : <p className="nextgig-meta" style={{ marginTop: 8 }}>No upcoming gigs confirmed.</p>}
+          </div>
+          <button className="open-link" onClick={() => go("bookings")}>{d.next ? "Open event →" : "Add one →"}</button>
+        </div>
+        {d.next && <>
+          <div className="gig-checks">
+            {GIG_CHECKS.map(([k, lbl]) => (
+              <button key={k} className={"gig-check" + (checks[k] ? " done" : "")} onClick={() => toggleCheck(k)}>
+                {checks[k] ? <CheckSquare size={17} /> : <Square size={17} />} {lbl}
+              </button>
+            ))}
+          </div>
+          <div className="nextgig-foot"><span className="link-gold" onClick={() => go("calendar")}>{d.next90} confirmed event{d.next90 === 1 ? "" : "s"} in the next 90 days → View calendar</span></div>
+        </>}
+      </div>
+
+      {/* Charts */}
       <div className="grid2">
         <div className="card">
           <h3 className="card-h">Visitors · last 14 days</h3>
@@ -611,17 +772,41 @@ function Overview() {
         </div>
         <div className="card">
           <h3 className="card-h">Leads · last 8 weeks</h3>
-          <div style={{ height: 200 }}>
+          {d.leadsEmpty ? (
+            <div className="empty" style={{ padding: 24, lineHeight: 1.8 }}>
+              No leads recorded in this period.<br />
+              <span className="link-gold" onClick={() => go("bookings")}>Check booking form</span> · <span className="link-gold" onClick={() => go("marketing")}>Review traffic sources</span>
+            </div>
+          ) : (
+            <div style={{ height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={d.weeks}>
+                  <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
+                  <Bar dataKey="leads" name="Leads" fill="#C9A84C" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Confirmed revenue — the number the business runs on */}
+      <div className="card">
+        <h3 className="card-h">Revenue confirmed · last 6 months</h3>
+        {d.hasRevenue ? (
+          <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={d.weeks}>
+              <BarChart data={d.revMonths}>
                 <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
-                <Bar dataKey="leads" name="Leads" fill="#C9A84C" radius={[4, 4, 0, 0]} />
+                <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} formatter={(v) => [fmtINR(v), "Confirmed"]} />
+                <Bar dataKey="revenue" name="Revenue" fill="#C9A84C" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        ) : <p className="empty" style={{ padding: 16 }}>No confirmed revenue in the last 6 months yet — confirm a booking with an agreed fee to see it here.</p>}
       </div>
 
       <div className="grid2">
@@ -641,6 +826,20 @@ function Overview() {
             <strong>{d.bookViews}</strong> visits to /book → <strong>{d.leads30}</strong> requests = <strong style={{ color: "#C9A84C" }}>{d.funnel}%</strong> convert
           </p>
         ) : (d.hasTraffic ? <p className="empty" style={{ padding: 16 }}>No /book visits in this window yet.</p> : trafficPlaceholder)}
+      </div>
+
+      {/* Activity feed */}
+      <div className="card">
+        <h3 className="card-h">Recent activity</h3>
+        {d.activity.length ? (
+          <div className="feed">
+            {d.activity.map((a) => (
+              <button key={a.id} className="feed-item" onClick={() => go("bookings")}>
+                <span className="fdot" /> <span>{a.text}</span> <span className="fago">{a.ago}</span>
+              </button>
+            ))}
+          </div>
+        ) : <p className="empty" style={{ padding: 16 }}>No activity yet.</p>}
       </div>
     </>
   );
@@ -5393,7 +5592,15 @@ function NLHistory({ showToast }) {
 }
 
 // ---------------- shared bits ----------------
-const Stat = ({ label, value, hint }) => (<div className="card stat"><strong>{value}</strong><span>{label}</span>{hint && <span style={{ fontSize: "0.7rem", opacity: 0.55, marginTop: 2, lineHeight: 1.3 }}>{hint}</span>}</div>);
+const Stat = ({ label, value, hint, trend, sub, urgent }) => (
+  <div className={"card stat" + (urgent ? " stat-urgent" : "")}>
+    <strong>{value}</strong>
+    <span>{label}</span>
+    {sub && <span className="stat-sub">{sub}</span>}
+    {trend && <span className={"stat-trend " + (trend.good === false ? "bad" : trend.good ? "good" : "flat")}>{trend.arrow} {trend.text}</span>}
+    {hint && <span style={{ fontSize: "0.7rem", opacity: 0.55, marginTop: 2, lineHeight: 1.3 }}>{hint}</span>}
+  </div>
+);
 const Center = ({ children }) => (<div className="center">{children}</div>);
 
 function Styles() {
@@ -5421,6 +5628,53 @@ function Styles() {
   .stat{display:flex;flex-direction:column;gap:6px;padding:18px;}
   .stat strong{font-family:'Bebas Neue';font-size:38px;line-height:1;}
   .stat span{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);}
+  /* ── Overview dashboard ── */
+  .ov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+  .stat-sub{font-size:10px;letter-spacing:.5px;text-transform:none;color:var(--grey);margin-top:3px;}
+  .stat-trend{font-size:11px;font-weight:600;margin-top:7px;letter-spacing:.2px;}
+  .stat-trend.good{color:#7fe0a0;} .stat-trend.bad{color:#ff8a8a;} .stat-trend.flat{color:var(--grey);}
+  .stat-urgent{border-color:rgba(201,168,76,.5);background:linear-gradient(180deg,rgba(201,168,76,.10),var(--panel));}
+  .stat-urgent strong{color:var(--gold);}
+  .qa{display:flex;gap:8px;flex-wrap:wrap;}
+  .qa-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--off);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;}
+  .qa-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+  .qa-btn.alert{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08);}
+  .qa-btn:disabled{opacity:.4;cursor:default;}
+  .needs{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px;}
+  .needs-item{display:inline-flex;align-items:center;gap:10px;background:rgba(201,168,76,.07);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--off);cursor:pointer;text-align:left;}
+  .needs-item:hover{background:rgba(201,168,76,.13);}
+  .needs-item .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex:none;box-shadow:0 0 8px rgba(201,168,76,.6);}
+  .needs-item .go{color:var(--gold);font-weight:600;white-space:nowrap;}
+  .needs-clear{display:inline-flex;align-items:center;gap:8px;background:rgba(127,224,160,.08);border:1px solid rgba(127,224,160,.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#7fe0a0;}
+  .nextgig{border-color:rgba(201,168,76,.28);}
+  .nextgig.soon{border-color:rgba(201,168,76,.6);box-shadow:0 0 0 1px rgba(201,168,76,.22),0 8px 30px rgba(201,168,76,.10);}
+  .nextgig.urgent{border-color:rgba(255,59,59,.5);box-shadow:0 0 0 1px rgba(255,59,59,.18);}
+  .nextgig-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .nextgig-name{font-family:'Bebas Neue';font-size:30px;letter-spacing:.5px;line-height:1;margin-top:6px;}
+  .nextgig-meta{color:var(--grey);font-size:13px;margin:6px 0 0;}
+  .nextgig-count{font-family:'Bebas Neue';font-size:20px;color:var(--gold);letter-spacing:.5px;}
+  .nextgig.urgent .nextgig-count{color:#ff8a8a;}
+  .gig-checks{display:flex;flex-direction:column;gap:9px;margin:16px 0 0;}
+  .gig-check{display:inline-flex;align-items:center;gap:9px;background:transparent;border:none;color:var(--off);font-size:13px;cursor:pointer;padding:0;text-align:left;}
+  .gig-check.done{color:var(--grey);text-decoration:line-through;}
+  .gig-check svg{color:var(--gold);flex:none;}
+  .nextgig-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;}
+  .link-gold{color:var(--gold);cursor:pointer;}.link-gold:hover{text-decoration:underline;}
+  .open-link{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none;}
+  .open-link:hover{border-color:var(--gold);}
+  .feed{display:flex;flex-direction:column;}
+  .feed-item{display:flex;align-items:center;gap:10px;padding:10px 0;border:none;border-bottom:1px solid var(--line);background:none;color:var(--off);font-size:13px;cursor:pointer;text-align:left;width:100%;}
+  .feed-item:last-child{border-bottom:0;}
+  .feed-item:hover{color:var(--gold);}
+  .feed-item .fdot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none;opacity:.8;}
+  .feed-item .fago{margin-left:auto;color:var(--grey);font-size:11.5px;white-space:nowrap;}
+  .nav-dd{position:relative;}
+  .nav-dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:190px;background:#141414;border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px;}
+  .nav-dd-item{display:flex;align-items:center;gap:9px;background:transparent;border:none;color:var(--off);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;text-align:left;white-space:nowrap;}
+  .nav-dd-item:hover{background:rgba(232,232,224,.06);}
+  .nav-dd-item.on{color:var(--gold);background:rgba(201,168,76,.10);}
+  @media(max-width:760px){.ov-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:480px){.ov-grid{grid-template-columns:1fr;}}
   .center{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--grey);padding:50px;}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
   .chip{background:transparent;border:1px solid var(--line);border-radius:999px;color:var(--grey);font-size:12px;padding:7px 14px;cursor:pointer;text-transform:capitalize;}
