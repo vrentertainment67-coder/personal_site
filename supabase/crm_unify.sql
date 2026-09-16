@@ -134,6 +134,14 @@ begin
   -- drop subscriber relationships no longer active in the Resend mirror (consent stays accurate)
   delete from contact_relationships cr where cr.kind='subscriber'
     and not exists (select 1 from subscribers s where s.id = cr.ref_id and s.status='active');
+  -- drop relationships whose source row has since been DELETED (e.g. a booking
+  -- inquiry removed from /admin) — otherwise it lingers as a stale lead forever.
+  delete from contact_relationships cr where cr.ref_table='bookings'
+    and not exists (select 1 from bookings b where b.id = cr.ref_id);
+  delete from contact_relationships cr where cr.ref_table='event_rsvps'
+    and not exists (select 1 from event_rsvps e where e.id = cr.ref_id);
+  delete from contact_relationships cr where cr.ref_table='podcast_applications'
+    and not exists (select 1 from podcast_applications p where p.id = cr.ref_id);
   -- self-heal: remove orphan contacts (e.g. from earlier non-idempotent runs)
   delete from contacts c where not exists (select 1 from contact_relationships cr where cr.contact_id=c.id);
 end $$;

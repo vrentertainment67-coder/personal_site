@@ -558,6 +558,7 @@ function Overview({ onNavigate }) {
   const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checks, setChecks] = useState({});
+  const [revRange, setRevRange] = useState("6m");
 
   useEffect(() => {
     (async () => {
@@ -625,8 +626,10 @@ function Overview({ onNavigate }) {
 
     const upcoming = bookings.filter((b) => b.status === "accepted" && b.event_date && b.event_date >= todayStr)
       .sort((a, b) => a.event_date.localeCompare(b.event_date));
+    const daysUntil = (b) => Math.max(0, Math.ceil((new Date(b.event_date).getTime() - now) / DAY));
     const next = upcoming[0];
-    const nextDays = next ? Math.max(0, Math.ceil((new Date(next.event_date).getTime() - now) / DAY)) : null;
+    const nextDays = next ? daysUntil(next) : null;
+    const gigs = upcoming.slice(0, 3).map((g) => ({ ...g, days: daysUntil(g) }));   // next three
     const next90 = upcoming.filter((b) => new Date(b.event_date).getTime() - now < 90 * DAY).length;
 
     const byKey = (key, lim) => {
@@ -645,16 +648,23 @@ function Overview({ onNavigate }) {
     const leadsEmpty = weeks.every((w) => !w.leads);
 
     // Confirmed revenue by month (accepted/completed) on agreed fee, last 6 months.
+    // Confirmed revenue by month — a full monthly series from the first logged
+    // confirmed booking to the latest (the UI range control slices it).
     const confirmed = bookings.filter((b) => (b.status === "accepted" || b.status === "completed") && b.event_date);
-    const revMonths = [];
-    for (let i = 5; i >= 0; i--) {
-      const dt = new Date(now); dt.setDate(1); dt.setMonth(dt.getMonth() - i);
-      const y = dt.getFullYear(), mo = dt.getMonth();
-      const revenue = confirmed.filter((b) => { const e = new Date(b.event_date); return e.getFullYear() === y && e.getMonth() === mo; })
-        .reduce((s, b) => s + (Number(b.agreed_fee) || BUDGET_MID[b.budget] || 0), 0);
-      revMonths.push({ label: MONTHS[mo], revenue });
+    const monthRow = (y, mo) => {
+      const items = confirmed.filter((b) => { const e = new Date(b.event_date); return e.getFullYear() === y && e.getMonth() === mo; })
+        .map((b) => ({ name: b.name || cap(b.event_type) || "Booking", type: cap(b.event_type), city: b.city || "", amount: Number(b.agreed_fee) || BUDGET_MID[b.budget] || 0, est: !(Number(b.agreed_fee) > 0) }))
+        .sort((a, b) => b.amount - a.amount);
+      return { key: `${y}-${mo}`, label: MONTHS[mo], xlabel: `${MONTHS[mo]} ’${String(y).slice(2)}`, month: mo, year: y, revenue: items.reduce((s, r) => s + r.amount, 0), items };
+    };
+    const revAll = [];
+    if (confirmed.length) {
+      const times = confirmed.map((b) => new Date(b.event_date).getTime());
+      const minD = new Date(Math.min(...times)), maxD = new Date(Math.max(...times, now));
+      for (let dt = new Date(minD.getFullYear(), minD.getMonth(), 1); dt <= new Date(maxD.getFullYear(), maxD.getMonth(), 1); dt.setMonth(dt.getMonth() + 1))
+        revAll.push(monthRow(dt.getFullYear(), dt.getMonth()));
     }
-    const hasRevenue = revMonths.some((r) => r.revenue > 0);
+    const hasRevenue = revAll.some((r) => r.revenue > 0);
 
     // Activity feed — most recent bookings, labelled by current status.
     const activity = bookings.slice(0, 10).map((b) => ({
@@ -669,25 +679,28 @@ function Overview({ onNavigate }) {
     const bookViews = traffic ? (traffic.book_views || 0) : 0;
     const funnel = bookViews ? Math.round((leads30 / bookViews) * 100) : null;
 
-    return { views30, todayViews, newWeek, leads30, pending, conv, pipeline, next, nextDays, next90,
+    return { views30, todayViews, newWeek, leads30, pending, conv, pipeline, next, nextDays, next90, gigs,
       visTrend, leadsTrend, convTrend, pipeTrend, pendTrend, unrespCount, oldestAgeH,
-      types: byKey("event_type"), cities: byKey("city", 6), weeks, leadsEmpty, revMonths, hasRevenue, activity,
+      types: byKey("event_type"), cities: byKey("city", 6), weeks, leadsEmpty, revAll, hasRevenue, activity,
       sources, pages, bookViews, funnel, hasTraffic: !!traffic };
   }, [vis, bookings, traffic]);
 
-  // Next-gig checklist — persisted per booking in localStorage (no schema change).
-  const nextId = d.next && d.next.id;
+  // Per-gig prep checklists — one map keyed by booking id, each persisted in
+  // localStorage (no schema change). Loaded for the three upcoming gigs.
+  const gigIds = d.gigs.map((g) => g.id).join(",");
   useEffect(() => {
-    if (!nextId) { setChecks({}); return; }
-    try { setChecks(JSON.parse(localStorage.getItem(gigKey(nextId)) || "{}")); } catch { setChecks({}); }
-  }, [nextId]);
-  const toggleCheck = (k) => {
-    if (!nextId) return;
-    const nx = { ...checks, [k]: !checks[k] };
-    setChecks(nx);
-    try { localStorage.setItem(gigKey(nextId), JSON.stringify(nx)); } catch {}
+    const ids = gigIds ? gigIds.split(",") : [];
+    const m = {};
+    ids.forEach((id) => { try { m[id] = JSON.parse(localStorage.getItem(gigKey(id)) || "{}"); } catch { m[id] = {}; } });
+    setChecks(m);
+  }, [gigIds]);
+  const toggleCheck = (id, k) => {
+    const cur = checks[id] || {};
+    const nx = { ...cur, [k]: !cur[k] };
+    setChecks((c) => ({ ...c, [id]: nx }));
+    try { localStorage.setItem(gigKey(id), JSON.stringify(nx)); } catch {}
   };
-  const checksDone = GIG_CHECKS.filter(([k]) => checks[k]).length;
+  const doneCount = (id) => GIG_CHECKS.filter(([k]) => (checks[id] || {})[k]).length;
 
   if (loading) return <Center><Loader2 className="spin" size={20} /> Loading…</Center>;
 
@@ -697,8 +710,20 @@ function Overview({ onNavigate }) {
   // Needs-action items (shown only when non-zero).
   const actions = [];
   if (d.unrespCount > 0) actions.push({ text: `${d.unrespCount} inquir${d.unrespCount === 1 ? "y" : "ies"} unresponded${d.oldestAgeH ? ` — oldest ${fmtAge(d.oldestAgeH)}` : ""}`, cta: "View", go: "bookings" });
-  if (d.next && d.nextDays <= 14 && checksDone < GIG_CHECKS.length) actions.push({ text: `${d.next.name} prep incomplete (${GIG_CHECKS.length - checksDone} left) — ${d.nextDays} day${d.nextDays === 1 ? "" : "s"} away`, cta: "Open", go: "bookings" });
+  if (d.next && d.nextDays <= 14 && doneCount(d.next.id) < GIG_CHECKS.length) actions.push({ text: `${d.next.name} prep incomplete (${GIG_CHECKS.length - doneCount(d.next.id)} left) — ${d.nextDays} day${d.nextDays === 1 ? "" : "s"} away`, cta: "Open", go: "bookings" });
   const gigState = d.next ? (d.nextDays <= 2 ? "urgent" : d.nextDays <= 7 ? "soon" : "") : "";
+
+  // Revenue chart series, sliced by the selected range.
+  const nowIdx = (() => { const n = new Date(); return n.getFullYear() * 12 + n.getMonth(); })();
+  const mIdx = (r) => r.year * 12 + r.month;
+  let revRows = d.revAll || [];
+  if (revRange === "6m") revRows = revRows.filter((r) => mIdx(r) <= nowIdx && mIdx(r) > nowIdx - 6);
+  else if (revRange === "12m") revRows = revRows.filter((r) => mIdx(r) <= nowIdx && mIdx(r) > nowIdx - 12);
+  else if (revRange === "year") revRows = revRows.filter((r) => r.year === new Date().getFullYear());
+  const revMulti = revRows.length > 1 && revRows[0].year !== revRows[revRows.length - 1].year;
+  const revData = revRows.map((r) => ({ ...r, x: (!revMulti && (revRange === "6m" || revRange === "year")) ? r.label : r.xlabel }));
+  const revTotal = revData.reduce((s, r) => s + r.revenue, 0);
+  const RANGES = [["6m", "6M"], ["12m", "12M"], ["year", "This year"], ["all", "All"]];
 
   return (
     <>
@@ -730,28 +755,38 @@ function Overview({ onNavigate }) {
         <Stat label="New leads · 7d" value={d.newWeek} trend={d.leadsTrend} />
       </div>
 
-      {/* Next gig — feature card */}
+      {/* Next gigs — feature card (up to three upcoming, each with its prep) */}
       <div className={"card nextgig " + gigState}>
         <div className="nextgig-top">
-          <div>
-            <h3 className="card-h" style={{ margin: 0 }}>Next gig</h3>
-            {d.next ? <>
-              <div className="nextgig-name">{d.next.name}</div>
-              <p className="nextgig-meta">{cap(d.next.event_type)} · {new Date(d.next.event_date).toDateString()} · <span className="nextgig-count">{d.nextDays} day{d.nextDays === 1 ? "" : "s"} away</span></p>
-            </> : <p className="nextgig-meta" style={{ marginTop: 8 }}>No upcoming gigs confirmed.</p>}
-          </div>
-          <button className="open-link" onClick={() => go("bookings")}>{d.next ? "Open event →" : "Add one →"}</button>
+          <h3 className="card-h" style={{ margin: 0 }}>{d.gigs.length > 1 ? "Next gigs" : "Next gig"}</h3>
+          {!d.gigs.length && <button className="open-link" onClick={() => go("bookings")}>Add one →</button>}
         </div>
-        {d.next && <>
-          <div className="gig-checks">
-            {GIG_CHECKS.map(([k, lbl]) => (
-              <button key={k} className={"gig-check" + (checks[k] ? " done" : "")} onClick={() => toggleCheck(k)}>
-                {checks[k] ? <CheckSquare size={17} /> : <Square size={17} />} {lbl}
-              </button>
-            ))}
+        {d.gigs.length ? (
+          <div className="giglist">
+            {d.gigs.map((g, idx) => {
+              const gc = checks[g.id] || {};
+              return (
+                <div key={g.id} className="gigrow">
+                  <div className="gigrow-head">
+                    <div>
+                      <div className="nextgig-name" style={{ fontSize: idx === 0 ? 30 : 21 }}>{g.name}</div>
+                      <p className="nextgig-meta">{cap(g.event_type)} · {new Date(g.event_date).toDateString()} · <span className={"nextgig-count" + (g.days <= 2 ? " urg" : "")}>{g.days} day{g.days === 1 ? "" : "s"} away</span></p>
+                    </div>
+                    <button className="open-link" onClick={() => go("bookings")}>Open →</button>
+                  </div>
+                  <div className="gig-checks">
+                    {GIG_CHECKS.map(([k, lbl]) => (
+                      <button key={k} className={"gig-check" + (gc[k] ? " done" : "")} onClick={() => toggleCheck(g.id, k)}>
+                        {gc[k] ? <CheckSquare size={16} /> : <Square size={16} />} {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="nextgig-foot"><span className="link-gold" onClick={() => go("calendar")}>{d.next90} confirmed event{d.next90 === 1 ? "" : "s"} in the next 90 days → View calendar</span></div>
-        </>}
+        ) : <p className="nextgig-meta" style={{ marginTop: 8 }}>No upcoming gigs confirmed.</p>}
+        {d.gigs.length > 0 && <div className="nextgig-foot"><span className="link-gold" onClick={() => go("calendar")}>{d.next90} confirmed event{d.next90 === 1 ? "" : "s"} in the next 90 days → View calendar</span></div>}
       </div>
 
       {/* Charts */}
@@ -792,21 +827,31 @@ function Overview({ onNavigate }) {
         </div>
       </div>
 
-      {/* Confirmed revenue — the number the business runs on */}
+      {/* Confirmed revenue — the number the business runs on. Hover a month for
+          the bookings behind it; switch range from 6M up to all-time. */}
       <div className="card">
-        <h3 className="card-h">Revenue confirmed · last 6 months</h3>
-        {d.hasRevenue ? (
-          <div style={{ height: 220 }}>
+        <div className="row-between" style={{ marginBottom: 12 }}>
+          <h3 className="card-h" style={{ margin: 0 }}>Revenue confirmed</h3>
+          {d.hasRevenue && <div className="chips" style={{ margin: 0 }}>
+            {RANGES.map(([k, l]) => <button key={k} className={"chip" + (revRange === k ? " on" : "")} onClick={() => setRevRange(k)}>{l}</button>)}
+          </div>}
+        </div>
+        {!d.hasRevenue ? (
+          <p className="empty" style={{ padding: 16 }}>No confirmed revenue logged yet — confirm a booking with an agreed fee to see it here.</p>
+        ) : revTotal > 0 ? (<>
+          <p className="sub" style={{ margin: "0 0 10px" }}><strong style={{ color: "#C9A84C" }}>{fmtINR(revTotal)}</strong> across {revData.length} month{revData.length === 1 ? "" : "s"} · hover a bar for the breakdown</p>
+          <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={d.revMonths}>
+              <BarChart data={revData} margin={{ top: 4, right: 4, left: 0, bottom: revData.length > 12 ? 18 : 0 }}>
                 <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tipStyle} cursor={{ fill: "rgba(201,168,76,0.08)" }} formatter={(v) => [fmtINR(v), "Confirmed"]} />
+                <XAxis dataKey="x" tick={{ fill: "#9a9a92", fontSize: 11 }} axisLine={false} tickLine={false}
+                  interval={revData.length > 14 ? "preserveStartEnd" : 0} angle={revData.length > 12 ? -32 : 0} textAnchor={revData.length > 12 ? "end" : "middle"} height={revData.length > 12 ? 46 : 30} />
+                <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(201,168,76,0.08)" }} />
                 <Bar dataKey="revenue" name="Revenue" fill="#C9A84C" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        ) : <p className="empty" style={{ padding: 16 }}>No confirmed revenue in the last 6 months yet — confirm a booking with an agreed fee to see it here.</p>}
+        </>) : <p className="empty" style={{ padding: 16 }}>No confirmed revenue in this range.</p>}
       </div>
 
       <div className="grid2">
@@ -5592,6 +5637,30 @@ function NLHistory({ showToast }) {
 }
 
 // ---------------- shared bits ----------------
+// Revenue chart hover — shows the bookings that make up the hovered month.
+function RevenueTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const m = payload[0].payload;
+  const items = m.items || [];
+  return (
+    <div className="rev-tip">
+      <div className="rev-tip-h">{m.label} {m.year} · <span className="rev-tip-total">{fmtINR(m.revenue)}</span></div>
+      {items.length ? (
+        <div className="rev-tip-list">
+          {items.slice(0, 8).map((it, i) => (
+            <div key={i} className="rev-tip-row">
+              <span className="rev-tip-name">{it.name}{it.type ? ` · ${it.type}` : ""}{it.city ? ` · ${it.city}` : ""}</span>
+              <span className="rev-tip-amt">{fmtINR(it.amount)}{it.est ? "*" : ""}</span>
+            </div>
+          ))}
+          {items.length > 8 && <div className="rev-tip-more">+{items.length - 8} more</div>}
+          {items.some((x) => x.est) && <div className="rev-tip-note">* estimated from budget band</div>}
+        </div>
+      ) : <div className="rev-tip-note">No confirmed bookings this month</div>}
+    </div>
+  );
+}
+
 const Stat = ({ label, value, hint, trend, sub, urgent }) => (
   <div className={"card stat" + (urgent ? " stat-urgent" : "")}>
     <strong>{value}</strong>
@@ -5614,7 +5683,9 @@ function Styles() {
   .bm{font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;}.bs{font-size:9px;letter-spacing:3px;color:var(--grey);}
   .logout{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}
   .logout:hover{border-color:var(--red);color:#ff8a8a;}
-  .adm-nav{display:flex;gap:6px;padding:14px 22px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  /* flex-wrap (not overflow-x:auto) — a scroll container would clip the
+     dropdown panels that open below the bar. */
+  .adm-nav{display:flex;flex-wrap:wrap;gap:6px;padding:14px 22px;border-bottom:1px solid var(--line);position:relative;z-index:15;}
   .navb{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);color:var(--grey);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s;}
   .navb:hover{color:var(--off);border-color:var(--gold);}
   .navb.on{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:600;}
@@ -5658,6 +5729,12 @@ function Styles() {
   .gig-check{display:inline-flex;align-items:center;gap:9px;background:transparent;border:none;color:var(--off);font-size:13px;cursor:pointer;padding:0;text-align:left;}
   .gig-check.done{color:var(--grey);text-decoration:line-through;}
   .gig-check svg{color:var(--gold);flex:none;}
+  .giglist{display:flex;flex-direction:column;margin-top:4px;}
+  .gigrow{padding:15px 0;border-top:1px solid var(--line);}
+  .gigrow:first-child{border-top:0;padding-top:8px;}
+  .gigrow-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .gigrow .gig-checks{margin-top:12px;gap:7px;}
+  .nextgig-count.urg{color:#ff8a8a;}
   .nextgig-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;}
   .link-gold{color:var(--gold);cursor:pointer;}.link-gold:hover{text-decoration:underline;}
   .open-link{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none;}
@@ -5668,8 +5745,17 @@ function Styles() {
   .feed-item:hover{color:var(--gold);}
   .feed-item .fdot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none;opacity:.8;}
   .feed-item .fago{margin-left:auto;color:var(--grey);font-size:11.5px;white-space:nowrap;}
+  .rev-tip{background:#111;border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:11px 13px;min-width:210px;max-width:300px;box-shadow:0 12px 34px rgba(0,0,0,.55);}
+  .rev-tip-h{font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;color:var(--off);margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+  .rev-tip-total{color:var(--gold);}
+  .rev-tip-list{display:flex;flex-direction:column;gap:5px;}
+  .rev-tip-row{display:flex;align-items:baseline;gap:12px;font-size:12px;}
+  .rev-tip-name{color:rgba(232,232,224,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rev-tip-amt{margin-left:auto;color:var(--gold);font-weight:600;white-space:nowrap;}
+  .rev-tip-more{font-size:11px;color:var(--grey);margin-top:2px;}
+  .rev-tip-note{font-size:10.5px;color:var(--grey);margin-top:6px;font-style:italic;}
   .nav-dd{position:relative;}
-  .nav-dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:190px;background:#141414;border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px;}
+  .nav-dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:190px;background:#141414;border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px;}
   .nav-dd-item{display:flex;align-items:center;gap:9px;background:transparent;border:none;color:var(--off);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;text-align:left;white-space:nowrap;}
   .nav-dd-item:hover{background:rgba(232,232,224,.06);}
   .nav-dd-item.on{color:var(--gold);background:rgba(201,168,76,.10);}
