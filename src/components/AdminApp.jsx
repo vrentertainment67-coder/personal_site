@@ -69,6 +69,14 @@ async function parseEnquiry(text) {
 const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<.*>/); return (m && m[1].trim()) || (from || "").replace(/<.*>/, "").trim() || from; };
 // Booking status → [label, colour]. "pending" reads as "Enquiry" for the owner.
 const BK_STATUS = { pending: ["Enquiry", "#e0b13c"], accepted: ["Confirmed", "#4ea765"], completed: ["Completed · Paid", "#5a8f8a"], declined: ["Declined", "#9a9a8a"] };
+// Interpolated into the WhatsApp payment-reminder template. Set once to your
+// real UPI id / bank line and it flows into every reminder message.
+const PAY_DETAILS = "UPI djvic@upi (set PAY_DETAILS in AdminApp.jsx)";
+// Where a booking gets its origin channel from (feature: Source). Reuses the
+// existing `source` column; the first three are the historical funnel values.
+const BK_SOURCES = ["website", "funnel", "referral", "instagram", "whatsapp", "in_person", "other"];
+const BK_SOURCE_LABEL = { website: "Website form", funnel: "Website form", referral: "Referral", instagram: "Instagram DM", whatsapp: "WhatsApp direct", in_person: "In person", manual: "Manual", other: "Other" };
+const srcLabel = (s) => BK_SOURCE_LABEL[s] || (s ? cap(s) : "—");
 // Render a single date or a multi-day range, e.g. "Sep 22–23" or "Sep 30 – Oct 1".
 function fmtRange(s, e) {
   if (!s) return "—";
@@ -592,7 +600,9 @@ function Overview({ onNavigate }) {
 
     // Funnel/lead metrics count ORGANIC (website) requests only — manually
     // logged gigs are existing contacts/references, not funnel leads.
-    const organic = bookings.filter((b) => (b.source || "website") !== "manual");
+    // Website-funnel leads only — the new direct channels (instagram/whatsapp/
+    // referral/in-person/manual) are existing contacts, not funnel conversions.
+    const organic = bookings.filter((b) => ["website", "funnel"].includes(b.source || "website"));
     const newWeek = organic.filter((b) => inWin(at(b), 0, WEEK)).length;
     const leadsTrend = pctTrend(newWeek, organic.filter((b) => inWin(at(b), WEEK, 2 * WEEK)).length, "last week");
     const leads30 = organic.filter((b) => inWin(at(b), 0, 30 * DAY)).length;
@@ -883,26 +893,8 @@ function Bookings({ showToast }) {
   const [colAmt, setColAmt] = useState(""); const [colMethod, setColMethod] = useState("UPI");
   const [colWhen, setColWhen] = useState(new Date().toLocaleDateString("en-CA"));
   const [colNote, setColNote] = useState(""); const [colBusy, setColBusy] = useState(false);
-  const [cap, setCap] = useState(""); const [capBusy, setCapBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
 
-  const runCapture = async () => {
-    const text = cap.trim();
-    if (!text) return;
-    setCapBusy(true);
-    let d;
-    try { d = await parseEnquiry(text); } catch { d = { error: "Couldn't reach the parser." }; }
-    setCapBusy(false);
-    // Parser down or unsure? Never dead-end or lose the typed enquiry — open the
-    // blank form with the raw text dropped into Notes so it can be finished by
-    // hand. The manual form needs only a name + date, so nothing blocks logging.
-    if (!d || d.error) {
-      setPrefill({ message: text }); setAdding(true); setFormKey((k) => k + 1); setCap("");
-      return showToast(`${(d && d.error) || "Parser unavailable"} — opened a blank form with your text; fill the rest in.`);
-    }
-    setPrefill(d); setAdding(true); setFormKey((k) => k + 1); setCap("");
-    showToast("Pulled the details — check and save.");
-  };
   const openBlankForm = () => { setPrefill(null); setFormKey((k) => k + 1); setAdding((v) => !v); };
 
   const load = useCallback(async () => {
@@ -1128,6 +1120,20 @@ function Bookings({ showToast }) {
       return <BookingEditForm booking={r} onDone={() => { setEditing(null); load(); }} onCancel={() => setEditing(null)} showToast={showToast} />;
     }
     const [stLbl, stCol] = BK_STATUS[r.status] || [r.status, "#9a9a8a"];
+    // Status-aware WhatsApp templates — pure client-side wa.me links.
+    const fn = (r.name || "there").split(" ")[0];
+    const et = r.event_type || "event";
+    const dateStr = fmtRange(r.event_date, r.event_end_date);
+    const venue = r.venue || "the venue";
+    const bal = inr(Math.max(0, balOf(r)));
+    const TPL = {
+      enquiry: `Hi ${fn}, thanks for reaching out! I'd love to perform at your ${et} on ${dateStr}. Let me check and get back to you shortly. — VIC`,
+      confirmed: `Hi ${fn}, your ${et} on ${dateStr} at ${venue} is confirmed! I'll be in touch closer to the date to finalise the details. Looking forward to it. — VIC`,
+      reminder: `Hi ${fn}, just a quick note — your balance of ${bal} for your ${et} on ${dateStr} is due. Please transfer to ${PAY_DETAILS}. Let me know once done. — VIC`,
+      daybefore: `Hi ${fn}, looking forward to your ${et} tomorrow at ${venue}! I'll arrive early to set up. See you then. — VIC`,
+      thanks: `Hi ${fn}, it was a pleasure performing at your ${et}! Hope everyone had a great time. — VIC`,
+    };
+    const sendWa = (text) => { const num = waDigits(r.contact); window.open(num.length >= 10 ? `https://wa.me/${num}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); };
     return (
       <>
         <div className="row-between">
@@ -1140,9 +1146,23 @@ function Bookings({ showToast }) {
           <span>{fmtRange(r.event_date, r.event_end_date)}</span>
           <span><MapPin size={12} /> {r.venue || "—"}, {r.city || "—"}</span>
           {r.budget && <span className="gold">{r.budget}</span>}
+          <span className="tag" style={{ background: "#1a1a1a", color: "#c9a84c" }}>{srcLabel(r.source)}</span>
           {r.contact && r.contact !== "—" && <span>{r.contact}</span>}
         </p>
         {r.message && <p className="req-msg">{r.message}</p>}
+        <div className="card" style={{ padding: 16 }}>
+          <h3 className="card-h" style={{ marginBottom: 12 }}>WhatsApp templates</h3>
+          <div className="wa-tpl">
+            {r.status === "pending" && <button className="act wa" onClick={() => sendWa(TPL.enquiry)}><MessageCircle size={14} /> Reply to enquiry</button>}
+            {r.status === "accepted" && <>
+              <button className="act wa" onClick={() => sendWa(TPL.confirmed)}><MessageCircle size={14} /> Send confirmation</button>
+              <button className="act wa" onClick={() => sendWa(TPL.reminder)}><MessageCircle size={14} /> Payment reminder</button>
+              <button className="act wa" onClick={() => sendWa(TPL.daybefore)}><MessageCircle size={14} /> Day-before note</button>
+            </>}
+            {r.status === "completed" && <button className="act wa" onClick={() => sendWa(TPL.thanks)}><MessageCircle size={14} /> Thank-you note</button>}
+            {r.status === "declined" && <span className="bk-sub">No templates for declined enquiries.</span>}
+          </div>
+        </div>
         <GigFinance booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
         <GigMailer booking={r} payments={pays[r.id] || []} onChange={load} showToast={showToast} />
         <NoteField initial={r.notes || ""} onSave={(n) => saveNote(r.id, n)} />
@@ -1193,6 +1213,8 @@ function Bookings({ showToast }) {
         .bk-month-n { color: #8a8878; font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: .04em; }
         .bk-name { font-weight: 600; color: #e8e8e0; }
         .bk-sub { color: #8a8878; font-size: 12px; }
+        .bk-src { font-size: 10px; color: #a49a7e; background: #161616; border: 1px solid #2a2a2a; padding: 1px 6px; border-radius: 6px; margin-left: 6px; letter-spacing: .02em; white-space: nowrap; }
+        .wa-tpl { display: flex; flex-wrap: wrap; gap: 8px; }
         .bk-st { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; display: inline-block; }
         .bk-actions { white-space: nowrap; text-align: right; }
         .bk-ic { background: none; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px; color: #cfcabf; cursor: pointer; margin-left: 4px; line-height: 0; }
@@ -1225,14 +1247,6 @@ function Bookings({ showToast }) {
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
           <button className="btn sm" onClick={openBlankForm}><Plus size={15} /> Log enquiry</button>
         </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "2px 0 12px" }}>
-        <input className="search" style={{ flex: "1 1 260px", margin: 0 }} placeholder="Quick-log — type or 🎤 dictate the enquiry, then Auto-fill…"
-          value={cap} onChange={(e) => setCap(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") runCapture(); }} />
-        <button className="btn" disabled={capBusy || !cap.trim()} onClick={runCapture}>
-          {capBusy ? <><Loader2 className="spin" size={15} /> Reading…</> : <><Sparkles size={15} /> Auto-fill</>}
-        </button>
       </div>
 
       {showStats && (<>
@@ -1359,7 +1373,7 @@ function Bookings({ showToast }) {
                         </td>
                       )}
                       <td>
-                        <div className="bk-name">{r.name} {r.source === "manual" && <span className="mini">manual</span>}</div>
+                        <div className="bk-name">{r.name} <span className="bk-src">{srcLabel(r.source)}</span></div>
                         <div className="bk-sub">{[r.venue, r.city].filter(Boolean).join(", ") || "—"}</div>
                       </td>
                       <td><span className="tag">{r.event_type}</span></td>
@@ -4691,7 +4705,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
   const [f, setF] = useState({
     name: b.name || "", contact: b.contact && b.contact !== "—" ? b.contact : "",
     event_type: b.event_type || "private", event_date: b.event_date || "", event_end_date: b.event_end_date || "",
-    venue: b.venue || "", city: b.city || "", amount: b.agreed_fee ?? "", message: b.message || "",
+    venue: b.venue || "", city: b.city || "", amount: b.agreed_fee ?? "", message: b.message || "", source: b.source || "manual",
   });
   const [busy, setBusy] = useState(false);
   const save = async () => {
@@ -4704,7 +4718,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
       event_date: f.event_date, event_end_date: f.event_end_date || null,
       venue: f.venue.trim() || null, city: f.city.trim() || null,
       agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount),
-      message: f.message.trim() || null,
+      message: f.message.trim() || null, source: f.source,
     }).eq("id", b.id);
     setBusy(false);
     if (error) return showToast("Save failed: " + error.message);
@@ -4725,6 +4739,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
           <div className="field"><label>To (optional — multi-day)</label><input type="date" value={f.event_end_date} min={f.event_date || undefined} onChange={(e) => setF({ ...f, event_end_date: e.target.value })} /></div>
           <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
           <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
+          <div className="field"><label>Source</label><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{[["manual", "Manual"], ["instagram", "Instagram DM"], ["whatsapp", "WhatsApp direct"], ["referral", "Referral"], ["website", "Website form"], ["in_person", "In person"], ["other", "Other"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
         </div>
         <div className="field"><label>Notes / message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
         <div className="req-actions">
@@ -4738,7 +4753,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
 
 function ManualEntry({ onDone, showToast, initial }) {
   const i = initial || {};
-  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", amount: i.amount ?? "", message: i.message || "", confirmed: false });
+  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", amount: i.amount ?? "", message: i.message || "", source: i.source || "manual", confirmed: false });
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!f.name || !f.event_date) return showToast("Name and date required.");
@@ -4747,7 +4762,7 @@ function ManualEntry({ onDone, showToast, initial }) {
     const { data, error } = await supabase.from("bookings").insert({
       name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
       event_end_date: f.event_end_date || null,
-      venue: f.venue, city: f.city, agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount), message: f.message || null, source: "manual",
+      venue: f.venue, city: f.city, agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount), message: f.message || null, source: f.source || "manual",
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
     if (error) { setBusy(false); return showToast(error.message); }
@@ -4774,6 +4789,7 @@ function ManualEntry({ onDone, showToast, initial }) {
         <div className="field"><label>To (optional — multi-day)</label><input type="date" value={f.event_end_date} min={f.event_date || undefined} onChange={(e) => setF({ ...f, event_end_date: e.target.value })} /></div>
         <div className="field"><label>Venue</label><input value={f.venue} onChange={(e) => setF({ ...f, venue: e.target.value })} /></div>
         <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
+        <div className="field"><label>Source</label><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{[["manual", "Manual"], ["instagram", "Instagram DM"], ["whatsapp", "WhatsApp direct"], ["referral", "Referral"], ["website", "Website form"], ["in_person", "In person"], ["other", "Other"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
       </div>
       <div className="field"><label>Notes / original message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
       <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar (leave off to log as an enquiry)</label>
