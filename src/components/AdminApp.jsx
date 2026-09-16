@@ -566,6 +566,7 @@ function Overview({ onNavigate }) {
   const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [revRange, setRevRange] = useState("6m");
+  const [liveEvents, setLiveEvents] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -581,6 +582,16 @@ function Overview({ onNavigate }) {
       setVis((v.data || []).map((r) => ({ ...r, label: `${MONTHS[new Date(r.d).getMonth()]} ${new Date(r.d).getDate()}` })));
       setBookings(b.data || []);
       setTraffic(t || null);
+      // Live events with RSVP enabled → RSVP counter on the urgency strip.
+      try {
+        const evs = (await supabase.from("events").select("slug,title,date_label,rsvp_cutoff,expiry,guestlist_enabled").eq("active", true)).data || [];
+        const on = evs.filter((e) => e.guestlist_enabled);
+        if (on.length) {
+          const rs = (await supabase.from("event_rsvps").select("event").in("event", on.map((e) => e.slug))).data || [];
+          const cnt = {}; rs.forEach((r) => { cnt[r.event] = (cnt[r.event] || 0) + 1; });
+          setLiveEvents(on.map((e) => ({ ...e, rsvps: cnt[e.slug] || 0 })));
+        } else setLiveEvents([]);
+      } catch { setLiveEvents([]); }
       setLoading(false);
     })();
   }, []);
@@ -703,6 +714,12 @@ function Overview({ onNavigate }) {
   const actions = [];
   if (d.unrespCount > 0) actions.push({ text: `${d.unrespCount} inquir${d.unrespCount === 1 ? "y" : "ies"} unresponded${d.oldestAgeH ? ` — oldest ${fmtAge(d.oldestAgeH)}` : ""}`, cta: "View", go: "bookings" });
   if (d.next && d.nextDays <= 3) actions.push({ text: `${d.next.name} is ${d.nextDays === 0 ? "today" : d.nextDays === 1 ? "tomorrow" : `in ${d.nextDays} days`}`, cta: "Open", go: "bookings" });
+  liveEvents.forEach((e) => {
+    const target = e.rsvp_cutoff || e.expiry;
+    let tail = e.date_label || "";
+    if (target) { const dd = Math.ceil((new Date(target).getTime() - Date.now()) / 864e5); if (dd >= 0) tail = `${dd} day${dd === 1 ? "" : "s"} to go`; }
+    actions.push({ text: `${e.title} · ${e.rsvps} RSVP${e.rsvps === 1 ? "" : "s"}${tail ? ` · ${tail}` : ""}`, cta: "Guests", go: "guests" });
+  });
   const gigState = d.next ? (d.nextDays <= 2 ? "urgent" : d.nextDays <= 7 ? "soon" : "") : "";
 
   // Revenue chart series, sliced by the selected range.
@@ -3946,6 +3963,15 @@ function DJCBlast({ recipients, audience, onSent, showToast, onClose }) {
         <label>Message · <span style={{ color: "#8a8878" }}>{"{name}"} becomes their first name</span></label>
         <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={5}
           style={{ width: "100%", background: "#0e0e0d", color: "#e8e8e0", border: "1px solid #2a2a2a", borderRadius: 6, padding: 10, fontFamily: "inherit", fontSize: 13.5, resize: "vertical", boxSizing: "border-box" }} />
+      </div>
+
+      {/* Live preview — exactly what the first recipient will receive, so a
+          template mistake is caught before anything is sent to the list. */}
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label>Preview · <span style={{ color: "#8a8878" }}>as {recipients[0]?.name ? firstName(recipients[0]) : "a sample recipient"} will see it</span></label>
+        <div style={{ whiteSpace: "pre-wrap", background: "#0b120e", border: "1px solid #24352a", borderRadius: 8, padding: "12px 14px", fontSize: 13.5, color: "#dfe8df", lineHeight: 1.5 }}>
+          {bodyFor(recipients[0] || { name: "Aditya" }) || <span style={{ color: "#8a8878" }}>Type a message above…</span>}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
