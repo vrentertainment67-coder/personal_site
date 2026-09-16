@@ -71,7 +71,7 @@ const mailName = (from) => { const m = (from || "").match(/^\s*"?([^"<]*?)"?\s*<
 const BK_STATUS = { pending: ["Enquiry", "#e0b13c"], accepted: ["Confirmed", "#4ea765"], completed: ["Completed · Paid", "#5a8f8a"], declined: ["Declined", "#9a9a8a"] };
 // Interpolated into the WhatsApp payment-reminder template. Set once to your
 // real UPI id / bank line and it flows into every reminder message.
-const PAY_DETAILS = "UPI djvic@upi (set PAY_DETAILS in AdminApp.jsx)";
+const PAY_DETAILS = "UPI: vikasnaik84@okhdfcbank";
 // Where a booking gets its origin channel from (feature: Source). Reuses the
 // existing `source` column; the first three are the historical funnel values.
 const BK_SOURCES = ["website", "funnel", "referral", "instagram", "whatsapp", "in_person", "other"];
@@ -199,7 +199,7 @@ export default function Admin() {
         {tab === "podcast" && <Podcast showToast={showToast} />}
         {tab === "collective" && <DJCollective showToast={showToast} />}
         {tab === "mail" && <MailTab showToast={showToast} />}
-        {tab === "calendar" && <CalendarTab showToast={showToast} />}
+        {tab === "calendar" && <CalendarTab showToast={showToast} onNavigate={setTab} />}
         {tab === "media" && <Media showToast={showToast} />}
         {tab === "requests" && <RequestsAdmin showToast={showToast} />}
         {tab === "livevideos" && <LiveVideosAdmin showToast={showToast} />}
@@ -4251,6 +4251,19 @@ function EventMediaManager({ event, onBack, showToast }) {
   );
 }
 
+// Rough genre classifier for requested songs — keyword/artist lookup, no AI.
+// Deliberately conservative: unknown Latin-script titles fall to English.
+const GENRE_KW = [
+  ["Punjabi", ["diljit", "ap dhillon", "sidhu", "moose wala", "moosewala", "karan aujla", "ammy virk", "jatt", "bhangra", "gippy", "jassie gill", "shubh", "punjab", "mankirt", "nseeb", "prem dhillon", "guru randhawa", "b praak", "sharry", "tarsem"]],
+  ["Bollywood", ["arijit", "pritam", "badshah", "neha kakkar", "shreya", "honey singh", "yo yo", "atif", "sonu nigam", "bollywood", "kishore", "lata", "a r rahman", "ar rahman", "rahman", "tanishk", "jubin", "darshan raval", "sachet", "vishal", "shankar", "raftaar", "divine", "emiway", "nucleya", "sunidhi", "kk ", "mohit", "amit trivedi"]],
+];
+const classifyGenre = (song) => {
+  const s = (song || "").toLowerCase();
+  for (const [g, kw] of GENRE_KW) if (kw.some((k) => s.includes(k))) return g;
+  if (/[ऀ-ॿ]/.test(song || "") || /\b(pyaar|pyar|dil|ishq|tere|mere|tum|hai|raat|naina|deewana|sanam|jaan|mohabbat|zindagi|dhol|nagada)\b/.test(s)) return "Bollywood";
+  return "English";
+};
+
 // ── Song requests admin: per-couple request inbox + playlist builder ──
 function RequestsAdmin({ showToast }) {
   const [couples, setCouples] = useState([]);
@@ -4301,6 +4314,12 @@ function RequestsAdmin({ showToast }) {
   }, [rows]);
   const guests = new Set(rows.map((r) => (r.guest_name || "").toLowerCase().trim()).filter(Boolean)).size;
   const dupes = agg.filter((a) => a.count > 1).length;
+  // Genre split across all requests (rough keyword classification).
+  const genreSplit = useMemo(() => {
+    if (!rows.length) return [];
+    const c = {}; rows.forEach((r) => { const g = classifyGenre(r.song); c[g] = (c[g] || 0) + 1; });
+    return Object.entries(c).map(([g, n]) => ({ g, n, pct: Math.round((n / rows.length) * 100) })).sort((a, b) => b.n - a.n);
+  }, [rows]);
 
   const addCouple = async () => {
     const name = nName.trim();
@@ -4334,6 +4353,10 @@ function RequestsAdmin({ showToast }) {
     navigator.clipboard?.writeText(text).then(() => showToast("Playlist copied ✓"), () => showToast("Couldn't copy."));
   };
   const copyLink = () => navigator.clipboard?.writeText(shareUrl).then(() => showToast("Link copied ✓"), () => {});
+  const waCouple = () => {
+    const msg = `Hi ${couple?.couple_names || "there"}, here's the link for your wedding guests to request songs for your big night: ${shareUrl}. Share it with them and let the requests roll in! — VIC`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  };
 
   const q = query.trim().toLowerCase();
   const filtered = rows.filter((r) => !q || [r.guest_name, r.guest_email, r.song].some((v) => (v || "").toLowerCase().includes(q)));
@@ -4371,6 +4394,7 @@ function RequestsAdmin({ showToast }) {
             </select>
             <button className="btn sm ghost" onClick={() => { setRVal(couple?.couple_names || ""); setRenaming((v) => !v); }}><Pencil size={14} /> Rename</button>
             <button className="btn sm ghost" onClick={copyLink} title={shareUrl}><Copy size={14} /> Copy guest link</button>
+            <button className="btn sm ghost" onClick={waCouple} title="Send the couple their guest link"><MessageCircle size={14} /> WhatsApp couple</button>
             <a className="btn sm ghost" href={shareUrl} target="_blank" rel="noopener noreferrer"><Eye size={14} /> Open</a>
           </div>
           {renaming && (
@@ -4398,6 +4422,12 @@ function RequestsAdmin({ showToast }) {
           {reqLoading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
             <p className="empty">No requests yet for {couple?.couple_names}. Share the link above.</p>
           ) : view === "playlist" ? (
+            <>
+            {genreSplit.length > 0 && (
+              <p className="sub" style={{ margin: "0 0 10px", color: "#9a9a92" }}>
+                {rows.length} request{rows.length === 1 ? "" : "s"} · {genreSplit.map((x) => `${x.g} ${x.pct}%`).join(" · ")}
+              </p>
+            )}
             <div className="list">
               {agg.map((a, i) => (
                 <div key={i} className="req" style={{ display: "flex", alignItems: "center", gap: 12, borderLeft: a.count > 1 ? "3px solid #e0b13c" : "3px solid transparent", paddingLeft: 10 }}>
@@ -4410,6 +4440,7 @@ function RequestsAdmin({ showToast }) {
                 </div>
               ))}
             </div>
+            </>
           ) : (
             <>
               <input className="search" placeholder="Search name, email, song…" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -4799,7 +4830,7 @@ function ManualEntry({ onDone, showToast, initial }) {
 }
 
 // ---------------- CALENDAR (block dates) ----------------
-function CalendarTab({ showToast }) {
+function CalendarTab({ showToast, onNavigate }) {
   const today = useMemo(() => new Date(), []);
   const [cur, setCur] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [map, setMap] = useState({});
@@ -4816,7 +4847,7 @@ function CalendarTab({ showToast }) {
     if (!checkDate) { setCheckGigs([]); return; }
     let cancelled = false;
     supabase.from("bookings")
-      .select("name,event_type,status,event_date,event_end_date")
+      .select("id,name,event_type,status,event_date,event_end_date,agreed_fee,budget,venue,city")
       .or(`event_date.eq.${checkDate},and(event_date.lte.${checkDate},event_end_date.gte.${checkDate})`)
       .then(({ data }) => { if (!cancelled) setCheckGigs((data || []).filter((b) => b.status === "accepted" || b.status === "pending")); });
     return () => { cancelled = true; };
@@ -4909,6 +4940,17 @@ function CalendarTab({ showToast }) {
             <div className="cr-date">{checkLabel}</div>
             <div className="cr-status">{stat.cls === "free" ? "✓ " : "● "}{stat.label}</div>
             <div className="cr-sub">{(checkState === "booked" || checkState === "held") && who ? who : stat.sub}</div>
+            {checkGigs.length > 0 && (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
+                {checkGigs.map((b) => (
+                  <div key={b.id} style={{ fontSize: 13, color: "#cfcabf" }}>
+                    <b>{b.name}</b> · {b.event_type} · {b.agreed_fee != null ? fmtINR(b.agreed_fee) : (b.budget || "—")} · {b.status === "accepted" ? "Confirmed" : "Enquiry"}
+                    {(b.venue || b.city) ? <span style={{ color: "#8a8878" }}> · {[b.venue, b.city].filter(Boolean).join(", ")}</span> : null}
+                  </div>
+                ))}
+                <button className="btn sm ghost" style={{ alignSelf: "flex-start", marginTop: 4 }} onClick={() => onNavigate && onNavigate("bookings")}>Open in bookings →</button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -4921,7 +4963,9 @@ function CalendarTab({ showToast }) {
           {Array.from({ length: fw }).map((_, i) => <span key={`b${i}`} className="cc empty" />)}
           {Array.from({ length: dim }).map((_, i) => {
             const day = i + 1; const key = ymd(cur.y, cur.m, day); const st = map[key] || "open";
-            return <button key={day} className={`cc ${st}${key === checkDate ? " checked" : ""}`} onClick={() => toggle(day)}>{day}</button>;
+            // A booked/held/busy night → preview it; an open/blocked night → toggle the block.
+            const preview = st === "booked" || st === "held" || st === "busy";
+            return <button key={day} className={`cc ${st}${key === checkDate ? " checked" : ""}`} onClick={() => preview ? pickDate(key) : toggle(day)}>{day}</button>;
           })}
         </div>
         <div className="legend">
