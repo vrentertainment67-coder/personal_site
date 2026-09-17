@@ -1114,7 +1114,7 @@ function Bookings({ showToast }) {
   const sectorTop = Math.max(...sectors.map((s) => s.booked), 1);
 
   const exportCsv = () => {
-    const cols = ["created_at", "status", "name", "contact", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "advance", "advance_due", "tds", "paid", "balance", "message"];
+    const cols = ["created_at", "status", "name", "organiser", "contact", "source", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "advance", "advance_due", "tds", "paid", "balance", "message"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...sorted.map((r) => {
       const paid = paidOf(r.id);
@@ -1164,6 +1164,7 @@ function Bookings({ showToast }) {
           <span><MapPin size={12} /> {r.venue || "—"}, {r.city || "—"}</span>
           {r.budget && <span className="gold">{r.budget}</span>}
           <span className="tag" style={{ background: "#1a1a1a", color: "#c9a84c" }}>{srcLabel(r.source)}</span>
+          {r.organiser && <span title="Organiser / event manager">🏢 {r.organiser}</span>}
           {r.contact && r.contact !== "—" && <span>{r.contact}</span>}
         </p>
         {r.message && <p className="req-msg">{r.message}</p>}
@@ -4762,7 +4763,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
   const [f, setF] = useState({
     name: b.name || "", contact: b.contact && b.contact !== "—" ? b.contact : "",
     event_type: b.event_type || "private", event_date: b.event_date || "", event_end_date: b.event_end_date || "",
-    venue: b.venue || "", city: b.city || "", amount: b.agreed_fee ?? "", message: b.message || "", source: b.source || "manual",
+    venue: b.venue || "", city: b.city || "", amount: b.agreed_fee ?? "", message: b.message || "", source: b.source || "manual", organiser: b.organiser || "",
   });
   const [busy, setBusy] = useState(false);
   const save = async () => {
@@ -4775,7 +4776,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
       event_date: f.event_date, event_end_date: f.event_end_date || null,
       venue: f.venue.trim() || null, city: f.city.trim() || null,
       agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount),
-      message: f.message.trim() || null, source: f.source,
+      message: f.message.trim() || null, source: f.source, organiser: f.organiser.trim() || null,
     }).eq("id", b.id);
     setBusy(false);
     if (error) return showToast("Save failed: " + error.message);
@@ -4798,6 +4799,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
           <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
           <div className="field"><label>Source</label><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{[["manual", "Manual"], ["instagram", "Instagram DM"], ["whatsapp", "WhatsApp direct"], ["referral", "Referral"], ["website", "Website form"], ["in_person", "In person"], ["other", "Other"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
         </div>
+        <div className="field"><label>Organiser / event manager <span style={{ color: "#66665e", fontWeight: 400 }}>· corporate entity or agency behind the booking</span></label><input value={f.organiser} onChange={(e) => setF({ ...f, organiser: e.target.value })} placeholder="e.g. Infosys — or XYZ Events (Priya)" /></div>
         <div className="field"><label>Notes / message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
         <div className="req-actions">
           <button className="act wa" disabled={busy} onClick={save}>{busy ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Save changes</button>
@@ -4810,7 +4812,7 @@ function BookingEditForm({ booking, onDone, onCancel, showToast }) {
 
 function ManualEntry({ onDone, showToast, initial }) {
   const i = initial || {};
-  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", amount: i.amount ?? "", message: i.message || "", source: i.source || "manual", confirmed: false });
+  const [f, setF] = useState({ name: i.name || "", contact: i.contact || "", event_type: i.event_type || "private", event_date: i.event_date || "", event_end_date: i.event_end_date || "", venue: i.venue || "", city: i.city || "", amount: i.amount ?? "", message: i.message || "", source: i.source || "manual", organiser: i.organiser || "", confirmed: false });
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!f.name || !f.event_date) return showToast("Name and date required.");
@@ -4820,6 +4822,7 @@ function ManualEntry({ onDone, showToast, initial }) {
       name: f.name, contact: f.contact || "—", event_type: f.event_type, event_date: f.event_date,
       event_end_date: f.event_end_date || null,
       venue: f.venue, city: f.city, agreed_fee: f.amount === "" || f.amount == null ? null : Number(f.amount), message: f.message || null, source: f.source || "manual",
+      organiser: f.organiser.trim() || null,
       status: f.confirmed ? "accepted" : "pending",
     }).select().single();
     if (error) { setBusy(false); return showToast(error.message); }
@@ -4848,6 +4851,7 @@ function ManualEntry({ onDone, showToast, initial }) {
         <div className="field"><label>City</label><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></div>
         <div className="field"><label>Source</label><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{[["manual", "Manual"], ["instagram", "Instagram DM"], ["whatsapp", "WhatsApp direct"], ["referral", "Referral"], ["website", "Website form"], ["in_person", "In person"], ["other", "Other"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
       </div>
+      <div className="field"><label>Organiser / event manager <span style={{ color: "#66665e", fontWeight: 400 }}>· corporate entity or agency behind the booking</span></label><input value={f.organiser} onChange={(e) => setF({ ...f, organiser: e.target.value })} placeholder="e.g. Infosys — or XYZ Events (Priya)" /></div>
       <div className="field"><label>Notes / original message</label><textarea rows={2} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>
       <label className="check"><input type="checkbox" checked={f.confirmed} onChange={(e) => setF({ ...f, confirmed: e.target.checked })} /> Already confirmed — add to my calendar (leave off to log as an enquiry)</label>
       <button className="btn" onClick={save} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : (f.confirmed ? "Save gig" : "Log enquiry")}</button>
