@@ -3,7 +3,7 @@ guestName: "DJ Paroma"
 guestTitle: "DJ & Producer — 15 years, cabin crew to Bollywood remixes"
 season: 2
 episode: 23
-youtubeId: "vC8YLNw4dzY"
+youtubeId: "2Q_8TZQStJg"
 category: "behind-the-decks"
 categoryLabel: "Behind the Decks"
 premiereWhen: ""
