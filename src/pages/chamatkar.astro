@@ -20,6 +20,7 @@ const EVENT = {
   // Vol. 5 (12 Sep) is done — next date not decided yet, so dateTBA hides the
   // countdown, RSVP cutoff and calendar links and shows "date announced soon".
   dateTBA: true,
+  startISO: '',        // set to the next edition's date (e.g. '2026-11-15') → drives the Event rich-result schema
   dateLabel: '',
   timeLabel: '9:00 PM onwards',
   doorsAt: '',
@@ -50,12 +51,40 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // `poster` (landscape cover) is optional — the block just shows text + gallery
 // until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
-  { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-banner.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Photos & clips landing soon.' },
+  { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', startISO: '2026-09-12', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-banner.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-22', edition: 'Vol. 4', dateLabel: 'Saturday, 22 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol4-banner.jpg', blurb: 'The 90s / 2000s Edition — the Bollywood you grew up on, mixed live against global records. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
-  { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
+  { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', startISO: '2026-06-13', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
 ];
+
+// ── Event rich-result schema ──────────────────────────────────────────────
+// Represents the current edition once it has a date (set EVENT.startISO);
+// until then, the latest dated edition, so the page always carries a complete
+// Event with every field Google needs (endDate, offers, image, eventStatus,
+// performer).
+const schemaEd = EVENT.startISO
+  ? { edition: EVENT.edition, startISO: EVENT.startISO, status: 'upcoming' }
+  : PAST_EDITIONS.find((e) => e.startISO);
+const chamatkarSchema = schemaEd ? [{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": `Chamatkar ${schemaEd.edition} — ${EVENT.tagline}`,
+  "startDate": `${schemaEd.startISO}T21:00:00+05:30`,
+  "endDate": `${schemaEd.startISO}T23:59:00+05:30`,
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "image": ["https://djvicofficial.com/images/chamatkar-vol5-banner.webp"],
+  "location": {
+    "@type": "Place",
+    "name": "Happy Brew Cocktail Club",
+    "address": { "@type": "PostalAddress", "streetAddress": "Koramangala", "addressLocality": "Bangalore", "addressRegion": "Karnataka", "addressCountry": "IN" }
+  },
+  "description": "Chamatkar — Bollywood through a global lens, mixed live as a signature audio-visual set by DJ VIC at Happy Brew, Koramangala. Scan-to-enter guest list, winners called out live all night.",
+  "performer": { "@type": "MusicGroup", "name": "DJ VIC" },
+  "organizer": { "@type": "Person", "@id": "https://djvicofficial.com/#person", "name": "DJ VIC" },
+  "offers": { "@type": "Offer", "url": "https://djvicofficial.com/chamatkar/", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "validFrom": `${schemaEd.startISO}T00:00:00+05:30` }
+}] : [];
 ---
 
 <Layout
@@ -65,6 +94,7 @@ const PAST_EDITIONS = [
   ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. Next edition announced soon. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
   ogImage="https://djvicofficial.com/images/chamatkar-vol5-banner.webp"
   canonical="https://djvicofficial.com/chamatkar/"
+  schema={chamatkarSchema}
 >
   <Nav />
 
