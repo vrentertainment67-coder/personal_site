@@ -105,10 +105,13 @@ const calendar = EDITIONS.filter((e) => e.status !== 'past');
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(current.mapsQuery || `${current.venue}, ${current.area}`)}`;
 const desc = `${BRAND.presenter} presents ${BRAND.name} — ${BRAND.headline}. ${current.name} · ${current.dateLabel}, ${current.timeLabel} · ${current.venue}, ${current.area}. Free entry on the guest list.`;
 
+// endDate for the Event rich result — ~5h after the start (nights run late).
+const endISO = current.startISO ? new Date(new Date(current.startISO).getTime() + 5 * 60 * 60 * 1000).toISOString() : undefined;
 const schema = [{
   "@context": "https://schema.org", "@type": "Event",
   "name": `${current.name} — ${BRAND.name}, Bangalore`,
   "startDate": current.startISO,
+  "endDate": endISO,
   "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
   "eventStatus": "https://schema.org/EventScheduled",
   "location": { "@type": "Place", "name": current.venue, "address": { "@type": "PostalAddress", "streetAddress": current.area, "addressLocality": "Bangalore", "addressRegion": "Karnataka", "addressCountry": "IN" } },
@@ -116,6 +119,7 @@ const schema = [{
   "description": desc,
   "performer": { "@type": "Person", "name": "DJ VIC" },
   "organizer": { "@type": "Organization", "name": BRAND.presenter },
+  "offers": { "@type": "Offer", "url": "https://djvicofficial.com/andaaz/", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "validFrom": current.startISO },
   "url": "https://djvicofficial.com/andaaz/"
 }];
 ---

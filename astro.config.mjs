@@ -7,6 +7,14 @@ import react from '@astrojs/react';
 
 export default defineConfig({
   site: 'https://djvicofficial.com',
+  trailingSlash: 'always',
+  // Old/renamed URLs Google has cached → redirect to the live page (static
+  // meta-refresh pages; GitHub Pages has no server-side redirect support).
+  redirects: {
+    '/blog/sangeet-night-music-guide-2026/': '/blog/best-songs-for-sangeet-night-2026/',
+    '/blog/wedding-dj-cost-bangalore/': '/blog/wedding-dj-cost-bangalore-2026/',
+    '/podcast/': '/thevicfix/',
+  },
   integrations: [mdx(), sitemap({
     // Keep noindex pages out of the sitemap (admin, booking funnel, thank-you).
     // Keep noindex pages out (admin, booking funnel, thank-you) and the

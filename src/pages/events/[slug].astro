@@ -21,6 +21,15 @@ const formattedDate = eventDate.toLocaleDateString('en-IN', {
 });
 
 const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
+
+// Rich-result Event schema needs these — Google flagged them as missing.
+const eventUrl = `https://djvicofficial.com/events/${event.id}/`;
+const eventImage = event.data.creativeImage
+  ? new URL(event.data.creativeImage, 'https://djvicofficial.com').href
+  : 'https://djvicofficial.com/images/og-default.jpg';
+// Nights run 9 PM onward; give a valid datetime range (endDate after startDate).
+const startDateTime = `${event.data.date}T21:00:00+05:30`;
+const endDateTime = `${event.data.date}T23:59:00+05:30`;
 ---
 
 <Layout
@@ -32,14 +41,27 @@ const successUrl = `https://djvicofficial.com/events/${event.id}/?rsvp=success`;
       "@context": "https://schema.org",
       "@type": "Event",
       "name": event.data.title,
-      "startDate": event.data.date,
+      "startDate": startDateTime,
+      "endDate": endDateTime,
+      "eventStatus": "https://schema.org/EventScheduled",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "image": [eventImage],
       "location": {
         "@type": "Place",
         "name": event.data.venue,
         "address": event.data.address || event.data.city
       },
       "description": event.data.description,
-      "organizer": { "@id": "https://djvicofficial.com/#person" }
+      "performer": { "@type": "MusicGroup", "name": "DJ VIC" },
+      "organizer": { "@type": "Person", "@id": "https://djvicofficial.com/#person", "name": "DJ VIC" },
+      "offers": {
+        "@type": "Offer",
+        "url": eventUrl,
+        "price": "0",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStock",
+        "validFrom": `${event.data.date}T00:00:00+05:30`
+      }
     },
     {
       "@context": "https://schema.org",
