@@ -77,6 +77,10 @@ const PAY_DETAILS = "UPI: vikasnaik84@okhdfcbank";
 const BK_SOURCES = ["website", "funnel", "referral", "instagram", "whatsapp", "in_person", "other"];
 const BK_SOURCE_LABEL = { website: "Website form", funnel: "Website form", referral: "Referral", instagram: "Instagram DM", whatsapp: "WhatsApp direct", in_person: "In person", manual: "Manual", other: "Other" };
 const srcLabel = (s) => BK_SOURCE_LABEL[s] || (s ? cap(s) : "—");
+// Why a booking didn't convert — captured when declining, analysed later.
+const LOST_REASONS = ["Pricing / budget", "Booked another DJ", "Date unavailable", "No response", "Event cancelled", "Postponed", "Not the right fit", "Other"];
+// Canonical bucket for the lost-reasons breakdown (drop any free-text note).
+const lostBucket = (r) => (r && r.lost_reason ? String(r.lost_reason).split(" — ")[0].trim() : "Unspecified");
 // Render a single date or a multi-day range, e.g. "Sep 22–23" or "Sep 30 – Oct 1".
 function fmtRange(s, e) {
   if (!s) return "—";
@@ -911,8 +915,25 @@ function Bookings({ showToast }) {
   const [colWhen, setColWhen] = useState(new Date().toLocaleDateString("en-CA"));
   const [colNote, setColNote] = useState(""); const [colBusy, setColBusy] = useState(false);
   const [prefill, setPrefill] = useState(null); const [formKey, setFormKey] = useState(0);
+  // Decline-with-reason capture.
+  const [declineFor, setDeclineFor] = useState(null); const [lostReason, setLostReason] = useState(""); const [lostNote, setLostNote] = useState("");
 
   const openBlankForm = () => { setPrefill(null); setFormKey((k) => k + 1); setAdding((v) => !v); };
+  const startDecline = (r) => {
+    const base = r.lost_reason ? String(r.lost_reason).split(" — ") : [];
+    setLostReason(base[0] && LOST_REASONS.includes(base[0]) ? base[0] : "");
+    setLostNote(base.slice(1).join(" — ") || (base[0] && !LOST_REASONS.includes(base[0]) ? base[0] : ""));
+    setDeclineFor(r);
+  };
+  const confirmDecline = async () => {
+    if (!declineFor) return;
+    const reason = lostReason
+      ? (lostNote.trim() ? `${lostReason} — ${lostNote.trim()}` : lostReason)
+      : (lostNote.trim() || null);
+    const id = declineFor.id;
+    setDeclineFor(null); setLostReason(""); setLostNote("");
+    await decide(id, "declined", reason);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -934,12 +955,15 @@ function Bookings({ showToast }) {
   // What's still genuinely owed on a gig: fee − cash received − TDS deducted.
   const balOf = (r) => Number(r.agreed_fee || 0) - paidOf(r.id) - Number(r.tds_amount || 0);
 
-  const decide = async (id, status) => {
+  const decide = async (id, status, reason) => {
     setActing(id);
     // 1) Set the status directly — the signed-in admin has the grants for this
     //    (same path as "Mark done & paid"), so confirming/declining never
     //    depends on the calendar Edge Function's service key being healthy.
-    const { error: upErr } = await supabase.from("bookings").update({ status }).eq("id", id);
+    // Capture WHY on a decline; clear it if a booking is (re-)confirmed.
+    const patch = status === "declined" ? { status, lost_reason: reason || null }
+      : status === "accepted" ? { status, lost_reason: null } : { status };
+    const { error: upErr } = await supabase.from("bookings").update(patch).eq("id", id);
     if (upErr) { setActing(null); return showToast("Couldn't update — " + upErr.message); }
 
     // 2) Best-effort: add to / remove from Google Calendar. If the function is
@@ -1113,6 +1137,15 @@ function Bookings({ showToast }) {
   }, {})).filter((s) => s.booked > 0).sort((a, b) => b.booked - a.booked);
   const sectorTop = Math.max(...sectors.map((s) => s.booked), 1);
 
+  // Why declined bookings didn't convert — grouped by canonical lost reason.
+  const lost = rows.filter((r) => r.status === "declined");
+  const lostReasons = Object.values(lost.reduce((m, r) => {
+    const k = lostBucket(r);
+    (m[k] = m[k] || { reason: k, count: 0 }).count += 1;
+    return m;
+  }, {})).sort((a, b) => b.count - a.count);
+  const lostTop = Math.max(...lostReasons.map((x) => x.count), 1);
+
   const exportCsv = () => {
     const cols = ["created_at", "status", "name", "organiser", "contact", "source", "event_type", "event_date", "venue", "city", "budget", "agreed_fee", "advance", "advance_due", "tds", "paid", "balance", "message"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -1128,6 +1161,26 @@ function Bookings({ showToast }) {
     a.download = `djvic-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
+
+  // Decline-with-reason modal — shared by the list and the detail view.
+  const declineModal = declineFor ? (
+    <div className="dq-overlay" onClick={() => setDeclineFor(null)}>
+      <div className="dq-modal" onClick={(e) => e.stopPropagation()}>
+        <h3 className="dq-h">Decline — {declineFor.name}</h3>
+        <p className="dq-sub">Capture why so you can spot the pattern later. Optional, but useful.</p>
+        <div className="dq-chips">
+          {LOST_REASONS.map((rsn) => (
+            <button key={rsn} className={"dq-chip" + (lostReason === rsn ? " on" : "")} onClick={() => setLostReason((v) => v === rsn ? "" : rsn)}>{rsn}</button>
+          ))}
+        </div>
+        <textarea className="dq-note" rows={2} value={lostNote} onChange={(e) => setLostNote(e.target.value)} placeholder="Optional note — competitor, quoted price, who said no…" />
+        <div className="dq-actions">
+          <button className="act" onClick={() => setDeclineFor(null)}>Cancel</button>
+          <button className="act decline" disabled={acting === declineFor.id} onClick={confirmDecline}><XCircle size={15} /> Mark declined</button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   // ── Detail view (rich per-gig: finance, mailer, notes, actions) ──
   if (openId) {
@@ -1153,10 +1206,17 @@ function Bookings({ showToast }) {
     const sendWa = (text) => { const num = waDigits(r.contact); window.open(num.length >= 10 ? `https://wa.me/${num}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); };
     return (
       <>
+        {declineModal}
         <div className="row-between">
           <button className="note-save" onClick={() => setOpenId(null)}>← Back to bookings</button>
           <span className="bk-st" style={{ color: "#161616", background: stCol }}>{stLbl}</span>
         </div>
+        {r.status === "declined" && (
+          <p className="req-msg" style={{ borderLeft: "3px solid #7a5a1e" }}>
+            <strong style={{ color: "#e0b13c" }}>Lost:</strong> {r.lost_reason || "reason not recorded"}
+            <button style={{ marginLeft: 10, background: "none", border: "none", color: "#c9a84c", cursor: "pointer", fontSize: 12, textDecoration: "underline" }} onClick={() => startDecline(r)}>edit reason</button>
+          </p>
+        )}
         <h1 className="h1" style={{ marginTop: 10 }}>{r.name} {r.source === "manual" && <span className="mini">manual</span>}</h1>
         <p className="req-meta">
           <span className="tag">{r.event_type}</span>
@@ -1190,7 +1250,7 @@ function Bookings({ showToast }) {
               <button className="act accept" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>
                 {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Confirm
               </button>
-              <button className="act decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}>
+              <button className="act decline" disabled={acting === r.id} onClick={() => startDecline(r)}>
                 <XCircle size={15} /> Decline
               </button>
             </>
@@ -1254,7 +1314,17 @@ function Bookings({ showToast }) {
         .bk-sec-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #a8842f, #c9a84c); border-radius: 5px; }
         .bk-sec-val { flex: 0 0 auto; min-width: 92px; text-align: right; color: #e8e8e0; font-size: 13px; font-weight: 600; white-space: nowrap; }
         .bk-sec-pct { color: #8a8878; font-weight: 500; font-size: 11.5px; margin-left: 6px; }
+        .dq-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(2px); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .dq-modal { background: #141416; border: 1px solid #2a2a2a; border-radius: 14px; padding: 20px; width: 100%; max-width: 460px; }
+        .dq-h { margin: 0 0 4px; font-size: 17px; color: #fff; }
+        .dq-sub { margin: 0 0 14px; color: #8a8878; font-size: 12.5px; }
+        .dq-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+        .dq-chip { background: transparent; border: 1px solid #2a2a2a; color: #cfcabf; border-radius: 999px; font-size: 12.5px; padding: 6px 12px; cursor: pointer; }
+        .dq-chip.on { background: #c9a84c; border-color: #c9a84c; color: #161616; font-weight: 600; }
+        .dq-note { width: 100%; background: #0e0e0d; color: #e8e8e0; border: 1px solid #2a2a2a; border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 13px; resize: vertical; box-sizing: border-box; }
+        .dq-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
       `}</style>
+      {declineModal}
       <div className="row-between">
         <h1 className="h1">Bookings</h1>
         <div style={{ display: "flex", gap: 8 }}>
@@ -1291,6 +1361,22 @@ function Bookings({ showToast }) {
         </div>
       ) : (
         <p className="empty" style={{ padding: "8px 2px" }}>No sector revenue yet — set agreed fees on confirmed gigs to see the split.</p>
+      )}
+
+      {lost.length > 0 && (
+        <div className="bk-sectors">
+          <div className="bk-sectors-head">
+            <span>Why deals were lost</span>
+            <span className="bk-sectors-sub" style={{ color: "#e0736a" }}>{lost.length} declined</span>
+          </div>
+          {lostReasons.map((x) => (
+            <div className="bk-sec" key={x.reason}>
+              <span className="bk-sec-label">{x.reason}<span className="bk-sec-n">{x.count}</span></span>
+              <span className="bk-sec-bar"><span style={{ width: `${Math.round((x.count / lostTop) * 100)}%`, background: "linear-gradient(90deg,#7a3b3b,#e0736a)" }} /></span>
+              <span className="bk-sec-val">{Math.round((x.count / lost.length) * 100)}%</span>
+            </div>
+          ))}
+        </div>
       )}
       </>)}
 
@@ -1402,7 +1488,7 @@ function Bookings({ showToast }) {
                         {r.status === "pending" && (
                           <>
                             <button className="bk-ic green" title="Confirm" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>{acting === r.id ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />}</button>
-                            <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => decide(r.id, "declined")}><XCircle size={14} /></button>
+                            <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => startDecline(r)}><XCircle size={14} /></button>
                           </>
                         )}
                         <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
