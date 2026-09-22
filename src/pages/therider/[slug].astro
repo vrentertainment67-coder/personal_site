@@ -1,0 +1,60 @@
+---
+// Tracked hand-off page for a Rider edition: /therider/ep10/ etc.
+// Loads as a real HTML page (so tracker.js records the visit — direct links
+// shared on Instagram now count), then opens the PDF. Share THESE links.
+import Layout from '../../layouts/Layout.astro';
+import { EDITIONS } from '../../lib/rider.js';
+
+export function getStaticPaths() {
+  return EDITIONS.map((e) => ({ params: { slug: e.slug }, props: { ed: e } }));
+}
+const { ed } = Astro.props;
+const desc = `The Rider No.${ed.no} — ${ed.kicker}. ${ed.sub}`;
+---
+
+<Layout
+  bare
+  noindex
+  title={`Opening The Rider No.${ed.no} — ${ed.title} | DJ VIC`}
+  description={desc}
+  canonical={`https://djvicofficial.com/therider/${ed.slug}/`}
+>
+  <main id="main-content" class="rl">
+    <div class="rl-card">
+      <span class="rl-ic">{ed.icon}</span>
+      <span class="rl-kick">The Rider · No.{ed.no}</span>
+      <h1 class="rl-title">{ed.title}</h1>
+      <p class="rl-sub">{ed.kicker}</p>
+      <div class="rl-spin" aria-hidden="true"></div>
+      <p class="rl-open">Opening your PDF…</p>
+      <a class="rl-fallback" href={ed.file} target="_blank" rel="noopener noreferrer">Tap here if it doesn’t open →</a>
+      <a class="rl-back" href="/therider/">← All Rider editions</a>
+    </div>
+  </main>
+
+  <!-- The tracker (Layout, defer + keepalive) logs this /therider/epNN/ view;
+       a short beat lets the beacon fire, then we hand off to the PDF. -->
+  <script is:inline define:vars={{ file: ed.file }}>
+    setTimeout(function () { window.location.replace(file); }, 650);
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content={`0;url=${ed.file}`} />
+  </noscript>
+</Layout>
+
+<style>
+  .rl { min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: #080808; color: #e8e8e0; padding: 1.5rem; }
+  .rl-card { text-align: center; max-width: 26rem; display: flex; flex-direction: column; align-items: center; }
+  .rl-ic { font-size: 2.6rem; line-height: 1; width: 4.4rem; height: 4.4rem; display: flex; align-items: center; justify-content: center; background: rgba(255,77,61,.1); border: 1px solid rgba(255,77,61,.25); border-radius: 18px; margin-bottom: 1.1rem; }
+  .rl-kick { font-family: 'Bebas Neue', sans-serif; font-size: .82rem; letter-spacing: .22em; text-transform: uppercase; color: #ff4d3d; }
+  .rl-title { font-family: var(--font-display, sans-serif); font-size: clamp(1.8rem, 6vw, 2.6rem); line-height: 1.02; margin: .3rem 0 .2rem; color: #fff; text-transform: uppercase; }
+  .rl-sub { font-size: .62rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.45); margin: 0 0 1.6rem; }
+  .rl-spin { width: 26px; height: 26px; border: 2px solid rgba(255,77,61,.25); border-top-color: #ff4d3d; border-radius: 50%; animation: rl-sp .7s linear infinite; }
+  @keyframes rl-sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .rl-spin { animation: none; } }
+  .rl-open { color: rgba(255,255,255,.6); font-size: .95rem; margin: 1rem 0 1.4rem; }
+  .rl-fallback { display: inline-block; background: #ff4d3d; color: #160504; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: .8rem; padding: .8rem 1.6rem; border-radius: 5px; text-decoration: none; }
+  .rl-fallback:hover { filter: brightness(1.08); }
+  .rl-back { margin-top: 1.2rem; color: rgba(255,255,255,.45); font-size: .8rem; text-decoration: none; }
+  .rl-back:hover { color: #ff4d3d; }
+</style>
