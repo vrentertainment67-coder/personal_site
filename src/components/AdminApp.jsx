@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
-  AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy,
+  AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy, Undo2,
   ChevronDown, Square, CheckSquare, Bell,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
@@ -961,8 +961,9 @@ function Bookings({ showToast }) {
     //    (same path as "Mark done & paid"), so confirming/declining never
     //    depends on the calendar Edge Function's service key being healthy.
     // Capture WHY on a decline; clear it if a booking is (re-)confirmed.
+    // Going back to an enquiry is a clean reset, so any old lost reason goes too.
     const patch = status === "declined" ? { status, lost_reason: reason || null }
-      : status === "accepted" ? { status, lost_reason: null } : { status };
+      : (status === "accepted" || status === "pending") ? { status, lost_reason: null } : { status };
     const { error: upErr } = await supabase.from("bookings").update(patch).eq("id", id);
     if (upErr) { setActing(null); return showToast("Couldn't update — " + upErr.message); }
 
@@ -979,10 +980,21 @@ function Bookings({ showToast }) {
       showToast(calFailed
         ? `Confirmed & saved — but Google Calendar sync failed (${res.detail || res.error}). Use "Sync to calendar" once calendar-sync is fixed.`
         : "Confirmed — on your calendar.");
+    } else if (status === "pending") {
+      showToast(calFailed ? "Back to enquiry & saved (calendar not updated)." : "Moved back to enquiry.");
     } else {
-      showToast(calFailed ? "Declined & saved (calendar not updated)." : "Declined.");
+      showToast(calFailed ? "Marked lost & saved (calendar not updated)." : "Marked lost — removed from calendar.");
     }
     load();
+  };
+
+  // Undo a confirm/decline: put the booking back to a plain enquiry. Frees the
+  // calendar slot; fee, payments and notes are left untouched.
+  const backToEnquiry = (r) => {
+    const paid = paidOf(r.id);
+    if (!window.confirm(`Move "${r.name}" back to an enquiry?\n\nIt comes off your calendar and out of the booked totals.` +
+      (paid > 0 ? `\n\n${inr(paid)} in payments is recorded on it — those stay logged.` : ""))) return;
+    decide(r.id, "pending");
   };
 
   const saveNote = async (id, notes) => {
@@ -1166,8 +1178,11 @@ function Bookings({ showToast }) {
   const declineModal = declineFor ? (
     <div className="dq-overlay" onClick={() => setDeclineFor(null)}>
       <div className="dq-modal" onClick={(e) => e.stopPropagation()}>
-        <h3 className="dq-h">Decline — {declineFor.name}</h3>
-        <p className="dq-sub">Capture why so you can spot the pattern later. Optional, but useful.</p>
+        <h3 className="dq-h">{declineFor.status === "accepted" ? "Mark lost" : "Decline"} — {declineFor.name}</h3>
+        <p className="dq-sub">
+          {declineFor.status === "accepted" ? "This was confirmed — marking it lost takes it off your calendar and out of booked totals. " : ""}
+          Capture why so you can spot the pattern later. Optional, but useful.
+        </p>
         <div className="dq-chips">
           {LOST_REASONS.map((rsn) => (
             <button key={rsn} className={"dq-chip" + (lostReason === rsn ? " on" : "")} onClick={() => setLostReason((v) => v === rsn ? "" : rsn)}>{rsn}</button>
@@ -1176,7 +1191,7 @@ function Bookings({ showToast }) {
         <textarea className="dq-note" rows={2} value={lostNote} onChange={(e) => setLostNote(e.target.value)} placeholder="Optional note — competitor, quoted price, who said no…" />
         <div className="dq-actions">
           <button className="act" onClick={() => setDeclineFor(null)}>Cancel</button>
-          <button className="act decline" disabled={acting === declineFor.id} onClick={confirmDecline}><XCircle size={15} /> Mark declined</button>
+          <button className="act decline" disabled={acting === declineFor.id} onClick={confirmDecline}><XCircle size={15} /> {declineFor.status === "accepted" ? "Mark lost" : "Mark declined"}</button>
         </div>
       </div>
     </div>
@@ -1263,6 +1278,16 @@ function Bookings({ showToast }) {
           {r.status === "accepted" && (
             <button className="act accept" disabled={acting === r.id} onClick={() => complete(r)} title="Event done — archive it. Any unpaid balance stays tracked under Owing.">
               {acting === r.id ? <Loader2 className="spin" size={15} /> : <CheckCircle2 size={15} />} Mark completed
+            </button>
+          )}
+          {(r.status === "accepted" || r.status === "declined") && (
+            <button className="act" disabled={acting === r.id} onClick={() => backToEnquiry(r)} title="Undo — put this back to how it came in, as an open enquiry">
+              <Undo2 size={15} /> Back to enquiry
+            </button>
+          )}
+          {r.status === "accepted" && (
+            <button className="act decline" disabled={acting === r.id} onClick={() => startDecline(r)} title="Client went cold / booked someone else — record why">
+              <XCircle size={15} /> Mark lost
             </button>
           )}
           {r.status === "completed" && (
@@ -1490,6 +1515,15 @@ function Bookings({ showToast }) {
                             <button className="bk-ic green" title="Confirm" disabled={acting === r.id} onClick={() => decide(r.id, "accepted")}>{acting === r.id ? <Loader2 className="spin" size={14} /> : <CheckCircle2 size={14} />}</button>
                             <button className="bk-ic danger" title="Decline" disabled={acting === r.id} onClick={() => startDecline(r)}><XCircle size={14} /></button>
                           </>
+                        )}
+                        {r.status === "accepted" && (
+                          <>
+                            <button className="bk-ic" title="Back to enquiry (undo confirm)" disabled={acting === r.id} onClick={() => backToEnquiry(r)}><Undo2 size={14} /></button>
+                            <button className="bk-ic danger" title="Mark lost" disabled={acting === r.id} onClick={() => startDecline(r)}><XCircle size={14} /></button>
+                          </>
+                        )}
+                        {r.status === "declined" && (
+                          <button className="bk-ic" title="Back to enquiry (undo decline)" disabled={acting === r.id} onClick={() => backToEnquiry(r)}><Undo2 size={14} /></button>
                         )}
                         <button className="bk-ic" title="Reply" onClick={() => whatsapp(r)}><MessageCircle size={14} /></button>
                         <button className="bk-ic" title="Open" onClick={() => setOpenId(r.id)}><Eye size={14} /></button>
