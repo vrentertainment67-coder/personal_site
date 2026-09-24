@@ -12,7 +12,7 @@ export const IMAGE_SLOTS = [
   { slot: "weddings.destination", label: "Weddings — destination photo", page: "Weddings", size: "1000 × 800 px · 5:4", default: "/images/home/wed-destination-placeholder.jpg" },
   { slot: "corporate.hero", label: "Corporate — hero background", page: "Corporate", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1600&q=85" },
   { slot: "sangeet.hero", label: "Sangeet — hero background", page: "Sangeet", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&q=85" },
-  { slot: "nightlife.hero", label: "Nightlife — hero background", page: "Nightlife", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=1600&q=85" },
+  { slot: "nightlife.hero", label: "Nightlife — hero background", page: "Nightlife", size: "1920 × 1080 px · landscape", default: "/images/blog/concert-crowd-lights.jpg" },
   { slot: "private-events.hero", label: "Private Events — hero background", page: "Private Events", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&q=85" },
   { slot: "private-sessions.hero", label: "Private Sessions — hero background", page: "Private Sessions", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1600&q=80" },
   { slot: "festivals.hero", label: "Festivals — hero background", page: "Festivals", size: "1920 × 1080 px · landscape", default: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=85" },
