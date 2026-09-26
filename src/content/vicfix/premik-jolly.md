@@ -3,7 +3,7 @@ guestName: "Premik Jolly"
 guestTitle: "Producer, engineer & guitarist — the room behind Bangalore metal"
 season: 2
 episode: 24
-youtubeId: "S7fIwuUwEEM"
+youtubeId: "yd_0bgsjmqc"
 category: "architects"
 categoryLabel: "The Architects"
 premiereWhen: ""
