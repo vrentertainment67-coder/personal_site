@@ -177,7 +177,12 @@ export default function LiveVideos() {
             controls playsInline preload="metadata" />;
         })()}
       </div>
-      {sel && sel.title && <p className="lv-caption">{sel.title}</p>}
+      {sel && (sel.title || sel.description) && (
+        <div className="lv-cap">
+          {sel.title && <p className="lv-caption">{sel.title}</p>}
+          {sel.description && <p className="lv-desc">{sel.description}</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -216,6 +221,8 @@ const styles = `
   overflow: hidden; border: 1px solid #1e1e1e; }
 .lv-player video, .lv-player iframe { width: 100%; height: 100%; display: block; background: #000; border: 0; }
 .lv-player-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,.4); }
-.lv-caption { text-align: center; color: #b8b4a8; font-size: .9rem; margin: .9rem 0 0; }
+.lv-cap { margin-top: .9rem; }
+.lv-caption { text-align: center; color: #b8b4a8; font-size: .9rem; margin: 0; }
+.lv-desc { text-align: center; color: rgba(255,255,255,.55); font-size: .82rem; line-height: 1.55; margin: .35rem auto 0; max-width: 44rem; }
 @media (max-width: 560px) { .lv-thumb, .lv-thumb-img { width: 116px; } .lv-thumb-img { height: 70px; } }
 `;

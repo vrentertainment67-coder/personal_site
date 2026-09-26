@@ -4644,6 +4644,9 @@ function LiveVideosAdmin({ showToast }) {
   const [lCeremony, setLCeremony] = useState("");
   const [lTitle, setLTitle] = useState("");
   const [lBusy, setLBusy] = useState(false);
+  const [editId, setEditId] = useState(null);   // clip whose description is being edited
+  const [descDraft, setDescDraft] = useState("");
+  const [descBusy, setDescBusy] = useState(false);
   const fileRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -4754,6 +4757,15 @@ function LiveVideosAdmin({ showToast }) {
     if (error) return showToast("Couldn't tag — " + error.message);
     showToast(val ? `Tagged “${val}”.` : "Ceremony cleared."); load();
   };
+  const openDesc = (r) => { setEditId(r.id); setDescDraft(r.description || ""); };
+  const saveDesc = async (r) => {
+    const val = descDraft.trim();
+    setDescBusy(true);
+    const { error } = await supabase.from("live_videos").update({ description: val || null }).eq("id", r.id);
+    setDescBusy(false);
+    if (error) return showToast("Couldn't save description — " + error.message);
+    setEditId(null); showToast(val ? "Description saved." : "Description cleared."); load();
+  };
 
   const order = (l) => { const i = LV_LANGS.indexOf(l); return i === -1 ? 999 : i; };
   const groups = langsPresent.sort((a, b) => order(a) - order(b) || a.localeCompare(b)).map((l) => [l, rows.filter((r) => r.language === l)]);
@@ -4836,26 +4848,41 @@ function LiveVideosAdmin({ showToast }) {
               </div>
               <div className="list">
                 {items.map((r, i) => (
-                  <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 92, height: 58, flexShrink: 0, borderRadius: 5, overflow: "hidden", background: "#050505", border: "1px solid #222", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {r.thumbnail_url ? <img src={r.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Film size={18} color="#666" />}
+                  <div key={r.id}>
+                    <div className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 92, height: 58, flexShrink: 0, borderRadius: 5, overflow: "hidden", background: "#050505", border: "1px solid #222", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {r.thumbnail_url ? <img src={r.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Film size={18} color="#666" />}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 12.5, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "(untitled clip)"}</div>
+                        <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: "#8a8878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{r.url}</a>
+                        {r.description && <div style={{ fontSize: 11.5, color: "#9a968c", marginTop: 3, lineHeight: 1.4 }}>{r.description}</div>}
+                      </div>
+                      <select value={r.language} onChange={(e) => relang(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12 }} title="Move to language">
+                        {[...new Set([...allLangs, r.language])].map((x) => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                      <select value={r.ceremony || ""} onChange={(e) => setCeremony(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12, color: r.ceremony ? "var(--off)" : "#8a8878" }} title="Ceremony / type">
+                        <option value="">— ceremony —</option>
+                        {[...new Set([...allCers, r.ceremony].filter(Boolean))].map((x) => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        <button style={{ ...icBtn, color: editId === r.id ? "#c9a84c" : "#cfcabf", borderColor: editId === r.id ? "rgba(201,168,76,.5)" : "#2a2a2a" }} title="Edit description" onClick={() => (editId === r.id ? setEditId(null) : openDesc(r))}><Pencil size={13} /></button>
+                        <button style={icBtn} title="Move up" disabled={i === 0} onClick={() => move(r, -1, items)}>↑</button>
+                        <button style={icBtn} title="Move down" disabled={i === items.length - 1} onClick={() => move(r, 1, items)}>↓</button>
+                        <button style={{ ...icBtn, color: "#e0574a" }} title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
+                      </div>
                     </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 12.5, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "(untitled clip)"}</div>
-                      <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: "#8a8878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{r.url}</a>
-                    </div>
-                    <select value={r.language} onChange={(e) => relang(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12 }} title="Move to language">
-                      {[...new Set([...allLangs, r.language])].map((x) => <option key={x} value={x}>{x}</option>)}
-                    </select>
-                    <select value={r.ceremony || ""} onChange={(e) => setCeremony(r, e.target.value)} style={{ ...inp, padding: "5px 6px", fontSize: 12, color: r.ceremony ? "var(--off)" : "#8a8878" }} title="Ceremony / type">
-                      <option value="">— ceremony —</option>
-                      {[...new Set([...allCers, r.ceremony].filter(Boolean))].map((x) => <option key={x} value={x}>{x}</option>)}
-                    </select>
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button style={icBtn} title="Move up" disabled={i === 0} onClick={() => move(r, -1, items)}>↑</button>
-                      <button style={icBtn} title="Move down" disabled={i === items.length - 1} onClick={() => move(r, 1, items)}>↓</button>
-                      <button style={{ ...icBtn, color: "#e0574a" }} title="Remove" onClick={() => del(r)}><Trash2 size={14} /></button>
-                    </div>
+                    {editId === r.id && (
+                      <div style={{ padding: "10px 12px 4px", display: "flex", flexDirection: "column", gap: 8 }}>
+                        <textarea value={descDraft} onChange={(e) => setDescDraft(e.target.value)} rows={2}
+                          placeholder="Short description — shown under this clip on /live (venue, city, the moment…)."
+                          style={{ ...inp, width: "100%", resize: "vertical", fontFamily: "Inter", lineHeight: 1.5 }} />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button className="btn sm" disabled={descBusy} onClick={() => saveDesc(r)}>{descBusy ? <><Loader2 className="spin" size={13} /> Saving…</> : "Save description"}</button>
+                          <button className="btn sm ghost" onClick={() => setEditId(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

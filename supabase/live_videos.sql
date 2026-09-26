@@ -18,6 +18,9 @@ create table if not exists public.live_videos (
 -- Haldi/Mehendi, After Party, Club Night. Null until tagged.
 alter table public.live_videos add column if not exists ceremony text;
 
+-- Optional per-clip description, shown under the player on /live. Null until set.
+alter table public.live_videos add column if not exists description text;
+
 create index if not exists live_videos_lang_idx on public.live_videos (language, sort_order);
 
 alter table public.live_videos enable row level security;
