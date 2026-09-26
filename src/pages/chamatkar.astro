@@ -54,7 +54,7 @@ const PAST_EDITIONS = [
   { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', startISO: '2026-09-12', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-banner.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-22', edition: 'Vol. 4', dateLabel: 'Saturday, 22 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol4-banner.jpg', blurb: 'The 90s / 2000s Edition — the Bollywood you grew up on, mixed live against global records. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
-  { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', youtubeId: 'K_QZsi3C6uU', blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
+  { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', youtubeIds: ['K_QZsi3C6uU', 'h_X8RcVqe1w'], blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
   { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', startISO: '2026-06-13', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
 ];
 
@@ -213,11 +213,11 @@ const chamatkarSchema = schemaEd ? [{
             <span class="ck-past-venue">📍 {ed.venue} · {ed.area}</span>
           </div>
           <p class="ck-past-blurb">{ed.blurb}</p>
-          {ed.youtubeId && (
+          {ed.youtubeIds && ed.youtubeIds.map((vid) => (
             <div class="ck-past-video">
-              <iframe src={`https://www.youtube.com/embed/${ed.youtubeId}?rel=0&modestbranding=1&playsinline=1`} title={`Chamatkar ${ed.edition} — recap`} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <iframe src={`https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1&playsinline=1`} title={`Chamatkar ${ed.edition} — recap`} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
-          )}
+          ))}
           <EventMedia client:load slug={ed.slug} />
         </div>
       ))}
