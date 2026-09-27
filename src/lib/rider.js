@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '11', slug: 'ep11', icon: '🎚️', file: '/TheRider-Ep11-OpeningManual.pdf',
+    title: 'The First Three Tracks',
+    kicker: 'The Opening Manual',
+    sub: 'The crowd doesn’t remember your peak — they remember your opening. The science of how a set is remembered, and how to plan the first three tracks.',
+    inside: [
+      'The science — why the primacy effect makes the opening what the crowd remembers',
+      'What working DJs do — the opening habits of Hedex, Purple Disco Machine, Alex Farell and Alycia Bezgo',
+      'The three-track framework — the Introduction, the Proposition, the Commitment',
+      'The opening planning worksheet + the audit worksheet for the opening you’ve been playing',
+      'Openers by context — warm-up, opener, peak time and closer',
+    ],
+  },
+  {
     no: '10', slug: 'ep10', icon: '💪', file: '/TheRider-Ep10-BodyWorkingManual.pdf',
     title: 'DJing At 40',
     kicker: 'The Working Manual',
