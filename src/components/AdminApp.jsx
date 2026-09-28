@@ -4419,6 +4419,7 @@ function RequestsAdmin({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [reqLoading, setReqLoading] = useState(false);
   const [view, setView] = useState("playlist");   // playlist | all
+  const [fnFilter, setFnFilter] = useState("all"); // sub_event filter
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
   const [nName, setNName] = useState(""); const [nSlug, setNSlug] = useState(""); const [saving, setSaving] = useState(false);
@@ -4448,25 +4449,38 @@ function RequestsAdmin({ showToast }) {
   const couple = couples.find((c) => c.slug === sel);
   const shareUrl = sel ? `https://djvicofficial.com/requests/?c=${sel}` : "";
 
-  // Aggregate by normalised song for the playlist view (duplicates → counts).
+  // Split the couple's "please don't play" rows out from real requests.
+  const reqRows = useMemo(() => rows.filter((r) => !r.is_avoid), [rows]);
+  const avoidRows = useMemo(() => rows.filter((r) => r.is_avoid), [rows]);
+  // Which functions are in use → filter chips ("General" = untagged).
+  const subEvents = useMemo(() => [...new Set(reqRows.map((r) => r.sub_event).filter(Boolean))], [reqRows]);
+  const hasUntagged = useMemo(() => reqRows.some((r) => !r.sub_event), [reqRows]);
+  const shownReq = useMemo(() => reqRows.filter((r) =>
+    fnFilter === "all" ? true : fnFilter === "General" ? !r.sub_event : r.sub_event === fnFilter
+  ), [reqRows, fnFilter]);
+
+  // Aggregate by normalised song for the playlist view (must-play + link + count).
   const agg = useMemo(() => {
     const map = new Map();
-    rows.forEach((r) => {
+    shownReq.forEach((r) => {
       const key = (r.song || "").toLowerCase().replace(/\s+/g, " ").trim();
       if (!key) return;
-      if (!map.has(key)) map.set(key, { song: r.song, count: 0, by: [] });
-      const e = map.get(key); e.count++; if (r.guest_name && !e.by.includes(r.guest_name)) e.by.push(r.guest_name);
+      if (!map.has(key)) map.set(key, { song: r.song, count: 0, by: [], must: false, ref: null });
+      const e = map.get(key); e.count++;
+      if (r.guest_name && !e.by.includes(r.guest_name)) e.by.push(r.guest_name);
+      if (r.must_play) e.must = true;
+      if (r.ref_url && !e.ref) e.ref = r.ref_url;
     });
-    return [...map.values()].sort((a, b) => b.count - a.count || a.song.localeCompare(b.song));
-  }, [rows]);
-  const guests = new Set(rows.map((r) => (r.guest_name || "").toLowerCase().trim()).filter(Boolean)).size;
+    return [...map.values()].sort((a, b) => (b.must - a.must) || b.count - a.count || a.song.localeCompare(b.song));
+  }, [shownReq]);
+  const guests = new Set(shownReq.map((r) => (r.guest_name || "").toLowerCase().trim()).filter(Boolean)).size;
   const dupes = agg.filter((a) => a.count > 1).length;
-  // Genre split across all requests (rough keyword classification).
+  // Genre split across the shown requests (rough keyword classification).
   const genreSplit = useMemo(() => {
-    if (!rows.length) return [];
-    const c = {}; rows.forEach((r) => { const g = classifyGenre(r.song); c[g] = (c[g] || 0) + 1; });
-    return Object.entries(c).map(([g, n]) => ({ g, n, pct: Math.round((n / rows.length) * 100) })).sort((a, b) => b.n - a.n);
-  }, [rows]);
+    if (!shownReq.length) return [];
+    const c = {}; shownReq.forEach((r) => { const g = classifyGenre(r.song); c[g] = (c[g] || 0) + 1; });
+    return Object.entries(c).map(([g, n]) => ({ g, n, pct: Math.round((n / shownReq.length) * 100) })).sort((a, b) => b.n - a.n);
+  }, [shownReq]);
 
   const addCouple = async () => {
     const name = nName.trim();
@@ -4494,9 +4508,10 @@ function RequestsAdmin({ showToast }) {
     loadReqs();
   };
   const copyPlaylist = () => {
-    if (!agg.length) return showToast("No requests yet.");
-    const text = `${couple ? couple.couple_names + " — " : ""}Song requests (${rows.length})\n\n` +
-      agg.map((a, i) => `${i + 1}. ${a.song}${a.count > 1 ? `  (×${a.count})` : ""}`).join("\n");
+    if (!agg.length && !avoidRows.length) return showToast("No requests yet.");
+    const text = `${couple ? couple.couple_names + " — " : ""}Song requests (${shownReq.length})\n\n` +
+      agg.map((a, i) => `${i + 1}. ${a.must ? "★ " : ""}${a.song}${a.count > 1 ? `  (×${a.count})` : ""}${a.ref ? `  ${a.ref}` : ""}`).join("\n") +
+      (avoidRows.length ? `\n\nDo NOT play:\n` + avoidRows.map((r, i) => `${i + 1}. ${r.song}`).join("\n") : "");
     navigator.clipboard?.writeText(text).then(() => showToast("Playlist copied ✓"), () => showToast("Couldn't copy."));
   };
   const copyLink = () => navigator.clipboard?.writeText(shareUrl).then(() => showToast("Link copied ✓"), () => {});
@@ -4506,7 +4521,7 @@ function RequestsAdmin({ showToast }) {
   };
 
   const q = query.trim().toLowerCase();
-  const filtered = rows.filter((r) => !q || [r.guest_name, r.guest_email, r.song].some((v) => (v || "").toLowerCase().includes(q)));
+  const filtered = shownReq.filter((r) => !q || [r.guest_name, r.guest_email, r.song].some((v) => (v || "").toLowerCase().includes(q)));
   const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter" };
 
   return (
@@ -4553,18 +4568,27 @@ function RequestsAdmin({ showToast }) {
           )}
 
           <div style={{ display: "flex", gap: 10, margin: "10px 0 12px", flexWrap: "wrap" }}>
-            <div style={glStat}><strong style={glNum}>{rows.length}</strong><span style={glLbl}>Requests</span></div>
+            <div style={glStat}><strong style={glNum}>{shownReq.length}</strong><span style={glLbl}>Requests</span></div>
             <div style={glStat}><strong style={glNum}>{agg.length}</strong><span style={glLbl}>Unique songs</span></div>
             <div style={glStat}><strong style={glNum}>{guests}</strong><span style={glLbl}>Guests</span></div>
             {dupes > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#e0b13c" }}>{dupes}</strong><span style={glLbl}>Repeated</span></div>}
+            {avoidRows.length > 0 && <div style={glStat}><strong style={{ ...glNum, color: "#e0574a" }}>{avoidRows.length}</strong><span style={glLbl}>Don’t play</span></div>}
           </div>
 
           <div className="chips" style={{ marginBottom: 10 }}>
             <button className={view === "playlist" ? "chip on" : "chip"} onClick={() => setView("playlist")}>Playlist ({agg.length})</button>
-            <button className={view === "all" ? "chip on" : "chip"} onClick={() => setView("all")}>All requests ({rows.length})</button>
+            <button className={view === "all" ? "chip on" : "chip"} onClick={() => setView("all")}>All requests ({shownReq.length})</button>
             <button className="btn sm" style={{ marginLeft: "auto" }} onClick={copyPlaylist}><Copy size={14} /> Copy playlist</button>
             <button className="btn sm ghost" onClick={loadReqs} disabled={reqLoading}>{reqLoading ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />}</button>
           </div>
+
+          {subEvents.length > 0 && (
+            <div className="chips" style={{ marginBottom: 10 }}>
+              {["all", ...subEvents, ...(hasUntagged ? ["General"] : [])].map((f) => (
+                <button key={f} className={fnFilter === f ? "chip on" : "chip"} onClick={() => setFnFilter(f)}>{f === "all" ? "All functions" : f}</button>
+              ))}
+            </div>
+          )}
 
           {reqLoading ? <Center><Loader2 className="spin" size={18} /></Center> : rows.length === 0 ? (
             <p className="empty">No requests yet for {couple?.couple_names}. Share the link above.</p>
@@ -4577,10 +4601,10 @@ function RequestsAdmin({ showToast }) {
             )}
             <div className="list">
               {agg.map((a, i) => (
-                <div key={i} className="req" style={{ display: "flex", alignItems: "center", gap: 12, borderLeft: a.count > 1 ? "3px solid #e0b13c" : "3px solid transparent", paddingLeft: 10 }}>
+                <div key={i} className="req" style={{ display: "flex", alignItems: "center", gap: 12, borderLeft: a.must ? "3px solid #c9a84c" : a.count > 1 ? "3px solid #e0b13c" : "3px solid transparent", paddingLeft: 10 }}>
                   <span style={{ fontSize: 13, color: "#66665e", width: 22, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 14, color: "#e8e8e0" }}>{a.song}</div>
+                    <div style={{ fontSize: 14, color: "#e8e8e0" }}>{a.must && <span title="Must-play" style={{ color: "#c9a84c" }}>★ </span>}{a.song}{a.ref && <a href={a.ref} target="_blank" rel="noopener noreferrer" title={a.ref} style={{ marginLeft: 6, color: "#c9a84c", fontSize: 12, textDecoration: "none" }}>🔗</a>}</div>
                     <div className="bk-sub" style={{ fontSize: 11.5 }}>{a.by.slice(0, 4).join(", ")}{a.by.length > 4 ? ` +${a.by.length - 4}` : ""}</div>
                   </div>
                   {a.count > 1 && <span className="tag" style={{ background: "rgba(224,177,60,.14)", color: "#e0b13c", borderColor: "#7a5a1e" }}>×{a.count} requested</span>}
@@ -4597,7 +4621,7 @@ function RequestsAdmin({ showToast }) {
                   return (
                     <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 14, color: "#e8e8e0" }}>{r.song}</div>
+                        <div style={{ fontSize: 14, color: "#e8e8e0" }}>{r.must_play && <span title="Must-play" style={{ color: "#c9a84c" }}>★ </span>}{r.song}{r.ref_url && <a href={r.ref_url} target="_blank" rel="noopener noreferrer" title={r.ref_url} style={{ marginLeft: 6, color: "#c9a84c", fontSize: 12, textDecoration: "none" }}>🔗</a>}</div>
                         <p className="req-meta" style={{ margin: "2px 0 0" }}>
                           <span>{r.guest_name}</span>
                           {r.sub_event && <span style={{ color: "#e0b13c", fontWeight: 600 }}>{r.sub_event}</span>}
@@ -4611,6 +4635,23 @@ function RequestsAdmin({ showToast }) {
                 })}
               </div>
             </>
+          )}
+
+          {avoidRows.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#e0574a" }}>🚫 Do not play ({avoidRows.length})</h3>
+              <div className="list">
+                {avoidRows.map((r) => (
+                  <div key={r.id} className="req" style={{ display: "flex", alignItems: "center", gap: 12, borderLeft: "3px solid #e0574a", paddingLeft: 10 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 14, color: "#e8e8e0" }}>{r.song}</div>
+                      <p className="req-meta" style={{ margin: "2px 0 0" }}><span>{r.guest_name}</span></p>
+                    </div>
+                    <button style={{ background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#e0574a", cursor: "pointer", lineHeight: 0 }} title="Remove" onClick={() => delReq(r)}><Trash2 size={14} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </>
       )}

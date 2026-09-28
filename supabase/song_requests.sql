@@ -92,3 +92,44 @@ revoke all on function public.bride_list_requests(text, text) from public;
 revoke all on function public.bride_delete_request(uuid, text, text) from public;
 grant execute on function public.bride_list_requests(text, text) to anon, authenticated;
 grant execute on function public.bride_delete_request(uuid, text, text) to anon, authenticated;
+
+-- ============================================================
+-- COUPLE LIST — extras: must-play star, reference link, do-not-play flag.
+-- ============================================================
+alter table public.song_requests add column if not exists is_avoid  boolean not null default false;  -- true = "please don't play"
+alter table public.song_requests add column if not exists must_play boolean not null default false;  -- couple's non-negotiables
+alter table public.song_requests add column if not exists ref_url   text;                             -- exact-version reference link
+
+-- List now returns the extra fields (return type changed → drop first).
+drop function if exists public.bride_list_requests(text, text);
+create or replace function public.bride_list_requests(p_slug text, p_key text)
+returns table (id uuid, song text, guest_name text, sub_event text, is_avoid boolean, must_play boolean, ref_url text, created_at timestamptz)
+language sql security definer stable
+set search_path = public
+as $$
+  select id, song, guest_name, sub_event, is_avoid, must_play, ref_url, created_at
+  from public.song_requests
+  where couple_slug = p_slug and owner_key is not null and owner_key = p_key
+  order by created_at asc
+$$;
+revoke all on function public.bride_list_requests(text, text) from public;
+grant execute on function public.bride_list_requests(text, text) to anon, authenticated;
+
+-- Toggle must-play / set-or-clear the reference link on one of the couple's rows.
+create or replace function public.bride_update_request(p_id uuid, p_slug text, p_key text, p_must_play boolean, p_ref_url text)
+returns integer
+language plpgsql security definer
+set search_path = public
+as $$
+declare n integer;
+begin
+  update public.song_requests
+  set must_play = coalesce(p_must_play, must_play),
+      ref_url   = p_ref_url
+  where id = p_id and couple_slug = p_slug and owner_key is not null and owner_key = p_key;
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+revoke all on function public.bride_update_request(uuid, text, text, boolean, text) from public;
+grant execute on function public.bride_update_request(uuid, text, text, boolean, text) to anon, authenticated;
