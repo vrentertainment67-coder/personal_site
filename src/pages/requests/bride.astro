@@ -26,7 +26,7 @@ const EVENT_LINE = "Villa Cetinale · Tuscany · 17–20 Oct 2026";
   <style is:global>
     :root{
       --bg:#f5efe4; --card:#fffdf8; --line:#e2d8c7;
-      --ink:#241f1b; --ink-soft:#7a6e60; --wine:#7a1f2b; --wine-d:#5f1621;
+      --ink:#241f1b; --ink-soft:#6f6355; --wine:#7a1f2b; --wine-d:#5f1621;
       --gold:#b0895a; --green:#4e7d52;
     }
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -41,8 +41,8 @@ const EVENT_LINE = "Villa Cetinale · Tuscany · 17–20 Oct 2026";
 
     header{ text-align:center; padding:16px 0 12px; }
     .k{ font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--wine); font-weight:600; }
-    .names{ font-family:'Pinyon Script', cursive; font-weight:400; font-size:clamp(3.1rem,15vw,4.7rem);
-      line-height:1.05; margin:.15rem 0 .1rem; color:var(--ink); padding:0 .08em .08em; }
+    .names{ font-family:'Pinyon Script', cursive; font-weight:400; font-size:3.4rem; white-space:nowrap; max-width:100%;
+      line-height:1.14; margin:.1rem 0 .05rem; color:var(--ink); padding:0 .04em .12em; }
     .event-line{ font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft); margin-top:6px; }
     .ornament{ display:flex; align-items:center; justify-content:center; gap:12px; margin:13px auto 9px; max-width:200px; }
     .ornament::before, .ornament::after{ content:''; height:1px; flex:1; }
@@ -66,16 +66,17 @@ const EVENT_LINE = "Villa Cetinale · Tuscany · 17–20 Oct 2026";
     .item.must{ border-color:rgba(122,31,43,.38); box-shadow:0 5px 18px rgba(122,31,43,.07); }
     .item.avoid{ border-color:#e7cfcd; background:#fcf5f3; }
     .item.avoid .s{ color:var(--wine-d); }
-    .star{ flex:none; background:none; border:none; color:#c9bda9; font-size:20px; line-height:1.1; cursor:pointer; padding:0 1px; transition:color .15s; }
+    .star{ flex:none; background:none; border:none; color:#c9bda9; font-size:22px; cursor:pointer; padding:0;
+      width:38px; height:38px; display:flex; align-items:center; justify-content:center; transition:color .15s; }
     .star.on{ color:var(--gold); }
-    .item .s{ flex:1; min-width:0; font-size:1.02rem; color:var(--ink); word-break:break-word; line-height:1.35; }
-    .item .who{ font-size:12px; color:var(--wine); margin-top:3px; display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
-    .reflink{ background:none; border:none; color:var(--gold); font-size:12px; font-family:inherit; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px; }
+    .item .s{ flex:1; min-width:0; font-size:1.05rem; color:var(--ink); word-break:break-word; line-height:1.4; padding-top:6px; }
+    .item .who{ font-size:12.5px; color:var(--wine); margin-top:4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+    .reflink{ background:none; border:none; color:var(--gold); font-size:12.5px; font-family:inherit; cursor:pointer; padding:4px 2px; text-decoration:underline; text-underline-offset:2px; }
     .item .rm{ flex:none; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:9px;
-      width:33px; height:33px; font-size:15px; line-height:1; cursor:pointer; transition:.15s; }
+      width:38px; height:38px; font-size:15px; line-height:1; cursor:pointer; transition:.15s; }
     .item .rm:hover{ border-color:var(--wine); color:var(--wine); }
     .rm .spin{ border-color:rgba(122,31,43,.25); border-top-color:var(--wine); }
-    .empty-list{ color:#a99e8d; font-size:1rem; text-align:center; padding:.6rem 0 .2rem; font-style:italic; font-family:'Cormorant Garamond',serif; }
+    .empty-list{ color:#8f8474; font-size:1rem; text-align:center; padding:.6rem 0 .2rem; font-style:italic; font-family:'Cormorant Garamond',serif; }
 
     .linkedit{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; width:100%; }
     .linkinput{ flex:1 1 160px; min-width:0; background:#fff; border:1.5px solid var(--line); border-radius:9px;
@@ -87,7 +88,7 @@ const EVENT_LINE = "Villa Cetinale · Tuscany · 17–20 Oct 2026";
 
     .who-wrap{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
     .chip{ background:#fff; border:1.5px solid var(--line); color:var(--ink-soft); border-radius:99px;
-      padding:9px 17px; font-size:15px; font-family:inherit; cursor:pointer; transition:.16s; }
+      padding:11px 18px; font-size:15px; font-family:inherit; cursor:pointer; transition:.16s; }
     .chip:hover{ border-color:var(--gold); color:var(--ink); }
     .chip.on{ background:var(--wine); border-color:var(--wine); color:#fdf6ef; font-weight:600; }
 
@@ -206,9 +207,21 @@ const EVENT_LINE = "Villa Cetinale · Tuscany · 17–20 Oct 2026";
           buildRows('avoidSongs', 2, 'asong');
           show('app');
           $('app').classList.add('fade-in');
+          fitName();
           loadList();
         })
         .catch(function () { show('invalid'); });
+
+      // Keep the couple's name on ONE line, as large as fits the screen.
+      function fitName() {
+        var el = $('names');
+        if (!el || !el.textContent || !el.clientWidth) return;
+        var size = 76, min = 24, guard = 0;
+        el.style.fontSize = size + 'px';
+        while (el.scrollWidth > el.clientWidth && size > min && guard < 90) { size -= 1; el.style.fontSize = size + 'px'; guard++; }
+      }
+      if (document.fonts && document.fonts.ready) { try { document.fonts.ready.then(fitName); } catch (e) {} }
+      window.addEventListener('resize', fitName);
 
       function buildWho(coupleNames) {
         var parts = coupleNames.split(/\s*(?:&|,|\band\b)\s*/i).map(function (s) { return s.trim(); }).filter(Boolean);
