@@ -5,11 +5,24 @@
 -- Safe to re-run: it clears prior curated rows and re-seeds them.
 -- ============================================================
 
--- 1) Public (anon) can read gallery media, so the live site mirrors the table.
+-- 1) Privileges + RLS. NOTE: an RLS policy alone is NOT enough — the role also
+--    needs a base table GRANT, or you get "permission denied for table media".
+grant select on public.media to anon;
+grant select, insert, update, delete on public.media to authenticated;
+
+alter table public.media enable row level security;
+
+-- Public (anon) can read ONLY gallery rows, so the live site mirrors the table.
 drop policy if exists "public read gallery media" on public.media;
 create policy "public read gallery media"
   on public.media for select to anon
   using (kind = 'gallery');
+
+-- The signed-in admin can read/insert/update/delete everything.
+drop policy if exists "authenticated full media" on public.media;
+create policy "authenticated full media"
+  on public.media for all to authenticated
+  using (true) with check (true);
 
 -- 2) Seed the 36 curated photos so they're fully manageable from the admin.
 --    public_id 'curated/NN' marks them; deleting one from the admin just removes
