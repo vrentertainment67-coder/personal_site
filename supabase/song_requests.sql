@@ -96,6 +96,7 @@ grant execute on function public.bride_delete_request(uuid, text, text) to anon,
 -- ============================================================
 -- COUPLE LIST — extras: must-play star, reference link, do-not-play flag.
 -- ============================================================
+alter table public.song_requests add column if not exists sub_event text;                            -- (defensive) 'Cocktail' | 'Sangeet' | 'Mehndi'
 alter table public.song_requests add column if not exists is_avoid  boolean not null default false;  -- true = "please don't play"
 alter table public.song_requests add column if not exists must_play boolean not null default false;  -- couple's non-negotiables
 alter table public.song_requests add column if not exists ref_url   text;                             -- exact-version reference link
