@@ -4628,6 +4628,7 @@ function RequestsAdmin({ showToast }) {
                           {r.guest_email && <span>{r.guest_email}</span>}
                           <span>{MONTHS[t.getMonth()]} {t.getDate()}, {pad(t.getHours())}:{pad(t.getMinutes())}</span>
                         </p>
+                        {r.note && <p style={{ margin: "3px 0 0", fontSize: 12, color: "#b8b4a8", fontStyle: "italic" }}>“{r.note}”</p>}
                       </div>
                       <button style={{ background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#e0574a", cursor: "pointer", lineHeight: 0 }} title="Remove" onClick={() => delReq(r)}><Trash2 size={14} /></button>
                     </div>

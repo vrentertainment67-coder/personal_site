@@ -134,3 +134,19 @@ end;
 $$;
 revoke all on function public.bride_update_request(uuid, text, text, boolean, text) from public;
 grant execute on function public.bride_update_request(uuid, text, text, boolean, text) to anon, authenticated;
+
+-- ============================================================
+-- GUEST PAGE extras: a dedication/note, and a private live count for the
+-- "N songs already requested" social-proof line (no names ever exposed).
+-- ============================================================
+alter table public.song_requests add column if not exists note text;  -- guest's optional note to the couple
+
+create or replace function public.song_request_count(p_slug text)
+returns integer language sql security definer stable
+set search_path = public
+as $$
+  select count(*)::int from public.song_requests
+  where couple_slug = p_slug and coalesce(is_avoid, false) = false
+$$;
+revoke all on function public.song_request_count(text) from public;
+grant execute on function public.song_request_count(text) to anon, authenticated;
