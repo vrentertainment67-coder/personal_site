@@ -48,3 +48,47 @@ create policy "admin all requests" on public.song_requests
 -- First couple.
 insert into public.request_couples (slug, couple_names) values ('ram', 'Ram')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- COUPLE'S OWN PRIVATE LIST (/requests/bride/?c=<slug>&k=<key>)
+-- The couple gets a private link with no 3-song cap where they can add songs,
+-- see their running list and remove entries. Their rows live in this same
+-- song_requests table (so VIC sees them in the admin), tagged with a secret
+-- owner_key from the link and, optionally, which function the song is for.
+-- Guests still cannot read the table; the couple reads/removes only their own
+-- rows through the two security-definer functions below, scoped to their key.
+-- ============================================================
+alter table public.song_requests add column if not exists owner_key text;   -- secret from the couple's private link (guests: null)
+alter table public.song_requests add column if not exists sub_event text;    -- optional: 'Cocktail' | 'Sangeet' | 'Mehndi'
+
+-- List the couple's own entries (only rows matching their slug + secret key).
+create or replace function public.bride_list_requests(p_slug text, p_key text)
+returns table (id uuid, song text, guest_name text, sub_event text, created_at timestamptz)
+language sql security definer stable
+set search_path = public
+as $$
+  select id, song, guest_name, sub_event, created_at
+  from public.song_requests
+  where couple_slug = p_slug and owner_key is not null and owner_key = p_key
+  order by created_at asc
+$$;
+
+-- Remove one of the couple's own entries (must match id + slug + key).
+create or replace function public.bride_delete_request(p_id uuid, p_slug text, p_key text)
+returns integer
+language plpgsql security definer
+set search_path = public
+as $$
+declare n integer;
+begin
+  delete from public.song_requests
+  where id = p_id and couple_slug = p_slug and owner_key is not null and owner_key = p_key;
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
+revoke all on function public.bride_list_requests(text, text) from public;
+revoke all on function public.bride_delete_request(uuid, text, text) from public;
+grant execute on function public.bride_list_requests(text, text) to anon, authenticated;
+grant execute on function public.bride_delete_request(uuid, text, text) to anon, authenticated;

@@ -1,0 +1,265 @@
+---
+// /requests/bride/?c=<slug>&k=<key> — the couple's OWN private song list.
+// Unlike the guest page (/requests), there's no 3-song cap and the list is
+// read back so they can see and remove what they've entered. Entries write to
+// the SAME song_requests table (tagged with a secret owner_key from the link),
+// so VIC sees them in the admin alongside guest requests. Privacy: guests still
+// can't read the table — this page reads/removes only via secure, key-scoped
+// DB functions (bride_list_requests / bride_delete_request). Unlisted, noindex.
+const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Your Song List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root{ --gold:#c9a84c; --gold2:#b8912f; --bg:#0c0b0a; --card:#151311; --line:#2a261f;
+      --off:#efe9dd; --mut:#a09884; --green:#39b56a; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--off);
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100dvh; }
+    body{ background-image: radial-gradient(ellipse 90% 55% at 50% -10%, rgba(201,168,76,.10), transparent 70%);
+      padding:max(20px,env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom)); }
+    .wrap{ max-width:460px; margin:0 auto; }
+    header{ text-align:center; padding:14px 0 18px; }
+    .k{ font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    .names{ font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,10vw,3rem); line-height:1.05; margin:.5rem 0 .1rem; color:#fff; }
+    .occ{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.05rem; color:var(--mut); }
+    .intro{ text-align:center; color:var(--mut); font-size:.92rem; line-height:1.6; margin:0 auto 1.4rem; max-width:23rem; }
+    .sec-h{ font-size:12px; color:var(--mut); margin:1.4rem 0 8px; letter-spacing:.02em; display:flex; justify-content:space-between; align-items:baseline; }
+    .sec-h b{ color:var(--off); font-weight:600; }
+    /* saved list */
+    #list{ margin:0 0 6px; }
+    .item{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line);
+      border-radius:12px; padding:12px 12px 12px 14px; margin:0 0 8px; }
+    .item .s{ flex:1; min-width:0; font-size:15px; color:var(--off); word-break:break-word; }
+    .item .rm{ flex:none; background:none; border:1px solid var(--line); color:var(--mut); border-radius:9px;
+      width:32px; height:32px; font-size:17px; line-height:1; cursor:pointer; }
+    .item .rm:hover{ border-color:#7a2e28; color:#ff9a90; }
+    .empty-list{ color:#6b6456; font-size:.9rem; text-align:center; padding:.6rem 0 .2rem; font-style:italic; }
+    .item .who{ font-size:11px; color:var(--gold); letter-spacing:.02em; margin-top:2px; }
+    /* who's adding */
+    .who-wrap{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+    .chip{ background:#100e0c; border:1.5px solid var(--line); color:var(--mut); border-radius:99px;
+      padding:9px 16px; font-size:14px; font-family:inherit; cursor:pointer; }
+    .chip.on{ border-color:var(--gold); color:#1a1407; background:linear-gradient(90deg,var(--gold2),var(--gold)); font-weight:600; }
+    /* add form */
+    .songrow{ position:relative; margin:0 0 10px; }
+    .songrow .n{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--gold); font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; pointer-events:none; }
+    .songrow input{ width:100%; background:#100e0c; border:1.5px solid var(--line); border-radius:12px;
+      padding:14px 14px 14px 34px; color:var(--off); font-size:16px; outline:none; font-family:inherit; }
+    .songrow input:focus{ border-color:var(--gold); }
+    .addmore{ background:none; border:none; color:var(--gold); font-size:.85rem; font-family:inherit; cursor:pointer; padding:2px 0 10px; }
+    .go{ width:100%; padding:16px; border:none; border-radius:14px; font-size:16px; font-weight:700;
+      color:#1a1407; background:linear-gradient(90deg,var(--gold2),var(--gold)); cursor:pointer; letter-spacing:.02em; margin-top:6px; }
+    .go:disabled{ opacity:.55; }
+    .msg{ text-align:center; font-size:.9rem; padding:11px; border-radius:11px; margin:12px 0 0; display:none; }
+    .msg.err{ display:block; background:rgba(224,87,74,.12); color:#ff9a90; border:1px solid #7a2e28; }
+    .msg.ok{ display:block; background:rgba(57,181,106,.12); color:#8fe0ad; border:1px solid #2f6b45; }
+    .foot{ text-align:center; color:#5c554a; font-size:11px; margin-top:22px; letter-spacing:.04em; }
+    .state{ text-align:center; padding:2rem 1rem; }
+    .state .big{ font-family:'Cormorant Garamond',serif; font-size:2rem; color:#fff; margin:.4rem 0 .6rem; }
+    .state p{ color:var(--mut); line-height:1.6; }
+    .hidden{ display:none !important; }
+    .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+    .spin{ display:inline-block; width:15px; height:15px; border:2px solid rgba(0,0,0,.3); border-top-color:#1a1407; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; }
+    @keyframes sp{ to{ transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div id="loading" class="state"><p>Loading…</p></div>
+
+    <div id="invalid" class="state hidden">
+      <div class="big">This link isn’t active</div>
+      <p>Please use the exact private link DJ VIC shared with you.</p>
+    </div>
+
+    <div id="app" class="hidden">
+      <header>
+        <div class="k">Your Song List</div>
+        <div class="names" id="names">—</div>
+        <div class="occ">your picks for the day</div>
+      </header>
+      <p class="intro">This is your private list — add as many songs as you like, come back anytime, and remove any you change your mind about. We’ll build the night around them.</p>
+
+      <div class="sec-h"><span>Your list so far</span><b id="count">0</b></div>
+      <div id="list"></div>
+      <div id="emptyList" class="empty-list">Nothing added yet — add your first song below.</div>
+
+      <div class="sec-h"><span>Add songs</span></div>
+      <div id="who" class="who-wrap hidden"></div>
+      <div id="fn" class="who-wrap"></div>
+      <form id="f" autocomplete="off" novalidate>
+        <input class="hp" type="text" id="company" tabindex="-1" aria-hidden="true" />
+        <div id="songs"></div>
+        <button type="button" id="addmore" class="addmore">+ Add another row</button>
+        <button type="submit" id="go" class="go">Add to my list</button>
+      </form>
+
+      <div id="msg" class="msg"></div>
+      <div class="foot">Powered by DJ VIC · djvicofficial.com</div>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ SUPABASE_URL, SUPABASE_KEY }}>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var show = function (id) { ['loading','invalid','app'].forEach(function(x){ $(x).classList.toggle('hidden', x!==id); }); };
+      var H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+      var params = new URLSearchParams(location.search);
+      var slug = (params.get('c') || '').trim().toLowerCase();
+      var key  = (params.get('k') || '').trim();
+      if (!slug || key.length < 6) { show('invalid'); return; }
+
+      var who = 'Couple';   // whichever partner is adding right now
+
+      // Validate the couple (public read), then load the existing list.
+      fetch(SUPABASE_URL + '/rest/v1/request_couples?slug=eq.' + encodeURIComponent(slug) + '&select=couple_names,active', { headers: H })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          var c = rows && rows[0];
+          if (!c || c.active === false) { show('invalid'); return; }
+          $('names').textContent = c.couple_names;
+          buildWho(c.couple_names);
+          buildFunctions();
+          buildAddRows(3);
+          show('app');
+          loadList();
+        })
+        .catch(function () { show('invalid'); });
+
+      // Split "Anjana & Isaiah" into pickable names so either partner can add
+      // under their own name. One name → no chooser.
+      function buildWho(coupleNames) {
+        var parts = coupleNames.split(/\s*(?:&|,|\band\b)\s*/i).map(function (s) { return s.trim(); }).filter(Boolean);
+        who = (parts[0] || coupleNames || 'Couple').trim();
+        if (parts.length < 2) return;
+        var host = $('who'); host.innerHTML = '';
+        var lbl = document.createElement('span');
+        lbl.style.cssText = 'width:100%;font-size:12px;color:var(--mut);margin:0 0 -2px;';
+        lbl.textContent = 'Adding as';
+        host.appendChild(lbl);
+        parts.forEach(function (nm) {
+          var b = document.createElement('button'); b.type = 'button';
+          b.className = 'chip' + (nm === who ? ' on' : ''); b.textContent = nm;
+          b.addEventListener('click', function () {
+            who = nm;
+            [].slice.call(host.querySelectorAll('.chip')).forEach(function (x) { x.classList.toggle('on', x.textContent === nm); });
+          });
+          host.appendChild(b);
+        });
+        host.classList.remove('hidden');
+      }
+
+      // Optional: tag songs for a specific function. Click again to clear.
+      var fn = '';
+      var FUNCTIONS = ['Cocktail', 'Sangeet', 'Mehndi'];
+      function buildFunctions() {
+        var host = $('fn'); host.innerHTML = '';
+        var lbl = document.createElement('span');
+        lbl.style.cssText = 'width:100%;font-size:12px;color:var(--mut);margin:0 0 -2px;';
+        lbl.textContent = 'For which function? (optional)';
+        host.appendChild(lbl);
+        FUNCTIONS.forEach(function (nm) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = nm;
+          b.addEventListener('click', function () {
+            fn = (fn === nm) ? '' : nm;
+            [].slice.call(host.querySelectorAll('.chip')).forEach(function (x) { x.classList.toggle('on', x.textContent === fn); });
+          });
+          host.appendChild(b);
+        });
+      }
+
+      function loadList() {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/bride_list_requests', {
+          method: 'POST', headers: H, body: JSON.stringify({ p_slug: slug, p_key: key })
+        }).then(function (r) { return r.ok ? r.json() : []; }).then(renderList).catch(function () { renderList([]); });
+      }
+
+      function renderList(items) {
+        items = Array.isArray(items) ? items : [];
+        $('count').textContent = String(items.length);
+        var host = $('list'); host.innerHTML = '';
+        $('emptyList').classList.toggle('hidden', items.length > 0);
+        items.forEach(function (it) {
+          var row = document.createElement('div'); row.className = 'item';
+          var col = document.createElement('div'); col.className = 's';
+          var s = document.createElement('div'); s.textContent = it.song; col.appendChild(s);
+          var meta = [];
+          var nm = (it.guest_name || '').replace(/\s*\(couple\)\s*$/i, '').trim();
+          if (nm) meta.push(nm);
+          if (it.sub_event) meta.push(it.sub_event);
+          if (meta.length) { var w = document.createElement('div'); w.className = 'who'; w.textContent = '— ' + meta.join(' · '); col.appendChild(w); }
+          var b = document.createElement('button'); b.className = 'rm'; b.type = 'button';
+          b.innerHTML = '&times;'; b.title = 'Remove';
+          b.addEventListener('click', function () { removeItem(it.id, b); });
+          row.appendChild(col); row.appendChild(b); host.appendChild(row);
+        });
+      }
+
+      function removeItem(id, btn) {
+        btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+        fetch(SUPABASE_URL + '/rest/v1/rpc/bride_delete_request', {
+          method: 'POST', headers: H, body: JSON.stringify({ p_id: id, p_slug: slug, p_key: key })
+        }).then(function (r) { if (!r.ok) throw new Error(); loadList(); })
+          .catch(function () { btn.disabled = false; btn.innerHTML = '&times;'; msg('Couldn’t remove that — try again.', 'err'); });
+      }
+
+      function buildAddRows(n) {
+        var host = $('songs'); host.innerHTML = '';
+        for (var i = 0; i < n; i++) addRow(i === 0);
+      }
+      function addRow(first) {
+        var host = $('songs');
+        var idx = host.children.length + 1;
+        var row = document.createElement('div'); row.className = 'songrow';
+        row.innerHTML = '<span class="n">' + idx + '</span>';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'song';
+        inp.placeholder = first ? 'Song name — artist' : 'Another song';
+        row.appendChild(inp); host.appendChild(row);
+      }
+
+      function msg(t, cls) { var m = $('msg'); m.textContent = t; m.className = 'msg ' + cls; }
+
+      $('addmore').addEventListener('click', function () { addRow(false); });
+
+      $('f').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if ($('company').value) return; // honeypot
+        var songs = [].slice.call(document.querySelectorAll('.song'))
+          .map(function (s) { return s.value.trim(); }).filter(Boolean);
+        if (!songs.length) return msg('Add at least one song.', 'err');
+
+        var rows = songs.map(function (song) {
+          return { couple_slug: slug, guest_name: (who || 'Couple') + ' (couple)', guest_email: null, song: song, owner_key: key, sub_event: fn || null };
+        });
+
+        var go = $('go'); go.disabled = true; go.innerHTML = '<span class="spin"></span> Adding…';
+        fetch(SUPABASE_URL + '/rest/v1/song_requests', {
+          method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(rows)
+        }).then(function (r) {
+          if (!r.ok) throw new Error(String(r.status));
+          go.disabled = false; go.textContent = 'Add to my list';
+          buildAddRows(3);
+          msg(rows.length === 1 ? 'Added ✓' : rows.length + ' songs added ✓', 'ok');
+          setTimeout(function () { $('msg').className = 'msg'; }, 2600);
+          loadList();
+        }).catch(function () {
+          go.disabled = false; go.textContent = 'Add to my list';
+          msg('Couldn’t save — check your connection and try again.', 'err');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

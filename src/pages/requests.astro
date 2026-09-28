@@ -80,7 +80,7 @@ const CAP = 3;
     <div id="thanks" class="state hidden">
       <div class="tick">✓</div>
       <div class="big">Request received</div>
-      <p id="thanks-sub">Thank you! VIC will weave your picks into the night.</p>
+      <p id="thanks-sub">Thank you! We’ll weave your picks into the night.</p>
     </div>
 
     <!-- form -->
@@ -90,7 +90,7 @@ const CAP = 3;
         <div class="names" id="names">—</div>
         <div class="occ">on their wedding day</div>
       </header>
-      <p class="intro">Help build the soundtrack. Drop up to <b id="cap-n">3</b> songs you’d love to hear — VIC takes it from there.</p>
+      <p class="intro">Help build the soundtrack. Drop up to <b id="cap-n">3</b> songs you’d love to hear — we’ll curate the track list from there.</p>
 
       <div id="msg" class="msg"></div>
 
@@ -174,7 +174,7 @@ const CAP = 3;
         }).then(function (r) {
           if (!r.ok) throw new Error(String(r.status));
           localStorage.setItem(LSKEY, String(sent() + rows.length));
-          $('thanks-sub').textContent = 'Thank you, ' + name.split(' ')[0] + '! ' + (rows.length === 1 ? 'Your song is' : 'Your ' + rows.length + ' songs are') + ' in — VIC will weave them into the night.';
+          $('thanks-sub').textContent = 'Thank you, ' + name.split(' ')[0] + '! ' + (rows.length === 1 ? 'Your song is' : 'Your ' + rows.length + ' songs are') + ' in — we’ll weave them into the night.';
           show('thanks');
         }).catch(function () {
           go.disabled = false; go.textContent = 'Send my requests';

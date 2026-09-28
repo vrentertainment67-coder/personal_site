@@ -4600,6 +4600,7 @@ function RequestsAdmin({ showToast }) {
                         <div style={{ fontSize: 14, color: "#e8e8e0" }}>{r.song}</div>
                         <p className="req-meta" style={{ margin: "2px 0 0" }}>
                           <span>{r.guest_name}</span>
+                          {r.sub_event && <span style={{ color: "#e0b13c", fontWeight: 600 }}>{r.sub_event}</span>}
                           {r.guest_email && <span>{r.guest_email}</span>}
                           <span>{MONTHS[t.getMonth()]} {t.getDate()}, {pad(t.getHours())}:{pad(t.getMinutes())}</span>
                         </p>
