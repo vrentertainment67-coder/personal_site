@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '11', slug: 'ep11', icon: '🎬', file: '/TheRider-Ep11-OpeningManual.pdf',
+    title: 'The First Three Tracks',
+    kicker: 'The Opening Manual',
+    sub: 'The crowd remembers the start, not the peak. The cognitive science of why your opening is what sticks, what four touring DJs actually do to plan theirs, and the specific job of each of your first three tracks.',
+    inside: [
+      'The science — why the primacy effect means your opening, not your peak, is what the room remembers',
+      'What four internationally-touring DJs actually do to prep an opening — from Pioneer DJ’s 2026 interviews',
+      'The three-track framework — the specific job of the Introduction, the Proposition and the Commitment',
+      'The opening planning worksheet — decide the shape of your next opening before you’re in the booth',
+      'The audit worksheet + openers by context — fix the opening you’ve been playing, by slot and room type',
+    ],
+  },
+  {
     no: '10', slug: 'ep10', icon: '💪', file: '/TheRider-Ep10-BodyWorkingManual.pdf',
     title: 'DJing At 40',
     kicker: 'The Working Manual',
