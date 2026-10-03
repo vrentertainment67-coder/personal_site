@@ -6,6 +6,15 @@ name: Portfolio desk — check
 # need no secrets at all.
 
 on:
+  # A push to the working branch runs the desk for real, so the dashboard can be
+  # seen with live data before anything is merged. It commits the built page
+  # back with "[desk]" in the message, and skips itself on that commit.
+  push:
+    branches:
+      - "claude/**"
+    paths-ignore:
+      - "portfolio-desk/site/**"
+      - "portfolio-desk/data/**"
   workflow_dispatch:
     inputs:
       task:
@@ -24,8 +33,11 @@ defaults:
 
 jobs:
   check:
+    if: "!contains(github.event.head_commit.message, '[desk]')"
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
     env:
       TZ: Asia/Kolkata
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -48,20 +60,37 @@ jobs:
 
       - name: Run
         id: run
+        env:
+          TASK: ${{ inputs.task || 'dry-run-no-brief' }}
         run: |
           set -o pipefail
-          case "${{ inputs.task }}" in
+          case "$TASK" in
             verify-symbols)    python -m desk verify-symbols --json-out verify.json | tee out.txt ;;
             holidays)          python -m desk holidays --refresh | tee out.txt ;;
             dry-run)           python -m desk run --dry-run --force | tee out.txt ;;
             dry-run-no-brief)  python -m desk run --dry-run --no-brief --force | tee out.txt ;;
           esac
 
+      - name: Also verify the tickers
+        if: github.event_name == 'push'
+        continue-on-error: true
+        run: python -m desk verify-symbols --json-out verify.json | tee verify.txt
+
+      - name: Commit the built page back
+        if: github.event_name == 'push'
+        continue-on-error: true
+        run: |
+          git config user.name "portfolio-desk"
+          git config user.email "noreply@github.com"
+          git add -A site data verify.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "[desk] live build $(date +%F\ %H:%M)"
+          git push
+
       - name: Report
         if: always()
         run: |
           {
-            echo "## ${{ inputs.task }}"
+            echo "## ${{ inputs.task || 'dry-run-no-brief' }}"
             echo '```'
             cat out.txt 2>/dev/null || echo "(no output — see the step log)"
             echo '```'
@@ -71,9 +100,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: desk-${{ inputs.task }}
+          name: desk-${{ inputs.task || 'push' }}
           path: |
             portfolio-desk/out.txt
+            portfolio-desk/verify.txt
             portfolio-desk/verify.json
             portfolio-desk/site/index.html
             portfolio-desk/data/nse-holidays-*.json
