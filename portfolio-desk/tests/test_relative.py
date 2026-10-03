@@ -80,3 +80,21 @@ def test_the_holdings_file_sectors_are_mostly_mapped():
     assert unmapped <= {
         "Conglomerate", "Consumer Tech", "Telecom", "Textiles & Apparel", "Unlisted",
     }, f"unexpected unmapped sectors: {unmapped}"
+
+
+def test_a_mapped_index_with_too_little_history_says_so():
+    """Not the same as having no index at all, and the sentence must not claim it is."""
+    rel = compare("MARUTI", "Auto", series(17000, 11386), {
+        "NIFTY AUTO": [100, 101, 102],       # far too short for the 3m window
+        "NIFTY 50": series(24000, 24800),
+    })
+    assert rel.mapped_index == "NIFTY AUTO"
+    assert rel.sector_index is None
+    assert "NIFTY AUTO had too little history" in rel.sentence()
+    assert "no sector index" not in rel.sentence()
+
+
+def test_a_sector_with_no_mapping_still_says_no_sector_index():
+    rel = compare("X", "Consumer Tech", series(100, 120), {"NIFTY 50": series(100, 110)})
+    assert rel.mapped_index is None
+    assert "no sector index for Consumer Tech" in rel.sentence()

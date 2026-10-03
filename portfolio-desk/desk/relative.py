@@ -41,10 +41,11 @@ MARKET = "NIFTY 50"
 class Relative:
     symbol: str
     sector: str
-    sector_index: str | None
+    sector_index: str | None           # the index used, when it had enough history
     stock: dict[str, float]            # window -> return %
     sector_returns: dict[str, float]
     market_returns: dict[str, float]
+    mapped_index: str | None = None    # what the sector maps to, used or not
 
     def vs_sector(self, window: str = "3m") -> float | None:
         if window not in self.stock or window not in self.sector_returns:
@@ -91,9 +92,14 @@ class Relative:
                 f"{sector_3m:+.0f}% ({gap:+.0f}% relative){tail}"
             )
         if market_3m is not None:
+            why = (
+                f"{self.mapped_index} had too little history"
+                if self.mapped_index
+                else f"no sector index for {self.sector}"
+            )
             return (
                 f"{stock_3m:+.0f}% over 3 months against the Nifty {market_3m:+.0f}% "
-                f"({stock_3m - market_3m:+.0f}% relative); no sector index for {self.sector}"
+                f"({stock_3m - market_3m:+.0f}% relative); {why}"
             )
         return f"{stock_3m:+.0f}% over 3 months"
 
@@ -122,10 +128,13 @@ def compare(
         return None
     index_name = SECTOR_INDEX.get(sector)
     sector_series = index_closes.get(index_name or "", [])
+    # The index counts as usable only when it covers the comparison window.
+    usable = bool(returns(sector_series))
     return Relative(
         symbol=symbol,
         sector=sector,
-        sector_index=index_name if sector_series else None,
+        sector_index=index_name if usable else None,
+        mapped_index=index_name,
         stock=stock,
         sector_returns=returns(sector_series) if sector_series else {},
         market_returns=returns(index_closes.get(MARKET, [])),
