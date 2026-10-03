@@ -314,7 +314,8 @@ def portfolio_signals(analytics: Analytics) -> list[PortfolioSignal]:
     if analytics.unpriced:
         out.append(
             PortfolioSignal(
-                f"{len(analytics.unpriced)} holdings have no price",
+                f"{len(analytics.unpriced)} holding"
+                f"{'s' if len(analytics.unpriced) != 1 else ''} with no price",
                 ", ".join(p.name for p in analytics.unpriced) + " — excluded from every total.",
                 "warn",
             )

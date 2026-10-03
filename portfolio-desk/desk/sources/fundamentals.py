@@ -37,7 +37,7 @@ class Fundamentals:
     roe_pct: float | None = None
     operating_margin_pct: float | None = None
     profit_margin_pct: float | None = None
-    debt_to_equity: float | None = None
+    debt_to_equity: float | None = None      # a ratio: 0.11 means 11 paise of debt per rupee of equity
     revenue_growth_pct: float | None = None
     earnings_growth_pct: float | None = None
     target_mean: float | None = None
@@ -138,9 +138,11 @@ def _parse(symbol: str, result: dict[str, Any]) -> Fundamentals:
         roe_pct=_pct(financial.get("returnOnEquity")),
         operating_margin_pct=_pct(financial.get("operatingMargins")),
         profit_margin_pct=_pct(financial.get("profitMargins")),
-        debt_to_equity=_raw(financial.get("debtToEquity")),
-        revenue_growth_pct=_pct(financial.get("revenueGrowth")),
-        earnings_growth_pct=_pct(financial.get("earningsGrowth")),
+        # Yahoo reports this as a percentage (11 means 0.11x). Storing it raw
+        # made Coal India look eleven times levered instead of barely levered.
+        debt_to_equity=_ratio(financial.get("debtToEquity")),
+        revenue_growth_pct=_sane_growth(_pct(financial.get("revenueGrowth"))),
+        earnings_growth_pct=_sane_growth(_pct(financial.get("earningsGrowth"))),
         target_mean=_raw(financial.get("targetMeanPrice")),
         recommendation=financial.get("recommendationKey") or None,
         analyst_count=_int(financial.get("numberOfAnalystOpinions")),
@@ -161,6 +163,24 @@ def _pct(field: Any) -> float | None:
     """Ratios arrive as fractions; report them as percentages."""
     value = _raw(field)
     return None if value is None else value * 100
+
+
+def _ratio(field: Any) -> float | None:
+    """debtToEquity arrives as a percentage; return the ratio it means."""
+    value = _raw(field)
+    return None if value is None else value / 100
+
+
+# A quarter can genuinely swing, but a reported move beyond this is far more
+# often a Yahoo artefact (a restated base, a merger) than a real figure, and it
+# would otherwise drive the quality score on its own.
+GROWTH_SANITY_PCT = 100.0
+
+
+def _sane_growth(value: float | None) -> float | None:
+    if value is None or abs(value) > GROWTH_SANITY_PCT:
+        return None
+    return value
 
 
 def _int(field: Any) -> int | None:

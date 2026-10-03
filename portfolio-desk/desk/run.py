@@ -316,7 +316,7 @@ def _news_for(
     out: dict[str, list[dict[str, Any]]] = {}
     for symbol, name in wanted[:NEWS_LIMIT]:
         try:
-            headlines = client.for_company(name)
+            headlines = client.for_company(name, symbol=symbol)
         except SourceUnavailable as exc:
             market.statuses.append(SourceStatus("news", "failed", exc.detail))
             return out

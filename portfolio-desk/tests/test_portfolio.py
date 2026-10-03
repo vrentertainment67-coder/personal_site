@@ -145,3 +145,15 @@ def test_losers_lists_drawdowns_worst_first():
         market({"ASIANTILES": 48.06, "AWL": 175.80, "RELIANCE": 1167.70}),
     )
     assert [p.name for p in a.losers] == ["Asian Granito", "Adani Wilmar"]
+
+
+def test_a_huge_return_is_shown_as_a_multiple_not_a_percentage():
+    """"+63,416%" is unreadable; "634x" is not."""
+    from desk.format import multiple
+
+    # +63,416% means the holding is worth 635 times what it cost, not 634.
+    assert multiple(63416.0) == "635x"
+    assert multiple(900.0) == "+900.0%"      # below the threshold, still a percentage
+    assert multiple(237.0) == "+237.0%"
+    assert multiple(-36.0) == "-36.0%"
+    assert multiple(None) == "—"

@@ -56,5 +56,17 @@ def pct(value: float | None, decimals: int = 1, *, signed: bool = True) -> str:
     return f"{sign}{value:.{decimals}f}%"
 
 
+def multiple(value: float | None, decimals: int = 1) -> str:
+    """A return big enough to lose its meaning as a percentage, as a multiple.
+
+    +63,416% is unreadable; 634x is not.
+    """
+    if value is None:
+        return DASH
+    if abs(value) < 1000:
+        return pct(value, decimals)
+    return f"{value / 100 + 1:,.0f}x"
+
+
 def qty(value: float) -> str:
     return group(value, 0)

@@ -21,6 +21,11 @@ STOCK_TOLERANCE_PCT = 0.75
 SWING_LOOKBACK = 60
 SWING_STRENGTH = 2
 
+# A "resistance 0.0% above" is the pivot landing on the close — true, and
+# useless. The nearest zones must be far enough away to be ahead of price.
+INDEX_MIN_DISTANCE_PCT = 0.25
+STOCK_MIN_DISTANCE_PCT = 0.75
+
 
 @dataclass(frozen=True)
 class Bar:
@@ -140,6 +145,7 @@ class LevelSet:
     prev_week_low: float | None = None
     swing_highs: list[float] = field(default_factory=list)
     swing_lows: list[float] = field(default_factory=list)
+    min_distance_pct: float = STOCK_MIN_DISTANCE_PCT
     oi_support: float | None = None
     oi_resistance: float | None = None
     pcr: float | None = None
@@ -168,12 +174,19 @@ class LevelSet:
             return None
         return (self.last / self.week_52_low - 1) * 100
 
-    def supports(self, limit: int = 3) -> list[Zone]:
+    def _far_enough(self, zone: Zone) -> bool:
+        return abs(zone.distance_pct(self.last)) >= self.min_distance_pct
+
+    def supports(self, limit: int = 3, *, all_zones: bool = False) -> list[Zone]:
         rows = [z for z in self.zones if z.side == "support"]
+        if not all_zones:
+            rows = [z for z in rows if self._far_enough(z)]
         return sorted(rows, key=lambda z: self.last - z.center)[:limit]
 
-    def resistances(self, limit: int = 3) -> list[Zone]:
+    def resistances(self, limit: int = 3, *, all_zones: bool = False) -> list[Zone]:
         rows = [z for z in self.zones if z.side == "resistance"]
+        if not all_zones:
+            rows = [z for z in rows if self._far_enough(z)]
         return sorted(rows, key=lambda z: z.center - self.last)[:limit]
 
     def nearest_support(self) -> Zone | None:
@@ -343,6 +356,7 @@ def build(
     level_set = LevelSet(
         symbol=symbol,
         last=last_price,
+        min_distance_pct=INDEX_MIN_DISTANCE_PCT if is_index else STOCK_MIN_DISTANCE_PCT,
         prev_close=prev_close,
         pivots=classic_pivots(previous.high, previous.low, previous.close),
         cpr=central_pivot_range(previous.high, previous.low, previous.close),

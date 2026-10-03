@@ -97,7 +97,7 @@ def test_near_support_reports_what_agrees_there():
     series = bars(list(range(100, 360)))
     ls = build("X", series)
     support = ls.nearest_support()
-    ls.last = support.center * 1.002          # just above the zone
+    ls.last = support.center * 1.01           # above the zone, past the 0.75% floor
     signals = [s for s in level_signals(ls) if s.code in {"near_support", "inside_zone"}]
     assert signals
     # The reason names the families that agree, which is what `strength` counts.

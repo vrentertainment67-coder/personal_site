@@ -58,7 +58,7 @@ PB_CHEAP, PB_RICH = 1.5, 8.0
 # Quality bands.
 ROE_GOOD, ROE_POOR = 15.0, 5.0
 MARGIN_GOOD, MARGIN_POOR = 20.0, 5.0
-DEBT_HEAVY = 150.0        # debt/equity, as Yahoo reports it (percentage points)
+DEBT_HEAVY = 1.5          # debt/equity ratio at which leverage weighs on the score
 
 # Earnings inside this many days make the verdict provisional.
 EARNINGS_SOON_DAYS = 10
@@ -274,7 +274,7 @@ def _quality(fundamentals: Fundamentals | None) -> Factor | None:
     debt = fundamentals.debt_to_equity
     if debt is not None:
         scores.append(max(-1.0, min(1.0, (DEBT_HEAVY - debt) / DEBT_HEAVY)))
-        parts.append(f"debt/equity {debt:.0f}")
+        parts.append(f"debt/equity {debt:.2f}")
 
     growth = fundamentals.revenue_growth_pct
     if growth is not None:

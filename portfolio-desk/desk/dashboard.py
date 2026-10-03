@@ -15,8 +15,8 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import config
-from .format import DASH, compact, pct, qty, rupees
+from . import charts, config
+from .format import DASH, compact, multiple, pct, qty, rupees
 from .holdings import Portfolio, summarize
 from .market import MarketData
 from .portfolio import Analytics, Position
@@ -36,8 +36,21 @@ class BuildResult:
     archive_path: Path
 
 
-def _row(position: Position, analytics: Analytics) -> dict[str, Any]:
+def _row(
+    position: Position,
+    analytics: Analytics,
+    closes: dict[str, list[float]] | None = None,
+    levels: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     weight = analytics.weight_pct(position)
+    symbol = position.symbol or ""
+    spark = charts.sparkline((closes or {}).get(symbol, []))
+    level_set = (levels or {}).get(symbol)
+    range_pct = (
+        charts.range_position(position.last, level_set.week_52_low, level_set.week_52_high)
+        if level_set is not None and position.last is not None
+        else None
+    )
     return {
         "name": position.name,
         "sym": position.symbol or DASH,
@@ -55,20 +68,35 @@ def _row(position: Position, analytics: Analytics) -> dict[str, Any]:
         "unreal": position.unrealised,
         "unreal_txt": rupees(position.unrealised),
         "ret": position.return_pct,
-        "ret_txt": pct(position.return_pct),
+        "ret_txt": multiple(position.return_pct),
         "tier": position.price_tier,
         "no_cost": position.avg_cost is None,
         "unlisted": not position.holding.is_listed,
         "unpriced": position.value is None,
         "guessed": position.holding.verify_symbol,
+        "spark": (
+            {"points": spark.points, "x": spark.last_x, "y": spark.last_y,
+             "rising": spark.rising}
+            if spark else None
+        ),
+        "range_pct": range_pct,
+        "range_txt": (
+            f"{range_pct:.0f}% up its 52-week range "
+            f"({rupees(level_set.week_52_low)}–{rupees(level_set.week_52_high)})"
+            if range_pct is not None and level_set is not None else ""
+        ),
     }
 
 
 def _flags(
-    analytics: Analytics, portfolio: Portfolio, *, skip_concentration: bool = False
+    analytics: Analytics,
+    portfolio: Portfolio,
+    *,
+    skip_concentration: bool = False,
+    skip_unpriced: bool = False,
 ) -> list[dict[str, str]]:
-    """Panel items. `skip_concentration` avoids repeating what the signal
-    engine already says when a full run supplied portfolio notes."""
+    """Panel items. The skip flags avoid repeating, word for word, what the
+    signal engine already said in the notes above this panel."""
     flags: list[dict[str, str]] = []
     conc = analytics.concentration
 
@@ -106,7 +134,7 @@ def _flags(
         body = ", ".join(f"{p.name} {pct(p.return_pct)}" for p in losers)
         flags.append({"tone": "loss", "title": "Down more than 20%", "body": body + "."})
 
-    if analytics.unpriced:
+    if analytics.unpriced and not skip_unpriced:
         names = ", ".join(
             f"{p.name} ({'unlisted' if not p.holding.is_listed else 'no price'})"
             for p in analytics.unpriced
@@ -114,7 +142,10 @@ def _flags(
         flags.append(
             {
                 "tone": "warn",
-                "title": f"{len(analytics.unpriced)} holdings have no price",
+                "title": (
+                    f"{len(analytics.unpriced)} holding"
+                    f"{'s' if len(analytics.unpriced) != 1 else ''} with no price"
+                ),
                 "body": f"{names}. They are excluded from the total value and from every weight.",
             }
         )
@@ -191,7 +222,7 @@ def _ratings(run: Any) -> list[dict[str, Any]]:
             if f.operating_margin_pct is not None:
                 facts.append(f"op margin {f.operating_margin_pct:.0f}%")
             if f.debt_to_equity is not None:
-                facts.append(f"D/E {f.debt_to_equity:.0f}")
+                facts.append(f"D/E {f.debt_to_equity:.2f}")
             if f.dividend_yield_pct:
                 facts.append(f"yield {f.dividend_yield_pct:.1f}%")
             if f.earnings_date:
@@ -241,7 +272,9 @@ def build_context(
 ) -> dict[str, Any]:
     today = date.today()
     conc = analytics.concentration
-    rows = [_row(p, analytics) for p in analytics.positions]
+    run_closes = getattr(run, "closes", {}) or {}
+    run_levels = getattr(run, "levels", {}) or {}
+    rows = [_row(p, analytics, run_closes, run_levels) for p in analytics.positions]
     priced_rows = sorted(
         (r for r in rows if r["value"] is not None), key=lambda r: r["value"], reverse=True
     )
@@ -297,10 +330,10 @@ def build_context(
         tiles.insert(
             1,
             {
-                "label": "Today",
+                "label": "Today" if price_as_of == today.isoformat() else "Last session",
                 "value": compact(analytics.day_change_value),
                 "tone": _tone(analytics.day_change_value),
-                "note": "change since the previous close",
+                "note": f"change on {price_as_of} against the close before it",
             },
         )
 
@@ -310,6 +343,9 @@ def build_context(
     index_cards = _index_cards(run)
     watchlist = _watchlist(run)
     ratings = _ratings(run)
+    rating_objects = list(getattr(run, "ratings", []))
+    dots = charts.scatter(rating_objects)
+    bands = charts.value_by_verdict(rating_objects, analytics.total_value)
     rating_tally: dict[str, int] = {}
     for row in ratings:
         rating_tally[row["verdict"]] = rating_tally.get(row["verdict"], 0) + 1
@@ -416,7 +452,11 @@ def build_context(
             }
             for s in analytics.sectors
         ],
-        "flags": _flags(analytics, portfolio, skip_concentration=bool(portfolio_notes)),
+        "flags": _flags(
+            analytics, portfolio,
+            skip_concentration=bool(portfolio_notes),
+            skip_unpriced=any("no price" in n["headline"] for n in portfolio_notes),
+        ),
         "rows": rows,
         # `</` would end the <script> element early; escape it for the embed.
         "rows_json": json.dumps(rows, ensure_ascii=False).replace("</", "<\\/"),
@@ -432,6 +472,17 @@ def build_context(
         "rating_tally": rating_tally,
         "calls": calls,
         "no_rating": no_rating,
+        "scatter": [
+            {"name": d.name, "symbol": d.symbol, "x": d.x, "y": d.y, "tone": d.tone,
+             "shape": d.shape, "verdict": d.verdict, "label": d.label, "title": d.title}
+            for d in dots
+        ],
+        "bands": [
+            {"verdict": b.verdict, "tone": b.tone, "value": compact(b.value),
+             "share": b.share_pct, "share_txt": pct(b.share_pct, 0, signed=False),
+             "count": b.count}
+            for b in bands
+        ],
         "portfolio_notes": portfolio_notes,
         "brief": brief_block,  # None when the run did not generate one
         "news": news_rows,

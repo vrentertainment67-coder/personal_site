@@ -84,6 +84,37 @@ h2{font-size:19px;font-weight:600;margin:36px 0 12px}
 .tabs button:focus-visible{outline:2px solid var(--mari);outline-offset:-2px}
 .tabs span{margin-left:auto;align-self:center;color:var(--mute);font-size:12.5px}
 [role="tabpanel"][hidden]{display:none}
+/* Money behind each verdict. Position and the written label carry the meaning;
+   colour only reinforces it. */
+.bands{display:flex;height:40px;border-radius:6px;overflow:hidden;background:var(--line);margin:0 0 6px}
+.bands div{height:100%;border-right:2px solid var(--bg);display:flex;align-items:center;padding:0 10px;min-width:3px;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden}
+.bands div:last-child{border-right:0}
+.bands .good{background:color-mix(in srgb,var(--gain) 22%,var(--panel));color:var(--ink)}
+.bands .bad{background:color-mix(in srgb,var(--loss) 22%,var(--panel));color:var(--ink)}
+.bands .neutral{background:var(--panel);color:var(--mute)}
+.bands .warn{background:var(--mari-soft);color:var(--ink)}
+.bandnote{display:flex;justify-content:space-between;gap:12px;color:var(--mute);font-size:12px;margin:0 0 22px}
+/* Valuation against trend. */
+.plot{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:12px}
+.plot h3{margin:0 0 2px;font-size:15px;font-weight:600}
+.plot p.sub{margin:0 0 10px;color:var(--mute);font-size:13px}
+.plot svg{width:100%;height:auto;display:block;overflow:visible}
+.plot .axis{stroke:var(--line);stroke-width:1}
+.plot .quad{fill:var(--mute);opacity:.55;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase}
+.plot .mark{stroke:var(--panel);stroke-width:1.5}
+.plot .mark.good{fill:var(--gain)}
+.plot .mark.bad{fill:var(--loss)}
+.plot .mark.neutral{fill:var(--mute)}
+.plot .dotlabel{fill:var(--ink);font-size:9.5px}
+.plot .axname{fill:var(--mute);font-size:10px}
+.key{display:flex;gap:16px;flex-wrap:wrap;color:var(--mute);font-size:12.5px;margin-top:8px}
+.key span{display:flex;align-items:center;gap:6px}
+.key svg{width:12px;height:12px;overflow:visible}
+.spark{width:72px;height:20px;display:block}
+.spark polyline{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.spark circle{fill:var(--ink)}
+.rangebar{width:64px;height:6px;background:var(--line);border-radius:3px;position:relative;display:inline-block;vertical-align:middle}
+.rangebar i{position:absolute;top:-2px;width:2px;height:10px;background:var(--ink);border-radius:1px}
 .calls{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px}
 @media(max-width:760px){.calls{grid-template-columns:1fr}}
 .call{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--mute);border-radius:8px;padding:16px 18px 10px}
@@ -186,6 +217,15 @@ footer p{margin:0 0 8px}
 
 <section role="tabpanel" id="panel-calls" aria-labelledby="tab-calls">
 {% if calls and ratings %}
+{% if bands %}
+<div class="bands" role="img" aria-label="Portfolio value by call: {% for b in bands %}{{ b.verdict }} {{ b.share_txt }}{{ ", " if not loop.last }}{% endfor %}">
+{% for b in bands %}
+ <div class="{{ b.tone }}" style="width:{{ '%.2f'|format(b.share) }}%" title="{{ b.verdict }}: {{ b.value }} across {{ b.count }} holding{{ 's' if b.count != 1 }}">{% if b.share >= 8 %}{{ b.verdict }} {{ b.share_txt }}{% endif %}</div>
+{% endfor %}
+</div>
+<p class="bandnote"><span>Share of portfolio value behind each call{% for b in bands %}{% if b.share < 8 %} · {{ b.verdict }} {{ b.share_txt }} ({{ b.value }}){% endif %}{% endfor %}</span><span>{{ row_count }} holdings</span></p>
+{% endif %}
+
 <div class="calls">
 {% for c in calls %}
  <div class="call {{ c.tone }}">
@@ -202,6 +242,46 @@ footer p{margin:0 0 8px}
  </div>
 {% endfor %}
 </div>
+{% if scatter %}
+<div class="plot">
+ <h3>Valuation against trend</h3>
+ <p class="sub">Each holding placed by what the scorecard found: how it is trading (left to right) and how it is priced (bottom to top). Shape carries the call, so it reads without colour.</p>
+ <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet" role="img"
+      aria-label="Scatter of holdings by trend and valuation. {% for d in scatter %}{{ d.name }} {{ d.verdict }}. {% endfor %}">
+  <line class="axis" x1="160" y1="14" x2="160" y2="178"></line>
+  <line class="axis" x1="18" y1="96" x2="302" y2="96"></line>
+  <text class="quad" x="26" y="26">cheap, falling</text>
+  <text class="quad" x="294" y="26" text-anchor="end">cheap, rising</text>
+  <text class="quad" x="26" y="172">dear, falling</text>
+  <text class="quad" x="294" y="172" text-anchor="end">dear, rising</text>
+  <text class="axname" x="160" y="194" text-anchor="middle">trend →</text>
+  <text class="axname" x="10" y="96" text-anchor="middle" transform="rotate(-90 10 96)">valuation →</text>
+{% for d in scatter %}
+{% set cx = 24 + d.x * 2.72 %}
+{% set cy = 172 - d.y * 1.56 %}
+  <g class="mark {{ d.tone }}"><title>{{ d.title }}</title>
+{% if d.shape == 'up' %}
+   <polygon points="{{ '%.1f'|format(cx) }},{{ '%.1f'|format(cy - 5) }} {{ '%.1f'|format(cx - 4.5) }},{{ '%.1f'|format(cy + 3.5) }} {{ '%.1f'|format(cx + 4.5) }},{{ '%.1f'|format(cy + 3.5) }}"></polygon>
+{% elif d.shape == 'down' %}
+   <polygon points="{{ '%.1f'|format(cx) }},{{ '%.1f'|format(cy + 5) }} {{ '%.1f'|format(cx - 4.5) }},{{ '%.1f'|format(cy - 3.5) }} {{ '%.1f'|format(cx + 4.5) }},{{ '%.1f'|format(cy - 3.5) }}"></polygon>
+{% else %}
+   <circle cx="{{ '%.1f'|format(cx) }}" cy="{{ '%.1f'|format(cy) }}" r="4"></circle>
+{% endif %}
+  </g>
+{% if d.label %}
+  <text class="dotlabel" x="{{ '%.1f'|format(cx + 7) }}" y="{{ '%.1f'|format(cy + 3) }}">{{ d.symbol }}</text>
+{% endif %}
+{% endfor %}
+ </svg>
+ <p class="key">
+  <span><svg viewBox="0 0 12 12"><polygon points="6,1 1,10 11,10" fill="var(--gain)"/></svg> Buy</span>
+  <span><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="var(--mute)"/></svg> Keep</span>
+  <span><svg viewBox="0 0 12 12"><polygon points="6,11 1,2 11,2" fill="var(--loss)"/></svg> Sell</span>
+  <span>Holdings with no published valuation are not plotted.</span>
+ </p>
+</div>
+{% endif %}
+
 {% if no_rating %}
 <p class="unrated">Not rated: {% for n in no_rating %}{{ n.name }} — {{ n.why }}{{ "; " if not loop.last }}{% endfor %}</p>
 {% endif %}
@@ -360,6 +440,8 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 <th data-k="qty" tabindex="0">Qty</th>
 <th data-k="avg" tabindex="0">Avg cost</th>
 <th data-k="price" tabindex="0">Price</th>
+<th>Year</th>
+<th data-k="range_pct" tabindex="0">In range</th>
 <th data-k="value" tabindex="0" aria-sort="descending">Value</th>
 <th data-k="weight" tabindex="0">Weight</th>
 <th data-k="unreal" tabindex="0">Unrealised P/L</th>
@@ -428,6 +510,17 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 <script>
 const D = JSON.parse(document.getElementById("rows").textContent);
 const cls = n => n == null ? "na" : n >= 0 ? "g" : "l";
+
+// A year of closes per row, and where price sits in its 52-week range. Both are
+// single-series marks in muted ink — no colour to decode.
+const spark = d => d.spark
+  ? `<svg class="spark" viewBox="0 0 72 20" aria-hidden="true"><polyline points="${d.spark.points}"/>`
+    + `<circle cx="${d.spark.x}" cy="${d.spark.y}" r="1.8"/></svg>`
+  : `<span class="na">—</span>`;
+
+const rangeBar = d => d.range_pct == null
+  ? `<span class="na">—</span>`
+  : `<span class="rangebar" title="${d.range_txt}"><i style="left:${d.range_pct}%"></i></span>`;
 const tierTag = { snapshot: "last close", none: "no price" };
 let key = "value", asc = false;
 
@@ -440,6 +533,7 @@ function cell(d) {
   return `<tr>
     <td>${d.name}${tags.map(t => `<span class="tag">${t}</span>`).join("")}<small>${d.sym} · ${d.sector}</small></td>
     <td>${d.qty_txt}</td><td>${d.avg_txt}</td><td>${d.price_txt}</td>
+    <td>${spark(d)}</td><td>${rangeBar(d)}</td>
     <td>${d.value_txt}</td><td>${d.weight_txt}</td>
     <td class="${cls(d.unreal)}">${d.unreal_txt}</td>
     <td class="${cls(d.ret)}">${d.ret_txt}</td></tr>`;
@@ -458,7 +552,7 @@ function render() {
       return asc ? x - y : y - x;
     });
   document.getElementById("tb").innerHTML = rows.map(cell).join("")
-    || `<tr><td colspan="8" class="na">No holding matches that.</td></tr>`;
+    || `<tr><td colspan="10" class="na">No holding matches that.</td></tr>`;
 }
 
 document.querySelectorAll("th").forEach(th => {

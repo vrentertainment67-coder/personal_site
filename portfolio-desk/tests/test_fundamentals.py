@@ -112,3 +112,17 @@ def test_an_html_error_page_is_not_mistaken_for_a_crumb():
                           text="<html>error</html>"))
     c._prime()
     assert c._crumb is None
+
+
+def test_debt_to_equity_is_converted_from_yahoos_percentage():
+    """Regression: "D/E 11" read as 11x when Yahoo meant 0.11x."""
+    f = _parse("COALINDIA", {"financialData": {"debtToEquity": wrapped(11.0)}})
+    assert f.debt_to_equity == pytest.approx(0.11)
+
+
+def test_an_implausible_growth_figure_is_dropped_rather_than_scored():
+    """Petronet came back at -53% one run and +300% the next; past ±100% the
+    number is far more often a Yahoo artefact than a real quarter."""
+    assert _parse("X", {"financialData": {"revenueGrowth": wrapped(3.0)}}).revenue_growth_pct is None
+    assert _parse("X", {"financialData": {"revenueGrowth": wrapped(-1.4)}}).revenue_growth_pct is None
+    assert _parse("X", {"financialData": {"revenueGrowth": wrapped(0.3)}}).revenue_growth_pct == pytest.approx(30)

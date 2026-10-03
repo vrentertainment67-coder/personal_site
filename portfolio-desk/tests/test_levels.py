@@ -198,3 +198,29 @@ def test_a_zone_never_grows_wider_than_its_tolerance():
     for zone in zones:
         assert (zone.high - zone.low) / zone.center * 100 <= 0.75 + 1e-9
     assert len(zones) > 1
+
+
+def test_a_zone_sitting_on_the_close_is_not_the_nearest_level():
+    """Regression: pivots land on the close, so every stock reported a
+    resistance "0.0% below" the price, which is true and useless."""
+    from desk.levels import Zone
+
+    ls = build("X", bars(list(range(100, 360))), last=300)
+    ls.zones = [
+        Zone(low=299.9, high=300.1, center=300.0, methods=("pivot",), side="resistance"),
+        Zone(low=305.0, high=306.0, center=305.5, methods=("R1", "50 DMA"), side="resistance"),
+        Zone(low=299.8, high=299.9, center=299.85, methods=("pivot",), side="support"),
+        Zone(low=292.0, high=293.0, center=292.5, methods=("S1", "prev day low"), side="support"),
+    ]
+    assert [z.center for z in ls.resistances()] == [305.5]
+    assert [z.center for z in ls.supports()] == [292.5]
+    assert ls.nearest_resistance().center == 305.5
+
+    # The filtered-out zones are still available when something wants them all.
+    assert len(ls.resistances(all_zones=True)) == 2
+
+
+def test_indices_use_a_tighter_minimum_than_stocks():
+    index = build("NIFTY", bars(list(range(24000, 24300))), is_index=True)
+    stock = build("STOCK", bars(list(range(100, 400))), is_index=False)
+    assert index.min_distance_pct < stock.min_distance_pct
