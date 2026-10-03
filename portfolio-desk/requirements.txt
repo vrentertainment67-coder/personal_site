@@ -1,0 +1,8 @@
+# Step 1 (holdings + verify-symbols)
+requests>=2.31
+
+# Later steps, added as they land:
+#   yfinance        prices, DMAs, global cues      (step 2)
+#   pandas          OHLC frames for the levels engine (step 3)
+#   jinja2          dashboard template             (step 7)
+#   anthropic       the written brief              (step 6)
