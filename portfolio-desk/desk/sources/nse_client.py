@@ -30,6 +30,9 @@ FII_DII_URL = f"{BASE}/api/fiidiiTradeReact"
 HOLIDAY_URL = f"{BASE}/api/holiday-master"
 OPTION_CHAIN_INDEX_URL = f"{BASE}/api/option-chain-indices"
 OPTION_CHAIN_EQUITY_URL = f"{BASE}/api/option-chain-equities"
+# NSE moved the chain to a versioned endpoint and the old paths now 404, so try
+# the new one first and keep the old as the fallback.
+OPTION_CHAIN_V3_URL = f"{BASE}/api/option-chain-v3"
 
 
 @dataclass(frozen=True)
@@ -150,12 +153,22 @@ class NseClient:
     def option_chain(self, symbol: str, *, is_index: bool) -> tuple[list[dict[str, Any]], str | None]:
         """Chain rows plus the nearest expiry. F&O instruments only."""
         self._prime_session()
-        url = OPTION_CHAIN_INDEX_URL if is_index else OPTION_CHAIN_EQUITY_URL
-        response = self.http.get_json(
-            url, params={"symbol": symbol}, cache_key=f"option-chain-{symbol}"
-        )
-        if not response.ok or not isinstance(response.payload, dict):
-            raise SourceUnavailable(self.source, f"option-chain {symbol}: HTTP {response.status}")
+        attempts = [
+            (OPTION_CHAIN_V3_URL,
+             {"type": "Indices" if is_index else "Equity", "symbol": symbol}),
+            (OPTION_CHAIN_INDEX_URL if is_index else OPTION_CHAIN_EQUITY_URL,
+             {"symbol": symbol}),
+        ]
+        response = None
+        for url, params in attempts:
+            response = self.http.get_json(
+                url, params=params, cache_key=f"option-chain-{symbol}-{url[-12:]}"
+            )
+            if response.ok and isinstance(response.payload, dict):
+                break
+        if response is None or not response.ok or not isinstance(response.payload, dict):
+            status = response.status if response else "no response"
+            raise SourceUnavailable(self.source, f"option-chain {symbol}: HTTP {status}")
         records = response.payload.get("records")
         if not isinstance(records, dict):
             return [], None

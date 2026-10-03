@@ -78,6 +78,22 @@ h2{font-size:19px;font-weight:600;margin:36px 0 12px}
 .watch li.good::before{background:var(--gain)}
 .watch li.bad::before{background:var(--loss)}
 .watch li.warn::before{background:var(--mari)}
+.rate{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.rate>div{padding:13px 16px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:84px 1fr;gap:14px;align-items:start}
+.rate>div:last-child{border-bottom:0}
+.verdict{font-weight:600;font-size:14px;border-radius:6px;padding:5px 0;text-align:center;border:1px solid var(--line)}
+.verdict.good{color:var(--gain);border-color:var(--gain)}
+.verdict.bad{color:var(--loss);border-color:var(--loss)}
+.verdict.neutral{color:var(--mute)}
+.verdict small{display:block;font-weight:400;font-size:11px;color:var(--mute)}
+.rate h3{margin:0;font-size:15px;font-weight:600}
+.rate .sym{color:var(--mute);font-size:12.5px;font-weight:400}
+.rate ul{margin:6px 0 0;padding:0;list-style:none;font-size:13.5px;color:var(--mute)}
+.rate li{padding-left:14px;position:relative;margin:2px 0}
+.rate li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--line)}
+.rate .flip{margin-top:6px;font-size:12.5px}
+.rate .flip span{background:var(--bg);border-radius:4px;padding:2px 7px;margin-right:6px}
+.rate .caveat{color:var(--mari);font-size:12.5px;margin-top:5px}
 .brief{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
 .brief h3{margin:0 0 3px;font-size:14px;font-weight:600}
 .brief p{margin:0 0 14px;font-size:14.5px;line-height:1.6}
@@ -175,6 +191,38 @@ footer p{margin:0 0 8px}
  <p class="by">Written by {{ brief.model }} from the figures on this page. Every number in it was
  checked back against that data before publishing. Reference only, not investment advice.</p>
 </div>
+{% endif %}
+
+{% if ratings %}
+<h2>Buy, keep or sell</h2>
+<p class="banner"><span aria-hidden="true">⚠</span><span><b>This is a scorecard, not advice and not a forecast.</b>
+Each verdict is the weighted sum of the factors listed beside it — trend against the moving
+averages, position in the 52-week range, distance to the nearest levels, volatility, your cost
+and the size of the position. There is no price target and no view on any company's business,
+because the desk holds no data that would support one. "Flips" are the prices at which this same
+scorecard would read differently, solved for, not predicted. Your decision, not its.</span></p>
+<div class="rate">
+{% for r in ratings %}
+ <div>
+  <div class="verdict {{ r.tone }}">{{ r.verdict }}<small>{{ r.score }}</small></div>
+  <div>
+   <h3>{{ r.name }} <span class="sym">{{ r.symbol }} · {{ r.last }} · {{ r.confidence }} scorecard</span></h3>
+   <ul>
+{% for reason in r.reasons %}
+    <li>{{ reason }}</li>
+{% endfor %}
+   </ul>
+{% if r.flips %}
+   <p class="flip">{% for f in r.flips %}<span>{{ f }}</span>{% endfor %}</p>
+{% endif %}
+{% for c in r.caveats %}
+   <p class="caveat">{{ c }}</p>
+{% endfor %}
+  </div>
+ </div>
+{% endfor %}
+</div>
+<p class="legend"><span>{% for verdict, count in rating_tally.items() %}{{ count }} {{ verdict }}{{ ", " if not loop.last }}{% endfor %}</span><span>Same inputs, same verdict, every run.</span></p>
 {% endif %}
 
 {% if indices %}

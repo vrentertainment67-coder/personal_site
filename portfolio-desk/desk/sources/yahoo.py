@@ -105,7 +105,9 @@ class YahooClient:
         payload = response.payload if isinstance(response.payload, dict) else {}
         chart = payload.get("chart") if isinstance(payload.get("chart"), dict) else {}
         results = chart.get("result")
-        if response.status == 404 or not results:
+        if response.status == 404:
+            return []        # Yahoo answered: there is no such ticker.
+        if not results:
             if not response.ok:
                 raise SourceUnavailable(self.source, f"{ticker}: HTTP {response.status}")
             return []

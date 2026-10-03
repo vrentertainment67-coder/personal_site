@@ -36,6 +36,9 @@ SECTOR_INDICES = (
     "NIFTY IT", "NIFTY BANK", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY METAL",
     "NIFTY ENERGY", "NIFTY FMCG", "NIFTY PSU BANK", "NIFTY REALTY",
 )
+# Stop a history sweep only when the source itself has gone away.
+MAX_CONSECUTIVE_FAILURES = 4
+
 GLOBAL_CUES = {
     "S&P 500": "^GSPC", "Nasdaq": "^IXIC", "Dow": "^DJI", "Nikkei": "^N225",
     "Hang Seng": "^HSI", "WTI crude": "CL=F", "Brent": "BZ=F", "Gold": "GC=F",
@@ -171,21 +174,36 @@ def fetch_bars(
     """Daily history per symbol, for the levels engine."""
     client = client or YahooClient()
     bars: dict[str, list[Bar]] = {}
+    empty: list[str] = []
     unreachable = ""
+    consecutive = 0
+
     for symbol, ticker in tickers.items():
         try:
             series = client.history(ticker, period=period)
         except SourceUnavailable as exc:
+            # One bad ticker is not an outage. Give up only when the source
+            # stops answering several times in a row — otherwise a single dead
+            # name silently costs every holding after it its levels.
             unreachable = exc.detail
-            break
+            consecutive += 1
+            if consecutive >= MAX_CONSECUTIVE_FAILURES:
+                break
+            continue
+        consecutive = 0
         if series:
             bars[symbol] = series
-    if unreachable:
-        return bars, SourceStatus("yahoo (history)", "failed", f"unreachable, {unreachable}")
-    return bars, SourceStatus(
-        "yahoo (history)", "ok" if bars else "failed",
-        f"{len(bars)} of {len(tickers)} series",
-    )
+        else:
+            empty.append(symbol)
+
+    detail = f"{len(bars)} of {len(tickers)} series"
+    if empty:
+        detail += f"; no history for {', '.join(empty[:5])}"
+    if consecutive >= MAX_CONSECUTIVE_FAILURES:
+        return bars, SourceStatus(
+            "yahoo (history)", "failed", f"gave up after {consecutive} failures, {unreachable}"
+        )
+    return bars, SourceStatus("yahoo (history)", "ok" if bars else "failed", detail)
 
 
 def fetch_global_cues(client: YahooClient | None = None) -> tuple[list[dict[str, Any]], SourceStatus]:

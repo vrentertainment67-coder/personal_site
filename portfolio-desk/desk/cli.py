@@ -283,6 +283,56 @@ def cmd_verify_symbols(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _print_ratings(ratings) -> None:
+    from .ratings import Verdict
+
+    rows = []
+    for r in ratings:
+        rows.append([
+            r.verdict.value,
+            f"{r.score:+.2f}" if r.verdict is not Verdict.NO_RATING else "—",
+            r.name,
+            r.position.symbol or "—",
+            r.confidence,
+            "; ".join(f"{k} {v:,.2f}" for k, v in r.flip_levels.items()) or "—",
+        ])
+    print(_table(["Verdict", "Score", "Holding", "Symbol", "Scorecard", "Flips"], rows))
+
+    counts: dict[str, int] = {}
+    for r in ratings:
+        counts[r.verdict.value] = counts.get(r.verdict.value, 0) + 1
+    print("\n" + " · ".join(f"{v} {k}" for k, v in counts.items()))
+    print(
+        "\nA scorecard over price history and position size. Not advice, not a forecast: "
+        "no price targets, no view on any company's business."
+    )
+
+
+def cmd_ratings(args: argparse.Namespace) -> int:
+    from . import run as run_mod
+
+    result = run_mod.morning(
+        offline=args.offline, skip_brief=True, force=True, holdings_path=args.file
+    )
+    if not result.ratings:
+        print("No ratings — price history is unavailable, so nothing could be scored.",
+              file=sys.stderr)
+        return EXIT_SOURCES_DOWN
+    _print_ratings(result.ratings)
+    if args.explain:
+        print()
+        for rating in result.ratings:
+            if rating.position.symbol != args.explain.upper() and rating.name != args.explain:
+                continue
+            print(f"{rating.name} — {rating.verdict.value} ({rating.score:+.2f})")
+            for factor in sorted(rating.factors, key=lambda f: -abs(f.contribution)):
+                print(f"  {factor.name:12} {factor.score:+.2f} x {factor.weight:.2f} "
+                      f"= {factor.contribution:+.3f}  {factor.reason}")
+            for caveat in rating.caveats:
+                print(f"  caveat: {caveat}")
+    return EXIT_OK
+
+
 def cmd_dashboard(args: argparse.Namespace) -> int:
     from . import dashboard, market as market_mod
     from .portfolio import analyse
@@ -343,6 +393,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         f"\nValue {compact(analytics.total_value)} · "
         f"unrealised {compact(analytics.unrealised)} on {analytics.measurable} measurable rows"
     )
+    if result.ratings:
+        print()
+        _print_ratings(result.ratings)
+
     if result.watchlist:
         print(f"\nWatchlist ({len(result.watchlist)}):")
         for item in result.watchlist:
@@ -501,6 +555,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--send-dashboard", action="store_true", help="also send the HTML file to Telegram"
     )
     run_parser.set_defaults(func=cmd_run)
+
+    ratings_parser = sub.add_parser(
+        "ratings", help="buy/keep/sell scorecard for every holding"
+    )
+    ratings_parser.add_argument("--offline", action="store_true")
+    ratings_parser.add_argument(
+        "--explain", metavar="SYMBOL", help="show the factor arithmetic for one holding"
+    )
+    ratings_parser.set_defaults(func=cmd_ratings)
 
     holidays_parser = sub.add_parser("holidays", help="show or refresh the NSE holiday list")
     holidays_parser.add_argument("--refresh", action="store_true", help="fetch from NSE and cache")

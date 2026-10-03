@@ -173,3 +173,65 @@ def test_the_days_levels_are_written_for_later_checking(tmp_path, monkeypatch):
     nifty = payload["instruments"]["NIFTY 50"]
     assert nifty["pcr"] == 1.08 and nifty["zones"]
     assert nifty["cpr"]["shape"] in {"narrow", "average", "wide"}
+
+
+# ------------------------------------------------- source-sweep robustness
+
+
+class _Yahoo:
+    """History for some tickers, 404 for others, outage for the rest."""
+
+    source = "yahoo"
+
+    def __init__(self, series, dead=(), down=()):
+        self.series, self.dead, self.down = series, set(dead), set(down)
+        self.asked = []
+
+    def history(self, ticker, period="1y"):
+        from desk.sources.http import SourceUnavailable
+
+        self.asked.append(ticker)
+        if ticker in self.down:
+            raise SourceUnavailable("yahoo", "connection reset")
+        if ticker in self.dead:
+            return []                     # Yahoo answered: no such ticker
+        return self.series
+
+
+def test_one_dead_ticker_does_not_cost_every_later_holding_its_history():
+    """Regression: the sweep aborted on the first failure, so LML.NS silently
+    took the 17 names after it with it."""
+    from desk import market as market_mod
+
+    tickers = {"A": "A.NS", "DEAD": "DEAD.NS", "B": "B.NS", "C": "C.NS"}
+    client = _Yahoo(bars([100, 101, 102]), dead={"DEAD.NS"})
+    got, status = market_mod.fetch_bars(tickers, client=client)
+
+    assert set(got) == {"A", "B", "C"}
+    assert client.asked == ["A.NS", "DEAD.NS", "B.NS", "C.NS"]
+    assert status.health == "ok"
+    assert "no history for DEAD" in status.detail
+
+
+def test_the_sweep_gives_up_only_once_the_source_stops_answering():
+    from desk import market as market_mod
+
+    tickers = {chr(65 + i): f"{chr(65 + i)}.NS" for i in range(8)}
+    client = _Yahoo(bars([100, 101]), down={f"{chr(65 + i)}.NS" for i in range(8)})
+    got, status = market_mod.fetch_bars(tickers, client=client)
+
+    assert got == {}
+    assert status.health == "failed"
+    assert len(client.asked) == market_mod.MAX_CONSECUTIVE_FAILURES
+    assert "gave up" in status.detail
+
+
+def test_an_intermittent_failure_does_not_end_the_sweep():
+    from desk import market as market_mod
+
+    tickers = {"A": "A.NS", "X": "X.NS", "B": "B.NS", "Y": "Y.NS", "C": "C.NS"}
+    client = _Yahoo(bars([100, 101]), down={"X.NS", "Y.NS"})
+    got, status = market_mod.fetch_bars(tickers, client=client)
+
+    assert set(got) == {"A", "B", "C"}
+    assert status.health == "ok"

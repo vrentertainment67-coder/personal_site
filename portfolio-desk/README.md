@@ -54,6 +54,34 @@ a 24% holding outranks a 0.2% one on the same news. Zones count agreement by
 "pivot, CPR top, S1" counts as one method agreeing with itself, not three. Only
 the nearest zone each side is reported. Every line carries its reason.
 
+## Buy / keep / sell
+
+`python -m desk ratings` scores every holding and `--explain SYMBOL` shows the
+arithmetic. Six factors, fixed weights, stated thresholds:
+
+| Factor | Weight | What it reads |
+|---|---|---|
+| trend | 0.30 | price against the 20, 50 and 200 DMA |
+| momentum | 0.20 | position inside the 52-week range |
+| levels | 0.15 | distance to the nearest support vs resistance |
+| size | 0.15 | position weight; bites above 10% of the book |
+| volatility | 0.10 | annualised, last 60 sessions |
+| your cost | 0.10 | return against average cost |
+
+Score above +0.30 is Buy, below -0.25 is Sell, between is Keep. A position at
+20% or more of the book is never a Buy however good the chart looks. Missing
+data narrows the scorecard (`confidence: full / partial / thin`) rather than
+being guessed, and no history at all means **No rating**, not a default Keep.
+
+`flip_levels` is the forward-looking part: the price at which this same
+scorecard would read Buy or Sell, found by re-scoring at candidate prices. It is
+solved for, not predicted.
+
+**This is not advice and not a forecast.** There is no price target, no earnings
+estimate and no view on any company's business, because the desk holds no data
+that would support one. It is a mechanical read of price history and position
+size, and it says so wherever it appears.
+
 Claude then reads that JSON and writes the brief. It gets no price feed, does no
 arithmetic, and every number it writes is checked back against the payload at the
 precision it was written to; a draft citing a figure that isn't there is

@@ -173,6 +173,25 @@ def _index_cards(run: Any) -> list[dict[str, Any]]:
     return cards
 
 
+def _ratings(run: Any) -> list[dict[str, Any]]:
+    rows = []
+    for rating in getattr(run, "ratings", []):
+        flips = getattr(rating, "flip_levels", {}) or {}
+        rows.append({
+            "name": rating.name,
+            "symbol": rating.position.symbol or DASH,
+            "verdict": rating.verdict.value,
+            "tone": rating.verdict.tone,
+            "score": f"{rating.score:+.2f}",
+            "confidence": rating.confidence,
+            "last": rupees(rating.position.last),
+            "reasons": rating.reasons,
+            "caveats": rating.caveats,
+            "flips": [f"{label} at {price:,.2f}" for label, price in flips.items()],
+        })
+    return rows
+
+
 def _watchlist(run: Any) -> list[dict[str, Any]]:
     if run is None:
         return []
@@ -268,6 +287,10 @@ def build_context(
 
     index_cards = _index_cards(run)
     watchlist = _watchlist(run)
+    ratings = _ratings(run)
+    rating_tally: dict[str, int] = {}
+    for row in ratings:
+        rating_tally[row["verdict"]] = rating_tally.get(row["verdict"], 0) + 1
     portfolio_notes = [
         {"headline": s.headline, "detail": s.detail, "tone": s.tone}
         for s in getattr(run, "portfolio_signals", [])
@@ -363,6 +386,8 @@ def build_context(
         ],
         "indices": index_cards,
         "watchlist": watchlist,
+        "ratings": ratings,
+        "rating_tally": rating_tally,
         "portfolio_notes": portfolio_notes,
         "brief": brief_block,  # None when the run did not generate one
         "news": news_rows,

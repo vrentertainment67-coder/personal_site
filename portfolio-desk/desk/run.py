@@ -20,6 +20,7 @@ from typing import Any
 
 from . import brief as brief_mod
 from . import config, dashboard, levels as levels_mod, market as market_mod, signals as signals_mod
+from . import ratings as ratings_mod
 from . import trading_days
 from .holdings import Portfolio, load as load_holdings
 from .market import MarketData, SourceStatus
@@ -48,6 +49,8 @@ class RunResult:
     market: MarketData | None = None
     levels: dict[str, levels_mod.LevelSet] = field(default_factory=dict)
     watchlist: list[signals_mod.Attention] = field(default_factory=list)
+    ratings: list[ratings_mod.Rating] = field(default_factory=list)
+    closes: dict[str, list[float]] = field(default_factory=dict)
     portfolio_signals: list[signals_mod.PortfolioSignal] = field(default_factory=list)
     news: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     globals_: list[dict[str, Any]] = field(default_factory=list)
@@ -96,6 +99,8 @@ def morning(
         bars, status = market_mod.fetch_bars(tickers, client=yahoo)
         market.statuses.insert(1, status)
         for symbol, series in bars.items():
+            self_closes = [b.close for b in series]
+            result.closes[symbol] = self_closes
             price = market.get(symbol)
             try:
                 result.levels[symbol] = levels_mod.build(
@@ -144,9 +149,10 @@ def morning(
             market.statuses.append(SourceStatus("fii/dii", "failed", exc.detail))
             result.unavailable.append("FII/DII flows")
 
-    # 4. Signals ------------------------------------------------------------
+    # 4. Signals and ratings -------------------------------------------------
     result.watchlist = signals_mod.rank(result.analytics, result.levels)
     result.portfolio_signals = signals_mod.portfolio_signals(result.analytics)
+    result.ratings = ratings_mod.rate_all(result.analytics, result.levels, result.closes)
 
     # 5. News, for the names the signals already surfaced -------------------
     if not offline:
@@ -329,6 +335,20 @@ def build_payload(result: RunResult) -> dict[str, Any]:
             "notes": [s.headline + " — " + s.detail for s in result.portfolio_signals],
         },
         watchlist=watchlist,
+        ratings=[
+            {
+                "name": r.name,
+                "symbol": r.position.symbol,
+                "verdict": r.verdict.value,
+                "score": round(r.score, 2),
+                "confidence": r.confidence,
+                "reasons": r.reasons,
+                "flip_levels": r.flip_levels,
+                "caveats": r.caveats,
+            }
+            for r in result.ratings
+            if r.verdict is not ratings_mod.Verdict.NO_RATING
+        ],
         sectors=[
             {"name": s.name, "weight_pct": round(s.weight_pct, 1)}
             for s in analytics.sectors[:8]
