@@ -24,6 +24,7 @@ class Quote:
     exchange: str | None
     currency: str | None
     last_price: float | None
+    previous_close: float | None = None
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,9 @@ class YahooClient:
             exchange=meta.get("fullExchangeName") or meta.get("exchangeName"),
             currency=meta.get("currency"),
             last_price=_as_float(meta.get("regularMarketPrice")),
+            previous_close=_as_float(
+                meta.get("chartPreviousClose") or meta.get("previousClose")
+            ),
         )
 
     def search(self, query: str, *, limit: int = 6) -> list[Match]:

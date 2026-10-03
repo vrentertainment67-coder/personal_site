@@ -4,9 +4,10 @@ A read-only daily market brief and dashboard for Vic's Indian equity portfolio.
 No broker integration: holdings are maintained by hand in `holdings.json`, market
 data comes from free public sources. The full brief is in [CLAUDE.md](CLAUDE.md).
 
-**Status: step 1 of 8 complete** — holdings loader and `verify-symbols`.
-Price fetch, levels, news, the Claude brief, the dashboard, Telegram and the
-schedule are still to come.
+**Status: steps 1–2 plus the dashboard.** Holdings loader, `verify-symbols`,
+portfolio analytics and `site/index.html`. The levels engine, NSE option chain,
+news, the written brief, Telegram and the schedule are still to come, and the
+dashboard names them as missing rather than hiding the gaps.
 
 ## Setup
 
@@ -23,7 +24,11 @@ python -m desk holdings list --json       # the validated document
 python -m desk verify-symbols             # check every ticker against Yahoo, then NSE
 python -m desk verify-symbols --only-flagged
 python -m desk verify-symbols --json-out data/verify.json
+python -m desk dashboard                  # rebuild site/index.html + a dated archive
+python -m desk dashboard --offline        # skip the live fetch, use the price snapshot
 ```
+
+Open `site/index.html` in a browser; it is a single self-contained file.
 
 Editing holdings (validated before anything is written):
 
@@ -66,6 +71,20 @@ Exit codes: `0` all good · `3` holdings.json is malformed · `4` tickers need
 correcting (or a guessed one could not be checked) · `5` no source reachable at all.
 The pipeline stops on 3, 4 and 5 rather than build a brief around a missing stock.
 
+## Where prices come from
+
+Three tiers, and the tier travels with every figure to the page:
+
+1. **live** — Yahoo quotes fetched this run.
+2. **snapshot** — `data/prices-snapshot.json`, the last close captured alongside the
+   broker-app screenshots. Used only for rows the live fetch could not supply.
+3. **none** — the row shows no price, is excluded from the total value, and takes no
+   weight.
+
+Anything short of a full live fetch puts a banner at the top of the dashboard naming
+the date the prices actually belong to. A missing cost basis suppresses P/L and return
+for that row rather than counting the position as pure profit.
+
 ## Tests
 
 ```sh
@@ -84,11 +103,18 @@ desk/
   config.py        paths, env, request etiquette
   holdings.py      load / validate / edit holdings.json
   verify.py        ticker verification and the report
+  market.py        price tiers (live / snapshot / none) and per-source health
+  portfolio.py     value, weights, P/L, sectors, concentration, flags
+  dashboard.py     context for the template, writes site/ and site/archive/
+  format.py        lakh/crore and Indian digit grouping
   sources/
     http.py        session reuse, rate limit, retries, day cache, failure classes
     yahoo.py       chart + search
     nse_client.py  quote-equity (option chain, VIX, FII/DII, holidays come later)
+templates/dashboard.html.j2
 holdings.json
+data/prices-snapshot.json
+site/index.html            (generated)
 reference/dashboard-v0.html
 tests/
 ```

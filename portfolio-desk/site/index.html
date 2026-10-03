@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Vic's Portfolio Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF1F4;--panel:#FFFFFF;--ink:#1B2433;--mute:#5E6878;--line:#D5DBE3;--gain:#1F7A5A;--loss:#B4423A;--mari:#E0A21B;--mari-soft:#F6E6BE;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141B26;--panel:#1C2533;--ink:#E7ECF2;--mute:#97A2B3;--line:#2E3A4C;--gain:#4CC495;--loss:#EE7B70;--mari:#F0B83A;--mari-soft:#3D3320}}
+:root[data-theme="dark"]{--bg:#141B26;--panel:#1C2533;--ink:#E7ECF2;--mute:#97A2B3;--line:#2E3A4C;--gain:#4CC495;--loss:#EE7B70;--mari:#F0B83A;--mari-soft:#3D3320}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:1080px;margin:0 auto;padding:28px 18px 60px}
+.date{color:var(--mute);font-size:13px;margin:0 0 6px}
+h1{font:400 clamp(30px,6vw,52px)/1.08 "Instrument Serif",Georgia,serif;margin:0 0 18px;max-width:22ch;letter-spacing:-.01em}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--mari-soft);border-left:3px solid var(--mari);border-radius:0 6px 6px 0;padding:11px 14px;margin:0 0 22px;font-size:13.5px;color:var(--ink)}
+.banner b{font-weight:600}
+.strip{display:flex;height:64px;border-radius:6px;overflow:hidden;background:var(--line)}
+.strip div{height:100%;border-right:2px solid var(--bg);position:relative;min-width:2px;cursor:default}
+.strip div:last-child{border-right:0}
+.strip div.top{background:var(--mari)}
+.strip div.rest{background:var(--mute);opacity:.35}
+.strip div.rest:hover{opacity:.7}
+.strip span{position:absolute;left:8px;bottom:6px;font-size:12px;font-weight:600;color:#1B2433;white-space:nowrap}
+.strip span b{display:block;font-size:18px}
+.legend{display:flex;justify-content:space-between;gap:12px;color:var(--mute);font-size:12px;margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:26px 0}
+.stats>div{background:var(--panel);padding:14px 16px}
+.stats small{color:var(--mute);display:block;font-size:13px}
+.stats strong{font-size:22px;font-weight:600;display:block}
+.stats em{color:var(--mute);font-size:12px;font-style:normal}
+h2{font-size:19px;font-weight:600;margin:36px 0 12px}
+.cols{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.sec{display:grid;grid-template-columns:132px 1fr 92px;align-items:center;gap:10px;font-size:14px;margin:7px 0}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);border-radius:0 4px 4px 0}
+.sec .pct{text-align:right;color:var(--mute);font-size:13px}
+.flag{border-left:3px solid var(--mari);padding:4px 0 4px 12px;margin:0 0 15px}
+.flag:last-child{margin-bottom:0}
+.flag.loss{border-color:var(--loss)}
+.flag p{margin:2px 0 0;color:var(--mute);font-size:14px}
+.flag strong{font-weight:600}
+.pending{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pending>div{background:var(--panel);padding:14px 16px}
+.pending strong{display:block;font-weight:600;margin-bottom:3px}
+.pending strong::before{content:"◌ ";color:var(--mari)}
+.pending p{margin:0;color:var(--mute);font-size:13.5px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input{flex:1;min-width:180px}
+input:focus-visible,select:focus-visible,th:focus-visible{outline:2px solid var(--mari);outline-offset:1px}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:14px}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+th{font-weight:600;color:var(--mute);cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
+th[aria-sort]::after{content:" ▾";color:var(--mari)}
+th[aria-sort="ascending"]::after{content:" ▴"}
+td small{display:block;color:var(--mute);font-size:12px}
+.g{color:var(--gain)}.l{color:var(--loss)}.na{color:var(--mute)}
+.tag{font-size:11px;background:var(--mari-soft);color:var(--ink);padding:1px 6px;border-radius:4px;margin-left:6px;white-space:nowrap}
+.src{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.src div{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
+.src i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--mute)}
+.src .ok i{background:var(--gain)}.src .stale i{background:var(--mari)}.src .failed i{background:var(--loss)}
+.src small{color:var(--mute)}
+footer{color:var(--mute);font-size:13px;margin-top:30px;max-width:76ch}
+footer p{margin:0 0 8px}
+@media print{body{background:#fff}.tools{display:none}}
+</style>
+</head>
+<body>
+<main>
+<p class="date">Built Saturday 3 October 2026, 05:00 UTC · holdings as of 2026-10-03 (Broker app screenshots (manual))</p>
+<h1>Three stocks make up 57% of your portfolio.</h1>
+
+<p class="banner"><span aria-hidden="true">⚠</span><span><b>Prices are not live.</b>
+Prices are the last close of 2026-10-03, from the snapshot captured with your broker-app screenshots — not a live fetch. Every figure below that depends on a price is as of 2026-10-03, not today.</span></p>
+
+<div class="strip" role="img" aria-label="Each holding sized by value: Lumax Auto Technologies 23.7%, Page Industries 17.6%, LTM 15.4%, Canara Bank 7.4%, Infosys 5.2%, Adani Power 3.8%, TCS 2.5%, Manipal Health Enterprises 2.1%, Indian Oil Corp 1.9%, Hyundai Motor India 1.7%, Reliance Industries 1.7%, Petronet LNG 1.4%, Maruti Suzuki 1.4%, Adani Enterprises 1.4%, Adani Ports & SEZ 1.2%, Coal India 1.0%, ICICI Bank 0.9%, Power Grid 0.9%, Syngene International 0.9%, Tata Steel 0.9%, Axis Bank 0.7%, Tata Power 0.7%, Adani Energy Solutions 0.6%, MOIL 0.6%, National Stock Exchange 0.5%, Jio Financial Services 0.5%, Adani Green Energy 0.5%, Sun Pharma 0.4%, Adani Wilmar 0.4%, Tata Capital 0.4%, Vodafone Idea 0.3%, Adani Total Gas 0.3%, JSW Cement 0.3%, FSN E-Commerce (Nykaa) 0.2%, Bajaj Housing Finance 0.2%, HDFC Bank 0.2%, Tata Technologies 0.2%, Asian Granito 0.2%, LML 0.0%">
+ <div class="top" style="flex:990575.0000" title="Lumax Auto Technologies: 23.7% (₹9,90,575)">
+  <span><b>23.7%</b>Lumax Auto Technologies</span> </div>
+ <div class="top" style="flex:733200.0000" title="Page Industries: 17.6% (₹7,33,200)">
+  <span><b>17.6%</b>Page Industries</span> </div>
+ <div class="top" style="flex:642720.0000" title="LTM: 15.4% (₹6,42,720)">
+  <span><b>15.4%</b>LTM</span> </div>
+ <div class="rest" style="flex:308100.0000" title="Canara Bank: 7.4% (₹3,08,100)">
+ </div>
+ <div class="rest" style="flex:217350.0000" title="Infosys: 5.2% (₹2,17,350)">
+ </div>
+ <div class="rest" style="flex:157560.0000" title="Adani Power: 3.8% (₹1,57,560)">
+ </div>
+ <div class="rest" style="flex:103965.0000" title="TCS: 2.5% (₹1,03,965)">
+ </div>
+ <div class="rest" style="flex:87000.0000" title="Manipal Health Enterprises: 2.1% (₹87,000)">
+ </div>
+ <div class="rest" style="flex:79200.0000" title="Indian Oil Corp: 1.9% (₹79,200)">
+ </div>
+ <div class="rest" style="flex:70875.0000" title="Hyundai Motor India: 1.7% (₹70,875)">
+ </div>
+ <div class="rest" style="flex:70062.0000" title="Reliance Industries: 1.7% (₹70,062)">
+ </div>
+ <div class="rest" style="flex:57300.0000" title="Petronet LNG: 1.4% (₹57,300)">
+ </div>
+ <div class="rest" style="flex:57000.0000" title="Maruti Suzuki: 1.4% (₹57,000)">
+ </div>
+ <div class="rest" style="flex:56486.0000" title="Adani Enterprises: 1.4% (₹56,486)">
+ </div>
+ <div class="rest" style="flex:52138.5000" title="Adani Ports & SEZ: 1.2% (₹52,138)">
+ </div>
+ <div class="rest" style="flex:42150.0000" title="Coal India: 1.0% (₹42,150)">
+ </div>
+ <div class="rest" style="flex:39318.0000" title="ICICI Bank: 0.9% (₹39,318)">
+ </div>
+ <div class="rest" style="flex:38197.5000" title="Power Grid: 0.9% (₹38,198)">
+ </div>
+ <div class="rest" style="flex:36130.0000" title="Syngene International: 0.9% (₹36,130)">
+ </div>
+ <div class="rest" style="flex:35820.0000" title="Tata Steel: 0.9% (₹35,820)">
+ </div>
+ <div class="rest" style="flex:30427.5000" title="Axis Bank: 0.7% (₹30,427)">
+ </div>
+ <div class="rest" style="flex:28012.0000" title="Tata Power: 0.7% (₹28,012)">
+ </div>
+ <div class="rest" style="flex:26528.0000" title="Adani Energy Solutions: 0.6% (₹26,528)">
+ </div>
+ <div class="rest" style="flex:23266.0000" title="MOIL: 0.6% (₹23,266)">
+ </div>
+ <div class="rest" style="flex:22636.9000" title="National Stock Exchange: 0.5% (₹22,637)">
+ </div>
+ <div class="rest" style="flex:21250.0000" title="Jio Financial Services: 0.5% (₹21,250)">
+ </div>
+ <div class="rest" style="flex:19320.0000" title="Adani Green Energy: 0.5% (₹19,320)">
+ </div>
+ <div class="rest" style="flex:18100.0000" title="Sun Pharma: 0.4% (₹18,100)">
+ </div>
+ <div class="rest" style="flex:17580.0000" title="Adani Wilmar: 0.4% (₹17,580)">
+ </div>
+ <div class="rest" style="flex:14694.7000" title="Tata Capital: 0.4% (₹14,695)">
+ </div>
+ <div class="rest" style="flex:12650.0000" title="Vodafone Idea: 0.3% (₹12,650)">
+ </div>
+ <div class="rest" style="flex:11663.0000" title="Adani Total Gas: 0.3% (₹11,663)">
+ </div>
+ <div class="rest" style="flex:11383.2000" title="JSW Cement: 0.3% (₹11,383)">
+ </div>
+ <div class="rest" style="flex:9748.5000" title="FSN E-Commerce (Nykaa): 0.2% (₹9,748)">
+ </div>
+ <div class="rest" style="flex:8293.0000" title="Bajaj Housing Finance: 0.2% (₹8,293)">
+ </div>
+ <div class="rest" style="flex:7212.0000" title="HDFC Bank: 0.2% (₹7,212)">
+ </div>
+ <div class="rest" style="flex:6988.0000" title="Tata Technologies: 0.2% (₹6,988)">
+ </div>
+ <div class="rest" style="flex:6728.4000" title="Asian Granito: 0.2% (₹6,728)">
+ </div>
+ <div class="rest" style="flex:187.5000" title="LML: 0.0% (₹188)">
+ </div>
+</div>
+<div class="legend"><span>Each block is one holding, sized by value</span><span>41 holdings · 2 without a price</span></div>
+
+<div class="stats">
+ <div><small>Value (excl. unpriced)</small><strong>₹41.7 L</strong><em>39 of 41 rows priced</em></div>
+ <div><small>Unrealised P/L</small><strong class="g">₹22.6 L</strong><em>on 31 rows with a cost basis (+254.1%)</em></div>
+ <div><small>Realised to date</small><strong class="g">₹6.7 L</strong><em>booked gains, from the broker app</em></div>
+ <div><small>In profit</small><strong>22 of 31</strong><em>measurable rows only</em></div>
+</div>
+
+<div class="cols">
+ <section>
+  <h2>Where your money sits</h2>
+  <div class="panel">
+   <div class="sec"><span>Auto</span><div class="bar" title="Auto: 26.8% (₹11.2 L, 4 holdings)"><i style="width:100.00%"></i></div><span class="pct">26.8%</span></div>
+   <div class="sec"><span>IT</span><div class="bar" title="IT: 23.3% (₹9.7 L, 4 holdings)"><i style="width:86.80%"></i></div><span class="pct">23.3%</span></div>
+   <div class="sec"><span>Textiles & Apparel</span><div class="bar" title="Textiles & Apparel: 17.6% (₹7.3 L, 1 holding)"><i style="width:65.54%"></i></div><span class="pct">17.6%</span></div>
+   <div class="sec"><span>Banks</span><div class="bar" title="Banks: 9.2% (₹3.9 L, 4 holdings)"><i style="width:34.42%"></i></div><span class="pct">9.2%</span></div>
+   <div class="sec"><span>Power</span><div class="bar" title="Power: 6.5% (₹2.7 L, 5 holdings)"><i style="width:24.10%"></i></div><span class="pct">6.5%</span></div>
+   <div class="sec"><span>Oil & Gas</span><div class="bar" title="Oil & Gas: 5.2% (₹2.2 L, 4 holdings)"><i style="width:19.51%"></i></div><span class="pct">5.2%</span></div>
+   <div class="sec"><span>Healthcare</span><div class="bar" title="Healthcare: 3.4% (₹1.4 L, 3 holdings)"><i style="width:12.63%"></i></div><span class="pct">3.4%</span></div>
+   <div class="sec"><span>Metals & Mining</span><div class="bar" title="Metals & Mining: 2.4% (₹1.0 L, 3 holdings)"><i style="width:9.05%"></i></div><span class="pct">2.4%</span></div>
+   <div class="sec"><span>Financials</span><div class="bar" title="Financials: 1.6% (₹66,875, 4 holdings)"><i style="width:5.98%"></i></div><span class="pct">1.6%</span></div>
+   <div class="sec"><span>Conglomerate</span><div class="bar" title="Conglomerate: 1.4% (₹56,486, 1 holding)"><i style="width:5.05%"></i></div><span class="pct">1.4%</span></div>
+   <div class="sec"><span>Infra & Ports</span><div class="bar" title="Infra & Ports: 1.2% (₹52,138, 1 holding)"><i style="width:4.66%"></i></div><span class="pct">1.2%</span></div>
+   <div class="sec"><span>Building Materials</span><div class="bar" title="Building Materials: 0.4% (₹18,112, 2 holdings)"><i style="width:1.62%"></i></div><span class="pct">0.4%</span></div>
+   <div class="sec"><span>FMCG</span><div class="bar" title="FMCG: 0.4% (₹17,580, 1 holding)"><i style="width:1.57%"></i></div><span class="pct">0.4%</span></div>
+   <div class="sec"><span>Telecom</span><div class="bar" title="Telecom: 0.3% (₹12,650, 1 holding)"><i style="width:1.13%"></i></div><span class="pct">0.3%</span></div>
+   <div class="sec"><span>Consumer Tech</span><div class="bar" title="Consumer Tech: 0.2% (₹9,748, 1 holding)"><i style="width:0.87%"></i></div><span class="pct">0.2%</span></div>
+  </div>
+ </section>
+ <section>
+  <h2>Worth a look</h2>
+  <div class="panel">
+   <div class="flag"><strong>Top 3 hold 57% of the portfolio</strong><p>Lumax Auto Technologies, Page Industries, LTM together are worth ₹23.7 L. A 10% fall across the three would cost about ₹2.4 L. Top 5 = 69% (₹28.9 L).</p></div>
+   <div class="flag"><strong>No cost basis on 9 holdings</strong><p>Adani Energy Solutions, Adani Green Energy, Adani Power, Adani Total Gas, Bgse Properties & Securities, Coal India, LML, Page Industries, Syngene International. The broker app shows an average cost of 0, usually bonus, demerger or transferred shares. Their value counts towards the total, but return and unrealised P/L are left blank rather than counting the whole position as profit.</p></div>
+   <div class="flag loss"><strong>Down more than 20%</strong><p>Asian Granito -39.9%, Bajaj Housing Finance -38.0%, Adani Wilmar -36.6%, Tata Technologies -35.9%, JSW Cement -24.1%.</p></div>
+   <div class="flag"><strong>2 holdings have no price</strong><p>Bgse Properties & Securities (unlisted), State Bank of India (no price). They are excluded from the total value and from every weight.</p></div>
+   <div class="flag"><strong>8 tickers still unverified</strong><p>Bajaj Housing Finance, Hyundai Motor India, JSW Cement, LML, LTM, Manipal Health Enterprises, National Stock Exchange, Tata Capital. The ticker was guessed from the company name and could not be confirmed against Yahoo or NSE, so their prices may belong to a different instrument.</p></div>
+  </div>
+ </section>
+</div>
+
+<h2>All holdings</h2>
+<div class="tools">
+ <input id="q" type="search" placeholder="Search by name or symbol" aria-label="Search holdings">
+ <select id="sf" aria-label="Filter by sector"><option value="">All sectors</option>
+  <option value="Auto">Auto</option>
+  <option value="Banks">Banks</option>
+  <option value="Building Materials">Building Materials</option>
+  <option value="Conglomerate">Conglomerate</option>
+  <option value="Consumer Tech">Consumer Tech</option>
+  <option value="FMCG">FMCG</option>
+  <option value="Financials">Financials</option>
+  <option value="Healthcare">Healthcare</option>
+  <option value="IT">IT</option>
+  <option value="Infra & Ports">Infra & Ports</option>
+  <option value="Metals & Mining">Metals & Mining</option>
+  <option value="Oil & Gas">Oil & Gas</option>
+  <option value="Power">Power</option>
+  <option value="Telecom">Telecom</option>
+  <option value="Textiles & Apparel">Textiles & Apparel</option>
+  <option value="Unlisted">Unlisted</option>
+ </select>
+</div>
+<div class="tablewrap"><table>
+<thead><tr>
+<th data-k="name" tabindex="0">Holding</th>
+<th data-k="qty" tabindex="0">Qty</th>
+<th data-k="avg" tabindex="0">Avg cost</th>
+<th data-k="price" tabindex="0">Price</th>
+<th data-k="value" tabindex="0" aria-sort="descending">Value</th>
+<th data-k="weight" tabindex="0">Weight</th>
+<th data-k="unreal" tabindex="0">Unrealised P/L</th>
+<th data-k="ret" tabindex="0">Return</th>
+</tr></thead>
+<tbody id="tb"></tbody>
+</table></div>
+
+<h2>Not built yet</h2>
+<div class="pending">
+ <div><strong>Index levels</strong><p>Pivots, CPR, DMAs, 52-week range and option-chain support/resistance for NIFTY 50, BANK NIFTY, FINNIFTY, MIDCPNIFTY, SENSEX. Needs the levels engine (step 3) and the NSE client (step 4).</p></div>
+ <div><strong>Support and resistance per holding</strong><p>Nearest zones and the distance to each, clustered from pivots, DMAs, previous-day and previous-week extremes. Same two steps.</p></div>
+ <div><strong>This morning's brief</strong><p>The written pre-market note, plus news touching your holdings. Needs the news feeds (step 5) and the Claude call (step 6).</p></div>
+</div>
+
+<h2>Where the numbers came from</h2>
+<div class="src">
+ <div class="skipped"><i aria-hidden="true"></i><span>yahoo (live prices)</span><small>not fetched — run without --offline to fetch</small></div>
+ <div class="stale"><i aria-hidden="true"></i><span>price snapshot</span><small>stale — last close 2026-10-03; 39 row(s) rely on it</small></div>
+ <div class="skipped"><i aria-hidden="true"></i><span>nse (option chain, VIX, FII/DII)</span><small>not built yet — step 4</small></div>
+ <div class="skipped"><i aria-hidden="true"></i><span>levels engine</span><small>not built yet — step 3</small></div>
+ <div class="skipped"><i aria-hidden="true"></i><span>news (Google News RSS)</span><small>not built yet — step 5</small></div>
+ <div class="skipped"><i aria-hidden="true"></i><span>claude brief</span><small>not built yet — step 6</small></div>
+</div>
+
+<footer>
+<p>Read from broker-app screenshots, so double-check anything that looks off.
+State Bank of India was cut off in the screenshots and is still unconfirmed. Holdings with no average cost show value and weight but no return, because a missing cost basis is not the same as a zero one.</p>
+<p>Reference only, not investment advice.</p>
+</footer>
+</main>
+
+<script type="application/json" id="rows">[{"name": "Adani Energy Solutions", "sym": "ADANIENSOL", "sector": "Power", "qty": 20.0, "qty_txt": "20", "avg": null, "avg_txt": "—", "price": 1326.4, "price_txt": "₹1,326", "value": 26528.0, "value_txt": "₹26,528", "weight": 0.6358861921920472, "weight_txt": "0.6%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Enterprises", "sym": "ADANIENT", "sector": "Conglomerate", "qty": 20.0, "qty_txt": "20", "avg": 638.73, "avg_txt": "₹639", "price": 2824.3, "price_txt": "₹2,824", "value": 56486.0, "value_txt": "₹56,486", "weight": 1.3539907815199028, "weight_txt": "1.4%", "unreal": 43711.4, "unreal_txt": "₹43,711", "ret": 342.1743146556448, "ret_txt": "+342.2%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Green Energy", "sym": "ADANIGREEN", "sector": "Power", "qty": 15.0, "qty_txt": "15", "avg": null, "avg_txt": "—", "price": 1288.0, "price_txt": "₹1,288", "value": 19320.0, "value_txt": "₹19,320", "weight": 0.4631077063159813, "weight_txt": "0.5%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Ports & SEZ", "sym": "ADANIPORTS", "sector": "Infra & Ports", "qty": 30.0, "qty_txt": "30", "avg": 54.16, "avg_txt": "₹54.16", "price": 1737.95, "price_txt": "₹1,738", "value": 52138.5, "value_txt": "₹52,138", "weight": 1.24977956240972, "weight_txt": "1.2%", "unreal": 50513.7, "unreal_txt": "₹50,514", "ret": 3108.9180206794686, "ret_txt": "+3108.9%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Power", "sym": "ADANIPOWER", "sector": "Power", "qty": 800.0, "qty_txt": "800", "avg": null, "avg_txt": "—", "price": 196.95, "price_txt": "₹197", "value": 157560.0, "value_txt": "₹1,57,560", "weight": 3.776772785048966, "weight_txt": "3.8%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Total Gas", "sym": "ATGL", "sector": "Oil & Gas", "qty": 20.0, "qty_txt": "20", "avg": null, "avg_txt": "—", "price": 583.15, "price_txt": "₹583", "value": 11663.0, "value_txt": "₹11,663", "weight": 0.2795665206399219, "weight_txt": "0.3%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Adani Wilmar", "sym": "AWL", "sector": "FMCG", "qty": 100.0, "qty_txt": "100", "avg": 277.25, "avg_txt": "₹277", "price": 175.8, "price_txt": "₹176", "value": 17580.0, "value_txt": "₹17,580", "weight": 0.4213992482937346, "weight_txt": "0.4%", "unreal": -10145.0, "unreal_txt": "₹-10,145", "ret": -36.59152389540126, "ret_txt": "-36.6%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Asian Granito", "sym": "ASIANTILES", "sector": "Building Materials", "qty": 140.0, "qty_txt": "140", "avg": 80.0, "avg_txt": "₹80.00", "price": 48.06, "price_txt": "₹48.06", "value": 6728.400000000001, "value_txt": "₹6,728", "weight": 0.161282292503957, "weight_txt": "0.2%", "unreal": -4471.599999999999, "unreal_txt": "₹-4,472", "ret": -39.925, "ret_txt": "-39.9%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Axis Bank", "sym": "AXISBANK", "sector": "Banks", "qty": 25.0, "qty_txt": "25", "avg": 266.9, "avg_txt": "₹267", "price": 1217.1, "price_txt": "₹1,217", "value": 30427.499999999996, "value_txt": "₹30,427", "weight": 0.72935868188041, "weight_txt": "0.7%", "unreal": 23754.999999999996, "unreal_txt": "₹23,755", "ret": 356.01348819782686, "ret_txt": "+356.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Bajaj Housing Finance", "sym": "BAJAJHFL", "sector": "Financials", "qty": 100.0, "qty_txt": "100", "avg": 133.73, "avg_txt": "₹134", "price": 82.93, "price_txt": "₹82.93", "value": 8293.0, "value_txt": "₹8,293", "weight": 0.1987863461945359, "weight_txt": "0.2%", "unreal": -5079.999999999998, "unreal_txt": "₹-5,080", "ret": -37.98698870859193, "ret_txt": "-38.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "Bgse Properties & Securities", "sym": "—", "sector": "Unlisted", "qty": 1000.0, "qty_txt": "1,000", "avg": null, "avg_txt": "—", "price": null, "price_txt": "—", "value": null, "value_txt": "—", "weight": null, "weight_txt": "—", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "none", "no_cost": true, "unlisted": true, "unpriced": true, "guessed": false}, {"name": "Canara Bank", "sym": "CANBK", "sector": "Banks", "qty": 2600.0, "qty_txt": "2,600", "avg": 46.25, "avg_txt": "₹46.25", "price": 118.5, "price_txt": "₹118", "value": 308100.0, "value_txt": "₹3,08,100", "weight": 7.385273515318522, "weight_txt": "7.4%", "unreal": 187850.0, "unreal_txt": "₹1,87,850", "ret": 156.21621621621622, "ret_txt": "+156.2%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Coal India", "sym": "COALINDIA", "sector": "Metals & Mining", "qty": 100.0, "qty_txt": "100", "avg": null, "avg_txt": "—", "price": 421.5, "price_txt": "₹422", "value": 42150.0, "value_txt": "₹42,150", "weight": 1.0103514400216673, "weight_txt": "1.0%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "FSN E-Commerce (Nykaa)", "sym": "NYKAA", "sector": "Consumer Tech", "qty": 30.0, "qty_txt": "30", "avg": 187.5, "avg_txt": "₹188", "price": 324.95, "price_txt": "₹325", "value": 9748.5, "value_txt": "₹9,748", "weight": 0.23367523162636356, "weight_txt": "0.2%", "unreal": 4123.5, "unreal_txt": "₹4,124", "ret": 73.30666666666666, "ret_txt": "+73.3%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "HDFC Bank", "sym": "HDFCBANK", "sector": "Banks", "qty": 10.0, "qty_txt": "10", "avg": 712.0, "avg_txt": "₹712", "price": 721.2, "price_txt": "₹721", "value": 7212.0, "value_txt": "₹7,212", "weight": 0.17287436738876075, "weight_txt": "0.2%", "unreal": 92.0, "unreal_txt": "₹92.00", "ret": 1.2921348314606895, "ret_txt": "+1.3%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Hyundai Motor India", "sym": "HYUNDAI", "sector": "Auto", "qty": 35.0, "qty_txt": "35", "avg": 1960.0, "avg_txt": "₹1,960", "price": 2025.0, "price_txt": "₹2,025", "value": 70875.0, "value_txt": "₹70,875", "weight": 1.6989005530613448, "weight_txt": "1.7%", "unreal": 2275.0, "unreal_txt": "₹2,275", "ret": 3.316326530612246, "ret_txt": "+3.3%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "ICICI Bank", "sym": "ICICIBANK", "sector": "Banks", "qty": 30.0, "qty_txt": "30", "avg": 211.02, "avg_txt": "₹211", "price": 1310.6, "price_txt": "₹1,311", "value": 39318.0, "value_txt": "₹39,318", "weight": 0.9424673290337348, "weight_txt": "0.9%", "unreal": 32987.4, "unreal_txt": "₹32,987", "ret": 521.0785707515874, "ret_txt": "+521.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Indian Oil Corp", "sym": "IOC", "sector": "Oil & Gas", "qty": 600.0, "qty_txt": "600", "avg": 125.65, "avg_txt": "₹126", "price": 132.0, "price_txt": "₹132", "value": 79200.0, "value_txt": "₹79,200", "weight": 1.898453951357439, "weight_txt": "1.9%", "unreal": 3810.0, "unreal_txt": "₹3,810", "ret": 5.053720652606453, "ret_txt": "+5.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Infosys", "sym": "INFY", "sector": "IT", "qty": 210.0, "qty_txt": "210", "avg": 307.01, "avg_txt": "₹307", "price": 1035.0, "price_txt": "₹1,035", "value": 217350.0, "value_txt": "₹2,17,350", "weight": 5.20996169605479, "weight_txt": "5.2%", "unreal": 152877.9, "unreal_txt": "₹1,52,878", "ret": 237.12256929741704, "ret_txt": "+237.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Jio Financial Services", "sym": "JIOFIN", "sector": "Financials", "qty": 100.0, "qty_txt": "100", "avg": 176.24, "avg_txt": "₹176", "price": 212.5, "price_txt": "₹212", "value": 21250.0, "value_txt": "₹21,250", "weight": 0.5093705361912321, "weight_txt": "0.5%", "unreal": 3626.0, "unreal_txt": "₹3,626", "ret": 20.574216976849733, "ret_txt": "+20.6%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "JSW Cement", "sym": "JSWCEMENT", "sector": "Building Materials", "qty": 102.0, "qty_txt": "102", "avg": 147.0, "avg_txt": "₹147", "price": 111.6, "price_txt": "₹112", "value": 11383.199999999999, "value_txt": "₹11,383", "weight": 0.2728596088269192, "weight_txt": "0.3%", "unreal": -3610.800000000001, "unreal_txt": "₹-3,611", "ret": -24.081632653061224, "ret_txt": "-24.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "LML", "sym": "LML", "sector": "Auto", "qty": 50.0, "qty_txt": "50", "avg": null, "avg_txt": "—", "price": 3.75, "price_txt": "₹3.75", "value": 187.5, "value_txt": "₹188", "weight": 0.0044944459075696944, "weight_txt": "0.0%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "LTM", "sym": "LTM", "sector": "IT", "qty": 160.0, "qty_txt": "160", "avg": 355.36, "avg_txt": "₹355", "price": 4017.0, "price_txt": "₹4,017", "value": 642720.0, "value_txt": "₹6,42,720", "weight": 15.406241459803702, "weight_txt": "15.4%", "unreal": 585862.4, "unreal_txt": "₹5,85,862", "ret": 1030.402971634399, "ret_txt": "+1030.4%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "Lumax Auto Technologies", "sym": "LUMAXTECH", "sector": "Auto", "qty": 500.0, "qty_txt": "500", "avg": 3.1, "avg_txt": "₹3.10", "price": 1981.15, "price_txt": "₹1,981", "value": 990575.0, "value_txt": "₹9,90,575", "weight": 23.74445735941787, "weight_txt": "23.7%", "unreal": 989025.0, "unreal_txt": "₹9,89,025", "ret": 63808.06451612904, "ret_txt": "+63808.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Manipal Health Enterprises", "sym": "MANIPAL", "sector": "Healthcare", "qty": 125.0, "qty_txt": "125", "avg": 590.0, "avg_txt": "₹590", "price": 696.0, "price_txt": "₹696", "value": 87000.0, "value_txt": "₹87,000", "weight": 2.085422901112338, "weight_txt": "2.1%", "unreal": 13250.0, "unreal_txt": "₹13,250", "ret": 17.96610169491526, "ret_txt": "+18.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "Maruti Suzuki", "sym": "MARUTI", "sector": "Auto", "qty": 5.0, "qty_txt": "5", "avg": 6020.13, "avg_txt": "₹6,020", "price": 11400.0, "price_txt": "₹11,400", "value": 57000.0, "value_txt": "₹57,000", "weight": 1.3663115559011871, "weight_txt": "1.4%", "unreal": 26899.35, "unreal_txt": "₹26,899", "ret": 89.364681493589, "ret_txt": "+89.4%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "MOIL", "sym": "MOIL", "sector": "Metals & Mining", "qty": 100.0, "qty_txt": "100", "avg": 112.2, "avg_txt": "₹112", "price": 232.66, "price_txt": "₹233", "value": 23266.0, "value_txt": "₹23,266", "weight": 0.5576948185894214, "weight_txt": "0.6%", "unreal": 12046.0, "unreal_txt": "₹12,046", "ret": 107.36185383244208, "ret_txt": "+107.4%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "National Stock Exchange", "sym": "NSE", "sector": "Financials", "qty": 13.0, "qty_txt": "13", "avg": 1785.0, "avg_txt": "₹1,785", "price": 1741.3, "price_txt": "₹1,741", "value": 22636.899999999998, "value_txt": "₹22,637", "weight": 0.5426150536803436, "weight_txt": "0.5%", "unreal": -568.1000000000022, "unreal_txt": "₹-568", "ret": -2.4481792717086837, "ret_txt": "-2.4%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "Page Industries", "sym": "PAGEIND", "sector": "Textiles & Apparel", "qty": 20.0, "qty_txt": "20", "avg": null, "avg_txt": "—", "price": 36660.0, "price_txt": "₹36,660", "value": 733200.0, "value_txt": "₹7,33,200", "weight": 17.575081276960532, "weight_txt": "17.6%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Petronet LNG", "sym": "PETRONET", "sector": "Oil & Gas", "qty": 200.0, "qty_txt": "200", "avg": 72.88, "avg_txt": "₹72.88", "price": 286.5, "price_txt": "₹286", "value": 57300.0, "value_txt": "₹57,300", "weight": 1.3735026693532988, "weight_txt": "1.4%", "unreal": 42724.0, "unreal_txt": "₹42,724", "ret": 293.1119648737651, "ret_txt": "+293.1%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Power Grid", "sym": "POWERGRID", "sector": "Power", "qty": 150.0, "qty_txt": "150", "avg": 123.93, "avg_txt": "₹124", "price": 254.65, "price_txt": "₹255", "value": 38197.5, "value_txt": "₹38,198", "weight": 0.9156085202900982, "weight_txt": "0.9%", "unreal": 19608.0, "unreal_txt": "₹19,608", "ret": 105.47889937868149, "ret_txt": "+105.5%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Reliance Industries", "sym": "RELIANCE", "sector": "Oil & Gas", "qty": 60.0, "qty_txt": "60", "avg": 42.11, "avg_txt": "₹42.11", "price": 1167.7, "price_txt": "₹1,168", "value": 70062.0, "value_txt": "₹70,062", "weight": 1.6794126356061225, "weight_txt": "1.7%", "unreal": 67535.4, "unreal_txt": "₹67,535", "ret": 2672.9755402517217, "ret_txt": "+2673.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "State Bank of India", "sym": "SBIN", "sector": "Banks", "qty": 300.0, "qty_txt": "300", "avg": 276.82, "avg_txt": "₹277", "price": null, "price_txt": "—", "value": null, "value_txt": "—", "weight": null, "weight_txt": "—", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "none", "no_cost": false, "unlisted": false, "unpriced": true, "guessed": false}, {"name": "Sun Pharma", "sym": "SUNPHARMA", "sector": "Healthcare", "qty": 10.0, "qty_txt": "10", "avg": 673.2, "avg_txt": "₹673", "price": 1810.0, "price_txt": "₹1,810", "value": 18100.0, "value_txt": "₹18,100", "weight": 0.4338638449440612, "weight_txt": "0.4%", "unreal": 11368.0, "unreal_txt": "₹11,368", "ret": 168.86512180629825, "ret_txt": "+168.9%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Syngene International", "sym": "SYNGENE", "sector": "Healthcare", "qty": 100.0, "qty_txt": "100", "avg": null, "avg_txt": "—", "price": 361.3, "price_txt": "₹361", "value": 36130.0, "value_txt": "₹36,130", "weight": 0.8660497634159631, "weight_txt": "0.9%", "unreal": null, "unreal_txt": "—", "ret": null, "ret_txt": "—", "tier": "snapshot", "no_cost": true, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Tata Capital", "sym": "TATACAP", "sector": "Financials", "qty": 46.0, "qty_txt": "46", "avg": 326.0, "avg_txt": "₹326", "price": 319.45, "price_txt": "₹319", "value": 14694.699999999999, "value_txt": "₹14,695", "weight": 0.3522375161491434, "weight_txt": "0.4%", "unreal": -301.3000000000011, "unreal_txt": "₹-301", "ret": -2.009202453987735, "ret_txt": "-2.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": true}, {"name": "TCS", "sym": "TCS", "sector": "IT", "qty": 50.0, "qty_txt": "50", "avg": 2147.15, "avg_txt": "₹2,147", "price": 2079.3, "price_txt": "₹2,079", "value": 103965.00000000001, "value_txt": "₹1,03,965", "weight": 2.492080366829245, "weight_txt": "2.5%", "unreal": -3392.4999999999854, "unreal_txt": "₹-3,392", "ret": -3.1600027944018727, "ret_txt": "-3.2%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Tata Power", "sym": "TATAPOWER", "sector": "Power", "qty": 80.0, "qty_txt": "80", "avg": 306.49, "avg_txt": "₹306", "price": 350.15, "price_txt": "₹350", "value": 28012.0, "value_txt": "₹28,012", "weight": 0.6714582334018255, "weight_txt": "0.7%", "unreal": 3492.7999999999993, "unreal_txt": "₹3,493", "ret": 14.245162974322145, "ret_txt": "+14.2%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Tata Steel", "sym": "TATASTEEL", "sector": "Metals & Mining", "qty": 200.0, "qty_txt": "200", "avg": 111.97, "avg_txt": "₹112", "price": 179.1, "price_txt": "₹179", "value": 35820.0, "value_txt": "₹35,820", "weight": 0.8586189461821145, "weight_txt": "0.9%", "unreal": 13426.0, "unreal_txt": "₹13,426", "ret": 59.95355898901491, "ret_txt": "+60.0%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Tata Technologies", "sym": "TATATECH", "sector": "IT", "qty": 10.0, "qty_txt": "10", "avg": 1089.9, "avg_txt": "₹1,090", "price": 698.8, "price_txt": "₹699", "value": 6988.0, "value_txt": "₹6,988", "weight": 0.1675050026778508, "weight_txt": "0.2%", "unreal": -3911.0, "unreal_txt": "₹-3,911", "ret": -35.88402605743647, "ret_txt": "-35.9%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}, {"name": "Vodafone Idea", "sym": "IDEA", "sector": "Telecom", "qty": 1000.0, "qty_txt": "1,000", "avg": 15.23, "avg_txt": "₹15.23", "price": 12.65, "price_txt": "₹12.65", "value": 12650.0, "value_txt": "₹12,650", "weight": 0.30322528389736875, "weight_txt": "0.3%", "unreal": -2580.0, "unreal_txt": "₹-2,580", "ret": -16.940249507550888, "ret_txt": "-16.9%", "tier": "snapshot", "no_cost": false, "unlisted": false, "unpriced": false, "guessed": false}]</script>
+<script>
+const D = JSON.parse(document.getElementById("rows").textContent);
+const cls = n => n == null ? "na" : n >= 0 ? "g" : "l";
+const tierTag = { snapshot: "last close", none: "no price" };
+let key = "value", asc = false;
+
+function cell(d) {
+  const tags = [];
+  if (d.no_cost) tags.push("no cost");
+  if (d.unlisted) tags.push("unlisted");
+  else if (d.unpriced) tags.push("no price");
+  if (d.guessed) tags.push("ticker?");
+  return `<tr>
+    <td>${d.name}${tags.map(t => `<span class="tag">${t}</span>`).join("")}<small>${d.sym} · ${d.sector}</small></td>
+    <td>${d.qty_txt}</td><td>${d.avg_txt}</td><td>${d.price_txt}</td>
+    <td>${d.value_txt}</td><td>${d.weight_txt}</td>
+    <td class="${cls(d.unreal)}">${d.unreal_txt}</td>
+    <td class="${cls(d.ret)}">${d.ret_txt}</td></tr>`;
+}
+
+function render() {
+  const q = document.getElementById("q").value.toLowerCase();
+  const s = document.getElementById("sf").value;
+  const rows = D
+    .filter(d => (!s || d.sector === s) && (d.name.toLowerCase().includes(q) || d.sym.toLowerCase().includes(q)))
+    .sort((a, b) => {
+      let x = a[key], y = b[key];
+      if (key === "name") return asc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      // Missing figures sink to the bottom whichever way the column is sorted.
+      if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1;
+      return asc ? x - y : y - x;
+    });
+  document.getElementById("tb").innerHTML = rows.map(cell).join("")
+    || `<tr><td colspan="8" class="na">No holding matches that.</td></tr>`;
+}
+
+document.querySelectorAll("th").forEach(th => {
+  const go = () => {
+    const k = th.dataset.k;
+    asc = key === k ? !asc : k === "name";
+    key = k;
+    document.querySelectorAll("th").forEach(t => t.removeAttribute("aria-sort"));
+    th.setAttribute("aria-sort", asc ? "ascending" : "descending");
+    render();
+  };
+  th.onclick = go;
+  th.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+});
+document.getElementById("q").oninput = render;
+document.getElementById("sf").onchange = render;
+render();
+</script>
+</body>
+</html>

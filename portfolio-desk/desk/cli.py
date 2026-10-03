@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from . import config, holdings as holdings_mod
+from .format import compact, inr
 from .holdings import Holding, HoldingsError, Portfolio
 from .verify import Report, verify_portfolio
 
@@ -20,22 +21,6 @@ EXIT_SOURCES_DOWN = 5
 
 
 # ---------------------------------------------------------------- formatting
-
-
-def _inr(value: float) -> str:
-    """Indian digit grouping: 12,34,567.89"""
-    negative = value < 0
-    whole, _, frac = f"{abs(value):.2f}".partition(".")
-    if len(whole) > 3:
-        head, tail = whole[:-3], whole[-3:]
-        groups = []
-        while len(head) > 2:
-            groups.insert(0, head[-2:])
-            head = head[:-2]
-        if head:
-            groups.insert(0, head)
-        whole = ",".join(groups + [tail])
-    return f"{'-' if negative else ''}₹{whole}.{frac}"
 
 
 def _table(headers: list[str], rows: list[list[str]]) -> str:
@@ -87,8 +72,8 @@ def cmd_holdings_list(args: argparse.Namespace) -> int:
                 h.nse_symbol or "—",
                 h.sector,
                 f"{h.qty:g}",
-                _inr(h.avg_cost) if h.avg_cost is not None else "missing",
-                _inr(invested) if invested is not None else "—",
+                inr(h.avg_cost) if h.avg_cost is not None else "missing",
+                inr(invested) if invested is not None else "—",
                 "verify" if h.verify_symbol else ("unlisted" if not h.is_listed else ""),
             ]
         )
@@ -99,7 +84,7 @@ def cmd_holdings_list(args: argparse.Namespace) -> int:
     print(
         f"\n{summary.total_rows} holdings, {summary.listed_rows} listed. "
         f"Known cost basis on {summary.total_rows - len(summary.missing_cost_basis)} rows "
-        f"= {_inr(invested_total)} invested."
+        f"= {inr(invested_total)} invested."
     )
     for block in (
         _bullets("Unlisted (counted, never fetched)", summary.unlisted),
@@ -297,10 +282,45 @@ def cmd_verify_symbols(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    from . import dashboard, market as market_mod
+    from .portfolio import analyse
+
+    portfolio = _load(args.file)
+    config.ensure_dirs()
+
+    tickers = {h.nse_symbol: h.yahoo_ticker for h in portfolio.listed if h.nse_symbol and h.yahoo_ticker}
+    market = market_mod.collect(tickers, offline=args.offline)
+    analytics = analyse(portfolio, market)
+    result = dashboard.build(portfolio, market, analytics)
+
+    print(f"Prices: {market.tier} (as of {market.as_of or 'n/a'})")
+    for status in market.statuses:
+        print(f"  {status.name}: {status.label}" + (f" — {status.detail}" if status.detail else ""))
+    print(
+        f"\n{analytics.priced_count} of {len(analytics.positions)} rows priced · "
+        f"value {compact(analytics.total_value)} · "
+        f"unrealised {compact(analytics.unrealised)} on {analytics.measurable} rows with a cost basis"
+    )
+    if analytics.concentration:
+        conc = analytics.concentration
+        print(
+            f"Top 3 = {conc.top3_pct:.0f}% ({compact(conc.top3_value)}); "
+            f"a 10% fall across them = {compact(conc.top3_drawdown_10pct)}"
+        )
+    print(f"\nWrote {result.index_path}\n      {result.archive_path}")
+    if market.tier != "live":
+        print(
+            "\nPrices are not live — the dashboard says so at the top of the page.",
+            file=sys.stderr,
+        )
+    return EXIT_OK
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     print(
-        "The daily run is not built yet — step 1 (holdings + verify-symbols) is done.\n"
-        "Next: price fetch and portfolio analytics (step 2 in CLAUDE.md).",
+        "The daily run is not built yet. `python -m desk dashboard` builds the dashboard; "
+        "the written brief (step 6) and Telegram delivery (step 7) are still to come.",
         file=sys.stderr,
     )
     return EXIT_USAGE
@@ -383,6 +403,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--json-out", type=Path, default=None, metavar="PATH", help="also write the report as JSON"
     )
     verify_parser.set_defaults(func=cmd_verify_symbols)
+
+    dash_parser = sub.add_parser("dashboard", help="rebuild site/index.html")
+    dash_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="skip the live fetch and use the price snapshot only",
+    )
+    dash_parser.set_defaults(func=cmd_dashboard)
 
     run_parser = sub.add_parser("run", help="build the daily brief (not implemented yet)")
     run_parser.add_argument("--dry-run", action="store_true", help="print, send nothing")
