@@ -36,6 +36,22 @@ SECTOR_INDICES = (
     "NIFTY IT", "NIFTY BANK", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY METAL",
     "NIFTY ENERGY", "NIFTY FMCG", "NIFTY PSU BANK", "NIFTY REALTY",
 )
+
+# Yahoo tickers for the sector indices, so a holding can be measured against the
+# sector it actually belongs to rather than against the Nifty alone.
+SECTOR_INDEX_TICKERS = {
+    "NIFTY IT": "^CNXIT",
+    "NIFTY BANK": "^NSEBANK",
+    "NIFTY AUTO": "^CNXAUTO",
+    "NIFTY PHARMA": "^CNXPHARMA",
+    "NIFTY METAL": "^CNXMETAL",
+    "NIFTY ENERGY": "^CNXENERGY",
+    "NIFTY FMCG": "^CNXFMCG",
+    "NIFTY PSU BANK": "^CNXPSUBANK",
+    "NIFTY REALTY": "^CNXREALTY",
+    "NIFTY INFRA": "^CNXINFRA",
+    "NIFTY FIN SERVICE": "^CNXFIN",
+}
 # Stop a history sweep only when the source itself has gone away.
 MAX_CONSECUTIVE_FAILURES = 4
 

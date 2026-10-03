@@ -177,6 +177,25 @@ def _ratings(run: Any) -> list[dict[str, Any]]:
     rows = []
     for rating in getattr(run, "ratings", []):
         flips = getattr(rating, "flip_levels", {}) or {}
+        f = rating.fundamentals
+        facts = []
+        if f is not None:
+            if f.pe:
+                facts.append(f"P/E {f.pe:.1f}")
+            elif f.forward_pe:
+                facts.append(f"forward P/E {f.forward_pe:.1f}")
+            if f.price_to_book:
+                facts.append(f"P/B {f.price_to_book:.1f}")
+            if f.roe_pct is not None:
+                facts.append(f"ROE {f.roe_pct:.0f}%")
+            if f.operating_margin_pct is not None:
+                facts.append(f"op margin {f.operating_margin_pct:.0f}%")
+            if f.debt_to_equity is not None:
+                facts.append(f"D/E {f.debt_to_equity:.0f}")
+            if f.dividend_yield_pct:
+                facts.append(f"yield {f.dividend_yield_pct:.1f}%")
+            if f.earnings_date:
+                facts.append(f"results {f.earnings_date}")
         rows.append({
             "name": rating.name,
             "symbol": rating.position.symbol or DASH,
@@ -185,8 +204,11 @@ def _ratings(run: Any) -> list[dict[str, Any]]:
             "score": f"{rating.score:+.2f}",
             "confidence": rating.confidence,
             "last": rupees(rating.position.last),
+            "headline": rating.headline,
             "reasons": rating.reasons,
             "caveats": rating.caveats,
+            "cost_note": rating.cost_note,
+            "facts": facts,
             "flips": [f"{label} at {price:,.2f}" for label, price in flips.items()],
         })
     return rows

@@ -220,3 +220,106 @@ def test_rate_all_orders_buys_first_and_tallies():
     assert ratings[-1].verdict is Verdict.NO_RATING
     assert tally(ratings)["No rating"] == 1
     assert {r.name for r in ratings if r.verdict is Verdict.SELL} == {"Down"}
+
+
+# ------------------------------------------- valuation, quality, relative
+
+
+def fundamentals(**kw):
+    from desk.sources.fundamentals import Fundamentals
+    return Fundamentals(symbol="TEST", **kw)
+
+
+def relative_of(stock_3m, sector_3m, index="NIFTY IT"):
+    from desk.relative import Relative
+    return Relative(symbol="TEST", sector="IT", sector_index=index,
+                    stock={"3m": stock_3m}, sector_returns={"3m": sector_3m},
+                    market_returns={"3m": 1.0})
+
+
+def test_a_cheap_profitable_stock_scores_better_than_an_expensive_weak_one():
+    position, levels, analytics, closes = setup(
+        200, [100 + i for i in range(260)],
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    cheap = rate(position, levels, analytics, closes,
+                 fundamentals=fundamentals(pe=11.0, price_to_book=1.2, roe_pct=24.0,
+                                           operating_margin_pct=28.0, debt_to_equity=15.0))
+    rich = rate(position, levels, analytics, closes,
+                fundamentals=fundamentals(pe=70.0, price_to_book=12.0, roe_pct=3.0,
+                                          operating_margin_pct=2.0, debt_to_equity=300.0))
+    assert cheap.score > rich.score
+    assert "P/E 11.0" in " ".join(cheap.reasons)
+    assert "ROE 24%" in " ".join(cheap.reasons)
+
+
+def test_a_fall_shared_with_the_sector_scores_better_than_a_lonely_one():
+    """The Infosys question: is it the stock, or everything around it?"""
+    position, levels, analytics, closes = setup(
+        101, list(range(360, 100, -1)),
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    with_sector = rate(position, levels, analytics, closes,
+                       relative=relative_of(-38.0, -36.0))
+    alone = rate(position, levels, analytics, closes,
+                 relative=relative_of(-38.0, +2.0))
+    assert with_sector.score > alone.score
+    assert "sector-wide" in with_sector.headline or "with its sector" in with_sector.headline
+    assert "Falling faster than its sector" in alone.headline
+
+
+def test_the_headline_names_the_factor_that_actually_drove_the_verdict():
+    position, levels, analytics, closes = setup(
+        359, list(range(100, 360)),
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    rating = rate(position, levels, analytics, closes)
+    driver = max(rating.factors, key=lambda f: abs(f.contribution))
+    assert driver.name in rating.headline
+
+
+def test_what_you_paid_is_shown_but_never_scored():
+    """Being up 237% must not make a falling stock look like a Buy."""
+    position, levels, analytics, closes = setup(
+        101, list(range(360, 100, -1)), avg_cost=30.0,     # a huge gain on cost
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    rating = rate(position, levels, analytics, closes)
+    assert "your cost" not in {f.name for f in rating.factors}
+    assert rating.cost_note and "+237%" in rating.cost_note
+    assert rating.verdict is Verdict.SELL
+
+
+def test_missing_fundamentals_are_declared_rather_than_assumed_neutral():
+    position, levels, analytics, closes = setup(
+        359, list(range(100, 360)),
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    rating = rate(position, levels, analytics, closes)
+    assert any("price-only" in c for c in rating.caveats)
+    assert "valuation" not in {f.name for f in rating.factors}
+
+
+def test_imminent_results_make_the_verdict_provisional():
+    from datetime import date, timedelta
+
+    position, levels, analytics, closes = setup(
+        359, list(range(100, 360)),
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    soon = (date.today() + timedelta(days=3)).isoformat()
+    rating = rate(position, levels, analytics, closes,
+                  fundamentals=fundamentals(pe=20.0, roe_pct=15.0, earnings_date=soon))
+    assert any("results due in 3 days" in c for c in rating.caveats)
+
+
+def test_a_loss_making_company_is_marked_down_not_skipped():
+    position, levels, analytics, closes = setup(
+        200, [100 + i for i in range(260)],
+        extra_rows=[row(name="Ballast", nse_symbol="BAL", yahoo_ticker="BAL.NS", qty=10000)],
+    )
+    rating = rate(position, levels, analytics, closes,
+                  fundamentals=fundamentals(pe=-8.0, price_to_book=3.0))
+    valuation = next(f for f in rating.factors if f.name == "valuation")
+    assert valuation.score < 0
+    assert "no positive earnings" in valuation.reason

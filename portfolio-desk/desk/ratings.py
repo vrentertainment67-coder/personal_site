@@ -1,15 +1,25 @@
 """A mechanical Buy / Keep / Sell read on each holding.
 
-What this is: a scorecard over things the desk already computed from price
-history — trend, momentum, volatility, drawdown from cost, position size and
-where price sits against its levels. Each factor has a fixed weight, a stated
-threshold and a sentence. The verdict is the sum. Run it twice on the same data
-and it gives the same answer.
+What this is: a scorecard over trend, relative strength against the stock's own
+sector, valuation, business quality, volatility, where price sits against its
+levels, and how much of the book the position is. Each factor has a fixed
+weight, a stated threshold and a sentence. The verdict is the sum. Run it twice
+on the same data and it gives the same answer.
 
-What this is not: a forecast. There is no price target, no earnings estimate and
-no view on any company's business, because the desk has no data that would
-support one. The forward-looking part is `flip_levels`: the prices at which this
-same scorecard would read differently.
+What this is not: a forecast. There is no price prediction here. Valuation and
+quality figures are reported as fetched; analyst targets, where they appear, are
+other people's opinions shown as data, never as the desk's view. The
+forward-looking field is `flip_levels`: the prices at which this same scorecard
+would read differently.
+
+Two deliberate choices:
+
+* **Cost basis does not move the score.** What Vic paid years ago says nothing
+  about whether a stock is worth holding today. It stays on display, out of the
+  arithmetic.
+* **A fall is judged against the stock's sector.** Down 40% while the sector is
+  down 35% is a different fact from down 40% while the sector is flat, and the
+  price-only version of this file could not tell them apart.
 
 A rating is a starting point for Vic's own judgement, not a recommendation to
 act. The page and the message say so.
@@ -23,6 +33,8 @@ from enum import Enum
 
 from .levels import LevelSet
 from .portfolio import Analytics, Position
+from .relative import Relative
+from .sources.fundamentals import Fundamentals
 
 # Verdict bands, on a score that runs -1 .. +1.
 BUY_ABOVE = 0.30
@@ -36,6 +48,20 @@ EXTREME_WEIGHT_PCT = 20.0
 # Annualised volatility (from 60 sessions) above which a position is loud enough
 # to count against it.
 HIGH_VOL_PCT = 45.0
+
+# Valuation bands for Indian large/mid caps. Deliberately coarse: these separate
+# "cheap", "ordinary" and "expensive", and pretending to more precision than
+# that would be false.
+PE_CHEAP, PE_RICH = 15.0, 40.0
+PB_CHEAP, PB_RICH = 1.5, 8.0
+
+# Quality bands.
+ROE_GOOD, ROE_POOR = 15.0, 5.0
+MARGIN_GOOD, MARGIN_POOR = 20.0, 5.0
+DEBT_HEAVY = 150.0        # debt/equity, as Yahoo reports it (percentage points)
+
+# Earnings inside this many days make the verdict provisional.
+EARNINGS_SOON_DAYS = 10
 
 
 class Verdict(str, Enum):
@@ -69,6 +95,10 @@ class Rating:
     factors: list[Factor] = field(default_factory=list)
     flip_levels: dict[str, float] = field(default_factory=dict)
     caveats: list[str] = field(default_factory=list)
+    headline: str = ""
+    cost_note: str | None = None
+    fundamentals: Fundamentals | None = None
+    relative: Relative | None = None
 
     @property
     def name(self) -> str:
@@ -124,7 +154,7 @@ def _trend(levels: LevelSet) -> Factor | None:
         reason = "Mixed against its averages: above " + ", ".join(
             f"{p} DMA" for p in sorted(above)
         ) + "; below " + ", ".join(f"{p} DMA" for p in sorted(below))
-    return Factor("trend", score, 0.30, reason)
+    return Factor("trend", score, 0.20, reason)
 
 
 def _momentum(levels: LevelSet) -> Factor | None:
@@ -139,7 +169,7 @@ def _momentum(levels: LevelSet) -> Factor | None:
         f"{span * 100:.0f}% of the way up its 52-week range "
         f"({from_high:+.1f}% from the high at {high:,.0f}, low {low:,.0f})"
     )
-    return Factor("momentum", score, 0.20, reason)
+    return Factor("momentum", score, 0.10, reason)
 
 
 def _levels_context(levels: LevelSet) -> Factor | None:
@@ -159,7 +189,7 @@ def _levels_context(levels: LevelSet) -> Factor | None:
         f"({support.strength} agree), {to_resistance:.1f}% below resistance at "
         f"{resistance.center:,.0f} ({resistance.strength} agree)"
     )
-    return Factor("levels", score, 0.15, reason)
+    return Factor("levels", score, 0.05, reason)
 
 
 def _volatility(levels: LevelSet, closes: list[float] | None) -> Factor | None:
@@ -169,7 +199,91 @@ def _volatility(levels: LevelSet, closes: list[float] | None) -> Factor | None:
     # 20% vol is calm, 45% is loud; map to +0.5 .. -1.
     score = max(-1.0, min(0.5, (HIGH_VOL_PCT - vol) / 50))
     reason = f"Annualised volatility {vol:.0f}% over the last 60 sessions"
-    return Factor("volatility", score, 0.10, reason)
+    return Factor("volatility", score, 0.05, reason)
+
+
+def _relative(rel: Relative | None) -> Factor | None:
+    """Is the move the stock's own, or its whole sector's?"""
+    if rel is None:
+        return None
+    gap = rel.vs_sector("3m")
+    against = rel.sector_index
+    if gap is None:
+        gap = rel.vs_market("3m")
+        against = "the Nifty"
+    if gap is None:
+        return None
+    sentence = rel.sentence()
+    # ±20% against the sector over three months is a full score either way.
+    score = max(-1.0, min(1.0, gap / 20))
+    return Factor("relative", score, 0.15, sentence or f"{gap:+.0f}% against {against}")
+
+
+def _valuation(fundamentals: Fundamentals | None) -> Factor | None:
+    """Cheap or expensive, on the multiples Yahoo reports."""
+    if fundamentals is None or not fundamentals.has_valuation:
+        return None
+
+    parts: list[str] = []
+    scores: list[float] = []
+
+    pe = fundamentals.pe or fundamentals.forward_pe
+    if pe and pe > 0:
+        label = "trailing P/E" if fundamentals.pe else "forward P/E"
+        scores.append(max(-1.0, min(1.0, (PE_RICH - pe) / (PE_RICH - PE_CHEAP) * 2 - 1)))
+        parts.append(f"{label} {pe:.1f}")
+    elif pe is not None and pe <= 0:
+        # A company with no earnings cannot be called cheap on any multiple, so
+        # this has to outweigh a flattering book value rather than offset it.
+        scores.append(-1.0)
+        parts.append("no positive earnings to price")
+
+    pb = fundamentals.price_to_book
+    if pb and pb > 0:
+        scores.append(max(-1.0, min(1.0, (PB_RICH - pb) / (PB_RICH - PB_CHEAP) * 2 - 1)))
+        parts.append(f"P/B {pb:.1f}")
+
+    if fundamentals.dividend_yield_pct:
+        parts.append(f"yield {fundamentals.dividend_yield_pct:.1f}%")
+
+    if not scores:
+        return None
+    return Factor("valuation", sum(scores) / len(scores), 0.20, ", ".join(parts))
+
+
+def _quality(fundamentals: Fundamentals | None) -> Factor | None:
+    """Profitability, leverage and growth — the business behind the ticker."""
+    if fundamentals is None or not fundamentals.has_quality:
+        return None
+
+    parts: list[str] = []
+    scores: list[float] = []
+
+    roe = fundamentals.roe_pct
+    if roe is not None:
+        scores.append(max(-1.0, min(1.0, (roe - ROE_POOR) / (ROE_GOOD - ROE_POOR) * 2 - 1)))
+        parts.append(f"ROE {roe:.0f}%")
+
+    margin = fundamentals.operating_margin_pct
+    if margin is not None:
+        scores.append(
+            max(-1.0, min(1.0, (margin - MARGIN_POOR) / (MARGIN_GOOD - MARGIN_POOR) * 2 - 1))
+        )
+        parts.append(f"operating margin {margin:.0f}%")
+
+    debt = fundamentals.debt_to_equity
+    if debt is not None:
+        scores.append(max(-1.0, min(1.0, (DEBT_HEAVY - debt) / DEBT_HEAVY)))
+        parts.append(f"debt/equity {debt:.0f}")
+
+    growth = fundamentals.revenue_growth_pct
+    if growth is not None:
+        scores.append(max(-1.0, min(1.0, growth / 20)))
+        parts.append(f"revenue {growth:+.0f}%")
+
+    if not scores:
+        return None
+    return Factor("quality", sum(scores) / len(scores), 0.15, ", ".join(parts))
 
 
 def _concentration(position: Position, analytics: Analytics) -> Factor | None:
@@ -178,31 +292,39 @@ def _concentration(position: Position, analytics: Analytics) -> Factor | None:
         return None
     if weight < HEAVY_WEIGHT_PCT:
         return Factor(
-            "size", 0.0, 0.15, f"{weight:.1f}% of the book — not a concentration problem"
+            "size", 0.0, 0.10, f"{weight:.1f}% of the book — not a concentration problem"
         )
     # Above the threshold the score falls away, reaching -1 at twice it.
     score = max(-1.0, -(weight - HEAVY_WEIGHT_PCT) / HEAVY_WEIGHT_PCT)
     return Factor(
-        "size", score, 0.15,
+        "size", score, 0.10,
         f"{weight:.1f}% of the book — a single position this size drives the whole portfolio",
     )
 
 
-def _drawdown(position: Position) -> Factor | None:
+def _cost_note(position: Position) -> str | None:
+    """Shown with the rating, never scored: what Vic paid is his history, not
+    a property of the stock."""
     ret = position.return_pct
     if ret is None:
         return None
-    # Purely informational about the position, not about the stock: a small
-    # weight so it colours the reading without driving it.
-    score = max(-1.0, min(1.0, ret / 100))
-    reason = f"{ret:+.0f}% against an average cost of {position.avg_cost:,.2f}"
-    return Factor("your cost", score, 0.10, reason)
+    return f"You are {ret:+.0f}% on this, against an average cost of {position.avg_cost:,.2f}"
 
 
-def rate(position: Position, levels: LevelSet | None, analytics: Analytics,
-         closes: list[float] | None = None) -> Rating:
+def rate(
+    position: Position,
+    levels: LevelSet | None,
+    analytics: Analytics,
+    closes: list[float] | None = None,
+    *,
+    fundamentals: Fundamentals | None = None,
+    relative: Relative | None = None,
+) -> Rating:
     """Score one holding. Missing data narrows the scorecard rather than faking it."""
     rating = Rating(position=position, verdict=Verdict.NO_RATING, score=0.0)
+    rating.fundamentals = fundamentals
+    rating.relative = relative
+    rating.cost_note = _cost_note(position)
 
     if position.value is None:
         rating.caveats.append("no price, so nothing can be computed")
@@ -220,14 +342,28 @@ def rate(position: Position, levels: LevelSet | None, analytics: Analytics,
 
     for factor in (
         _trend(levels),
+        _relative(relative),
+        _valuation(fundamentals),
+        _quality(fundamentals),
         _momentum(levels),
         _levels_context(levels),
         _volatility(levels, closes),
         _concentration(position, analytics),
-        _drawdown(position),
     ):
         if factor is not None:
             rating.factors.append(factor)
+
+    if fundamentals is None:
+        rating.caveats.append("no fundamentals, so the verdict is price-only")
+    elif not fundamentals.has_valuation:
+        rating.caveats.append("no valuation figures published for this name")
+
+    days = fundamentals.days_to_earnings() if fundamentals else None
+    if days is not None and 0 <= days <= EARNINGS_SOON_DAYS:
+        rating.caveats.append(
+            f"results due in {days} day{'s' if days != 1 else ''} "
+            f"({fundamentals.earnings_date}) — the picture may change"
+        )
 
     total_weight = sum(f.weight for f in rating.factors)
     if not total_weight:
@@ -252,12 +388,47 @@ def rate(position: Position, levels: LevelSet | None, analytics: Analytics,
             f"the scorecard said Buy, but at {weight:.0f}% of the book this is held back to Keep"
         )
 
-    rating.flip_levels = _flip_levels(position, levels, analytics, closes)
+    rating.flip_levels = _flip_levels(
+        position, levels, analytics, closes, fundamentals, relative
+    )
+    rating.headline = _headline(rating)
     return rating
 
 
+def _headline(rating: Rating) -> str:
+    """One sentence saying what actually drove the verdict."""
+    if not rating.factors:
+        return ""
+    driver = max(rating.factors, key=lambda f: abs(f.contribution))
+    rel = rating.relative
+
+    if rel is not None and rating.verdict is Verdict.SELL:
+        gap = rel.vs_sector("3m")
+        if gap is not None and gap > -3:
+            return (
+                f"Down with its sector rather than on its own: {rel.verdict}. "
+                f"The verdict rests most on {driver.name}."
+            )
+        if gap is not None:
+            return (
+                f"Falling faster than its sector ({gap:+.0f}% relative over 3 months). "
+                f"The verdict rests most on {driver.name}."
+            )
+    verb = {
+        Verdict.BUY: "Buy rests most on",
+        Verdict.SELL: "Sell rests most on",
+        Verdict.KEEP: "Keep: the strongest single factor is",
+    }.get(rating.verdict, "Driven by")
+    return f"{verb} {driver.name} — {driver.reason}"
+
+
 def _flip_levels(
-    position: Position, levels: LevelSet, analytics: Analytics, closes: list[float] | None
+    position: Position,
+    levels: LevelSet,
+    analytics: Analytics,
+    closes: list[float] | None,
+    fundamentals: Fundamentals | None = None,
+    relative: Relative | None = None,
 ) -> dict[str, float]:
     """The prices at which this same scorecard would read differently.
 
@@ -274,7 +445,9 @@ def _flip_levels(
             target = None
             for step in range(1, 61):           # up to 30% away, in 0.5% steps
                 levels.last = current * (1 + direction * step * 0.005)
-                probe = _score_only(position, levels, analytics, closes)
+                probe = _score_only(
+                    position, levels, analytics, closes, fundamentals, relative
+                )
                 if direction > 0 and probe >= BUY_ABOVE:
                     target = levels.last
                     break
@@ -289,13 +462,24 @@ def _flip_levels(
 
 
 def _score_only(
-    position: Position, levels: LevelSet, analytics: Analytics, closes: list[float] | None
+    position: Position,
+    levels: LevelSet,
+    analytics: Analytics,
+    closes: list[float] | None,
+    fundamentals: Fundamentals | None = None,
+    relative: Relative | None = None,
 ) -> float:
+    """The same arithmetic as rate(), used to solve for the flip levels.
+
+    Valuation and quality move with price too, but the desk only has today's
+    multiples, so they are held fixed here: the flip level answers "what price
+    changes the verdict, all else equal".
+    """
     factors = [
         f for f in (
-            _trend(levels), _momentum(levels), _levels_context(levels),
+            _trend(levels), _relative(relative), _valuation(fundamentals),
+            _quality(fundamentals), _momentum(levels), _levels_context(levels),
             _volatility(levels, closes), _concentration(position, analytics),
-            _drawdown(position),
         ) if f is not None
     ]
     total = sum(f.weight for f in factors)
@@ -306,12 +490,20 @@ def rate_all(
     analytics: Analytics,
     levels: dict[str, LevelSet],
     closes: dict[str, list[float]] | None = None,
+    fundamentals: dict[str, Fundamentals] | None = None,
+    relatives: dict[str, Relative] | None = None,
 ) -> list[Rating]:
     """Every holding, best score first."""
-    closes = closes or {}
+    closes, fundamentals, relatives = closes or {}, fundamentals or {}, relatives or {}
     out = [
-        rate(position, levels.get(position.symbol or ""), analytics,
-             closes.get(position.symbol or ""))
+        rate(
+            position,
+            levels.get(position.symbol or ""),
+            analytics,
+            closes.get(position.symbol or ""),
+            fundamentals=fundamentals.get(position.symbol or ""),
+            relative=relatives.get(position.symbol or ""),
+        )
         for position in analytics.positions
     ]
     order = {Verdict.BUY: 0, Verdict.KEEP: 1, Verdict.SELL: 2, Verdict.NO_RATING: 3}

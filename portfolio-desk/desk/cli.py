@@ -303,8 +303,9 @@ def _print_ratings(ratings) -> None:
         counts[r.verdict.value] = counts.get(r.verdict.value, 0) + 1
     print("\n" + " · ".join(f"{v} {k}" for k, v in counts.items()))
     print(
-        "\nA scorecard over price history and position size. Not advice, not a forecast: "
-        "no price targets, no view on any company's business."
+        "\nA scorecard over trend, strength against the stock's own sector, valuation, "
+        "quality and position size. Not advice and not a forecast: no price prediction, "
+        "and what you paid is shown but never scored."
     )
 
 

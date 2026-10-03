@@ -26,10 +26,12 @@ from .holdings import Portfolio, load as load_holdings
 from .market import MarketData, SourceStatus
 from .portfolio import Analytics, analyse
 from .sources.http import SourceUnavailable
+from .sources.fundamentals import FundamentalsClient
 from .sources.news import NewsClient
 from .sources.nse_client import NseClient
 from .sources.yahoo import YahooClient
 from . import oi as oi_mod
+from . import relative as relative_mod
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +53,8 @@ class RunResult:
     watchlist: list[signals_mod.Attention] = field(default_factory=list)
     ratings: list[ratings_mod.Rating] = field(default_factory=list)
     closes: dict[str, list[float]] = field(default_factory=dict)
+    fundamentals: dict[str, Any] = field(default_factory=dict)
+    relatives: dict[str, Any] = field(default_factory=dict)
     portfolio_signals: list[signals_mod.PortfolioSignal] = field(default_factory=list)
     news: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     globals_: list[dict[str, Any]] = field(default_factory=list)
@@ -129,8 +133,51 @@ def morning(
             except ValueError:
                 continue
 
+        # Sector indices, so each holding can be judged against its own sector.
+        sector_bars, sector_status = market_mod.fetch_bars(
+            market_mod.SECTOR_INDEX_TICKERS, client=yahoo
+        )
+        market.statuses.append(
+            SourceStatus("sector indices", sector_status.health, sector_status.detail)
+        )
+        index_closes = {name: [b.close for b in bars] for name, bars in sector_bars.items()}
+        index_closes.update(
+            {name: [b.close for b in bars] for name, bars in index_bars.items()}
+        )
+        for position in result.analytics.positions:
+            symbol = position.symbol or ""
+            if symbol not in result.closes:
+                continue
+            comparison = relative_mod.compare(
+                symbol, position.sector, result.closes[symbol], index_closes
+            )
+            if comparison is not None:
+                result.relatives[symbol] = comparison
+
         result.globals_, global_status = market_mod.fetch_global_cues(yahoo)
         market.statuses.append(global_status)
+
+        # Fundamentals: valuation, quality and the next earnings date.
+        fundamentals_client = FundamentalsClient()
+        fetched, failed = 0, ""
+        for symbol, ticker in tickers.items():
+            try:
+                data = fundamentals_client.fetch(symbol, ticker)
+            except SourceUnavailable as exc:
+                failed = exc.detail
+                break
+            if data is not None:
+                result.fundamentals[symbol] = data
+                fetched += 1
+        market.statuses.append(
+            SourceStatus(
+                "yahoo (fundamentals)",
+                "failed" if failed else ("ok" if fetched else "failed"),
+                failed or f"{fetched} of {len(tickers)} names",
+            )
+        )
+        if not result.fundamentals:
+            result.unavailable.append("valuation and quality")
     else:
         result.unavailable.append("levels (offline run)")
 
@@ -152,7 +199,10 @@ def morning(
     # 4. Signals and ratings -------------------------------------------------
     result.watchlist = signals_mod.rank(result.analytics, result.levels)
     result.portfolio_signals = signals_mod.portfolio_signals(result.analytics)
-    result.ratings = ratings_mod.rate_all(result.analytics, result.levels, result.closes)
+    result.ratings = ratings_mod.rate_all(
+        result.analytics, result.levels, result.closes,
+        result.fundamentals, result.relatives,
+    )
 
     # 5. News, for the names the signals already surfaced -------------------
     if not offline:
@@ -342,9 +392,11 @@ def build_payload(result: RunResult) -> dict[str, Any]:
                 "verdict": r.verdict.value,
                 "score": round(r.score, 2),
                 "confidence": r.confidence,
+                "headline": r.headline,
                 "reasons": r.reasons,
                 "flip_levels": r.flip_levels,
                 "caveats": r.caveats,
+                "cost_note": r.cost_note,
             }
             for r in result.ratings
             if r.verdict is not ratings_mod.Verdict.NO_RATING

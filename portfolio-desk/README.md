@@ -61,12 +61,24 @@ arithmetic. Six factors, fixed weights, stated thresholds:
 
 | Factor | Weight | What it reads |
 |---|---|---|
-| trend | 0.30 | price against the 20, 50 and 200 DMA |
-| momentum | 0.20 | position inside the 52-week range |
-| levels | 0.15 | distance to the nearest support vs resistance |
-| size | 0.15 | position weight; bites above 10% of the book |
-| volatility | 0.10 | annualised, last 60 sessions |
-| your cost | 0.10 | return against average cost |
+| trend | 0.20 | price against the 20, 50 and 200 DMA |
+| valuation | 0.20 | P/E, P/B, dividend yield (Yahoo fundamentals) |
+| relative | 0.15 | 3-month move against the stock's own sector index |
+| quality | 0.15 | ROE, operating margin, debt/equity, revenue growth |
+| momentum | 0.10 | position inside the 52-week range |
+| size | 0.10 | position weight; bites above 10% of the book |
+| levels | 0.05 | distance to the nearest support vs resistance |
+| volatility | 0.05 | annualised, last 60 sessions |
+
+**Relative strength is the factor that answers "whose fall is this?"** A stock
+down 40% while its sector is down 36% is a different fact from one down 40% while
+the sector is flat, and a price-only scorecard cannot tell them apart. Each
+holding's sector maps to a Nifty sectoral index (`desk/relative.py`); sectors
+with no clean index fall back to the Nifty.
+
+**What you paid is never scored.** A 237% gain on cost says nothing about whether
+a stock is worth holding today, so the cost basis is shown beside the rating and
+left out of the arithmetic.
 
 Score above +0.30 is Buy, below -0.25 is Sell, between is Keep. A position at
 20% or more of the book is never a Buy however good the chart looks. Missing
