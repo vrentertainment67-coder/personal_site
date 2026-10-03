@@ -1,0 +1,4710 @@
+{
+  "as_of": "2026-10-03",
+  "instruments": {
+    "ADANIENSOL": {
+      "last": 1326.4,
+      "prev_close": 1287.9,
+      "pivots": {
+        "p": 1341.6999918619792,
+        "r1": 1374.300008138021,
+        "r2": 1422.1999918619792,
+        "r3": 1454.800008138021,
+        "s1": 1293.800008138021,
+        "s2": 1261.1999918619792,
+        "s3": 1213.300008138021
+      },
+      "cpr": {
+        "tc": 1349.35,
+        "p": 1341.7,
+        "bc": 1334.05,
+        "width_pct": 1.14,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 1368.08,
+        "50": 1498.98,
+        "200": 1292.07
+      },
+      "week_52_high": 1789.0,
+      "week_52_low": 803.0999755859375,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 803.1,
+          "high": 803.1,
+          "center": 803.1,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1213.3,
+          "high": 1213.3,
+          "center": 1213.3,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1261.2,
+          "high": 1261.2,
+          "center": 1261.2,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1275.2,
+          "high": 1275.2,
+          "center": 1275.2,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1292.07,
+          "high": 1293.8,
+          "center": 1292.94,
+          "side": "support",
+          "methods": [
+            "200 DMA",
+            "S1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1309.1,
+          "high": 1315.0,
+          "center": 1312.05,
+          "side": "support",
+          "methods": [
+            "prev day low",
+            "prev week low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1334.05,
+          "high": 1341.7,
+          "center": 1337.42,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "swing low",
+            "pivot"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1348.0,
+          "high": 1349.35,
+          "center": 1348.67,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1368.08,
+          "high": 1374.3,
+          "center": 1370.79,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "swing low",
+            "R1"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1389.6,
+          "high": 1389.6,
+          "center": 1389.6,
+          "side": "resistance",
+          "methods": [
+            "prev day high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1422.2,
+          "high": 1432.4,
+          "center": 1427.3,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "prev week high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1436.5,
+          "high": 1446.0,
+          "center": 1441.25,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1454.8,
+          "high": 1454.8,
+          "center": 1454.8,
+          "side": "resistance",
+          "methods": [
+            "R3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1498.98,
+          "high": 1498.98,
+          "center": 1498.98,
+          "side": "resistance",
+          "methods": [
+            "50 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1527.0,
+          "high": 1527.0,
+          "center": 1527.0,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1570.2,
+          "high": 1570.2,
+          "center": 1570.2,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1603.9,
+          "high": 1603.9,
+          "center": 1603.9,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1625.0,
+          "high": 1637.0,
+          "center": 1630.2,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1665.1,
+          "high": 1672.0,
+          "center": 1668.55,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1789.0,
+          "high": 1789.0,
+          "center": 1789.0,
+          "side": "resistance",
+          "methods": [
+            "52w high",
+            "swing high"
+          ],
+          "agreement": 2
+        }
+      ]
+    },
+    "ADANIENT": {
+      "last": 2816.8,
+      "prev_close": 2831.1,
+      "pivots": {
+        "p": 2830.8333333333335,
+        "r1": 2889.666666666667,
+        "r2": 2962.5332845052085,
+        "r3": 3021.366617838542,
+        "s1": 2757.966715494792,
+        "s2": 2699.1333821614585,
+        "s3": 2626.266764322917
+      },
+      "cpr": {
+        "tc": 2837.85,
+        "p": 2830.83,
+        "bc": 2823.82,
+        "width_pct": 0.496,
+        "shape": "average"
+      },
+      "dma": {
+        "20": 2962.03,
+        "50": 2993.2,
+        "200": 2580.14
+      },
+      "week_52_high": 3245.0,
+      "week_52_low": 1753.0,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 1753.0,
+          "high": 1753.0,
+          "center": 1753.0,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2580.14,
+          "high": 2580.14,
+          "center": 2580.14,
+          "side": "support",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2626.27,
+          "high": 2626.27,
+          "center": 2626.27,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2699.13,
+          "high": 2699.13,
+          "center": 2699.13,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2757.97,
+          "high": 2772.0,
+          "center": 2764.98,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2823.82,
+          "high": 2837.85,
+          "center": 2830.75,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "swing low",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2889.67,
+          "high": 2907.0,
+          "center": 2899.64,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev week low",
+            "prev day high",
+            "swing low"
+          ],
+          "agreement": 4
+        },
+        {
+          "low": 2932.8,
+          "high": 2932.8,
+          "center": 2932.8,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2962.03,
+          "high": 2972.9,
+          "center": 2966.66,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "swing low",
+            "R2",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 2992.5,
+          "high": 2993.2,
+          "center": 2992.85,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 3021.37,
+          "high": 3026.1,
+          "center": 3024.52,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 3058.6,
+          "high": 3062.0,
+          "center": 3060.3,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 3083.7,
+          "high": 3091.5,
+          "center": 3087.6,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 3133.0,
+          "high": 3142.0,
+          "center": 3137.5,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 3173.7,
+          "high": 3173.7,
+          "center": 3173.7,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 3213.5,
+          "high": 3219.7,
+          "center": 3216.6,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 3245.0,
+          "high": 3245.0,
+          "center": 3245.0,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "ADANIGREEN": {
+      "last": 1276.1,
+      "prev_close": 1235.0,
+      "pivots": {
+        "p": 1278.1333414713542,
+        "r1": 1295.9666341145835,
+        "r2": 1315.8332926432292,
+        "r3": 1333.6665852864585,
+        "s1": 1258.2666829427085,
+        "s2": 1240.4333902994792,
+        "s3": 1220.5667317708335
+      },
+      "cpr": {
+        "tc": 1279.15,
+        "p": 1278.13,
+        "bc": 1277.12,
+        "width_pct": 0.159,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 1286.31,
+        "50": 1316.82,
+        "200": 1203.92
+      },
+      "week_52_high": 1631.5,
+      "week_52_low": 765.0,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 765.0,
+          "high": 765.0,
+          "center": 765.0,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1203.92,
+          "high": 1203.92,
+          "center": 1203.92,
+          "side": "support",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1214.9,
+          "high": 1223.6,
+          "center": 1219.69,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "S3"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1240.43,
+          "high": 1245.6,
+          "center": 1243.02,
+          "side": "support",
+          "methods": [
+            "S2",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1258.27,
+          "high": 1260.3,
+          "center": 1259.28,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1270.2,
+          "high": 1279.15,
+          "center": 1276.02,
+          "side": "support",
+          "methods": [
+            "prev week low",
+            "swing low",
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1281.1,
+          "high": 1286.31,
+          "center": 1283.7,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "20 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1294.8,
+          "high": 1298.0,
+          "center": 1296.26,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1310.3,
+          "high": 1316.82,
+          "center": 1314.24,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low",
+            "R2",
+            "50 DMA"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1332.0,
+          "high": 1339.7,
+          "center": 1335.82,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "R3",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1346.8,
+          "high": 1352.0,
+          "center": 1349.6,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1416.0,
+          "high": 1416.0,
+          "center": 1416.0,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1427.0,
+          "high": 1427.0,
+          "center": 1427.0,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1558.7,
+          "high": 1558.7,
+          "center": 1558.7,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1631.5,
+          "high": 1631.5,
+          "center": 1631.5,
+          "side": "resistance",
+          "methods": [
+            "52w high",
+            "swing high"
+          ],
+          "agreement": 2
+        }
+      ]
+    },
+    "ADANIPORTS": {
+      "last": 1737.8,
+      "prev_close": 1743.7,
+      "pivots": {
+        "p": 1746.6000162760417,
+        "r1": 1777.2000325520835,
+        "r2": 1816.6000162760417,
+        "r3": 1847.2000325520835,
+        "s1": 1707.2000325520835,
+        "s2": 1676.6000162760417,
+        "s3": 1637.2000325520835
+      },
+      "cpr": {
+        "tc": 1751.0,
+        "p": 1746.6,
+        "bc": 1742.2,
+        "width_pct": 0.504,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 1762.41,
+        "50": 1721.38,
+        "200": 1632.95
+      },
+      "week_52_high": 1891.0999755859375,
+      "week_52_low": 1292.0,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 1292.0,
+          "high": 1292.0,
+          "center": 1292.0,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1593.1,
+          "high": 1593.1,
+          "center": 1593.1,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1632.95,
+          "high": 1640.4,
+          "center": 1636.85,
+          "side": "support",
+          "methods": [
+            "200 DMA",
+            "S3",
+            "swing low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1650.0,
+          "high": 1650.0,
+          "center": 1650.0,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1671.0,
+          "high": 1676.6,
+          "center": 1673.8,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "S2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1685.2,
+          "high": 1685.2,
+          "center": 1685.2,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1703.4,
+          "high": 1716.0,
+          "center": 1707.52,
+          "side": "support",
+          "methods": [
+            "swing high",
+            "swing low",
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1716.9,
+          "high": 1723.9,
+          "center": 1720.73,
+          "side": "support",
+          "methods": [
+            "swing high",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1736.6,
+          "high": 1746.6,
+          "center": 1741.8,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR bottom",
+            "pivot"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1751.0,
+          "high": 1762.41,
+          "center": 1756.71,
+          "side": "resistance",
+          "methods": [
+            "CPR top",
+            "20 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1766.7,
+          "high": 1777.2,
+          "center": 1771.95,
+          "side": "resistance",
+          "methods": [
+            "prev week low",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1785.9,
+          "high": 1792.0,
+          "center": 1788.83,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1812.7,
+          "high": 1824.0,
+          "center": 1818.48,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "R2",
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1847.2,
+          "high": 1859.7,
+          "center": 1854.77,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1891.1,
+          "high": 1891.1,
+          "center": 1891.1,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "ADANIPOWER": {
+      "last": 196.21,
+      "prev_close": 196.14,
+      "pivots": {
+        "p": 197.55667114257812,
+        "r1": 202.01333618164062,
+        "r2": 207.81666564941406,
+        "r3": 212.27333068847656,
+        "s1": 191.7533416748047,
+        "s2": 187.2966766357422,
+        "s3": 181.49334716796875
+      },
+      "cpr": {
+        "tc": 198.23,
+        "p": 197.56,
+        "bc": 196.88,
+        "width_pct": 0.682,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 204.92,
+        "50": 206.75,
+        "200": 188.85
+      },
+      "week_52_high": 254.1999969482422,
+      "week_52_low": 128.10000610351562,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 128.1,
+          "high": 128.1,
+          "center": 128.1,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 181.49,
+          "high": 181.49,
+          "center": 181.49,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 187.3,
+          "high": 187.3,
+          "center": 187.3,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 188.85,
+          "high": 188.85,
+          "center": 188.85,
+          "side": "support",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 191.75,
+          "high": 193.1,
+          "center": 192.43,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 196.1,
+          "high": 197.56,
+          "center": 196.85,
+          "side": "resistance",
+          "methods": [
+            "prev week low",
+            "CPR bottom",
+            "pivot"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 198.0,
+          "high": 198.23,
+          "center": 198.12,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 200.4,
+          "high": 201.77,
+          "center": 201.2,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 202.01,
+          "high": 203.36,
+          "center": 202.69,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 204.12,
+          "high": 204.92,
+          "center": 204.52,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "20 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 206.7,
+          "high": 207.82,
+          "center": 207.1,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "50 DMA",
+            "R2"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 208.67,
+          "high": 208.67,
+          "center": 208.67,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 210.55,
+          "high": 211.33,
+          "center": 210.81,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 212.27,
+          "high": 213.8,
+          "center": 213.1,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 215.11,
+          "high": 216.1,
+          "center": 215.61,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 217.4,
+          "high": 217.4,
+          "center": 217.4,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 222.5,
+          "high": 222.5,
+          "center": 222.5,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 228.94,
+          "high": 228.94,
+          "center": 228.94,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 254.2,
+          "high": 254.2,
+          "center": 254.2,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "ATGL": {
+      "last": 583.0,
+      "prev_close": 594.45,
+      "pivots": {
+        "p": 583.0833333333334,
+        "r1": 594.116678873698,
+        "r2": 605.1833699544271,
+        "r3": 616.2167154947917,
+        "s1": 572.0166422526042,
+        "s2": 560.9832967122396,
+        "s3": 549.9166056315105
+      },
+      "cpr": {
+        "tc": 583.1,
+        "p": 583.08,
+        "bc": 583.07,
+        "width_pct": 0.006,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 605.91,
+        "50": 631.49,
+        "200": 615.38
+      },
+      "week_52_high": 859.8499755859375,
+      "week_52_low": 462.79998779296875,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 462.8,
+          "high": 462.8,
+          "center": 462.8,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 549.92,
+          "high": 549.92,
+          "center": 549.92,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 560.98,
+          "high": 560.98,
+          "center": 560.98,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 572.02,
+          "high": 572.05,
+          "center": 572.03,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 576.4,
+          "high": 576.4,
+          "center": 576.4,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 583.07,
+          "high": 583.1,
+          "center": 583.08,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 594.12,
+          "high": 594.15,
+          "center": 594.13,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 601.9,
+          "high": 605.91,
+          "center": 604.22,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high",
+            "prev week low",
+            "R2",
+            "20 DMA"
+          ],
+          "agreement": 4
+        },
+        {
+          "low": 615.38,
+          "high": 616.22,
+          "center": 615.8,
+          "side": "resistance",
+          "methods": [
+            "200 DMA",
+            "R3"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 624.4,
+          "high": 624.4,
+          "center": 624.4,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 631.49,
+          "high": 635.45,
+          "center": 633.47,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 643.15,
+          "high": 645.8,
+          "center": 644.48,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 652.0,
+          "high": 652.0,
+          "center": 652.0,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 659.05,
+          "high": 659.05,
+          "center": 659.05,
+          "side": "resistance",
+          "methods": [
+            "prev week high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 673.8,
+          "high": 677.85,
+          "center": 675.48,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 687.9,
+          "high": 687.9,
+          "center": 687.9,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 718.9,
+          "high": 718.9,
+          "center": 718.9,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 859.85,
+          "high": 859.85,
+          "center": 859.85,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "AWL": {
+      "last": 175.71,
+      "prev_close": 180.66,
+      "pivots": {
+        "p": 175.99332682291666,
+        "r1": 178.33665974934894,
+        "r2": 181.24332682291666,
+        "r3": 183.58665974934894,
+        "s1": 173.08665974934894,
+        "s2": 170.74332682291666,
+        "s3": 167.83665974934894
+      },
+      "cpr": {
+        "tc": 176.27,
+        "p": 175.99,
+        "bc": 175.71,
+        "width_pct": 0.32,
+        "shape": "average"
+      },
+      "dma": {
+        "20": 183.84,
+        "50": 189.06,
+        "200": 196.02
+      },
+      "week_52_high": 282.8999938964844,
+      "week_52_low": 171.19000244140625,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 167.84,
+          "high": 167.84,
+          "center": 167.84,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 170.74,
+          "high": 171.19,
+          "center": 170.97,
+          "side": "support",
+          "methods": [
+            "S2",
+            "52w low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 172.6,
+          "high": 173.65,
+          "center": 173.11,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 175.71,
+          "high": 176.27,
+          "center": 175.99,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 178.34,
+          "high": 178.9,
+          "center": 178.62,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 180.47,
+          "high": 181.61,
+          "center": 181.08,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R2",
+            "prev week low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 182.35,
+          "high": 183.59,
+          "center": 182.97,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R3"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 183.84,
+          "high": 185.0,
+          "center": 184.42,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 185.35,
+          "high": 185.35,
+          "center": 185.35,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 186.96,
+          "high": 187.75,
+          "center": 187.36,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 188.51,
+          "high": 189.33,
+          "center": 189.06,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "50 DMA",
+            "prev week high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 191.0,
+          "high": 191.0,
+          "center": 191.0,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 196.02,
+          "high": 196.02,
+          "center": 196.02,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 198.6,
+          "high": 199.9,
+          "center": 199.25,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 201.5,
+          "high": 201.5,
+          "center": 201.5,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 204.82,
+          "high": 204.82,
+          "center": 204.82,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 282.9,
+          "high": 282.9,
+          "center": 282.9,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "ASIANTILES": {
+      "last": 47.5,
+      "prev_close": 50.16,
+      "pivots": {
+        "p": 48.333333333333336,
+        "r1": 49.16666666666667,
+        "r2": 50.38333257039388,
+        "r3": 51.21666590372722,
+        "s1": 47.116667429606125,
+        "s2": 46.28333409627279,
+        "s3": 45.06666819254558
+      },
+      "cpr": {
+        "tc": 48.52,
+        "p": 48.33,
+        "bc": 48.14,
+        "width_pct": 0.793,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 50.19,
+        "50": 50.91,
+        "200": 61.08
+      },
+      "week_52_high": 79.05999755859375,
+      "week_52_low": 42.5,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 42.5,
+          "high": 42.5,
+          "center": 42.5,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 43.1,
+          "high": 43.1,
+          "center": 43.1,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 45.07,
+          "high": 45.07,
+          "center": 45.07,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 46.28,
+          "high": 46.28,
+          "center": 46.28,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 47.12,
+          "high": 47.37,
+          "center": 47.24,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 47.5,
+          "high": 47.5,
+          "center": 47.5,
+          "side": "resistance",
+          "methods": [
+            "prev day low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 48.14,
+          "high": 48.45,
+          "center": 48.31,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 48.52,
+          "high": 48.52,
+          "center": 48.52,
+          "side": "resistance",
+          "methods": [
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 49.17,
+          "high": 49.32,
+          "center": 49.28,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "swing high",
+            "prev week low",
+            "swing low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 49.55,
+          "high": 49.55,
+          "center": 49.55,
+          "side": "resistance",
+          "methods": [
+            "prev day high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 50.02,
+          "high": 50.38,
+          "center": 50.2,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "20 DMA",
+            "R2"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 50.91,
+          "high": 51.22,
+          "center": 51.13,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "swing high",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 52.01,
+          "high": 52.22,
+          "center": 52.15,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 57.9,
+          "high": 57.9,
+          "center": 57.9,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 61.08,
+          "high": 61.08,
+          "center": 61.08,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 68.43,
+          "high": 68.43,
+          "center": 68.43,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 79.06,
+          "high": 79.06,
+          "center": 79.06,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "AXISBANK": {
+      "last": 1217.1,
+      "prev_close": 1209.9,
+      "pivots": {
+        "p": 1224.6666666666667,
+        "r1": 1234.0332845052085,
+        "r2": 1250.9665934244792,
+        "r3": 1260.333211263021,
+        "s1": 1207.733357747396,
+        "s2": 1198.3667399088542,
+        "s3": 1181.4334309895835
+      },
+      "cpr": {
+        "tc": 1228.45,
+        "p": 1224.67,
+        "bc": 1220.88,
+        "width_pct": 0.618,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 1236.56,
+        "50": 1241.19,
+        "200": 1285.2
+      },
+      "week_52_high": 1418.300048828125,
+      "week_52_low": 1150.300048828125,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 1150.3,
+          "high": 1150.3,
+          "center": 1150.3,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1175.0,
+          "high": 1181.43,
+          "center": 1177.14,
+          "side": "support",
+          "methods": [
+            "prev week low",
+            "swing low",
+            "S3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1190.5,
+          "high": 1198.37,
+          "center": 1194.43,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "S2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1207.73,
+          "high": 1215.3,
+          "center": 1211.33,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1219.9,
+          "high": 1228.45,
+          "center": 1223.48,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1229.8,
+          "high": 1236.56,
+          "center": 1233.46,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R1",
+            "20 DMA"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1241.19,
+          "high": 1250.0,
+          "center": 1244.26,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "prev day high",
+            "swing low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1250.97,
+          "high": 1260.33,
+          "center": 1256.18,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "prev week high",
+            "swing high",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1272.0,
+          "high": 1280.7,
+          "center": 1276.35,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1285.2,
+          "high": 1285.2,
+          "center": 1285.2,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1298.6,
+          "high": 1300.0,
+          "center": 1299.3,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1348.0,
+          "high": 1348.0,
+          "center": 1348.0,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1418.3,
+          "high": 1418.3,
+          "center": 1418.3,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "BAJAJHFL": {
+      "last": 83.17,
+      "prev_close": 82.52,
+      "pivots": {
+        "p": 82.3866678873698,
+        "r1": 83.71333821614584,
+        "r2": 84.5166727701823,
+        "r3": 85.84334309895834,
+        "s1": 81.58333333333334,
+        "s2": 80.2566630045573,
+        "s3": 79.45332845052084
+      },
+      "cpr": {
+        "tc": 82.65,
+        "p": 82.39,
+        "bc": 82.12,
+        "width_pct": 0.635,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 83.36,
+        "50": 84.37,
+        "200": 86.69
+      },
+      "week_52_high": 113.44999694824219,
+      "week_52_low": 72.6500015258789,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 72.65,
+          "high": 72.65,
+          "center": 72.65,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 79.45,
+          "high": 79.45,
+          "center": 79.45,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 80.26,
+          "high": 80.26,
+          "center": 80.26,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 81.06,
+          "high": 81.58,
+          "center": 81.32,
+          "side": "support",
+          "methods": [
+            "prev day low",
+            "S1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 81.71,
+          "high": 82.12,
+          "center": 81.93,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "prev week low",
+            "CPR bottom"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 82.39,
+          "high": 82.65,
+          "center": 82.46,
+          "side": "support",
+          "methods": [
+            "pivot",
+            "swing low",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 83.19,
+          "high": 83.78,
+          "center": 83.54,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "20 DMA",
+            "swing low",
+            "R1"
+          ],
+          "agreement": 4
+        },
+        {
+          "low": 84.37,
+          "high": 84.98,
+          "center": 84.62,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "R2",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 85.47,
+          "high": 85.84,
+          "center": 85.65,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 86.45,
+          "high": 86.82,
+          "center": 86.65,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "200 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 87.95,
+          "high": 88.4,
+          "center": 88.17,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 113.45,
+          "high": 113.45,
+          "center": 113.45,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "CANBK": {
+      "last": 118.36,
+      "prev_close": 120.65,
+      "pivots": {
+        "p": 118.33333333333333,
+        "r1": 120.15666453043619,
+        "r2": 121.95332845052083,
+        "r3": 123.77665964762369,
+        "s1": 116.53666941324869,
+        "s2": 114.71333821614583,
+        "s3": 112.91667429606119
+      },
+      "cpr": {
+        "tc": 118.35,
+        "p": 118.33,
+        "bc": 118.32,
+        "width_pct": 0.023,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 123.28,
+        "50": 126.28,
+        "200": 136.14
+      },
+      "week_52_high": 162.88999938964844,
+      "week_52_low": 116.51000213623047,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 112.92,
+          "high": 112.92,
+          "center": 112.92,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 114.71,
+          "high": 114.71,
+          "center": 114.71,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 116.51,
+          "high": 116.54,
+          "center": 116.52,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "prev day low",
+            "S1"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 118.32,
+          "high": 118.35,
+          "center": 118.33,
+          "side": "support",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 120.13,
+          "high": 120.16,
+          "center": 120.14,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 121.81,
+          "high": 121.95,
+          "center": 121.88,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 122.8,
+          "high": 123.66,
+          "center": 123.11,
+          "side": "resistance",
+          "methods": [
+            "prev week low",
+            "swing low",
+            "20 DMA"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 123.78,
+          "high": 124.38,
+          "center": 124.15,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 125.14,
+          "high": 125.14,
+          "center": 125.14,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 126.25,
+          "high": 126.7,
+          "center": 126.48,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "50 DMA",
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 127.6,
+          "high": 128.1,
+          "center": 127.83,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 128.69,
+          "high": 128.69,
+          "center": 128.69,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 129.7,
+          "high": 129.7,
+          "center": 129.7,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 131.2,
+          "high": 131.43,
+          "center": 131.31,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 133.11,
+          "high": 133.11,
+          "center": 133.11,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 136.14,
+          "high": 136.14,
+          "center": 136.14,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 162.89,
+          "high": 162.89,
+          "center": 162.89,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "COALINDIA": {
+      "last": 420.4,
+      "prev_close": 422.5,
+      "pivots": {
+        "p": 421.01666259765625,
+        "r1": 425.73333740234375,
+        "r2": 431.0666809082031,
+        "r3": 435.7833557128906,
+        "s1": 415.6833190917969,
+        "s2": 410.9666442871094,
+        "s3": 405.63330078125
+      },
+      "cpr": {
+        "tc": 421.32,
+        "p": 421.02,
+        "bc": 420.71,
+        "width_pct": 0.146,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 422.39,
+        "50": 415.29,
+        "200": 434.12
+      },
+      "week_52_high": 491.25,
+      "week_52_low": 369.6000061035156,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 369.6,
+          "high": 369.6,
+          "center": 369.6,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 395.8,
+          "high": 397.5,
+          "center": 396.65,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 405.63,
+          "high": 406.25,
+          "center": 405.94,
+          "side": "support",
+          "methods": [
+            "S3",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 409.65,
+          "high": 412.7,
+          "center": 411.07,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "prev week low",
+            "swing high",
+            "S2"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 415.29,
+          "high": 416.3,
+          "center": 415.76,
+          "side": "support",
+          "methods": [
+            "50 DMA",
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 418.8,
+          "high": 421.32,
+          "center": 420.46,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 422.39,
+          "high": 424.7,
+          "center": 423.87,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 425.73,
+          "high": 428.5,
+          "center": 426.86,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high",
+            "swing high"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 429.4,
+          "high": 431.07,
+          "center": 430.22,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high",
+            "R2"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 433.5,
+          "high": 436.5,
+          "center": 435.24,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "200 DMA",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 491.25,
+          "high": 491.25,
+          "center": 491.25,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "NYKAA": {
+      "last": 324.95,
+      "prev_close": 325.5,
+      "pivots": {
+        "p": 321.9666748046875,
+        "r1": 327.933349609375,
+        "r2": 330.91668701171875,
+        "r3": 336.88336181640625,
+        "s1": 318.98333740234375,
+        "s2": 313.01666259765625,
+        "s3": 310.0333251953125
+      },
+      "cpr": {
+        "tc": 323.46,
+        "p": 321.97,
+        "bc": 320.48,
+        "width_pct": 0.927,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 333.75,
+        "50": 333.03,
+        "200": 285.03
+      },
+      "week_52_high": 349.54998779296875,
+      "week_52_low": 232.0,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 232.0,
+          "high": 232.0,
+          "center": 232.0,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 285.03,
+          "high": 285.03,
+          "center": 285.03,
+          "side": "support",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 310.03,
+          "high": 310.03,
+          "center": 310.03,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 313.02,
+          "high": 313.02,
+          "center": 313.02,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 316.0,
+          "high": 317.05,
+          "center": 316.52,
+          "side": "support",
+          "methods": [
+            "prev day low",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 318.98,
+          "high": 320.75,
+          "center": 320.18,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low",
+            "CPR bottom"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 321.97,
+          "high": 323.95,
+          "center": 323.02,
+          "side": "support",
+          "methods": [
+            "pivot",
+            "swing low",
+            "CPR top",
+            "prev week low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 324.95,
+          "high": 324.95,
+          "center": 324.95,
+          "side": "resistance",
+          "methods": [
+            "prev day high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 327.7,
+          "high": 330.1,
+          "center": 328.87,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 330.92,
+          "high": 333.03,
+          "center": 331.96,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "swing high",
+            "50 DMA"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 333.75,
+          "high": 335.15,
+          "center": 334.63,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 336.88,
+          "high": 336.88,
+          "center": 336.88,
+          "side": "resistance",
+          "methods": [
+            "R3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 343.9,
+          "high": 346.15,
+          "center": 344.84,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 348.0,
+          "high": 349.55,
+          "center": 349.03,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "52w high"
+          ],
+          "agreement": 2
+        }
+      ]
+    },
+    "HDFCBANK": {
+      "last": 721.2,
+      "prev_close": 719.05,
+      "pivots": {
+        "p": 716.5333251953125,
+        "r1": 725.9666748046875,
+        "r2": 730.7333374023438,
+        "r3": 740.1666870117188,
+        "s1": 711.7666625976562,
+        "s2": 702.3333129882812,
+        "s3": 697.566650390625
+      },
+      "cpr": {
+        "tc": 718.87,
+        "p": 716.53,
+        "bc": 714.2,
+        "width_pct": 0.651,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 717.83,
+        "50": 724.57,
+        "200": 811.89
+      },
+      "week_52_high": 1020.5,
+      "week_52_low": 681.9000244140625,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 681.9,
+          "high": 681.9,
+          "center": 681.9,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 697.57,
+          "high": 702.33,
+          "center": 699.47,
+          "side": "support",
+          "methods": [
+            "S3",
+            "swing low",
+            "S2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 706.25,
+          "high": 707.1,
+          "center": 706.67,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 711.77,
+          "high": 716.53,
+          "center": 714.82,
+          "side": "support",
+          "methods": [
+            "S1",
+            "CPR bottom",
+            "swing low",
+            "swing high",
+            "pivot"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 717.83,
+          "high": 722.7,
+          "center": 720.54,
+          "side": "support",
+          "methods": [
+            "20 DMA",
+            "CPR top",
+            "prev day high",
+            "swing low",
+            "prev week low"
+          ],
+          "agreement": 5
+        },
+        {
+          "low": 724.57,
+          "high": 725.97,
+          "center": 725.27,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 730.73,
+          "high": 734.4,
+          "center": 732.0,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 739.75,
+          "high": 740.17,
+          "center": 739.96,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "R3"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 749.3,
+          "high": 749.3,
+          "center": 749.3,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 757.9,
+          "high": 757.9,
+          "center": 757.9,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 811.89,
+          "high": 811.89,
+          "center": 811.89,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 823.7,
+          "high": 823.7,
+          "center": 823.7,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1020.5,
+          "high": 1020.5,
+          "center": 1020.5,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "HYUNDAI": {
+      "last": 2024.0,
+      "prev_close": 2050.7,
+      "pivots": {
+        "p": 2034.86669921875,
+        "r1": 2067.7333984375,
+        "r2": 2111.466796875,
+        "r3": 2144.33349609375,
+        "s1": 1991.13330078125,
+        "s2": 1958.2666015625,
+        "s3": 1914.533203125
+      },
+      "cpr": {
+        "tc": 2040.3,
+        "p": 2034.87,
+        "bc": 2029.43,
+        "width_pct": 0.534,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 2137.78,
+        "50": 2158.81,
+        "200": 2057.7
+      },
+      "week_52_high": 2591.89990234375,
+      "week_52_low": 1658.0,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 1658.0,
+          "high": 1658.0,
+          "center": 1658.0,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1914.53,
+          "high": 1927.5,
+          "center": 1921.02,
+          "side": "support",
+          "methods": [
+            "S3",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1938.4,
+          "high": 1938.4,
+          "center": 1938.4,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1958.27,
+          "high": 1958.27,
+          "center": 1958.27,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1991.13,
+          "high": 2002.0,
+          "center": 1996.57,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2029.43,
+          "high": 2040.3,
+          "center": 2034.87,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2052.5,
+          "high": 2067.73,
+          "center": 2060.68,
+          "side": "resistance",
+          "methods": [
+            "prev week low",
+            "200 DMA",
+            "swing high",
+            "R1"
+          ],
+          "agreement": 4
+        },
+        {
+          "low": 2078.6,
+          "high": 2078.6,
+          "center": 2078.6,
+          "side": "resistance",
+          "methods": [
+            "prev day high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2095.8,
+          "high": 2111.47,
+          "center": 2103.63,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2130.5,
+          "high": 2144.33,
+          "center": 2136.9,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high",
+            "20 DMA",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 2152.5,
+          "high": 2160.1,
+          "center": 2157.14,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2178.0,
+          "high": 2190.0,
+          "center": 2183.2,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 2224.5,
+          "high": 2232.1,
+          "center": 2227.87,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2247.6,
+          "high": 2251.7,
+          "center": 2250.27,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2273.9,
+          "high": 2281.0,
+          "center": 2277.45,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 2591.9,
+          "high": 2591.9,
+          "center": 2591.9,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "ICICIBANK": {
+      "last": 1310.6,
+      "prev_close": 1302.0,
+      "pivots": {
+        "p": 1316.3000081380208,
+        "r1": 1324.199991861979,
+        "r2": 1337.8000081380208,
+        "r3": 1345.699991861979,
+        "s1": 1302.699991861979,
+        "s2": 1294.8000081380208,
+        "s3": 1281.199991861979
+      },
+      "cpr": {
+        "tc": 1319.15,
+        "p": 1316.3,
+        "bc": 1313.45,
+        "width_pct": 0.433,
+        "shape": "average"
+      },
+      "dma": {
+        "20": 1354.52,
+        "50": 1400.21,
+        "200": 1353.22
+      },
+      "week_52_high": 1480.0,
+      "week_52_low": 1187.5999755859375,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 1187.6,
+          "high": 1187.6,
+          "center": 1187.6,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1281.2,
+          "high": 1281.2,
+          "center": 1281.2,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1291.0,
+          "high": 1294.8,
+          "center": 1292.9,
+          "side": "support",
+          "methods": [
+            "swing low",
+            "S2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1302.7,
+          "high": 1312.0,
+          "center": 1307.7,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low",
+            "prev week low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 1313.45,
+          "high": 1319.15,
+          "center": 1316.3,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1324.2,
+          "high": 1329.9,
+          "center": 1327.05,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1337.8,
+          "high": 1347.8,
+          "center": 1343.77,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "R3",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1352.0,
+          "high": 1354.52,
+          "center": 1353.25,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "200 DMA",
+            "20 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1390.0,
+          "high": 1400.21,
+          "center": 1393.9,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1401.0,
+          "high": 1408.0,
+          "center": 1404.5,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1415.4,
+          "high": 1418.9,
+          "center": 1417.15,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1430.8,
+          "high": 1430.8,
+          "center": 1430.8,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1449.0,
+          "high": 1454.0,
+          "center": 1451.67,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1460.0,
+          "high": 1460.0,
+          "center": 1460.0,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1480.0,
+          "high": 1480.0,
+          "center": 1480.0,
+          "side": "resistance",
+          "methods": [
+            "52w high",
+            "swing high"
+          ],
+          "agreement": 2
+        }
+      ]
+    },
+    "IOC": {
+      "last": 131.34,
+      "prev_close": 133.32,
+      "pivots": {
+        "p": 132.2133331298828,
+        "r1": 133.22666931152344,
+        "r2": 135.11334228515625,
+        "r3": 136.12667846679688,
+        "s1": 130.32666015625,
+        "s2": 129.31332397460938,
+        "s3": 127.42665100097656
+      },
+      "cpr": {
+        "tc": 132.65,
+        "p": 132.21,
+        "bc": 131.78,
+        "width_pct": 0.661,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 135.06,
+        "50": 137.76,
+        "200": 148.23
+      },
+      "week_52_high": 188.9600067138672,
+      "week_52_low": 130.22000122070312,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 127.43,
+          "high": 127.43,
+          "center": 127.43,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 129.31,
+          "high": 130.22,
+          "center": 129.77,
+          "side": "support",
+          "methods": [
+            "S2",
+            "52w low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 130.33,
+          "high": 131.2,
+          "center": 130.85,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 131.7,
+          "high": 132.65,
+          "center": 132.08,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 133.02,
+          "high": 133.23,
+          "center": 133.12,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 134.1,
+          "high": 135.06,
+          "center": 134.49,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "swing low",
+            "20 DMA"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 135.11,
+          "high": 136.13,
+          "center": 135.46,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "swing low",
+            "prev week low",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 136.16,
+          "high": 136.78,
+          "center": 136.47,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 137.76,
+          "high": 137.76,
+          "center": 137.76,
+          "side": "resistance",
+          "methods": [
+            "50 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 138.86,
+          "high": 139.3,
+          "center": 139.15,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 141.15,
+          "high": 141.15,
+          "center": 141.15,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 142.95,
+          "high": 143.99,
+          "center": 143.44,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 144.75,
+          "high": 145.2,
+          "center": 144.97,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 148.23,
+          "high": 148.23,
+          "center": 148.23,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 188.96,
+          "high": 188.96,
+          "center": 188.96,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "INFY": {
+      "last": 1035.0,
+      "prev_close": 1003.2,
+      "pivots": {
+        "p": 1023.0500081380209,
+        "r1": 1046.9499918619792,
+        "r2": 1058.8999837239585,
+        "r3": 1082.7999674479167,
+        "s1": 1011.1000162760417,
+        "s2": 987.2000325520834,
+        "s3": 975.2500406901042
+      },
+      "cpr": {
+        "tc": 1029.03,
+        "p": 1023.05,
+        "bc": 1017.08,
+        "width_pct": 1.168,
+        "shape": "wide"
+      },
+      "dma": {
+        "20": 1042.21,
+        "50": 1102.02,
+        "200": 1255.54
+      },
+      "week_52_high": 1728.0,
+      "week_52_low": 980.4000244140625,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 975.25,
+          "high": 980.4,
+          "center": 978.68,
+          "side": "support",
+          "methods": [
+            "S3",
+            "52w low",
+            "swing low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 987.2,
+          "high": 991.6,
+          "center": 989.4,
+          "side": "support",
+          "methods": [
+            "S2",
+            "prev week low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 999.15,
+          "high": 999.15,
+          "center": 999.15,
+          "side": "support",
+          "methods": [
+            "prev day low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1011.1,
+          "high": 1017.08,
+          "center": 1014.03,
+          "side": "support",
+          "methods": [
+            "S1",
+            "swing low",
+            "CPR bottom"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1023.05,
+          "high": 1029.03,
+          "center": 1026.19,
+          "side": "support",
+          "methods": [
+            "pivot",
+            "swing low",
+            "CPR top"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1035.0,
+          "high": 1042.21,
+          "center": 1038.6,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "20 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1044.5,
+          "high": 1046.95,
+          "center": 1045.72,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1058.9,
+          "high": 1058.9,
+          "center": 1058.9,
+          "side": "resistance",
+          "methods": [
+            "R2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1082.8,
+          "high": 1082.8,
+          "center": 1082.8,
+          "side": "resistance",
+          "methods": [
+            "R3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1097.7,
+          "high": 1102.02,
+          "center": 1099.86,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 1107.2,
+          "high": 1112.5,
+          "center": 1108.97,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1116.8,
+          "high": 1116.8,
+          "center": 1116.8,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1144.7,
+          "high": 1144.7,
+          "center": 1144.7,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1155.6,
+          "high": 1156.0,
+          "center": 1155.8,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1187.7,
+          "high": 1195.0,
+          "center": 1191.35,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1255.54,
+          "high": 1255.54,
+          "center": 1255.54,
+          "side": "resistance",
+          "methods": [
+            "200 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 1728.0,
+          "high": 1728.0,
+          "center": 1728.0,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "JIOFIN": {
+      "last": 212.5,
+      "prev_close": 220.5,
+      "pivots": {
+        "p": 212.3999989827474,
+        "r1": 216.2999979654948,
+        "r2": 220.0999959309896,
+        "r3": 223.999994913737,
+        "s1": 208.60000101725262,
+        "s2": 204.70000203450522,
+        "s3": 200.90000406901044
+      },
+      "cpr": {
+        "tc": 212.45,
+        "p": 212.4,
+        "bc": 212.35,
+        "width_pct": 0.047,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 227.61,
+        "50": 239.44,
+        "200": 248.4
+      },
+      "week_52_high": 316.8500061035156,
+      "week_52_low": 208.5,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 200.9,
+          "high": 200.9,
+          "center": 200.9,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 204.7,
+          "high": 204.7,
+          "center": 204.7,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 208.5,
+          "high": 208.6,
+          "center": 208.53,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "prev day low",
+            "S1"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 212.35,
+          "high": 212.45,
+          "center": 212.4,
+          "side": "support",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 216.2,
+          "high": 216.3,
+          "center": 216.25,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 220.1,
+          "high": 220.1,
+          "center": 220.1,
+          "side": "resistance",
+          "methods": [
+            "R2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 224.0,
+          "high": 225.45,
+          "center": 224.76,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "swing low",
+            "prev week low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 227.61,
+          "high": 227.61,
+          "center": 227.61,
+          "side": "resistance",
+          "methods": [
+            "20 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 231.21,
+          "high": 232.3,
+          "center": 231.77,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 234.0,
+          "high": 234.1,
+          "center": 234.03,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 239.44,
+          "high": 240.63,
+          "center": 240.03,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 241.5,
+          "high": 241.5,
+          "center": 241.5,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 248.4,
+          "high": 249.95,
+          "center": 249.12,
+          "side": "resistance",
+          "methods": [
+            "200 DMA",
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 263.4,
+          "high": 263.4,
+          "center": 263.4,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 268.2,
+          "high": 268.2,
+          "center": 268.2,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 316.85,
+          "high": 316.85,
+          "center": 316.85,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "JSWCEMENT": {
+      "last": 111.17,
+      "prev_close": 112.49,
+      "pivots": {
+        "p": 111.72000122070312,
+        "r1": 113.81999969482422,
+        "r2": 116.04000091552734,
+        "r3": 118.13999938964844,
+        "s1": 109.5,
+        "s2": 107.4000015258789,
+        "s3": 105.18000030517578
+      },
+      "cpr": {
+        "tc": 111.78,
+        "p": 111.72,
+        "bc": 111.66,
+        "width_pct": 0.107,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 117.33,
+        "50": 124.4,
+        "200": 124.53
+      },
+      "week_52_high": 143.39999389648438,
+      "week_52_low": 106.6500015258789,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 105.18,
+          "high": 105.18,
+          "center": 105.18,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 106.65,
+          "high": 107.4,
+          "center": 107.03,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "S2"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 109.5,
+          "high": 109.62,
+          "center": 109.56,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 111.66,
+          "high": 111.78,
+          "center": 111.72,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 112.83,
+          "high": 112.83,
+          "center": 112.83,
+          "side": "resistance",
+          "methods": [
+            "prev week low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 113.82,
+          "high": 113.94,
+          "center": 113.88,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 115.03,
+          "high": 115.03,
+          "center": 115.03,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 116.04,
+          "high": 116.04,
+          "center": 116.04,
+          "side": "resistance",
+          "methods": [
+            "R2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 117.33,
+          "high": 118.14,
+          "center": 117.74,
+          "side": "resistance",
+          "methods": [
+            "20 DMA",
+            "R3"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 119.75,
+          "high": 120.26,
+          "center": 119.92,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 122.94,
+          "high": 123.61,
+          "center": 123.28,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 124.4,
+          "high": 125.17,
+          "center": 124.7,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "200 DMA",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 127.34,
+          "high": 128.28,
+          "center": 127.81,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 129.88,
+          "high": 130.25,
+          "center": 130.07,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 131.3,
+          "high": 131.3,
+          "center": 131.3,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 134.75,
+          "high": 134.75,
+          "center": 134.75,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 136.0,
+          "high": 136.4,
+          "center": 136.2,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 143.4,
+          "high": 143.4,
+          "center": 143.4,
+          "side": "resistance",
+          "methods": [
+            "52w high",
+            "swing high"
+          ],
+          "agreement": 2
+        }
+      ]
+    },
+    "NIFTY 50": {
+      "last": 22421.95,
+      "prev_close": 22620.45,
+      "pivots": {
+        "p": 22416.616536458332,
+        "r1": 22615.932291666664,
+        "r2": 22809.915364583332,
+        "r3": 23009.231119791664,
+        "s1": 22222.633463541664,
+        "s2": 22023.317708333332,
+        "s3": 21829.334635416664
+      },
+      "cpr": {
+        "tc": 22419.28,
+        "p": 22416.62,
+        "bc": 22413.95,
+        "width_pct": 0.024,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 23268.93,
+        "50": 23870.1,
+        "200": 24355.76
+      },
+      "week_52_high": 26373.19921875,
+      "week_52_low": 22182.55078125,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 21829.33,
+          "high": 21829.33,
+          "center": 21829.33,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 22023.32,
+          "high": 22023.32,
+          "center": 22023.32,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 22182.55,
+          "high": 22222.63,
+          "center": 22207.5,
+          "side": "support",
+          "methods": [
+            "52w low",
+            "prev day low",
+            "S1"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 22413.95,
+          "high": 22419.28,
+          "center": 22416.62,
+          "side": "support",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 22610.6,
+          "high": 22615.93,
+          "center": 22613.27,
+          "side": "resistance",
+          "methods": [
+            "prev day high",
+            "R1"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 22809.92,
+          "high": 22809.92,
+          "center": 22809.92,
+          "side": "resistance",
+          "methods": [
+            "R2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 23009.23,
+          "high": 23020.95,
+          "center": 23015.09,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "prev week low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 23116.1,
+          "high": 23116.1,
+          "center": 23116.1,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 23268.93,
+          "high": 23268.93,
+          "center": 23268.93,
+          "side": "resistance",
+          "methods": [
+            "20 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 23489.0,
+          "high": 23489.0,
+          "center": 23489.0,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 23592.85,
+          "high": 23606.3,
+          "center": 23599.58,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 23786.8,
+          "high": 23786.8,
+          "center": 23786.8,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 23870.1,
+          "high": 23870.1,
+          "center": 23870.1,
+          "side": "resistance",
+          "methods": [
+            "50 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 24025.65,
+          "high": 24025.65,
+          "center": 24025.65,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 24259.8,
+          "high": 24265.95,
+          "center": 24262.88,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 24355.76,
+          "high": 24378.6,
+          "center": 24367.22,
+          "side": "resistance",
+          "methods": [
+            "200 DMA",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 24774.3,
+          "high": 24774.3,
+          "center": 24774.3,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 26373.2,
+          "high": 26373.2,
+          "center": 26373.2,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "BANK NIFTY": {
+      "last": 54450.75,
+      "prev_close": 54633.05,
+      "pivots": {
+        "p": 54536.266927083336,
+        "r1": 55005.93229166667,
+        "r2": 55561.114583333336,
+        "r3": 56030.77994791667,
+        "s1": 53981.08463541667,
+        "s2": 53511.419270833336,
+        "s3": 52956.23697916667
+      },
+      "cpr": {
+        "tc": 54579.03,
+        "p": 54536.27,
+        "bc": 54493.51,
+        "width_pct": 0.157,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 56028.06,
+        "50": 56897.06,
+        "200": 57129.55
+      },
+      "week_52_high": 61764.8515625,
+      "week_52_low": 49954.8515625,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 49954.85,
+          "high": 49954.85,
+          "center": 49954.85,
+          "side": "support",
+          "methods": [
+            "52w low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 52956.24,
+          "high": 52956.24,
+          "center": 52956.24,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 53511.42,
+          "high": 53511.42,
+          "center": 53511.42,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 53785.7,
+          "high": 53785.7,
+          "center": 53785.7,
+          "side": "support",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 53981.08,
+          "high": 54066.6,
+          "center": 54023.84,
+          "side": "support",
+          "methods": [
+            "S1",
+            "prev day low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 54493.51,
+          "high": 54579.03,
+          "center": 54536.27,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 55005.93,
+          "high": 55091.45,
+          "center": 55048.69,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 55341.2,
+          "high": 55341.2,
+          "center": 55341.2,
+          "side": "resistance",
+          "methods": [
+            "prev week low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 55561.11,
+          "high": 55699.45,
+          "center": 55630.28,
+          "side": "resistance",
+          "methods": [
+            "R2",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 56023.6,
+          "high": 56030.78,
+          "center": 56027.48,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "20 DMA",
+            "R3"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 56671.1,
+          "high": 56823.2,
+          "center": 56721.8,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 56897.06,
+          "high": 57001.75,
+          "center": 56965.05,
+          "side": "resistance",
+          "methods": [
+            "50 DMA",
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 57129.55,
+          "high": 57286.9,
+          "center": 57201.45,
+          "side": "resistance",
+          "methods": [
+            "200 DMA",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 57330.05,
+          "high": 57330.05,
+          "center": 57330.05,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 58024.95,
+          "high": 58076.85,
+          "center": 58050.9,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 58247.95,
+          "high": 58247.95,
+          "center": 58247.95,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 58596.85,
+          "high": 58596.85,
+          "center": 58596.85,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 61764.85,
+          "high": 61764.85,
+          "center": 61764.85,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    },
+    "SENSEX": {
+      "last": 71909.7,
+      "prev_close": 72480.29,
+      "pivots": {
+        "p": 71925.16145833333,
+        "r1": 72557.44010416666,
+        "r2": 73205.17708333333,
+        "r3": 73837.45572916666,
+        "s1": 71277.42447916666,
+        "s2": 70645.14583333333,
+        "s3": 69997.40885416666
+      },
+      "cpr": {
+        "tc": 71932.89,
+        "p": 71925.16,
+        "bc": 71917.43,
+        "width_pct": 0.021,
+        "shape": "narrow"
+      },
+      "dma": {
+        "20": 74358.02,
+        "50": 76297.32,
+        "200": 78365.52
+      },
+      "week_52_high": 86159.0234375,
+      "week_52_low": 71292.8828125,
+      "pcr": null,
+      "max_pain": null,
+      "zones": [
+        {
+          "low": 69997.41,
+          "high": 69997.41,
+          "center": 69997.41,
+          "side": "support",
+          "methods": [
+            "S3"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 70645.15,
+          "high": 70645.15,
+          "center": 70645.15,
+          "side": "support",
+          "methods": [
+            "S2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 71277.42,
+          "high": 71292.88,
+          "center": 71287.73,
+          "side": "support",
+          "methods": [
+            "S1",
+            "52w low",
+            "prev day low"
+          ],
+          "agreement": 3
+        },
+        {
+          "low": 71917.43,
+          "high": 71932.89,
+          "center": 71925.16,
+          "side": "resistance",
+          "methods": [
+            "CPR bottom",
+            "pivot",
+            "CPR top"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 72557.44,
+          "high": 72572.9,
+          "center": 72565.17,
+          "side": "resistance",
+          "methods": [
+            "R1",
+            "prev day high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 73205.18,
+          "high": 73205.18,
+          "center": 73205.18,
+          "side": "resistance",
+          "methods": [
+            "R2"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 73477.77,
+          "high": 73477.77,
+          "center": 73477.77,
+          "side": "resistance",
+          "methods": [
+            "prev week low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 73837.46,
+          "high": 73981.33,
+          "center": 73909.39,
+          "side": "resistance",
+          "methods": [
+            "R3",
+            "swing low"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 74358.02,
+          "high": 74358.02,
+          "center": 74358.02,
+          "side": "resistance",
+          "methods": [
+            "20 DMA"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 75038.93,
+          "high": 75038.93,
+          "center": 75038.93,
+          "side": "resistance",
+          "methods": [
+            "prev week high",
+            "swing high"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 75436.44,
+          "high": 75474.43,
+          "center": 75455.43,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 76135.72,
+          "high": 76297.32,
+          "center": 76216.52,
+          "side": "resistance",
+          "methods": [
+            "swing low",
+            "50 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 76822.89,
+          "high": 76822.89,
+          "center": 76822.89,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 77497.93,
+          "high": 77497.93,
+          "center": 77497.93,
+          "side": "resistance",
+          "methods": [
+            "swing low"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 77789.29,
+          "high": 77986.84,
+          "center": 77888.07,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 78282.55,
+          "high": 78365.52,
+          "center": 78324.03,
+          "side": "resistance",
+          "methods": [
+            "swing high",
+            "200 DMA"
+          ],
+          "agreement": 2
+        },
+        {
+          "low": 79143.15,
+          "high": 79143.15,
+          "center": 79143.15,
+          "side": "resistance",
+          "methods": [
+            "swing high"
+          ],
+          "agreement": 1
+        },
+        {
+          "low": 86159.02,
+          "high": 86159.02,
+          "center": 86159.02,
+          "side": "resistance",
+          "methods": [
+            "52w high"
+          ],
+          "agreement": 1
+        }
+      ]
+    }
+  }
+}
