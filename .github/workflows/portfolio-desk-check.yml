@@ -7,8 +7,8 @@ name: Portfolio desk — check
 
 on:
   # A push to the working branch runs the desk for real, so the dashboard can be
-  # seen with live data before anything is merged. It commits the built page
-  # back with "[desk]" in the message, and skips itself on that commit.
+  # seen with live data before anything is merged. It commits the built page back
+  # as the portfolio-desk user, and skips runs triggered by that user.
   push:
     branches:
       - "claude/**"
@@ -33,7 +33,9 @@ defaults:
 
 jobs:
   check:
-    if: "!contains(github.event.head_commit.message, '[desk]')"
+    # Skip only the runner's own commits. Matching on the message text is a trap:
+    # a commit that merely mentions the marker skips the run too.
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.author.name != 'portfolio-desk'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -83,7 +85,7 @@ jobs:
           git config user.name "portfolio-desk"
           git config user.email "noreply@github.com"
           git add -A site data verify.json 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "[desk] live build $(date +%F\ %H:%M)"
+          git diff --cached --quiet || git commit -m "Live build $(date +%F\ %H:%M)"
           git push
 
       - name: Report
