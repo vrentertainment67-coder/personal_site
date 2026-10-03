@@ -1,9 +1,0 @@
-# cached source responses (rebuilt every run)
-data/cache/
-
-# secrets
-.env
-
-__pycache__/
-*.py[cod]
-.pytest_cache/
