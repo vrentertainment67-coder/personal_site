@@ -78,6 +78,29 @@ h2{font-size:19px;font-weight:600;margin:36px 0 12px}
 .watch li.good::before{background:var(--gain)}
 .watch li.bad::before{background:var(--loss)}
 .watch li.warn::before{background:var(--mari)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:22px 0 26px}
+.tabs button{font:inherit;font-size:15px;font-weight:600;color:var(--mute);background:none;border:0;border-bottom:2px solid transparent;padding:10px 16px;cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--mari)}
+.tabs button:focus-visible{outline:2px solid var(--mari);outline-offset:-2px}
+.tabs span{margin-left:auto;align-self:center;color:var(--mute);font-size:12.5px}
+[role="tabpanel"][hidden]{display:none}
+.calls{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px}
+@media(max-width:760px){.calls{grid-template-columns:1fr}}
+.call{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--mute);border-radius:8px;padding:16px 18px 10px}
+.call.good{border-top-color:var(--gain)}
+.call.bad{border-top-color:var(--loss)}
+.call h2{margin:0;font:600 13px/1 "Instrument Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.call .n{font:400 clamp(44px,8vw,68px)/1 "Instrument Serif",Georgia,serif;margin:8px 0 0;letter-spacing:-.02em}
+.call.good .n{color:var(--gain)}
+.call.bad .n{color:var(--loss)}
+.call .of{color:var(--mute);font-size:12.5px;margin:0 0 12px}
+.call ol{list-style:none;margin:0;padding:0}
+.call li{display:flex;align-items:baseline;gap:7px;padding:8px 0;border-top:1px solid var(--line);font-size:14.5px}
+.call li b{font-weight:600}
+.call li .w{margin-left:auto;color:var(--mute);font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.call li .mark{color:var(--mari);font-weight:700;cursor:help}
+.call .none{color:var(--mute);font-size:14px;padding:8px 0;border-top:1px solid var(--line);display:block}
+.unrated{color:var(--mute);font-size:13px;margin:6px 0 0;max-width:80ch}
 .rate{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .rate>div{padding:13px 16px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:84px 1fr;gap:14px;align-items:start}
 .rate>div:last-child{border-bottom:0}
@@ -151,12 +174,48 @@ footer p{margin:0 0 8px}
 </div>
 <div class="legend"><span>Each block is one holding, sized by value</span><span>{{ row_count }} holdings{% if attention.unlisted or strip|length < row_count %} · {{ row_count - strip|length }} without a price{% endif %}</span></div>
 
+<div class="tabs" role="tablist" aria-label="Views">
+ <button role="tab" id="tab-calls" aria-controls="panel-calls" aria-selected="true" tabindex="0">Calls</button>
+ <button role="tab" id="tab-portfolio" aria-controls="panel-portfolio" aria-selected="false" tabindex="-1">Portfolio</button>
+ <span>{% for verdict, count in rating_tally.items() %}{{ count }} {{ verdict }}{{ " · " if not loop.last }}{% endfor %}</span>
+</div>
+
+<section role="tabpanel" id="panel-calls" aria-labelledby="tab-calls">
+{% if calls and ratings %}
+<div class="calls">
+{% for c in calls %}
+ <div class="call {{ c.tone }}">
+  <h2>{{ c.verdict }}</h2>
+  <p class="n">{{ c.count }}</p>
+  <p class="of">{{ "holding" if c.count == 1 else "holdings" }}</p>
+  <ol>
+{% for r in c.names %}
+   <li><b>{{ r.name }}</b>{% if r.caveats %}<span class="mark" title="{{ r.caveats|join('; ') }}" aria-label="caveat: {{ r.caveats|join('; ') }}">!</span>{% endif %}<span class="w">{{ r.score }}</span></li>
+{% else %}
+   <li class="none">None.</li>
+{% endfor %}
+  </ol>
+ </div>
+{% endfor %}
+</div>
+{% if no_rating %}
+<p class="unrated">Not rated: {% for n in no_rating %}{{ n.name }} — {{ n.why }}{{ "; " if not loop.last }}{% endfor %}</p>
+{% endif %}
+<p class="unrated">The number beside each name is its score. <b>!</b> marks a rating with a caveat; the reasons are below.</p>
+{% else %}
+<p class="banner"><span aria-hidden="true">⚠</span><span><b>No calls this run.</b>
+Scoring needs daily price history and none was available, so nothing was rated. The Portfolio
+tab still has your holdings and whatever prices were found.</span></p>
+{% endif %}
+
+</section>
+
+<section role="tabpanel" id="panel-portfolio" aria-labelledby="tab-portfolio" hidden>
 <div class="stats">
 {% for t in tiles %}
  <div><small>{{ t.label }}</small><strong{% if t.tone %} class="{{ t.tone }}"{% endif %}>{{ t.value }}</strong><em>{{ t.note }}</em></div>
 {% endfor %}
 </div>
-
 <div class="cols">
  <section>
   <h2>Where your money sits</h2>
@@ -178,7 +237,6 @@ footer p{margin:0 0 8px}
   </div>
  </section>
 </div>
-
 {% if brief and brief.ok %}
 <h2>This morning</h2>
 <div class="brief">
@@ -224,7 +282,6 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 </div>
 <p class="legend"><span>{% for verdict, count in rating_tally.items() %}{{ count }} {{ verdict }}{{ ", " if not loop.last }}{% endfor %}</span><span>Same inputs, same verdict, every run.</span></p>
 {% endif %}
-
 {% if indices %}
 <h2>Index levels</h2>
 <div class="cards">
@@ -250,7 +307,6 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 {% endfor %}
 </div>
 {% endif %}
-
 {% if watchlist %}
 <h2>Worth your attention today</h2>
 <div class="watch">
@@ -268,7 +324,6 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 </div>
 <p class="legend"><span>Ranked by how many signals agree, weighted by position size. Descriptive only — no recommendations.</span></p>
 {% endif %}
-
 {% if news %}
 <h2>News touching your holdings</h2>
 <div class="panel"><ul class="newslist">
@@ -277,7 +332,6 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 {% endfor %}
 </ul></div>
 {% endif %}
-
 <h2>All holdings</h2>
 <div class="tools">
  <input id="q" type="search" placeholder="Search by name or symbol" aria-label="Search holdings">
@@ -300,7 +354,6 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 </tr></thead>
 <tbody id="tb"></tbody>
 </table></div>
-
 {% if pending %}
 <h2>Not available this run</h2>
 <div class="pending">
@@ -309,6 +362,7 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 {% endfor %}
 </div>
 {% endif %}
+</section>
 
 <h2>Where the numbers came from</h2>
 <div class="src">
@@ -323,6 +377,39 @@ scorecard would read differently, solved for, not predicted. Your decision, not 
 <p>Reference only, not investment advice.</p>
 </footer>
 </main>
+
+<script>
+// Tabs. The hash deep-links a view; the choice is remembered per browser.
+(function () {
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function show(id, push) {
+    tabs.forEach(t => {
+      const on = t.id === id;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+    try { localStorage.setItem("desk-tab", id); } catch (e) { /* private window */ }
+    if (push) history.replaceState(null, "", "#" + id.replace("tab-", ""));
+  }
+  tabs.forEach((tab, i) => {
+    tab.onclick = () => show(tab.id, true);
+    tab.onkeydown = e => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      next.focus();
+      show(next.id, true);
+    };
+  });
+  let initial = null;
+  const fromHash = location.hash.replace("#", "");
+  if (fromHash) initial = "tab-" + fromHash;
+  if (!initial) { try { initial = localStorage.getItem("desk-tab"); } catch (e) { /* ignore */ } }
+  if (initial && tabs.some(t => t.id === initial)) show(initial, false);
+})();
+</script>
 
 <script type="application/json" id="rows">{{ rows_json|safe }}</script>
 <script>

@@ -291,6 +291,26 @@ def build_context(
     rating_tally: dict[str, int] = {}
     for row in ratings:
         rating_tally[row["verdict"]] = rating_tally.get(row["verdict"], 0) + 1
+
+    # The three columns of the Calls tab, in the order a human reads them.
+    calls = [
+        {
+            "verdict": verdict,
+            "tone": tone,
+            "count": rating_tally.get(verdict, 0),
+            "names": [r for r in ratings if r["verdict"] == verdict],
+        }
+        for verdict, tone in (("Buy", "good"), ("Keep", "neutral"), ("Sell", "bad"))
+    ]
+    no_rating = [
+        {
+            "name": r.name,
+            "symbol": r.position.symbol or DASH,
+            "why": r.caveats[0] if r.caveats else "not enough data",
+        }
+        for r in getattr(run, "ratings", [])
+        if r.verdict.value == "No rating"
+    ]
     portfolio_notes = [
         {"headline": s.headline, "detail": s.detail, "tone": s.tone}
         for s in getattr(run, "portfolio_signals", [])
@@ -388,6 +408,8 @@ def build_context(
         "watchlist": watchlist,
         "ratings": ratings,
         "rating_tally": rating_tally,
+        "calls": calls,
+        "no_rating": no_rating,
         "portfolio_notes": portfolio_notes,
         "brief": brief_block,  # None when the run did not generate one
         "news": news_rows,
