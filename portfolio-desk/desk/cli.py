@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 import sys
+from datetime import date
 from pathlib import Path
 
 from . import config, holdings as holdings_mod
@@ -318,12 +319,91 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    print(
-        "The daily run is not built yet. `python -m desk dashboard` builds the dashboard; "
-        "the written brief (step 6) and Telegram delivery (step 7) are still to come.",
-        file=sys.stderr,
+    from . import run as run_mod
+    from .telegram import Telegram
+
+    result = run_mod.morning(
+        offline=args.offline,
+        skip_brief=args.no_brief,
+        force=args.force,
+        holdings_path=args.file,
     )
-    return EXIT_USAGE
+
+    if not result.traded:
+        print(f"{result.day}: market closed ({result.reason}). Nothing to do.")
+        return EXIT_OK
+
+    analytics = result.analytics
+    assert analytics is not None
+    print(f"{result.day} — {result.reason}\n")
+    for status in result.statuses:
+        print(f"  {status.name}: {status.label}" + (f" — {status.detail}" if status.detail else ""))
+
+    print(
+        f"\nValue {compact(analytics.total_value)} · "
+        f"unrealised {compact(analytics.unrealised)} on {analytics.measurable} measurable rows"
+    )
+    if result.watchlist:
+        print(f"\nWatchlist ({len(result.watchlist)}):")
+        for item in result.watchlist:
+            print(f"  {item.score:5.1f}  {item.name}")
+            for reason in item.reasons:
+                print(f"         · {reason}")
+    else:
+        print("\nNothing on the watchlist.")
+
+    brief_result = result.brief
+    if brief_result and brief_result.ok and brief_result.text:
+        print("\n" + "-" * 60)
+        print(brief_result.text)
+        print("-" * 60)
+    elif brief_result:
+        print(f"\nBrief unavailable: {brief_result.failure}")
+        if brief_result.rejected_numbers:
+            print(f"  numbers it could not support: {', '.join(brief_result.rejected_numbers)}")
+
+    print(f"\nDashboard: {result.dashboard_path}")
+
+    if args.dry_run:
+        print("\nDry run — nothing sent.")
+        return EXIT_OK
+
+    telegram = Telegram()
+    if not telegram.configured:
+        print("\nTelegram is not configured; set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.",
+              file=sys.stderr)
+        return EXIT_OK
+
+    if brief_result and brief_result.ok and brief_result.text:
+        sent = telegram.send_text(brief_result.text)
+        print(f"\nTelegram: {sent.sent} message(s) sent" + (f", {sent.failures}" if sent.failures else ""))
+    if args.send_dashboard and result.dashboard_path:
+        doc = telegram.send_document(
+            result.dashboard_path, caption=f"Portfolio desk — {result.day}"
+        )
+        print(f"Dashboard sent: {doc.ok}")
+    return EXIT_OK
+
+
+def cmd_holidays(args: argparse.Namespace) -> int:
+    from . import trading_days
+
+    year = args.year or date.today().year
+    calendar = trading_days.refresh(year) if args.refresh else trading_days.load(year)
+    status = trading_days.status(calendar=calendar)
+    print(f"{year}: {len(calendar.dates)} holidays, source: {calendar.source}")
+    print(f"verified: {calendar.verified}")
+    for day in sorted(calendar.dates):
+        print(f"  {day}")
+    print(f"\nToday ({status.day}): {'open' if status.is_open else 'closed'} — {status.reason}")
+    if not calendar.verified:
+        print(
+            "\nThe full list could not be fetched from NSE, so only fixed-date holidays are "
+            "known. Re-run with --refresh when NSE is reachable.",
+            file=sys.stderr,
+        )
+        return EXIT_SOURCES_DOWN
+    return EXIT_OK
 
 
 # -------------------------------------------------------------------- parser
@@ -412,9 +492,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     dash_parser.set_defaults(func=cmd_dashboard)
 
-    run_parser = sub.add_parser("run", help="build the daily brief (not implemented yet)")
-    run_parser.add_argument("--dry-run", action="store_true", help="print, send nothing")
+    run_parser = sub.add_parser("run", help="the full morning run")
+    run_parser.add_argument("--dry-run", action="store_true", help="print it, send nothing")
+    run_parser.add_argument("--offline", action="store_true", help="no network; snapshot prices only")
+    run_parser.add_argument("--no-brief", action="store_true", help="skip the Claude call")
+    run_parser.add_argument("--force", action="store_true", help="run even on a holiday or weekend")
+    run_parser.add_argument(
+        "--send-dashboard", action="store_true", help="also send the HTML file to Telegram"
+    )
     run_parser.set_defaults(func=cmd_run)
+
+    holidays_parser = sub.add_parser("holidays", help="show or refresh the NSE holiday list")
+    holidays_parser.add_argument("--refresh", action="store_true", help="fetch from NSE and cache")
+    holidays_parser.add_argument("--year", type=int, default=None)
+    holidays_parser.set_defaults(func=cmd_holidays)
 
     return parser
 

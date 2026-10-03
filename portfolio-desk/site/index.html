@@ -52,6 +52,42 @@ h2{font-size:19px;font-weight:600;margin:36px 0 12px}
 .pending strong{display:block;font-weight:600;margin-bottom:3px}
 .pending strong::before{content:"◌ ";color:var(--mari)}
 .pending p{margin:0;color:var(--mute);font-size:13.5px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card h3{margin:0;font-size:15px;font-weight:600}
+.card .big{font-size:20px;font-weight:600}
+.ruler{position:relative;height:8px;background:linear-gradient(90deg,var(--gain) 0%,var(--line) 45%,var(--line) 55%,var(--loss) 100%);opacity:.75;border-radius:4px;margin:22px 0 8px}
+.ruler i{position:absolute;top:-6px;width:2px;height:20px;background:var(--ink);border-radius:1px}
+.ruler i::after{content:attr(data-label);position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;white-space:nowrap;color:var(--ink)}
+.ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mute);gap:12px}
+.ends b{display:block;color:var(--ink);font-weight:600}
+.ends div:last-child{text-align:right}
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:11px;font-size:12px;color:var(--mute)}
+.meta span{background:var(--bg);border-radius:4px;padding:2px 7px}
+.watch{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.watch>div{padding:13px 16px;border-bottom:1px solid var(--line)}
+.watch>div:last-child{border-bottom:0}
+.watch header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.watch h3{margin:0;font-size:15px;font-weight:600}
+.watch .sym{color:var(--mute);font-size:12.5px}
+.watch .px{margin-left:auto;font-size:14px}
+.watch ul{margin:7px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.watch li{font-size:13.5px;color:var(--mute);padding-left:14px;position:relative}
+.watch li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--mute)}
+.watch li.good::before{background:var(--gain)}
+.watch li.bad::before{background:var(--loss)}
+.watch li.warn::before{background:var(--mari)}
+.brief{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
+.brief h3{margin:0 0 3px;font-size:14px;font-weight:600}
+.brief p{margin:0 0 14px;font-size:14.5px;line-height:1.6}
+.brief p:last-child{margin-bottom:0}
+.brief .by{color:var(--mute);font-size:12px;margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.newslist{list-style:none;margin:0;padding:0;font-size:13.5px}
+.newslist li{padding:7px 0;border-bottom:1px solid var(--line)}
+.newslist li:last-child{border-bottom:0}
+.newslist b{font-weight:600}
+.newslist span{color:var(--mute)}
 .tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
 input{flex:1;min-width:180px}
@@ -79,7 +115,7 @@ footer p{margin:0 0 8px}
 </head>
 <body>
 <main>
-<p class="date">Built Saturday 3 October 2026, 05:00 UTC · holdings as of 2026-10-03 (Broker app screenshots (manual))</p>
+<p class="date">Built Saturday 3 October 2026, 05:54 UTC · holdings as of 2026-10-03 (Broker app screenshots (manual))</p>
 <h1>Three stocks make up 57% of your portfolio.</h1>
 
 <p class="banner"><span aria-hidden="true">⚠</span><span><b>Prices are not live.</b>
@@ -207,6 +243,10 @@ Prices are the last close of 2026-10-03, from the snapshot captured with your br
  </section>
 </div>
 
+
+
+
+
 <h2>All holdings</h2>
 <div class="tools">
  <input id="q" type="search" placeholder="Search by name or symbol" aria-label="Search holdings">
@@ -243,21 +283,17 @@ Prices are the last close of 2026-10-03, from the snapshot captured with your br
 <tbody id="tb"></tbody>
 </table></div>
 
-<h2>Not built yet</h2>
+<h2>Not available this run</h2>
 <div class="pending">
- <div><strong>Index levels</strong><p>Pivots, CPR, DMAs, 52-week range and option-chain support/resistance for NIFTY 50, BANK NIFTY, FINNIFTY, MIDCPNIFTY, SENSEX. Needs the levels engine (step 3) and the NSE client (step 4).</p></div>
- <div><strong>Support and resistance per holding</strong><p>Nearest zones and the distance to each, clustered from pivots, DMAs, previous-day and previous-week extremes. Same two steps.</p></div>
- <div><strong>This morning's brief</strong><p>The written pre-market note, plus news touching your holdings. Needs the news feeds (step 5) and the Claude call (step 6).</p></div>
+ <div><strong>Index levels</strong><p>Pivots, CPR, DMAs, 52-week range and option-chain support/resistance for NIFTY 50, BANK NIFTY, FINNIFTY, MIDCPNIFTY, SENSEX. Needs a reachable Yahoo and NSE.</p></div>
+ <div><strong>Today's watchlist</strong><p>Holdings near a zone, crossing a DMA, at a 52-week extreme or carrying news. Needs daily history, which needs Yahoo.</p></div>
+ <div><strong>This morning's brief</strong><p>Unavailable — not generated on this run.</p></div>
 </div>
 
 <h2>Where the numbers came from</h2>
 <div class="src">
  <div class="skipped"><i aria-hidden="true"></i><span>yahoo (live prices)</span><small>not fetched — run without --offline to fetch</small></div>
  <div class="stale"><i aria-hidden="true"></i><span>price snapshot</span><small>stale — last close 2026-10-03; 39 row(s) rely on it</small></div>
- <div class="skipped"><i aria-hidden="true"></i><span>nse (option chain, VIX, FII/DII)</span><small>not built yet — step 4</small></div>
- <div class="skipped"><i aria-hidden="true"></i><span>levels engine</span><small>not built yet — step 3</small></div>
- <div class="skipped"><i aria-hidden="true"></i><span>news (Google News RSS)</span><small>not built yet — step 5</small></div>
- <div class="skipped"><i aria-hidden="true"></i><span>claude brief</span><small>not built yet — step 6</small></div>
 </div>
 
 <footer>

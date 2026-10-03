@@ -117,6 +117,20 @@ class HttpClient:
         if gap < self.min_interval:
             time.sleep(self.min_interval - gap)
 
+    def get_text(
+        self,
+        url: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        cache_key: str | None = None,
+        retries: int | None = None,
+    ) -> str:
+        """GET a non-JSON body (RSS, CSV). Same failure rules as get_json."""
+        response = self._get(url, params=params, cache_key=cache_key, retries=retries, as_json=False)
+        if not response.ok:
+            raise SourceUnavailable(self.source, f"HTTP {response.status}")
+        return response.payload if isinstance(response.payload, str) else ""
+
     def get_json(
         self,
         url: str,
@@ -130,6 +144,17 @@ class HttpClient:
         Raises SourceUnavailable when the source could not answer. Returns a
         Response (possibly with a 4xx status) when it did.
         """
+        return self._get(url, params=params, cache_key=cache_key, retries=retries, as_json=True)
+
+    def _get(
+        self,
+        url: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        cache_key: str | None = None,
+        retries: int | None = None,
+        as_json: bool = True,
+    ) -> Response:
         if cache_key and self.cache:
             cached = self.cache.get(cache_key)
             if cached is not None:
@@ -149,10 +174,13 @@ class HttpClient:
                 if response.status_code in RETRY_STATUS:
                     last_detail = f"HTTP {response.status_code}"
                 else:
-                    try:
-                        payload = response.json() if response.content else None
-                    except ValueError:
-                        payload = None
+                    if as_json:
+                        try:
+                            payload = response.json() if response.content else None
+                        except ValueError:
+                            payload = None
+                    else:
+                        payload = response.text
                     result = Response(status=response.status_code, payload=payload)
                     if cache_key and self.cache:
                         self.cache.put(cache_key, {"status": result.status, "payload": result.payload})

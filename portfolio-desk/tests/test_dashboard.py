@@ -41,10 +41,12 @@ def test_source_status_is_on_the_page(page):
     assert "price snapshot" in page and "stale" in page
 
 
-def test_unbuilt_sections_are_declared_not_hidden(page):
-    assert "Not built yet" in page
+def test_unavailable_sections_are_declared_not_hidden(page):
+    """A section with no data says why, instead of quietly disappearing."""
+    assert "Not available this run" in page
     assert "Index levels" in page
     assert "This morning&#39;s brief" in page or "This morning's brief" in page
+    assert "Today&#39;s watchlist" in page or "Today's watchlist" in page
 
 
 def test_the_disclaimer_is_present(page):

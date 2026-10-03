@@ -4,10 +4,10 @@ A read-only daily market brief and dashboard for Vic's Indian equity portfolio.
 No broker integration: holdings are maintained by hand in `holdings.json`, market
 data comes from free public sources. The full brief is in [CLAUDE.md](CLAUDE.md).
 
-**Status: steps 1–2 plus the dashboard.** Holdings loader, `verify-symbols`,
-portfolio analytics and `site/index.html`. The levels engine, NSE option chain,
-news, the written brief, Telegram and the schedule are still to come, and the
-dashboard names them as missing rather than hiding the gaps.
+**Status: complete, waiting on network access.** Holdings, symbol verification,
+prices, levels, the signal engine, news, the Claude brief, the dashboard,
+Telegram and the 08:30 IST schedule are all built and tested. The only thing
+between it and a live run is the egress policy — see [SETUP.md](SETUP.md).
 
 ## Setup
 
@@ -16,10 +16,56 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 ```
 
-## What works today
+## The morning run
+
+```sh
+python -m desk run --dry-run     # everything, prints the brief, sends nothing
+python -m desk run               # and delivers it to Telegram
+python -m desk run --offline     # snapshot prices, no network at all
+python -m desk run --no-brief    # skip the Claude call
+python -m desk run --force       # ignore the holiday/weekend check
+```
+
+The order is fixed: prices and daily history, then levels, then the signals that
+read those levels, then news for the names the signals surfaced, then Claude,
+then the page. Each stage fails soft — a dead source removes a section and turns
+a chip red; it never aborts the run and never swaps stale data in silently.
+
+## What is "smart" here
+
+`desk/signals.py` scores each holding from rules, never from a model:
+
+| Signal | Fires when |
+|---|---|
+| near support / resistance | price is within 2% (0.2% for an index) of a zone |
+| inside a zone | price is between the zone's edges |
+| 52-week extreme | within 2% of the high or low, **and** the year's range is at least 15% wide |
+| DMA cross | price closed through a 20/50/200 DMA by at least 0.25% |
+| big move | the session moved 3% or more |
+| volume spike | 2x the 20-day average |
+| event / news | a result date, or headlines today |
+| deep drawdown | down more than 20% on cost |
+| data problems | missing cost basis, unverified ticker |
+
+Scores are the sum of signal weights, tilted (never created) by position size, so
+a 24% holding outranks a 0.2% one on the same news. Zones count agreement by
+*family* — the pivot ladder, CPR and S/R are one calculation, so a zone holding
+"pivot, CPR top, S1" counts as one method agreeing with itself, not three. Only
+the nearest zone each side is reported. Every line carries its reason.
+
+Claude then reads that JSON and writes the brief. It gets no price feed, does no
+arithmetic, and every number it writes is checked back against the payload at the
+precision it was written to; a draft citing a figure that isn't there is
+regenerated once and then dropped rather than sent. `prompts/brief.md` is the
+prompt — edit it without touching code.
+
+## Holdings and tickers
+
+
 
 ```sh
 python -m desk holdings list              # every row, plus what needs attention
+python -m desk holidays --refresh         # fetch and cache the NSE holiday list
 python -m desk holdings list --json       # the validated document
 python -m desk verify-symbols             # check every ticker against Yahoo, then NSE
 python -m desk verify-symbols --only-flagged
@@ -103,6 +149,14 @@ desk/
   config.py        paths, env, request etiquette
   holdings.py      load / validate / edit holdings.json
   verify.py        ticker verification and the report
+  run.py           the morning pipeline, and data/levels/<date>.json
+  levels.py        pivots, CPR, DMAs, swings, 52w, zone clustering
+  signals.py       the scored attention list
+  oi.py            PCR, OI walls, max pain
+  brief.py         the Claude call and its retry loop
+  numbers.py       the "every figure came from the payload" check
+  telegram.py      MarkdownV2 delivery, 4,096-char splitting
+  trading_days.py  NSE holidays, with a fixed-date fallback
   market.py        price tiers (live / snapshot / none) and per-source health
   portfolio.py     value, weights, P/L, sectors, concentration, flags
   dashboard.py     context for the template, writes site/ and site/archive/
@@ -110,7 +164,8 @@ desk/
   sources/
     http.py        session reuse, rate limit, retries, day cache, failure classes
     yahoo.py       chart + search
-    nse_client.py  quote-equity (option chain, VIX, FII/DII, holidays come later)
+    nse_client.py  quote-equity, option chain, VIX, FII/DII, holidays
+    news.py        Google News RSS per holding
 templates/dashboard.html.j2
 holdings.json
 data/prices-snapshot.json

@@ -1,8 +1,3 @@
-# Steps 1-2 and the dashboard
 requests>=2.31
 jinja2>=3.1
-
-# Later steps, added as they land:
-#   yfinance        bulk prices, DMAs, global cues   (step 2 refresh)
-#   pandas          OHLC frames for the levels engine (step 3)
-#   anthropic       the written brief                 (step 6)
+anthropic>=1.0        # only needed for the written brief

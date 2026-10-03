@@ -9,7 +9,10 @@ Only the two endpoints that work without a crumb/cookie dance:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
+
+from ..levels import Bar
 
 from .http import DayCache, HttpClient, SourceUnavailable
 
@@ -91,6 +94,47 @@ class YahooClient:
                 meta.get("chartPreviousClose") or meta.get("previousClose")
             ),
         )
+
+    def history(self, ticker: str, *, period: str = "1y") -> list[Bar]:
+        """Daily bars, oldest first. Empty list means Yahoo has no such ticker."""
+        response = self.http.get_json(
+            CHART_URL.format(ticker=ticker),
+            params={"range": period, "interval": "1d"},
+            cache_key=f"history-{ticker}-{period}",
+        )
+        payload = response.payload if isinstance(response.payload, dict) else {}
+        chart = payload.get("chart") if isinstance(payload.get("chart"), dict) else {}
+        results = chart.get("result")
+        if response.status == 404 or not results:
+            if not response.ok:
+                raise SourceUnavailable(self.source, f"{ticker}: HTTP {response.status}")
+            return []
+
+        result = results[0]
+        stamps = result.get("timestamp") or []
+        quote_blocks = (result.get("indicators") or {}).get("quote") or [{}]
+        quote = quote_blocks[0] if quote_blocks else {}
+        opens, highs = quote.get("open") or [], quote.get("high") or []
+        lows, closes = quote.get("low") or [], quote.get("close") or []
+        volumes = quote.get("volume") or []
+
+        bars: list[Bar] = []
+        for i, stamp in enumerate(stamps):
+            values = [
+                _as_float(series[i]) if i < len(series) else None
+                for series in (opens, highs, lows, closes)
+            ]
+            if any(v is None for v in values):
+                continue  # a holiday or a half-session Yahoo left blank
+            open_, high, low, close = values  # type: ignore[misc]
+            bars.append(
+                Bar(
+                    day=datetime.fromtimestamp(stamp, tz=timezone.utc).date(),
+                    open=open_, high=high, low=low, close=close,
+                    volume=_as_float(volumes[i]) if i < len(volumes) else None,
+                )
+            )
+        return bars
 
     def search(self, query: str, *, limit: int = 6) -> list[Match]:
         """Suggest tickers for a company name. Empty list means no match."""

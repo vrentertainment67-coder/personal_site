@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from .. import config
 from .http import DayCache, HttpClient, SourceUnavailable
@@ -23,6 +25,11 @@ BASE = "https://www.nseindia.com"
 HOME_URL = f"{BASE}/"
 QUOTE_EQUITY_URL = f"{BASE}/api/quote-equity"
 SEARCH_URL = f"{BASE}/api/search/autocomplete"
+ALL_INDICES_URL = f"{BASE}/api/allIndices"
+FII_DII_URL = f"{BASE}/api/fiidiiTradeReact"
+HOLIDAY_URL = f"{BASE}/api/holiday-master"
+OPTION_CHAIN_INDEX_URL = f"{BASE}/api/option-chain-indices"
+OPTION_CHAIN_EQUITY_URL = f"{BASE}/api/option-chain-equities"
 
 
 @dataclass(frozen=True)
@@ -87,6 +94,75 @@ class NseClient:
             is_fno=bool(info.get("isFNOSec")),
         )
 
+    def all_indices(self) -> dict[str, dict[str, float | None]]:
+        """Every NSE index with its last value and day change, keyed by name.
+
+        This is also where India VIX comes from.
+        """
+        self._prime_session()
+        response = self.http.get_json(ALL_INDICES_URL, cache_key="all-indices")
+        if not response.ok or not isinstance(response.payload, dict):
+            raise SourceUnavailable(self.source, f"allIndices: HTTP {response.status}")
+        out: dict[str, dict[str, float | None]] = {}
+        for row in response.payload.get("data") or []:
+            if not isinstance(row, dict) or not row.get("index"):
+                continue
+            out[str(row["index"]).strip()] = {
+                "last": _number(row.get("last")),
+                "change_pct": _number(row.get("percentChange")),
+                "prev_close": _number(row.get("previousClose")),
+            }
+        return out
+
+    def india_vix(self) -> float | None:
+        for name, values in self.all_indices().items():
+            if name.upper().replace(" ", "") == "INDIAVIX":
+                return values.get("last")
+        return None
+
+    def fii_dii(self) -> list[dict[str, Any]]:
+        """Provisional FII/DII cash-market figures for the last session."""
+        self._prime_session()
+        response = self.http.get_json(FII_DII_URL, cache_key="fii-dii")
+        if not response.ok or not isinstance(response.payload, list):
+            raise SourceUnavailable(self.source, f"fiidiiTradeReact: HTTP {response.status}")
+        return [row for row in response.payload if isinstance(row, dict)]
+
+    def trading_holidays(self) -> list[str]:
+        """Dates NSE's equity segment is shut, as ISO strings."""
+        self._prime_session()
+        response = self.http.get_json(
+            HOLIDAY_URL, params={"type": "trading"}, cache_key="holiday-master"
+        )
+        if not response.ok or not isinstance(response.payload, dict):
+            raise SourceUnavailable(self.source, f"holiday-master: HTTP {response.status}")
+        out: list[str] = []
+        for rows in response.payload.values():
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if isinstance(row, dict) and row.get("tradingDate"):
+                    parsed = _parse_nse_date(str(row["tradingDate"]))
+                    if parsed:
+                        out.append(parsed)
+        return sorted(set(out))
+
+    def option_chain(self, symbol: str, *, is_index: bool) -> tuple[list[dict[str, Any]], str | None]:
+        """Chain rows plus the nearest expiry. F&O instruments only."""
+        self._prime_session()
+        url = OPTION_CHAIN_INDEX_URL if is_index else OPTION_CHAIN_EQUITY_URL
+        response = self.http.get_json(
+            url, params={"symbol": symbol}, cache_key=f"option-chain-{symbol}"
+        )
+        if not response.ok or not isinstance(response.payload, dict):
+            raise SourceUnavailable(self.source, f"option-chain {symbol}: HTTP {response.status}")
+        records = response.payload.get("records")
+        if not isinstance(records, dict):
+            return [], None
+        rows = [r for r in (records.get("data") or []) if isinstance(r, dict)]
+        expiries = records.get("expiryDates") or []
+        return rows, (str(expiries[0]) if expiries else None)
+
     def search(self, query: str, *, limit: int = 6) -> list[tuple[str, str]]:
         """NSE autocomplete: [(symbol, company name)]. Empty list means no match."""
         self._prime_session()
@@ -110,3 +186,26 @@ class NseClient:
                 break
         return out
 
+
+
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.replace(",", "").strip())
+        except ValueError:
+            return None
+    return None
+
+
+def _parse_nse_date(text: str) -> str | None:
+    """NSE writes holiday dates as "26-Jan-2026"."""
+    for fmt in ("%d-%b-%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text.strip(), fmt).date().isoformat()
+        except ValueError:
+            continue
+    return None

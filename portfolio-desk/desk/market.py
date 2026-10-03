@@ -17,11 +17,30 @@ import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from . import config
+from .levels import Bar
 from .sources.http import SourceUnavailable
 from .sources.yahoo import YahooClient
+
+# Indices the desk covers. Yahoo has daily bars for the first three; the rest
+# come from NSE's allIndices snapshot (level only, no levels engine).
+INDEX_TICKERS = {
+    "NIFTY 50": "^NSEI",
+    "BANK NIFTY": "^NSEBANK",
+    "SENSEX": "^BSESN",
+}
+NSE_ONLY_INDICES = ("NIFTY FIN SERVICE", "NIFTY MIDCAP SELECT")
+SECTOR_INDICES = (
+    "NIFTY IT", "NIFTY BANK", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY METAL",
+    "NIFTY ENERGY", "NIFTY FMCG", "NIFTY PSU BANK", "NIFTY REALTY",
+)
+GLOBAL_CUES = {
+    "S&P 500": "^GSPC", "Nasdaq": "^IXIC", "Dow": "^DJI", "Nikkei": "^N225",
+    "Hang Seng": "^HSI", "WTI crude": "CL=F", "Brent": "BZ=F", "Gold": "GC=F",
+    "USD/INR": "INR=X", "US 10Y": "^TNX",
+}
 
 Tier = Literal["live", "snapshot", "none"]
 Health = Literal["ok", "stale", "failed", "skipped"]
@@ -146,6 +165,51 @@ def fetch_live(symbols_to_tickers: dict[str, str]) -> tuple[dict[str, Price], So
     return prices, SourceStatus("yahoo (live prices)", "ok" if prices else "failed", detail)
 
 
+def fetch_bars(
+    tickers: dict[str, str], *, period: str = "1y", client: YahooClient | None = None
+) -> tuple[dict[str, list[Bar]], SourceStatus]:
+    """Daily history per symbol, for the levels engine."""
+    client = client or YahooClient()
+    bars: dict[str, list[Bar]] = {}
+    unreachable = ""
+    for symbol, ticker in tickers.items():
+        try:
+            series = client.history(ticker, period=period)
+        except SourceUnavailable as exc:
+            unreachable = exc.detail
+            break
+        if series:
+            bars[symbol] = series
+    if unreachable:
+        return bars, SourceStatus("yahoo (history)", "failed", f"unreachable, {unreachable}")
+    return bars, SourceStatus(
+        "yahoo (history)", "ok" if bars else "failed",
+        f"{len(bars)} of {len(tickers)} series",
+    )
+
+
+def fetch_global_cues(client: YahooClient | None = None) -> tuple[list[dict[str, Any]], SourceStatus]:
+    """Overnight cues: US, Asia, crude, gold, the rupee, US 10-year."""
+    client = client or YahooClient()
+    rows: list[dict[str, Any]] = []
+    for name, ticker in GLOBAL_CUES.items():
+        try:
+            quote = client.quote(ticker)
+        except SourceUnavailable as exc:
+            return rows, SourceStatus("global cues", "failed", f"unreachable, {exc.detail}")
+        if quote is None or quote.last_price is None:
+            continue
+        change = None
+        if quote.previous_close:
+            change = (quote.last_price / quote.previous_close - 1) * 100
+        rows.append({
+            "name": name,
+            "last": round(quote.last_price, 2),
+            "change_pct": round(change, 2) if change is not None else None,
+        })
+    return rows, SourceStatus("global cues", "ok" if rows else "failed", f"{len(rows)} markets")
+
+
 def collect(
     symbols_to_tickers: dict[str, str],
     *,
@@ -176,16 +240,6 @@ def collect(
         snapshot_status.detail += f"; {used} row(s) rely on it"
     data.statuses.append(snapshot_status)
 
-    # Sources that belong to later build steps, so the dashboard can show the
-    # gaps rather than pretend the panels are empty by choice.
-    data.statuses.extend(
-        [
-            SourceStatus("nse (option chain, VIX, FII/DII)", "skipped", "step 4"),
-            SourceStatus("levels engine", "skipped", "step 3"),
-            SourceStatus("news (Google News RSS)", "skipped", "step 5"),
-            SourceStatus("claude brief", "skipped", "step 6"),
-        ]
-    )
     return data
 
 
