@@ -4,10 +4,11 @@ A read-only daily market brief and dashboard for Vic's Indian equity portfolio.
 No broker integration: holdings are maintained by hand in `holdings.json`, market
 data comes from free public sources. The full brief is in [CLAUDE.md](CLAUDE.md).
 
-**Status: complete, waiting on network access.** Holdings, symbol verification,
-prices, levels, the signal engine, news, the Claude brief, the dashboard,
-Telegram and the 08:30 IST schedule are all built and tested. The only thing
-between it and a live run is the egress policy — see [SETUP.md](SETUP.md).
+**Status: complete.** Holdings, symbol verification, prices, levels, the signal
+engine, news, the Claude brief, the dashboard, Telegram and the 08:30 IST
+schedule are all built and tested. It runs on GitHub Actions, where the network
+is open; a Claude cloud session may have market-data hosts blocked, which only
+affects runs started from chat. See [SETUP.md](SETUP.md).
 
 ## Setup
 

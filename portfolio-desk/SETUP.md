@@ -5,33 +5,38 @@ here, and nothing works until it is done.
 
 ---
 
-## 1. Open the network (you, 2 minutes)
+## 1. Run it on GitHub, not in a Claude session
 
-The desk needs to reach three hosts. In this cloud session they are currently
-blocked by the environment's egress policy, which is why every run so far has
-fallen back to the price snapshot.
+The desk needs to reach Yahoo, NSE and Google News. A Claude cloud session may
+have those hosts blocked by its environment's egress policy — that is why every
+run in chat has fallen back to the price snapshot. **GitHub Actions runners have
+open network access**, so that restriction does not apply where the desk actually
+runs. There is nothing to configure.
 
-In the Claude app: the cloud environment menu in the session title bar → **Edit**
-→ **Network access**. Either pick a broader level, or choose **Custom** and add:
+First, get this branch onto `master`. Scheduled workflows only ever run from the
+default branch, so until it is merged nothing fires at 08:30 regardless of the
+rest of this file.
 
-```
-query1.finance.yahoo.com      prices, daily history, global cues
-www.nseindia.com              option chain, India VIX, FII/DII, holiday list
-news.google.com               headlines per holding
-```
+Then: **Actions → Portfolio desk — check → Run workflow**, and pick a task:
 
-Keep the default package-manager domains that are already listed.
-Reference: https://code.claude.com/docs/en/cloud-environments#network-access
+| Task | What it does | Secrets needed |
+|---|---|---|
+| `verify-symbols` | resolves all 40 tickers against Yahoo, then NSE | none |
+| `holidays` | fetches NSE's trading-holiday list and caches it | none |
+| `dry-run-no-brief` | the full pipeline minus the Claude call | none |
+| `dry-run` | everything, prints the brief, sends nothing | `ANTHROPIC_API_KEY` |
 
-Then check it worked:
+Start with `verify-symbols`. It needs no secrets, takes about a minute, and the
+result — the real answer on LTM, NSE, Manipal Health, LML and the rest — lands in
+the job summary and as a downloadable `verify.json`. Until those tickers resolve,
+a wrong ticker means a wrong price and every number downstream inherits it.
 
-```sh
-python -m desk verify-symbols        # the 8 guessed tickers, resolved for real
-python -m desk run --dry-run         # full run, prints the brief, sends nothing
-```
-
-`verify-symbols` is the one to run first. Until it passes, a wrong ticker means
-a wrong price, and every number downstream inherits it.
+If you do want it working inside a Claude session too, the setting is the cloud
+environment menu in the session title bar → **Edit** → **Network access** → Custom,
+adding `query1.finance.yahoo.com`, `www.nseindia.com` and `news.google.com` while
+keeping the default package-manager domains. It is optional, and if that menu is
+not there (an environment someone else owns, or a session started outside the
+desktop app), skip it — GitHub is the path that matters.
 
 ---
 

@@ -1,0 +1,81 @@
+name: Portfolio desk — check
+
+# Run this by hand: Actions → Portfolio desk — check → Run workflow.
+# GitHub's runners have open network access, so this reaches Yahoo, NSE and
+# Google News without any environment settings. `verify-symbols` and `holidays`
+# need no secrets at all.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to run"
+        type: choice
+        default: verify-symbols
+        options:
+          - verify-symbols
+          - holidays
+          - dry-run
+          - dry-run-no-brief
+
+defaults:
+  run:
+    working-directory: portfolio-desk
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Asia/Kolkata
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL || 'claude-opus-5-5' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: portfolio-desk/requirements.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Tests
+        run: pip install pytest && python -m pytest tests -q
+
+      - name: Run
+        id: run
+        run: |
+          set -o pipefail
+          case "${{ inputs.task }}" in
+            verify-symbols)    python -m desk verify-symbols --json-out verify.json | tee out.txt ;;
+            holidays)          python -m desk holidays --refresh | tee out.txt ;;
+            dry-run)           python -m desk run --dry-run --force | tee out.txt ;;
+            dry-run-no-brief)  python -m desk run --dry-run --no-brief --force | tee out.txt ;;
+          esac
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "## ${{ inputs.task }}"
+            echo '```'
+            cat out.txt 2>/dev/null || echo "(no output — see the step log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desk-${{ inputs.task }}
+          path: |
+            portfolio-desk/out.txt
+            portfolio-desk/verify.json
+            portfolio-desk/site/index.html
+            portfolio-desk/data/nse-holidays-*.json
+          if-no-files-found: ignore
+          retention-days: 14
