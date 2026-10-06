@@ -1,0 +1,301 @@
+---
+// /war-of-the-djs — shared planning board for a DJ battle set (VIC × Rhea).
+// Both add tracks from any device; the list auto-collates, groups by language
+// and exports an indicative set for the client. Backed by public.war_tracks
+// (run supabase/war_tracks.sql). Unlisted, noindex. Standalone page.
+const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
+const EVENT_TITLE = "Rakuten";
+const EVENT_DATE = "30 Nov 2026";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>War of the DJs — DJ VIC × DJ Rhea</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script is:inline src="/song-search.js"></script>
+  <style is:global>
+    :root{ --bg:#0a0a0d; --card:#141419; --line:#26262e; --ink:#f0ede6; --mut:#9a968c;
+      --vic:#ff4d3d; --vic2:#c9a84c; --rhea:#22d3ee; --rhea2:#7c5cff; --field:#101014; --ok:#39b56a; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100dvh; }
+    body{ background-image: radial-gradient(ellipse 80% 45% at 15% -5%, rgba(255,77,61,.14), transparent 60%),
+      radial-gradient(ellipse 80% 45% at 85% -5%, rgba(34,211,238,.13), transparent 60%);
+      padding:max(18px,env(safe-area-inset-top)) 16px calc(34px + env(safe-area-inset-bottom)); }
+    .wrap{ max-width:620px; margin:0 auto; }
+
+    header{ text-align:center; padding:12px 0 18px; }
+    .k{ font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+    .title{ font-family:'Bebas Neue',sans-serif; font-size:clamp(3rem,15vw,5rem); line-height:.92; margin:.3rem 0 .5rem;
+      background:linear-gradient(90deg,var(--vic) 0%,var(--vic2) 42%,#fff 50%,var(--rhea) 58%,var(--rhea2) 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.01em; }
+    .vs{ display:flex; align-items:center; justify-content:center; gap:14px; font-family:'Bebas Neue',sans-serif; font-size:1.25rem; letter-spacing:.06em; }
+    .vs .side{ display:inline-flex; align-items:baseline; gap:8px; }
+    .vs .vic{ color:var(--vic); } .vs .rhea{ color:var(--rhea); }
+    .vs .side b{ font-size:1.5rem; }
+    .vs .x{ color:var(--mut); font-size:1rem; }
+    .sub{ max-width:34rem; margin:.9rem auto 0; color:var(--mut); line-height:1.6; font-size:.92rem; }
+
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin:16px 0; }
+    .lbl{ font-size:12px; letter-spacing:.02em; color:var(--mut); margin:14px 0 7px; font-weight:600; }
+    .lbl:first-child{ margin-top:0; }
+    .lbl .mut{ color:#625d53; font-weight:400; }
+    .in{ width:100%; background:var(--field); border:1.5px solid var(--line); border-radius:11px; padding:13px 14px;
+      color:var(--ink); font-size:16px; outline:none; font-family:inherit; transition:border-color .15s; }
+    .in:focus{ border-color:var(--rhea); }
+    .songrow{ position:relative; }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .chip{ background:var(--field); border:1.5px solid var(--line); color:var(--mut); border-radius:99px; padding:10px 16px;
+      font-size:14px; font-family:inherit; cursor:pointer; transition:.15s; }
+    .chip:hover{ border-color:#43434e; color:var(--ink); }
+    .chip.dj-vic.on{ background:var(--vic); border-color:var(--vic); color:#160504; font-weight:700; }
+    .chip.dj-rhea.on{ background:var(--rhea); border-color:var(--rhea); color:#042027; font-weight:700; }
+    .chip.on{ border-color:var(--ink); color:var(--ink); }
+    .lang-chips{ margin-bottom:9px; }
+    .perc-row{ display:flex; gap:9px; align-items:stretch; }
+    .drum{ flex:none; width:52px; border:1.5px solid var(--line); background:var(--field); border-radius:11px; font-size:22px;
+      cursor:pointer; transition:.15s; filter:grayscale(1) opacity(.5); }
+    .drum.on{ border-color:var(--vic2); background:rgba(201,168,76,.14); filter:none; }
+    .go{ width:100%; margin-top:14px; padding:15px; border:none; border-radius:12px; font-size:15px; font-weight:700;
+      letter-spacing:.03em; color:#0a0a0d; background:linear-gradient(90deg,var(--vic),var(--vic2)); cursor:pointer; transition:filter .15s, transform .12s; }
+    .go:hover{ filter:brightness(1.07); } .go:active{ transform:translateY(1px); } .go:disabled{ opacity:.5; }
+    .go.rhea-turn{ background:linear-gradient(90deg,var(--rhea),var(--rhea2)); color:#041016; }
+    .msg{ text-align:center; font-size:.88rem; padding:9px; border-radius:9px; margin-top:11px; display:none; }
+    .msg.err{ display:block; background:rgba(255,77,61,.12); color:#ff9a90; border:1px solid #7a2e28; }
+    .msg.ok{ display:block; background:rgba(57,181,106,.12); color:#8fe0ad; border:1px solid #2f6b45; }
+
+    .list-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:22px 0 10px; }
+    .list-head h2{ font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:.04em; margin:0; color:var(--ink); }
+    .filters{ display:flex; gap:6px; margin-left:auto; }
+    .fchip{ background:none; border:1px solid var(--line); color:var(--mut); border-radius:99px; padding:6px 13px; font-size:12.5px; font-family:inherit; cursor:pointer; }
+    .fchip.on{ border-color:var(--ink); color:var(--ink); }
+    .mini{ background:none; border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:7px 12px; font-size:12.5px; font-family:inherit; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+    .mini:hover{ border-color:var(--vic2); color:var(--vic2); }
+
+    .lang-sec{ margin:0 0 16px; }
+    .lang-h{ font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.12em; color:var(--vic2); text-transform:uppercase; margin:0 0 7px; padding-bottom:5px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
+    .lang-h span{ color:#5a554a; font-size:.72rem; letter-spacing:.06em; }
+    .row{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:11px 12px; margin:0 0 7px; border-left-width:3px; }
+    .row.vic{ border-left-color:var(--vic); } .row.rhea{ border-left-color:var(--rhea); }
+    .row .badge{ flex:none; font-family:'Bebas Neue',sans-serif; font-size:.78rem; letter-spacing:.05em; padding:3px 8px; border-radius:6px; }
+    .row.vic .badge{ background:rgba(255,77,61,.16); color:var(--vic); } .row.rhea .badge{ background:rgba(34,211,238,.16); color:var(--rhea); }
+    .row .body{ flex:1; min-width:0; }
+    .row .tname{ font-size:14.5px; color:var(--ink); word-break:break-word; line-height:1.3; }
+    .row .meta{ font-size:12px; color:var(--mut); margin-top:2px; display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; }
+    .row .meta .perc{ color:var(--vic2); }
+    .rdrum{ flex:none; background:none; border:none; font-size:17px; cursor:pointer; filter:grayscale(1) opacity(.4); }
+    .rdrum.on{ filter:none; }
+    .rm{ flex:none; background:none; border:1px solid var(--line); color:var(--mut); border-radius:8px; width:32px; height:32px; font-size:14px; cursor:pointer; }
+    .rm:hover{ border-color:var(--vic); color:var(--vic); }
+    .empty{ text-align:center; color:#5a554a; font-style:italic; padding:1.4rem 0; }
+    .foot{ text-align:center; color:#4a463d; font-size:11px; margin-top:24px; letter-spacing:.12em; text-transform:uppercase; }
+
+    /* iTunes dropdown */
+    .ss-drop{ position:absolute; left:0; right:0; top:100%; margin-top:5px; z-index:40; background:#17171d;
+      border:1px solid #33333d; border-radius:12px; overflow:hidden auto; box-shadow:0 12px 30px rgba(0,0,0,.5); max-height:290px; }
+    .ss-item{ display:flex; align-items:center; gap:11px; padding:9px 11px; cursor:pointer; border-bottom:1px solid #202028; }
+    .ss-item:last-child{ border-bottom:0; }
+    .ss-item.on, .ss-item:hover{ background:rgba(34,211,238,.12); }
+    .ss-thumb{ width:40px; height:40px; border-radius:6px; object-fit:cover; flex:none; background:#0a0a0d; border:1px solid var(--line); }
+    .ss-meta{ display:flex; flex-direction:column; min-width:0; }
+    .ss-title{ font-size:14.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ss-artist{ font-size:12.5px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hidden{ display:none !important; }
+    .spin{ display:inline-block; width:14px; height:14px; border:2px solid rgba(0,0,0,.3); border-top-color:#0a0a0d; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; }
+    @keyframes sp{ to{ transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="k">Corporate · {EVENT_TITLE} · {EVENT_DATE}</div>
+      <h1 class="title">War of the DJs</h1>
+      <div class="vs">
+        <span class="side vic">DJ VIC <b id="cVic">0</b></span>
+        <span class="x">×</span>
+        <span class="side rhea">DJ RHEA <b id="cRhea">0</b></span>
+      </div>
+      <p class="sub">One plays, one answers — the spotlight keeps shifting. Build the battle list together; it sorts by language for the client and doubles as the set plan.</p>
+    </header>
+
+    <div class="card">
+      <div class="lbl">Who's on this track?</div>
+      <div class="chips" id="djChips">
+        <button type="button" class="chip dj-vic" data-dj="VIC">DJ VIC</button>
+        <button type="button" class="chip dj-rhea" data-dj="Rhea">DJ Rhea</button>
+      </div>
+
+      <div class="lbl">Track</div>
+      <div class="songrow"><input id="track" class="in" type="text" placeholder="Search a song…" /></div>
+
+      <div class="lbl">Language / genre</div>
+      <div class="chips lang-chips" id="langChips"></div>
+      <input id="lang" class="in" type="text" placeholder="…or type a language / genre" />
+
+      <div class="lbl">Live percussion <span class="mut">(tap the drum if it's a percussion track)</span></div>
+      <div class="perc-row">
+        <button id="drum" class="drum" type="button" title="Playing live percussion on this track">🥁</button>
+        <input id="perc" class="in" type="text" placeholder="e.g. dhol on the drop, congas throughout" />
+      </div>
+
+      <button id="add" class="go" type="button">Add to the battle</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <div class="list-head">
+      <h2>The Setlist</h2>
+      <div class="filters" id="filters">
+        <button type="button" class="fchip on" data-f="all">All</button>
+        <button type="button" class="fchip" data-f="VIC">VIC</button>
+        <button type="button" class="fchip" data-f="Rhea">Rhea</button>
+      </div>
+      <button id="copyClient" class="mini" type="button">⧉ Copy for client</button>
+    </div>
+    <div id="list"></div>
+    <div id="empty" class="empty">No tracks yet — add the first one above.</div>
+
+    <div class="foot">DJ VIC × DJ Rhea · War of the DJs</div>
+  </main>
+
+  <script is:inline define:vars={{ SUPABASE_URL, SUPABASE_KEY, EVENT_TITLE, EVENT_DATE }}>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+      var REST = SUPABASE_URL + '/rest/v1/war_tracks';
+      var params = new URLSearchParams(location.search);
+      var EVENT = (params.get('e') || 'rakuten').trim().toLowerCase();
+
+      var dj = '', drum = false, filter = 'all', rows = [];
+      var LANGS = ['Hindi', 'Punjabi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Spanish', 'Arabic', 'Afrobeat', 'Instrumental'];
+
+      // DJ picker — colours the Add button to whose turn it is.
+      [].slice.call($('djChips').querySelectorAll('.chip')).forEach(function (b) {
+        b.addEventListener('click', function () {
+          dj = b.dataset.dj;
+          [].slice.call($('djChips').querySelectorAll('.chip')).forEach(function (x) { x.classList.toggle('on', x === b); });
+          $('add').classList.toggle('rhea-turn', dj === 'Rhea');
+        });
+      });
+
+      // Language chips.
+      LANGS.forEach(function (l) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = l;
+        b.addEventListener('click', function () {
+          $('lang').value = l;
+          [].slice.call($('langChips').querySelectorAll('.chip')).forEach(function (x) { x.classList.toggle('on', x === b); });
+        });
+        $('langChips').appendChild(b);
+      });
+      $('lang').addEventListener('input', function () {
+        [].slice.call($('langChips').querySelectorAll('.chip')).forEach(function (x) { x.classList.toggle('on', x.textContent.toLowerCase() === $('lang').value.trim().toLowerCase()); });
+      });
+
+      $('drum').addEventListener('click', function () { drum = !drum; $('drum').classList.toggle('on', drum); });
+
+      if (window.SongSearch) window.SongSearch.attach($('track'));
+
+      function msg(t, cls) { var m = $('msg'); m.textContent = t; m.className = 'msg ' + cls; if (cls === 'ok') setTimeout(function () { m.className = 'msg'; }, 2400); }
+
+      $('add').addEventListener('click', function () {
+        var track = $('track').value.trim(), lang = $('lang').value.trim(), perc = $('perc').value.trim();
+        if (!dj) return msg('Pick who’s on this track — VIC or Rhea.', 'err');
+        if (!track) return msg('Add a track.', 'err');
+        var row = { event_slug: EVENT, dj: dj, track: track, lang: lang || null, percussion: perc || null, drum: !!drum };
+        var btn = $('add'); btn.disabled = true; var old = btn.textContent; btn.innerHTML = '<span class="spin"></span> Adding…';
+        fetch(REST, { method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(row) })
+          .then(function (r) { if (!r.ok) throw new Error(String(r.status)); btn.disabled = false; btn.textContent = old;
+            $('track').value = ''; $('perc').value = ''; drum = false; $('drum').classList.remove('on');
+            msg('Added ✔', 'ok'); load();
+          }).catch(function (e) { btn.disabled = false; btn.textContent = old; msg('Couldn’t save — run war_tracks.sql, then retry. (' + e.message + ')', 'err'); });
+      });
+
+      [].slice.call($('filters').querySelectorAll('.fchip')).forEach(function (b) {
+        b.addEventListener('click', function () { filter = b.dataset.f;
+          [].slice.call($('filters').querySelectorAll('.fchip')).forEach(function (x) { x.classList.toggle('on', x === b); });
+          render();
+        });
+      });
+
+      function load() {
+        fetch(REST + '?event_slug=eq.' + encodeURIComponent(EVENT) + '&select=*&order=created_at.asc', { headers: H })
+          .then(function (r) { return r.ok ? r.json() : []; }).then(function (d) { rows = Array.isArray(d) ? d : []; render(); })
+          .catch(function () { rows = []; render(); });
+      }
+
+      function groupKey(r) { return (r.lang && r.lang.trim()) ? r.lang.trim() : 'Unsorted'; }
+
+      function render() {
+        $('cVic').textContent = rows.filter(function (r) { return r.dj === 'VIC'; }).length;
+        $('cRhea').textContent = rows.filter(function (r) { return r.dj === 'Rhea'; }).length;
+        var shown = rows.filter(function (r) { return filter === 'all' || r.dj === filter; });
+        $('empty').classList.toggle('hidden', shown.length > 0);
+        var host = $('list'); host.innerHTML = '';
+        var groups = {};
+        shown.forEach(function (r) { var k = groupKey(r); (groups[k] = groups[k] || []).push(r); });
+        Object.keys(groups).sort(function (a, b) { if (a === 'Unsorted') return 1; if (b === 'Unsorted') return -1; return a.localeCompare(b); })
+          .forEach(function (k) {
+            var sec = document.createElement('div'); sec.className = 'lang-sec';
+            var h = document.createElement('div'); h.className = 'lang-h';
+            h.innerHTML = '<span style="color:inherit">' + esc(k) + '</span><span>' + groups[k].length + '</span>';
+            sec.appendChild(h);
+            groups[k].forEach(function (r) { sec.appendChild(rowEl(r)); });
+            host.appendChild(sec);
+          });
+      }
+
+      function rowEl(r) {
+        var row = document.createElement('div'); row.className = 'row ' + (r.dj === 'Rhea' ? 'rhea' : 'vic');
+        var badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = r.dj === 'Rhea' ? 'RHEA' : 'VIC';
+        var body = document.createElement('div'); body.className = 'body';
+        var t = document.createElement('div'); t.className = 'tname'; t.textContent = r.track; body.appendChild(t);
+        if (r.percussion || r.drum) {
+          var m = document.createElement('div'); m.className = 'meta';
+          if (r.drum) { var d = document.createElement('span'); d.textContent = '🥁'; m.appendChild(d); }
+          if (r.percussion) { var p = document.createElement('span'); p.className = 'perc'; p.textContent = r.percussion; m.appendChild(p); }
+          body.appendChild(m);
+        }
+        var drumBtn = document.createElement('button'); drumBtn.className = 'rdrum' + (r.drum ? ' on' : ''); drumBtn.type = 'button';
+        drumBtn.textContent = '🥁'; drumBtn.title = r.drum ? 'Live percussion — tap to unset' : 'Mark live percussion';
+        drumBtn.addEventListener('click', function () { patch(r.id, { drum: !r.drum }); });
+        var rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.innerHTML = '🗑'; rm.title = 'Remove';
+        rm.addEventListener('click', function () { if (confirm('Remove "' + r.track + '"?')) del(r.id); });
+        row.appendChild(badge); row.appendChild(body); row.appendChild(drumBtn); row.appendChild(rm);
+        return row;
+      }
+
+      function patch(id, data) {
+        fetch(REST + '?id=eq.' + id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(data) })
+          .then(function (r) { if (r.ok) load(); });
+      }
+      function del(id) {
+        fetch(REST + '?id=eq.' + id, { method: 'DELETE', headers: H }).then(function (r) { if (r.ok) load(); });
+      }
+
+      function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+      $('copyClient').addEventListener('click', function () {
+        if (!rows.length) return msg('Nothing to copy yet.', 'err');
+        var groups = {};
+        rows.forEach(function (r) { var k = groupKey(r); (groups[k] = groups[k] || []).push(r); });
+        var out = 'WAR OF THE DJs — DJ VIC × DJ Rhea\nCorporate · ' + EVENT_TITLE + ' · ' + EVENT_DATE + '\nIndicative set (' + rows.length + ' tracks)\n';
+        Object.keys(groups).sort(function (a, b) { if (a === 'Unsorted') return 1; if (b === 'Unsorted') return -1; return a.localeCompare(b); })
+          .forEach(function (k) {
+            out += '\n— ' + k.toUpperCase() + ' —\n';
+            groups[k].forEach(function (r, i) {
+              out += (i + 1) + '. ' + r.track + ' — DJ ' + r.dj + (r.drum ? ' 🥁' : '') + (r.percussion ? ' (' + r.percussion + ')' : '') + '\n';
+            });
+          });
+        var btn = $('copyClient');
+        if (navigator.clipboard) navigator.clipboard.writeText(out).then(function () { var o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = o; }, 1800); }, function () { msg('Couldn’t copy.', 'err'); });
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>
