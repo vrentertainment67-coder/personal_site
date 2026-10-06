@@ -1,8 +1,9 @@
 ---
 // /war-of-the-djs — shared planning board for a DJ battle set (VIC × Rhea).
-// Both add tracks from any device; the list auto-collates, groups by language
-// and exports an indicative set for the client. Backed by public.war_tracks
-// (run supabase/war_tracks.sql). Unlisted, noindex. Standalone page.
+// Both add tracks from any device; the list auto-collates, groups by language,
+// reorders into a running set flow, and exports a branded indicative set for
+// the client. Backed by public.war_tracks (run supabase/war_tracks.sql).
+// Unlisted, noindex. Standalone page.
 const SUPABASE_URL = "https://jftnhuutttmccmqnnybf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
 const EVENT_TITLE = "Rakuten";
@@ -21,13 +22,14 @@ const EVENT_DATE = "30 Nov 2026";
   <script is:inline src="/song-search.js"></script>
   <style is:global>
     :root{ --bg:#0a0a0d; --card:#141419; --line:#26262e; --ink:#f0ede6; --mut:#9a968c;
-      --vic:#ff4d3d; --vic2:#c9a84c; --rhea:#22d3ee; --rhea2:#7c5cff; --field:#101014; --ok:#39b56a; }
+      --vic:#ff4d3d; --vic2:#c9a84c; --rhea:#22d3ee; --rhea2:#7c5cff; --field:#101014;
+      --ok:#39b56a; --open:#5ad19a; --close:#b79cff; }
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100dvh; }
     body{ background-image: radial-gradient(ellipse 80% 45% at 15% -5%, rgba(255,77,61,.14), transparent 60%),
       radial-gradient(ellipse 80% 45% at 85% -5%, rgba(34,211,238,.13), transparent 60%);
       padding:max(18px,env(safe-area-inset-top)) 16px calc(34px + env(safe-area-inset-bottom)); }
-    .wrap{ max-width:620px; margin:0 auto; }
+    .wrap{ max-width:640px; margin:0 auto; }
 
     header{ text-align:center; padding:12px 0 18px; }
     .k{ font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--mut); font-weight:600; }
@@ -57,6 +59,8 @@ const EVENT_DATE = "30 Nov 2026";
     .chip.dj-rhea.on{ background:var(--rhea); border-color:var(--rhea); color:#042027; font-weight:700; }
     .chip.on{ border-color:var(--ink); color:var(--ink); }
     .lang-chips{ margin-bottom:9px; }
+    .bpm-row{ display:flex; gap:9px; }
+    .bpm-row .in:first-child{ flex:0 0 110px; }
     .perc-row{ display:flex; gap:9px; align-items:stretch; }
     .drum{ flex:none; width:52px; border:1.5px solid var(--line); background:var(--field); border-radius:11px; font-size:22px;
       cursor:pointer; transition:.15s; filter:grayscale(1) opacity(.5); }
@@ -69,29 +73,40 @@ const EVENT_DATE = "30 Nov 2026";
     .msg.err{ display:block; background:rgba(255,77,61,.12); color:#ff9a90; border:1px solid #7a2e28; }
     .msg.ok{ display:block; background:rgba(57,181,106,.12); color:#8fe0ad; border:1px solid #2f6b45; }
 
-    .list-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:22px 0 10px; }
+    .list-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:22px 0 8px; }
     .list-head h2{ font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:.04em; margin:0; color:var(--ink); }
-    .filters{ display:flex; gap:6px; margin-left:auto; }
-    .fchip{ background:none; border:1px solid var(--line); color:var(--mut); border-radius:99px; padding:6px 13px; font-size:12.5px; font-family:inherit; cursor:pointer; }
+    .toolbar{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:0 0 12px; }
+    .seg{ display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+    .seg button{ background:none; border:0; color:var(--mut); padding:7px 12px; font-size:12.5px; font-family:inherit; cursor:pointer; }
+    .seg button.on{ background:var(--field); color:var(--ink); }
+    .fchip{ background:none; border:1px solid var(--line); color:var(--mut); border-radius:99px; padding:6px 12px; font-size:12.5px; font-family:inherit; cursor:pointer; }
     .fchip.on{ border-color:var(--ink); color:var(--ink); }
-    .mini{ background:none; border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:7px 12px; font-size:12.5px; font-family:inherit; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+    .mini{ background:none; border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:7px 11px; font-size:12.5px; font-family:inherit; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
     .mini:hover{ border-color:var(--vic2); color:var(--vic2); }
+    .mini.grow{ margin-left:auto; }
 
     .lang-sec{ margin:0 0 16px; }
     .lang-h{ font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.12em; color:var(--vic2); text-transform:uppercase; margin:0 0 7px; padding-bottom:5px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
-    .lang-h span{ color:#5a554a; font-size:.72rem; letter-spacing:.06em; }
-    .row{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:11px 12px; margin:0 0 7px; border-left-width:3px; }
+    .lang-h em{ color:#5a554a; font-size:.72rem; letter-spacing:.06em; font-style:normal; }
+    .row{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:10px 11px; margin:0 0 7px; border-left-width:3px; }
     .row.vic{ border-left-color:var(--vic); } .row.rhea{ border-left-color:var(--rhea); }
-    .row .badge{ flex:none; font-family:'Bebas Neue',sans-serif; font-size:.78rem; letter-spacing:.05em; padding:3px 8px; border-radius:6px; }
+    .ord{ flex:none; width:22px; text-align:center; font-family:'Bebas Neue',sans-serif; font-size:1.05rem; color:var(--mut); }
+    .badge{ flex:none; font-family:'Bebas Neue',sans-serif; font-size:.78rem; letter-spacing:.05em; padding:3px 8px; border-radius:6px; }
     .row.vic .badge{ background:rgba(255,77,61,.16); color:var(--vic); } .row.rhea .badge{ background:rgba(34,211,238,.16); color:var(--rhea); }
-    .row .body{ flex:1; min-width:0; }
-    .row .tname{ font-size:14.5px; color:var(--ink); word-break:break-word; line-height:1.3; }
-    .row .meta{ font-size:12px; color:var(--mut); margin-top:2px; display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; }
-    .row .meta .perc{ color:var(--vic2); }
-    .rdrum{ flex:none; background:none; border:none; font-size:17px; cursor:pointer; filter:grayscale(1) opacity(.4); }
-    .rdrum.on{ filter:none; }
-    .rm{ flex:none; background:none; border:1px solid var(--line); color:var(--mut); border-radius:8px; width:32px; height:32px; font-size:14px; cursor:pointer; }
-    .rm:hover{ border-color:var(--vic); color:var(--vic); }
+    .body{ flex:1; min-width:0; }
+    .tname{ font-size:14px; color:var(--ink); word-break:break-word; line-height:1.3; }
+    .meta{ font-size:11.5px; color:var(--mut); margin-top:2px; display:flex; flex-wrap:wrap; gap:3px 8px; align-items:center; }
+    .meta .perc{ color:var(--vic2); }
+    .slotpill{ font-family:'Bebas Neue',sans-serif; letter-spacing:.05em; font-size:.68rem; padding:1px 6px; border-radius:5px; }
+    .slotpill.opener{ background:rgba(90,209,154,.15); color:var(--open); } .slotpill.closer{ background:rgba(183,156,255,.15); color:var(--close); }
+    .ctrls{ flex:none; display:flex; gap:4px; align-items:center; }
+    .mv{ display:flex; flex-direction:column; gap:2px; }
+    .mv button{ width:24px; height:17px; border:1px solid var(--line); background:none; color:var(--mut); border-radius:5px; font-size:8px; cursor:pointer; line-height:1; }
+    .mv button:hover{ border-color:var(--ink); color:var(--ink); }
+    .ic{ width:30px; height:30px; border:1px solid var(--line); background:none; border-radius:7px; font-size:14px; cursor:pointer; color:var(--mut); }
+    .ic.rdrum{ filter:grayscale(1) opacity(.5); } .ic.rdrum.on{ filter:none; border-color:var(--vic2); }
+    .ic.slot.on{ border-color:var(--open); color:var(--open); }
+    .ic.rm:hover{ border-color:var(--vic); color:var(--vic); }
     .empty{ text-align:center; color:#5a554a; font-style:italic; padding:1.4rem 0; }
     .foot{ text-align:center; color:#4a463d; font-size:11px; margin-top:24px; letter-spacing:.12em; text-transform:uppercase; }
 
@@ -108,58 +123,102 @@ const EVENT_DATE = "30 Nov 2026";
     .hidden{ display:none !important; }
     .spin{ display:inline-block; width:14px; height:14px; border:2px solid rgba(0,0,0,.3); border-top-color:#0a0a0d; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; }
     @keyframes sp{ to{ transform:rotate(360deg); } }
+
+    /* ── Client / print view (light, document-style) ── */
+    .client-actions{ display:flex; gap:9px; align-items:center; margin:0 0 16px; }
+    .client-actions .go{ margin:0; width:auto; padding:11px 20px; }
+    .cdoc{ background:#fff; color:#1b1b1b; border:1px solid #e4e4e4; border-radius:14px; padding:clamp(20px,5vw,36px); }
+    .cdoc-head{ text-align:center; border-bottom:2px solid #1b1b1b; padding-bottom:16px; margin-bottom:20px; }
+    .cdoc-title{ font-family:'Bebas Neue',sans-serif; font-size:2.6rem; line-height:1; letter-spacing:.01em; }
+    .cdoc-title .v{ color:#d6342a; } .cdoc-title .r{ color:#0e8fa8; }
+    .cdoc-sub{ font-size:.86rem; letter-spacing:.14em; text-transform:uppercase; color:#555; margin-top:8px; }
+    .cdoc-note{ font-style:italic; color:#777; margin-top:4px; font-size:.9rem; }
+    .cdoc-lang{ font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:.1em; text-transform:uppercase; color:#1b1b1b; border-bottom:1px solid #ddd; padding-bottom:4px; margin:20px 0 8px; }
+    .cdoc-row{ display:flex; gap:10px; padding:5px 0; border-bottom:1px dotted #e8e8e8; font-size:.95rem; align-items:baseline; }
+    .cdoc-n{ color:#aaa; width:22px; flex:none; text-align:right; }
+    .cdoc-t{ flex:1; }
+    .cdoc-who{ font-weight:700; } .cdoc-who.v{ color:#d6342a; } .cdoc-who.r{ color:#0e8fa8; }
+    .cdoc-tag{ color:#777; font-size:.82rem; }
+    .cdoc-foot{ text-align:center; color:#999; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; margin-top:26px; border-top:1px solid #eee; padding-top:14px; }
+    @media print {
+      body{ background:#fff !important; padding:0; }
+      body::before{ content:none; } .no-print{ display:none !important; }
+      .cdoc{ border:0; border-radius:0; padding:0; }
+      .wrap{ max-width:none; }
+    }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <header>
-      <div class="k">Corporate · {EVENT_TITLE} · {EVENT_DATE}</div>
-      <h1 class="title">War of the DJs</h1>
-      <div class="vs">
-        <span class="side vic">DJ VIC <b id="cVic">0</b></span>
-        <span class="x">×</span>
-        <span class="side rhea">DJ RHEA <b id="cRhea">0</b></span>
+    <div id="editWrap">
+      <header>
+        <div class="k">Corporate · {EVENT_TITLE} · {EVENT_DATE}</div>
+        <h1 class="title">War of the DJs</h1>
+        <div class="vs">
+          <span class="side vic">DJ VIC <b id="cVic">0</b></span>
+          <span class="x">×</span>
+          <span class="side rhea">DJ RHEA <b id="cRhea">0</b></span>
+        </div>
+        <p class="sub">One plays, one answers — the spotlight keeps shifting. Build the battle list together; group it by language for the client, or lay it out as the running set.</p>
+      </header>
+
+      <div class="card" id="addCard">
+        <div class="lbl">Who's on this track?</div>
+        <div class="chips" id="djChips">
+          <button type="button" class="chip dj-vic" data-dj="VIC">DJ VIC</button>
+          <button type="button" class="chip dj-rhea" data-dj="Rhea">DJ Rhea</button>
+        </div>
+
+        <div class="lbl">Track</div>
+        <div class="songrow"><input id="track" class="in" type="text" placeholder="Search a song…" /></div>
+
+        <div class="lbl">Language / genre</div>
+        <div class="chips lang-chips" id="langChips"></div>
+        <input id="lang" class="in" type="text" placeholder="…or type a language / genre" />
+
+        <div class="lbl">BPM &amp; key <span class="mut">(optional — helps plan transitions)</span></div>
+        <div class="bpm-row">
+          <input id="bpm" class="in" type="number" inputmode="numeric" placeholder="BPM" />
+          <input id="key" class="in" type="text" placeholder="Key — e.g. 8A / Am" />
+        </div>
+
+        <div class="lbl">Live percussion <span class="mut">(tap the drum if it's a percussion track)</span></div>
+        <div class="perc-row">
+          <button id="drum" class="drum" type="button" title="Playing live percussion on this track">🥁</button>
+          <input id="perc" class="in" type="text" placeholder="e.g. dhol on the drop, congas throughout" />
+        </div>
+
+        <button id="add" class="go" type="button">Add to the battle</button>
+        <div id="msg" class="msg"></div>
       </div>
-      <p class="sub">One plays, one answers — the spotlight keeps shifting. Build the battle list together; it sorts by language for the client and doubles as the set plan.</p>
-    </header>
 
-    <div class="card">
-      <div class="lbl">Who's on this track?</div>
-      <div class="chips" id="djChips">
-        <button type="button" class="chip dj-vic" data-dj="VIC">DJ VIC</button>
-        <button type="button" class="chip dj-rhea" data-dj="Rhea">DJ Rhea</button>
+      <div class="list-head"><h2>The Setlist</h2></div>
+      <div class="toolbar">
+        <span class="seg" id="viewSeg">
+          <button type="button" data-v="lang" class="on">By language</button>
+          <button type="button" data-v="order">Running order</button>
+        </span>
+        <span class="seg" id="filterSeg">
+          <button type="button" data-f="all" class="on">All</button>
+          <button type="button" data-f="VIC">VIC</button>
+          <button type="button" data-f="Rhea">Rhea</button>
+        </span>
+        <button id="clientView" class="mini grow" type="button">📄 Client view</button>
+        <button id="copyClient" class="mini" type="button">⧉ Copy</button>
       </div>
+      <div id="list"></div>
+      <div id="empty" class="empty">No tracks yet — add the first one above.</div>
 
-      <div class="lbl">Track</div>
-      <div class="songrow"><input id="track" class="in" type="text" placeholder="Search a song…" /></div>
-
-      <div class="lbl">Language / genre</div>
-      <div class="chips lang-chips" id="langChips"></div>
-      <input id="lang" class="in" type="text" placeholder="…or type a language / genre" />
-
-      <div class="lbl">Live percussion <span class="mut">(tap the drum if it's a percussion track)</span></div>
-      <div class="perc-row">
-        <button id="drum" class="drum" type="button" title="Playing live percussion on this track">🥁</button>
-        <input id="perc" class="in" type="text" placeholder="e.g. dhol on the drop, congas throughout" />
-      </div>
-
-      <button id="add" class="go" type="button">Add to the battle</button>
-      <div id="msg" class="msg"></div>
+      <div class="foot">DJ VIC × DJ Rhea · War of the DJs</div>
     </div>
 
-    <div class="list-head">
-      <h2>The Setlist</h2>
-      <div class="filters" id="filters">
-        <button type="button" class="fchip on" data-f="all">All</button>
-        <button type="button" class="fchip" data-f="VIC">VIC</button>
-        <button type="button" class="fchip" data-f="Rhea">Rhea</button>
+    <div id="clientUI" class="hidden">
+      <div class="client-actions no-print">
+        <button id="backBtn" class="mini">← Back to editing</button>
+        <button id="printBtn" class="go" type="button">🖨 Print / Save as PDF</button>
       </div>
-      <button id="copyClient" class="mini" type="button">⧉ Copy for client</button>
+      <div class="cdoc" id="cdoc"></div>
     </div>
-    <div id="list"></div>
-    <div id="empty" class="empty">No tracks yet — add the first one above.</div>
-
-    <div class="foot">DJ VIC × DJ Rhea · War of the DJs</div>
   </main>
 
   <script is:inline define:vars={{ SUPABASE_URL, SUPABASE_KEY, EVENT_TITLE, EVENT_DATE }}>
@@ -170,10 +229,9 @@ const EVENT_DATE = "30 Nov 2026";
       var params = new URLSearchParams(location.search);
       var EVENT = (params.get('e') || 'rakuten').trim().toLowerCase();
 
-      var dj = '', drum = false, filter = 'all', rows = [];
+      var dj = '', drum = false, filter = 'all', view = 'lang', rows = [];
       var LANGS = ['Hindi', 'Punjabi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Spanish', 'Arabic', 'Afrobeat', 'Instrumental'];
 
-      // DJ picker — colours the Add button to whose turn it is.
       [].slice.call($('djChips').querySelectorAll('.chip')).forEach(function (b) {
         b.addEventListener('click', function () {
           dj = b.dataset.dj;
@@ -182,7 +240,6 @@ const EVENT_DATE = "30 Nov 2026";
         });
       });
 
-      // Language chips.
       LANGS.forEach(function (l) {
         var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = l;
         b.addEventListener('click', function () {
@@ -196,100 +253,149 @@ const EVENT_DATE = "30 Nov 2026";
       });
 
       $('drum').addEventListener('click', function () { drum = !drum; $('drum').classList.toggle('on', drum); });
-
       if (window.SongSearch) window.SongSearch.attach($('track'));
 
       function msg(t, cls) { var m = $('msg'); m.textContent = t; m.className = 'msg ' + cls; if (cls === 'ok') setTimeout(function () { m.className = 'msg'; }, 2400); }
 
       $('add').addEventListener('click', function () {
         var track = $('track').value.trim(), lang = $('lang').value.trim(), perc = $('perc').value.trim();
+        var bpm = parseInt($('bpm').value, 10), key = $('key').value.trim();
         if (!dj) return msg('Pick who’s on this track — VIC or Rhea.', 'err');
         if (!track) return msg('Add a track.', 'err');
-        var row = { event_slug: EVENT, dj: dj, track: track, lang: lang || null, percussion: perc || null, drum: !!drum };
+        var maxOrd = rows.reduce(function (m, r) { return Math.max(m, r.sort_order || 0); }, 0);
+        var row = { event_slug: EVENT, dj: dj, track: track, lang: lang || null, percussion: perc || null, drum: !!drum,
+          bpm: isNaN(bpm) ? null : bpm, musical_key: key || null, sort_order: maxOrd + 1 };
         var btn = $('add'); btn.disabled = true; var old = btn.textContent; btn.innerHTML = '<span class="spin"></span> Adding…';
         fetch(REST, { method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(row) })
           .then(function (r) { if (!r.ok) throw new Error(String(r.status)); btn.disabled = false; btn.textContent = old;
-            $('track').value = ''; $('perc').value = ''; drum = false; $('drum').classList.remove('on');
+            $('track').value = ''; $('perc').value = ''; $('bpm').value = ''; $('key').value = ''; drum = false; $('drum').classList.remove('on');
             msg('Added ✔', 'ok'); load();
           }).catch(function (e) { btn.disabled = false; btn.textContent = old; msg('Couldn’t save — run war_tracks.sql, then retry. (' + e.message + ')', 'err'); });
       });
 
-      [].slice.call($('filters').querySelectorAll('.fchip')).forEach(function (b) {
-        b.addEventListener('click', function () { filter = b.dataset.f;
-          [].slice.call($('filters').querySelectorAll('.fchip')).forEach(function (x) { x.classList.toggle('on', x === b); });
-          render();
-        });
+      [].slice.call($('viewSeg').querySelectorAll('button')).forEach(function (b) {
+        b.addEventListener('click', function () { view = b.dataset.v; [].slice.call($('viewSeg').querySelectorAll('button')).forEach(function (x) { x.classList.toggle('on', x === b); }); render(); });
+      });
+      [].slice.call($('filterSeg').querySelectorAll('button')).forEach(function (b) {
+        b.addEventListener('click', function () { filter = b.dataset.f; [].slice.call($('filterSeg').querySelectorAll('button')).forEach(function (x) { x.classList.toggle('on', x === b); }); render(); });
       });
 
       function load() {
-        fetch(REST + '?event_slug=eq.' + encodeURIComponent(EVENT) + '&select=*&order=created_at.asc', { headers: H })
-          .then(function (r) { return r.ok ? r.json() : []; }).then(function (d) { rows = Array.isArray(d) ? d : []; render(); })
+        fetch(REST + '?event_slug=eq.' + encodeURIComponent(EVENT) + '&select=*&order=sort_order.asc,created_at.asc', { headers: H })
+          .then(function (r) { return r.ok ? r.json() : []; }).then(function (d) { rows = Array.isArray(d) ? d : []; render(); if (!$('clientUI').classList.contains('hidden')) renderClient(); })
           .catch(function () { rows = []; render(); });
       }
 
-      function groupKey(r) { return (r.lang && r.lang.trim()) ? r.lang.trim() : 'Unsorted'; }
+      function gkey(r) { return (r.lang && r.lang.trim()) ? r.lang.trim() : 'Unsorted'; }
+      function byOrder(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); }
+      function langKeys(groups) { return Object.keys(groups).sort(function (a, b) { if (a === 'Unsorted') return 1; if (b === 'Unsorted') return -1; return a.localeCompare(b); }); }
 
       function render() {
         $('cVic').textContent = rows.filter(function (r) { return r.dj === 'VIC'; }).length;
         $('cRhea').textContent = rows.filter(function (r) { return r.dj === 'Rhea'; }).length;
-        var shown = rows.filter(function (r) { return filter === 'all' || r.dj === filter; });
+        var shown = rows.filter(function (r) { return filter === 'all' || r.dj === filter; }).slice().sort(byOrder);
         $('empty').classList.toggle('hidden', shown.length > 0);
         var host = $('list'); host.innerHTML = '';
-        var groups = {};
-        shown.forEach(function (r) { var k = groupKey(r); (groups[k] = groups[k] || []).push(r); });
-        Object.keys(groups).sort(function (a, b) { if (a === 'Unsorted') return 1; if (b === 'Unsorted') return -1; return a.localeCompare(b); })
-          .forEach(function (k) {
+        if (view === 'order') {
+          shown.forEach(function (r, i) { host.appendChild(rowEl(r, shown, i, true)); });
+        } else {
+          var groups = {}; shown.forEach(function (r) { var k = gkey(r); (groups[k] = groups[k] || []).push(r); });
+          langKeys(groups).forEach(function (k) {
             var sec = document.createElement('div'); sec.className = 'lang-sec';
-            var h = document.createElement('div'); h.className = 'lang-h';
-            h.innerHTML = '<span style="color:inherit">' + esc(k) + '</span><span>' + groups[k].length + '</span>';
+            var h = document.createElement('div'); h.className = 'lang-h'; h.innerHTML = '<span>' + esc(k) + '</span><em>' + groups[k].length + '</em>';
             sec.appendChild(h);
-            groups[k].forEach(function (r) { sec.appendChild(rowEl(r)); });
+            groups[k].forEach(function (r, i) { sec.appendChild(rowEl(r, groups[k], i, false)); });
             host.appendChild(sec);
           });
+        }
       }
 
-      function rowEl(r) {
+      function rowEl(r, ctx, idx, showNum) {
         var row = document.createElement('div'); row.className = 'row ' + (r.dj === 'Rhea' ? 'rhea' : 'vic');
+        if (showNum) { var ord = document.createElement('div'); ord.className = 'ord'; ord.textContent = idx + 1; row.appendChild(ord); }
         var badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = r.dj === 'Rhea' ? 'RHEA' : 'VIC';
         var body = document.createElement('div'); body.className = 'body';
         var t = document.createElement('div'); t.className = 'tname'; t.textContent = r.track; body.appendChild(t);
-        if (r.percussion || r.drum) {
-          var m = document.createElement('div'); m.className = 'meta';
-          if (r.drum) { var d = document.createElement('span'); d.textContent = '🥁'; m.appendChild(d); }
-          if (r.percussion) { var p = document.createElement('span'); p.className = 'perc'; p.textContent = r.percussion; m.appendChild(p); }
-          body.appendChild(m);
-        }
-        var drumBtn = document.createElement('button'); drumBtn.className = 'rdrum' + (r.drum ? ' on' : ''); drumBtn.type = 'button';
-        drumBtn.textContent = '🥁'; drumBtn.title = r.drum ? 'Live percussion — tap to unset' : 'Mark live percussion';
-        drumBtn.addEventListener('click', function () { patch(r.id, { drum: !r.drum }); });
-        var rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.innerHTML = '🗑'; rm.title = 'Remove';
+        var parts = [];
+        if (r.slot) parts.push('<span class="slotpill ' + r.slot + '">' + (r.slot === 'opener' ? 'OPENER' : 'CLOSER') + '</span>');
+        if (r.bpm) parts.push(r.bpm + ' BPM');
+        if (r.musical_key) parts.push(esc(r.musical_key));
+        if (r.drum) parts.push('🥁');
+        if (r.percussion) parts.push('<span class="perc">' + esc(r.percussion) + '</span>');
+        if (parts.length) { var m = document.createElement('div'); m.className = 'meta'; m.innerHTML = parts.join('<span style="opacity:.4">·</span>'); body.appendChild(m); }
+
+        var ctrls = document.createElement('div'); ctrls.className = 'ctrls';
+        var mv = document.createElement('div'); mv.className = 'mv';
+        var up = document.createElement('button'); up.type = 'button'; up.textContent = '▲'; up.title = 'Move up'; up.disabled = idx === 0;
+        var dn = document.createElement('button'); dn.type = 'button'; dn.textContent = '▼'; dn.title = 'Move down'; dn.disabled = idx === ctx.length - 1;
+        up.addEventListener('click', function () { move(ctx, idx, -1); }); dn.addEventListener('click', function () { move(ctx, idx, 1); });
+        mv.appendChild(up); mv.appendChild(dn);
+        var dr = document.createElement('button'); dr.type = 'button'; dr.className = 'ic rdrum' + (r.drum ? ' on' : ''); dr.textContent = '🥁'; dr.title = 'Live percussion';
+        dr.addEventListener('click', function () { patch(r.id, { drum: !r.drum }); });
+        var sl = document.createElement('button'); sl.type = 'button'; sl.className = 'ic slot' + (r.slot ? ' on' : ''); sl.textContent = '⚑'; sl.title = 'Opener / closer';
+        sl.addEventListener('click', function () { patch(r.id, { slot: r.slot === 'opener' ? 'closer' : (r.slot === 'closer' ? null : 'opener') }); });
+        var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'ic rm'; rm.textContent = '🗑'; rm.title = 'Remove';
         rm.addEventListener('click', function () { if (confirm('Remove "' + r.track + '"?')) del(r.id); });
-        row.appendChild(badge); row.appendChild(body); row.appendChild(drumBtn); row.appendChild(rm);
+        ctrls.appendChild(mv); ctrls.appendChild(dr); ctrls.appendChild(sl); ctrls.appendChild(rm);
+
+        row.appendChild(badge); row.appendChild(body); row.appendChild(ctrls);
         return row;
       }
 
-      function patch(id, data) {
-        fetch(REST + '?id=eq.' + id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(data) })
-          .then(function (r) { if (r.ok) load(); });
+      function move(ctx, idx, dir) {
+        var j = idx + dir; if (j < 0 || j >= ctx.length) return;
+        var a = ctx[idx], b = ctx[j];
+        Promise.all([
+          fetch(REST + '?id=eq.' + a.id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify({ sort_order: b.sort_order }) }),
+          fetch(REST + '?id=eq.' + b.id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify({ sort_order: a.sort_order }) })
+        ]).then(load);
       }
-      function del(id) {
-        fetch(REST + '?id=eq.' + id, { method: 'DELETE', headers: H }).then(function (r) { if (r.ok) load(); });
-      }
-
+      function patch(id, data) { fetch(REST + '?id=eq.' + id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(data) }).then(function (r) { if (r.ok) load(); }); }
+      function del(id) { fetch(REST + '?id=eq.' + id, { method: 'DELETE', headers: H }).then(function (r) { if (r.ok) load(); }); }
       function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+      // ── Client / print view ──
+      function renderClient() {
+        var groups = {}; rows.slice().sort(byOrder).forEach(function (r) { var k = gkey(r); (groups[k] = groups[k] || []).push(r); });
+        var html = '<div class="cdoc-head"><div class="cdoc-title"><span class="v">DJ VIC</span> × <span class="r">DJ RHEA</span></div>' +
+          '<div class="cdoc-sub">War of the DJs · ' + esc(EVENT_TITLE) + ' · ' + esc(EVENT_DATE) + '</div>' +
+          '<div class="cdoc-note">Indicative set — grouped by language (' + rows.length + ' tracks)</div></div>';
+        langKeys(groups).forEach(function (k) {
+          html += '<div class="cdoc-lang">' + esc(k) + '</div>';
+          groups[k].forEach(function (r, i) {
+            var tags = [];
+            if (r.slot) tags.push(r.slot === 'opener' ? 'Opener' : 'Closer');
+            if (r.drum) tags.push('live percussion' + (r.percussion ? ' — ' + r.percussion : ''));
+            else if (r.percussion) tags.push(r.percussion);
+            if (r.bpm) tags.push(r.bpm + ' BPM');
+            if (r.musical_key) tags.push(esc(r.musical_key));
+            html += '<div class="cdoc-row"><span class="cdoc-n">' + (i + 1) + '</span>' +
+              '<span class="cdoc-t">' + esc(r.track) + '</span>' +
+              '<span class="cdoc-who ' + (r.dj === 'Rhea' ? 'r' : 'v') + '">DJ ' + r.dj + (r.drum ? ' 🥁' : '') + '</span>' +
+              (tags.length ? '<span class="cdoc-tag">' + esc(tags.join(' · ')) + '</span>' : '') + '</div>';
+          });
+        });
+        html += '<div class="cdoc-foot">Prepared by DJ VIC · djvicofficial.com</div>';
+        $('cdoc').innerHTML = html;
+      }
+      $('clientView').addEventListener('click', function () { renderClient(); $('editWrap').classList.add('hidden'); $('clientUI').classList.remove('hidden'); window.scrollTo(0, 0); });
+      $('backBtn').addEventListener('click', function () { $('clientUI').classList.add('hidden'); $('editWrap').classList.remove('hidden'); });
+      $('printBtn').addEventListener('click', function () { window.print(); });
 
       $('copyClient').addEventListener('click', function () {
         if (!rows.length) return msg('Nothing to copy yet.', 'err');
-        var groups = {};
-        rows.forEach(function (r) { var k = groupKey(r); (groups[k] = groups[k] || []).push(r); });
+        var groups = {}; rows.slice().sort(byOrder).forEach(function (r) { var k = gkey(r); (groups[k] = groups[k] || []).push(r); });
         var out = 'WAR OF THE DJs — DJ VIC × DJ Rhea\nCorporate · ' + EVENT_TITLE + ' · ' + EVENT_DATE + '\nIndicative set (' + rows.length + ' tracks)\n';
-        Object.keys(groups).sort(function (a, b) { if (a === 'Unsorted') return 1; if (b === 'Unsorted') return -1; return a.localeCompare(b); })
-          .forEach(function (k) {
-            out += '\n— ' + k.toUpperCase() + ' —\n';
-            groups[k].forEach(function (r, i) {
-              out += (i + 1) + '. ' + r.track + ' — DJ ' + r.dj + (r.drum ? ' 🥁' : '') + (r.percussion ? ' (' + r.percussion + ')' : '') + '\n';
-            });
+        langKeys(groups).forEach(function (k) {
+          out += '\n— ' + k.toUpperCase() + ' —\n';
+          groups[k].forEach(function (r, i) {
+            var tags = [];
+            if (r.slot) tags.push(r.slot === 'opener' ? 'Opener' : 'Closer');
+            if (r.bpm) tags.push(r.bpm + ' BPM'); if (r.musical_key) tags.push(r.musical_key);
+            if (r.percussion) tags.push(r.percussion);
+            out += (i + 1) + '. ' + r.track + ' — DJ ' + r.dj + (r.drum ? ' 🥁' : '') + (tags.length ? ' (' + tags.join(', ') + ')' : '') + '\n';
           });
+        });
         var btn = $('copyClient');
         if (navigator.clipboard) navigator.clipboard.writeText(out).then(function () { var o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = o; }, 1800); }, function () { msg('Couldn’t copy.', 'err'); });
       });
