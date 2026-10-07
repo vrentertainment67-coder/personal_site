@@ -6,7 +6,7 @@ import {
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
   AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy, Undo2,
-  ChevronDown, Square, CheckSquare, Bell,
+  ChevronDown, Square, CheckSquare, Bell, Briefcase,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -170,6 +170,7 @@ export default function Admin() {
     ["today", "Today", Zap],
     ["bookings", "Bookings", ClipboardList],
     ["calendar", "Calendar", CalendarDays],
+    ["studio", "Studio", Briefcase],
   ];
   const GROUPS = [
     { label: "Manage", Icon: Users, items: [["events", "Events", Star], ["guests", "Guests", Users], ["requests", "Requests", ListMusic], ["mail", "Mail", Inbox]] },
@@ -198,6 +199,7 @@ export default function Admin() {
         {tab === "overview" && <Overview onNavigate={setTab} />}
         {tab === "today" && <Today showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
+        {tab === "studio" && <StudioAdmin showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
         {tab === "podcast" && <Podcast showToast={showToast} />}
@@ -4657,6 +4659,188 @@ function RequestsAdmin({ showToast }) {
         </>
       )}
     </>
+  );
+}
+
+// ── Studio: website builds & social-media work — projects + payments ledger ──
+function StudioAdmin({ showToast }) {
+  const today = new Date().toLocaleDateString("en-CA");
+  const blank = { client: "", contact: "", type: "website", title: "", amount: "", status: "active", started_on: today, notes: "" };
+  const [projects, setProjects] = useState([]);
+  const [pays, setPays] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState(null);
+  const [f, setF] = useState(blank);
+
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data: pr, error } = await supabase.from("studio_projects").select("*").order("created_at", { ascending: false });
+    if (error) { setErr(true); setLoading(false); showToast("Run studio_finance.sql in Supabase, then refresh."); return; }
+    const { data: pl } = await supabase.from("studio_payments").select("*").order("paid_on", { ascending: false });
+    const map = {}; (pl || []).forEach((p) => { (map[p.project_id] = map[p.project_id] || []).push(p); });
+    setProjects(pr || []); setPays(map); setErr(false); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+
+  const recv = (id) => (pays[id] || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const d0 = new Date();
+  const fyStart = new Date(d0.getMonth() >= 3 ? d0.getFullYear() : d0.getFullYear() - 1, 3, 1);
+  const fyEnd = new Date(fyStart.getFullYear() + 1, 2, 31, 23, 59, 59);
+  const mStart = new Date(d0.getFullYear(), d0.getMonth(), 1);
+  const allPays = Object.values(pays).flat();
+  const inRange = (p, a, b) => { const t = new Date(p.paid_on); return t >= a && t <= b; };
+  const monthRecv = allPays.filter((p) => inRange(p, mStart, new Date())).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const fyRecv = allPays.filter((p) => inRange(p, fyStart, fyEnd)).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const typeRecvFY = (ty) => { const ids = new Set(projects.filter((p) => p.type === ty).map((p) => p.id)); return allPays.filter((p) => ids.has(p.project_id) && inRange(p, fyStart, fyEnd)).reduce((s, p) => s + Number(p.amount || 0), 0); };
+  const outstanding = projects.filter((p) => p.status !== "closed" && p.amount).reduce((s, p) => s + Math.max(0, Number(p.amount) - recv(p.id)), 0);
+  const activeCount = projects.filter((p) => p.status === "active" || p.status === "lead").length;
+  const fyLabel = fyStart.getFullYear() + "–" + String((fyStart.getFullYear() + 1) % 100).padStart(2, "0");
+
+  const shown = projects.filter((p) => {
+    if (filter === "website" && p.type !== "website") return false;
+    if (filter === "social" && p.type !== "social") return false;
+    if (filter === "outstanding" && !(p.amount && Number(p.amount) - recv(p.id) > 0 && p.status !== "closed")) return false;
+    const q = query.trim().toLowerCase();
+    return !q || [p.client, p.contact, p.title].some((v) => (v || "").toLowerCase().includes(q));
+  });
+
+  const addProject = async () => {
+    if (!f.client.trim()) return showToast("Client name required.");
+    setSaving(true);
+    const { error } = await supabase.from("studio_projects").insert({
+      client: f.client.trim(), contact: f.contact.trim() || null, type: f.type, title: f.title.trim() || null,
+      amount: f.amount === "" ? null : Number(f.amount), status: f.status, started_on: f.started_on || null, notes: f.notes.trim() || null,
+    });
+    setSaving(false);
+    if (error) return showToast(error.message);
+    setF(blank); setAdding(false); showToast("Project added ✓"); load();
+  };
+  const patchProject = async (id, data) => { const { error } = await supabase.from("studio_projects").update(data).eq("id", id); if (error) return showToast(error.message); load(); };
+  const delProject = async (p) => { if (!confirm(`Delete "${p.client}" and its payments?`)) return; await supabase.from("studio_projects").delete().eq("id", p.id); load(); };
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter" };
+  const TYPES = [["website", "Website"], ["social", "Social media"], ["other", "Other"]];
+  const STAT = [["lead", "Lead"], ["active", "Active"], ["delivered", "Delivered"], ["closed", "Closed"]];
+  const tbadge = (t) => t === "website" ? { bg: "rgba(34,211,238,.14)", c: "#22d3ee", l: "Website" } : t === "social" ? { bg: "rgba(124,92,255,.16)", c: "#b79cff", l: "Social" } : { bg: "rgba(255,255,255,.08)", c: "#b8b4a8", l: "Other" };
+  const card = { border: "1px solid var(--line)", borderRadius: 10, padding: 12, marginBottom: 8, background: "rgba(255,255,255,.015)" };
+
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Studio</h1>
+        <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add project</button>
+      </div>
+      <p className="sub" style={{ margin: 0 }}>Website builds & social-media work — track what's agreed and what's been paid.</p>
+
+      <div style={{ display: "flex", gap: 10, margin: "12px 0 6px", flexWrap: "wrap" }}>
+        <div style={glStat}><strong style={glNum}>{inr(monthRecv)}</strong><span style={glLbl}>This month</span></div>
+        <div style={glStat}><strong style={glNum}>{inr(fyRecv)}</strong><span style={glLbl}>FY {fyLabel} received</span></div>
+        <div style={glStat}><strong style={{ ...glNum, color: outstanding > 0 ? "#e0574a" : "#c9a84c" }}>{inr(outstanding)}</strong><span style={glLbl}>Outstanding</span></div>
+        <div style={glStat}><strong style={glNum}>{activeCount}</strong><span style={glLbl}>Active / leads</span></div>
+      </div>
+      <p className="sub" style={{ margin: "0 0 12px", fontSize: ".78rem", color: "#9a9a92" }}>FY split — Website {inr(typeRecvFY("website"))} · Social {inr(typeRecvFY("social"))}</p>
+
+      {adding && (
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, margin: "4px 0 14px" }}>
+          <div className="grid2">
+            <div className="field"><label>Client</label><input value={f.client} onChange={(e) => setF({ ...f, client: e.target.value })} placeholder="Name / brand" /></div>
+            <div className="field"><label>Contact</label><input value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} placeholder="phone / email (optional)" /></div>
+            <div className="field"><label>Type</label><select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>{TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+            <div className="field"><label>Agreed amount (₹)</label><input type="number" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} placeholder="optional" /></div>
+            <div className="field"><label>Status</label><select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}>{STAT.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+            <div className="field"><label>Started</label><input type="date" value={f.started_on} onChange={(e) => setF({ ...f, started_on: e.target.value })} /></div>
+          </div>
+          <div className="field"><label>Project / notes</label><input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder='e.g. "5-page Astro site + booking form"' /></div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn sm" disabled={saving || !f.client.trim()} onClick={addProject}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Create</button>
+            <button className="btn sm ghost" onClick={() => { setAdding(false); setF(blank); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      <div className="chips" style={{ marginBottom: 10 }}>
+        {[["all", "All"], ["website", "Website"], ["social", "Social"], ["outstanding", "Outstanding"]].map(([k, l]) => (
+          <button key={k} className={filter === k ? "chip on" : "chip"} onClick={() => setFilter(k)}>{l}</button>
+        ))}
+      </div>
+      <input className="search" placeholder="Search client, contact, project…" value={query} onChange={(e) => setQuery(e.target.value)} />
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : shown.length === 0 ? (
+        <p className="empty" style={{ marginTop: 16 }}>{err ? "Run studio_finance.sql in Supabase, then refresh." : "No projects yet — add one above."}</p>
+      ) : (
+        <div style={{ marginTop: 8 }}>
+          {shown.map((p) => {
+            const r = recv(p.id); const amt = Number(p.amount || 0); const bal = amt - r; const tb = tbadge(p.type); const open = openId === p.id;
+            return (
+              <div key={p.id} style={card}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span className="tag" style={{ background: tb.bg, color: tb.c, borderColor: "transparent" }}>{tb.l}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14, color: "#e8e8e0" }}>{p.client}</div>
+                    {p.title && <div className="bk-sub" style={{ fontSize: 12 }}>{p.title}</div>}
+                  </div>
+                  <select value={p.status} onChange={(e) => patchProject(p.id, { status: e.target.value })} style={{ ...inp, padding: "5px 7px", fontSize: 12 }}>{STAT.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                  <button className="btn sm ghost" onClick={() => setOpenId(open ? null : p.id)}>{open ? "Hide" : "Payments"}</button>
+                  <button style={{ background: "none", border: "1px solid #2a2a2a", borderRadius: 6, padding: "6px 9px", color: "#e0574a", cursor: "pointer", lineHeight: 0 }} title="Delete project" onClick={() => delProject(p)}><Trash2 size={14} /></button>
+                </div>
+                <div style={{ display: "flex", gap: 14, marginTop: 7, fontSize: ".8rem", color: "rgba(255,255,255,.7)", flexWrap: "wrap" }}>
+                  {amt > 0 && <span>Agreed <strong style={{ color: "#e8e8e0" }}>{inr(amt)}</strong></span>}
+                  <span>Received <strong style={{ color: "#7fe0a0" }}>{inr(r)}</strong></span>
+                  {amt > 0 && <span>Balance <strong style={{ color: bal > 0 ? "#e0574a" : "#7fe0a0" }}>{inr(bal)}</strong></span>}
+                  {p.contact && <span style={{ color: "#8a8878" }}>{p.contact}</span>}
+                </div>
+                {open && <StudioPayments project={p} payments={pays[p.id] || []} bal={amt > 0 ? bal : null} onChange={load} showToast={showToast} inp={inp} inr={inr} today={today} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+function StudioPayments({ project, payments, bal, onChange, showToast, inp, inr, today }) {
+  const [amt, setAmt] = useState(""); const [method, setMethod] = useState("UPI"); const [when, setWhen] = useState(today); const [note, setNote] = useState(""); const [busy, setBusy] = useState(false);
+  const add = async () => {
+    if (!amt || Number(amt) <= 0) return showToast("Enter an amount");
+    setBusy(true);
+    const { error } = await supabase.from("studio_payments").insert({ project_id: project.id, amount: Number(amt), paid_on: when, method, note: note || null });
+    setBusy(false);
+    if (error) return showToast(error.message);
+    setAmt(""); setNote(""); showToast("Payment recorded ✓"); onChange();
+  };
+  const del = async (id) => { if (!confirm("Remove this payment?")) return; await supabase.from("studio_payments").delete().eq("id", id); onChange(); };
+  return (
+    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+      {payments.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 9 }}>
+          {payments.map((p) => (
+            <div key={p.id} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: ".76rem", color: "rgba(255,255,255,.65)" }}>
+              <strong style={{ color: "#7fe0a0" }}>{inr(p.amount)}</strong>
+              <span>{p.method || "—"}</span>
+              {p.note && <span style={{ color: "#c9a84c" }}>{p.note}</span>}
+              <span>{new Date(p.paid_on).toLocaleDateString("en-IN")}</span>
+              <button onClick={() => del(p.id)} title="Remove" style={{ marginLeft: "auto", background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0 }}><Trash2 size={12} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+        <input type="number" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="Amount ₹" style={{ ...inp, width: 110 }} />
+        {bal > 0 && <button className="btn sm ghost" onClick={() => setAmt(String(bal))} title={`Fill balance ${inr(bal)}`}>Balance</button>}
+        <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}><option>UPI</option><option>Bank</option><option>Cash</option><option>Card</option><option>Other</option></select>
+        <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} style={inp} />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (optional)" style={{ ...inp, flex: "1 1 120px" }} />
+        <button className="btn sm" onClick={add} disabled={busy}>{busy ? <Loader2 className="spin" size={12} /> : "Add payment"}</button>
+      </div>
+    </div>
   );
 }
 
