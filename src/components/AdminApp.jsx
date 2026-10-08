@@ -1775,6 +1775,8 @@ function GigMailer({ booking, payments, onChange, showToast }) {
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [proforma, setProforma] = useState(false); // invoice → proforma variant
+  const [savedClients, setSavedClients] = useState([]);  // repeat-business address book
+  const [selClient, setSelClient] = useState("");
   // Editable subject + body. Pre-filled from the template for the current mode,
   // and re-filled whenever the mode or the money changes — but never once it's
   // been hand-edited, so typed changes are not clobbered.
@@ -1790,6 +1792,29 @@ function GigMailer({ booking, payments, onChange, showToast }) {
       else showToast("gig-mailer isn't deployed / BILLERS_JSON not set yet");
     })();
   }, [open]);
+
+  // Saved clients (repeat-business address book) — loaded when the panel opens.
+  const loadClients = async () => {
+    const { data } = await supabase.from("invoice_clients").select("*").order("label", { ascending: true });
+    setSavedClients(data || []);
+  };
+  useEffect(() => { if (open) loadClients(); }, [open]);
+  const applyClient = (id) => {
+    const c = savedClients.find((x) => x.id === id); if (!c) return;
+    setCompany(c.company || ""); setGstin(c.gstin || ""); setAddress(c.address || ""); if (c.email) setEmail(c.email);
+  };
+  const saveClient = async () => {
+    const label = (company || "").trim() || (window.prompt("Save this client as:") || "").trim();
+    if (!label) return showToast("Add a Bill-to company first.");
+    const { error } = await supabase.from("invoice_clients").insert({
+      label, company: company.trim() || null, email: email.trim() || null,
+      phone: isEmail(booking.contact) ? null : (booking.contact || null),
+      gstin: gstin.trim() || null, address: address.trim() || null,
+    });
+    if (error) return showToast(/invoice_clients|does not exist/i.test(error.message) ? "Run invoice_clients.sql in Supabase first" : error.message);
+    showToast("Client saved ✓"); loadClients();
+  };
+  const delClient = async (id) => { if (!window.confirm("Remove this saved client?")) return; await supabase.from("invoice_clients").delete().eq("id", id); setSelClient(""); loadClients(); };
 
   const total = Number(booking.agreed_fee || 0);
   const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -2026,6 +2051,16 @@ function GigMailer({ booking, payments, onChange, showToast }) {
 
       {mode === "invoice" && (
         <>
+          <div style={{ display: "flex", gap: 8, alignItems: "end", marginTop: 8, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 220px" }}><span style={lbl}>Saved clients <span style={{ color: "#66665e" }}>(repeat business)</span></span>
+              <select style={inp} value={selClient} onChange={(e) => { setSelClient(e.target.value); if (e.target.value) applyClient(e.target.value); }}>
+                <option value="">— pick to pre-fill —</option>
+                {savedClients.map((c) => <option key={c.id} value={c.id}>{c.label}{c.gstin ? " · GST" : ""}</option>)}
+              </select>
+            </div>
+            <button className="btn sm ghost" type="button" onClick={saveClient} disabled={!company.trim()} title="Save these Bill-to details for repeat invoices"><Plus size={13} /> Save client</button>
+            {selClient && <button className="btn sm ghost" type="button" onClick={() => delClient(selClient)} title="Delete saved client"><Trash2 size={13} /></button>}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
             <div><span style={lbl}>Bill to (company)</span><input style={inp} value={company} onChange={(e) => setCompany(e.target.value)} /></div>
             <div><span style={lbl}>Client GST (optional)</span><input style={inp} value={gstin} onChange={(e) => setGstin(e.target.value)} /></div>
