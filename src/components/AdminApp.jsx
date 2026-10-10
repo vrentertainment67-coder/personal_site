@@ -6,7 +6,7 @@ import {
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
   MessageCircle, Star, Ban, Mail, Send, Users, History, Eye, EyeOff, Mic, Activity, Download, Zap,
   AtSign, RefreshCw, Film, Pencil, Inbox, Sparkles, ListMusic, Copy, Undo2,
-  ChevronDown, Square, CheckSquare, Bell, Briefcase,
+  ChevronDown, Square, CheckSquare, Bell, Briefcase, Speaker,
 } from "lucide-react";
 import { IMAGE_SLOTS } from "../lib/imageSlots.js";
 
@@ -171,6 +171,7 @@ export default function Admin() {
     ["bookings", "Bookings", ClipboardList],
     ["calendar", "Calendar", CalendarDays],
     ["studio", "Studio", Briefcase],
+    ["gear", "Gear", Speaker],
   ];
   const GROUPS = [
     { label: "Manage", Icon: Users, items: [["events", "Events", Star], ["guests", "Guests", Users], ["requests", "Requests", ListMusic], ["mail", "Mail", Inbox]] },
@@ -200,6 +201,7 @@ export default function Admin() {
         {tab === "today" && <Today showToast={showToast} />}
         {tab === "bookings" && <Bookings showToast={showToast} />}
         {tab === "studio" && <StudioAdmin showToast={showToast} />}
+        {tab === "gear" && <GearAdmin showToast={showToast} />}
         {tab === "events" && <EventsAdmin showToast={showToast} />}
         {tab === "guests" && <Guests showToast={showToast} />}
         {tab === "podcast" && <Podcast showToast={showToast} />}
@@ -4875,6 +4877,149 @@ function StudioPayments({ project, payments, bal, onChange, showToast, inp, inr,
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (optional)" style={{ ...inp, flex: "1 1 120px" }} />
         <button className="btn sm" onClick={add} disabled={busy}>{busy ? <Loader2 className="spin" size={12} /> : "Add payment"}</button>
       </div>
+    </div>
+  );
+}
+
+// ── Gear hire: shared-asset rental ledger with owner split + recovery ──
+function GearAdmin({ showToast }) {
+  const [assets, setAssets] = useState([]);
+  const [hires, setHires] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data: a, error } = await supabase.from("gear_assets").select("*").order("created_at", { ascending: true });
+    if (error) { setErr(true); setLoading(false); showToast("Run gear_hire.sql in Supabase, then refresh."); return; }
+    const { data: h } = await supabase.from("gear_hires").select("*").order("hired_on", { ascending: false });
+    const map = {}; (h || []).forEach((x) => { (map[x.asset_id] = map[x.asset_id] || []).push(x); });
+    setAssets(a || []); setHires(map); setErr(false); setLoading(false);
+  }, [showToast]);
+  useEffect(() => { load(); }, [load]);
+  const addAsset = async () => {
+    const name = (window.prompt("New gear item name:", "") || "").trim(); if (!name) return;
+    const { error } = await supabase.from("gear_assets").insert({ name }); if (error) return showToast(error.message); load();
+  };
+  return (
+    <>
+      <div className="row-between">
+        <h1 className="h1">Gear hire</h1>
+        <button className="btn sm ghost" onClick={addAsset}><Plus size={15} /> Add item</button>
+      </div>
+      <p className="sub" style={{ margin: 0 }}>Every time the gear goes out, log the hire — the net is split and tracked against what each owner put in.</p>
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (err || assets.length === 0) ? (
+        <p className="empty" style={{ marginTop: 16 }}>{err ? "Run gear_hire.sql in Supabase, then refresh." : "No gear yet — add an item above."}</p>
+      ) : assets.map((a) => <GearAsset key={a.id} asset={a} hires={hires[a.id] || []} onChange={load} showToast={showToast} />)}
+    </>
+  );
+}
+
+function GearAsset({ asset, hires, onChange, showToast }) {
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const today = new Date().toLocaleDateString("en-CA");
+  const [s, setS] = useState({ name: asset.name, vic_invested: asset.vic_invested, partner_name: asset.partner_name, partner_invested: asset.partner_invested, vic_split: asset.vic_split });
+  useEffect(() => { setS({ name: asset.name, vic_invested: asset.vic_invested, partner_name: asset.partner_name, partner_invested: asset.partner_invested, vic_split: asset.vic_split }); }, [asset.id]);
+  const [savingS, setSavingS] = useState(false);
+  const [h, setH] = useState({ hired_on: today, client: "", fee: "", expenses: "", notes: "" });
+  const [busy, setBusy] = useState(false);
+
+  const dirty = ["name", "vic_invested", "partner_name", "partner_invested", "vic_split"].some((k) => String(s[k]) !== String(asset[k]));
+  const saveSettings = async () => {
+    setSavingS(true);
+    const { error } = await supabase.from("gear_assets").update({
+      name: s.name.trim() || "Gear", vic_invested: Number(s.vic_invested || 0), partner_name: s.partner_name.trim() || "Partner",
+      partner_invested: Number(s.partner_invested || 0), vic_split: Number(s.vic_split || 0),
+    }).eq("id", asset.id);
+    setSavingS(false); if (error) return showToast(error.message); showToast("Saved ✓"); onChange();
+  };
+  const addHire = async () => {
+    if (h.fee === "" || Number(h.fee) < 0) return showToast("Enter the hire fee.");
+    setBusy(true);
+    const { error } = await supabase.from("gear_hires").insert({ asset_id: asset.id, hired_on: h.hired_on || today, client: h.client.trim() || null, fee: Number(h.fee || 0), expenses: Number(h.expenses || 0), notes: h.notes.trim() || null });
+    setBusy(false); if (error) return showToast(error.message);
+    setH({ hired_on: today, client: "", fee: "", expenses: "", notes: "" }); showToast("Hire logged ✓"); onChange();
+  };
+  const delHire = async (id) => { if (!window.confirm("Remove this hire?")) return; await supabase.from("gear_hires").delete().eq("id", id); onChange(); };
+
+  const gross = hires.reduce((x, r) => x + Number(r.fee || 0), 0);
+  const exp = hires.reduce((x, r) => x + Number(r.expenses || 0), 0);
+  const net = gross - exp;
+  const vs = Number(asset.vic_split || 0) / 100;
+  const vicShare = net * vs, partShare = net - vicShare;
+  const vicInv = Number(asset.vic_invested || 0), partInv = Number(asset.partner_invested || 0);
+  const totalInv = vicInv + partInv;
+  const recPct = totalInv > 0 ? Math.min(100, Math.round((Math.min(vicShare, vicInv) + Math.min(partShare, partInv)) / totalInv * 100)) : 0;
+  const pn = asset.partner_name || "Partner";
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter", width: "100%" };
+  const card = { border: "1px solid var(--line)", borderRadius: 12, padding: 14, margin: "14px 0", background: "rgba(255,255,255,.015)" };
+  const lbl2 = { fontSize: ".6rem", textTransform: "uppercase", letterSpacing: ".08em", color: "rgba(255,255,255,.45)", marginBottom: 3, display: "block" };
+  const ownerLine = (name, share, invested, color) => {
+    const rem = Math.max(0, invested - share), surplus = Math.max(0, share - invested);
+    return (
+      <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap", fontSize: ".82rem" }}>
+        <strong style={{ color, minWidth: 70 }}>{name}</strong>
+        <span>share <strong style={{ color: "#e8e8e0" }}>{inr(share)}</strong></span>
+        {invested > 0 && <span style={{ color: "#8a8878" }}>invested {inr(invested)}</span>}
+        {invested > 0 && (rem > 0
+          ? <span style={{ color: "#e0b13c" }}>to recover {inr(rem)}</span>
+          : <span style={{ color: "#7fe0a0" }}>recovered ✓{surplus > 0 ? ` · profit ${inr(surplus)}` : ""}</span>)}
+      </div>
+    );
+  };
+
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <input style={{ ...inp, flex: "1 1 160px", fontWeight: 700 }} value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} />
+        <button className="btn sm" onClick={saveSettings} disabled={savingS || !dirty}>{savingS ? <Loader2 className="spin" size={13} /> : "Save"}</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 8, marginBottom: 12 }}>
+        <div><span style={lbl2}>VIC invested ₹</span><input type="number" style={inp} value={s.vic_invested} onChange={(e) => setS({ ...s, vic_invested: e.target.value })} /></div>
+        <div><span style={lbl2}>Partner name</span><input style={inp} value={s.partner_name} onChange={(e) => setS({ ...s, partner_name: e.target.value })} /></div>
+        <div><span style={lbl2}>{(s.partner_name || "Partner")} invested ₹</span><input type="number" style={inp} value={s.partner_invested} onChange={(e) => setS({ ...s, partner_invested: e.target.value })} /></div>
+        <div><span style={lbl2}>VIC split %</span><input type="number" style={inp} value={s.vic_split} onChange={(e) => setS({ ...s, vic_split: e.target.value })} /></div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+        <div style={glStat}><strong style={glNum}>{inr(gross)}</strong><span style={glLbl}>Gross hired</span></div>
+        <div style={glStat}><strong style={glNum}>{inr(net)}</strong><span style={glLbl}>Net · {hires.length} hire{hires.length === 1 ? "" : "s"}</span></div>
+        <div style={glStat}><strong style={{ ...glNum, color: recPct >= 100 ? "#7fe0a0" : "#c9a84c" }}>{recPct}%</strong><span style={glLbl}>Capital recovered</span></div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, margin: "0 0 12px", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 8 }}>
+        {ownerLine("VIC", vicShare, vicInv, "#ff6f61")}
+        {ownerLine(pn, partShare, partInv, "#22d3ee")}
+        {exp > 0 && <div style={{ fontSize: ".74rem", color: "#8a8878" }}>Gross {inr(gross)} − expenses {inr(exp)} = net {inr(net)}, split {asset.vic_split}% / {100 - Number(asset.vic_split || 0)}%</div>}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(104px,1fr))", gap: 7, alignItems: "end" }}>
+        <div><span style={lbl2}>Date</span><input type="date" style={inp} value={h.hired_on} onChange={(e) => setH({ ...h, hired_on: e.target.value })} /></div>
+        <div style={{ gridColumn: "span 2" }}><span style={lbl2}>Client / event</span><input style={inp} value={h.client} onChange={(e) => setH({ ...h, client: e.target.value })} placeholder="who / where" /></div>
+        <div><span style={lbl2}>Hire fee ₹</span><input type="number" style={inp} value={h.fee} onChange={(e) => setH({ ...h, fee: e.target.value })} /></div>
+        <div><span style={lbl2}>Expenses ₹</span><input type="number" style={inp} value={h.expenses} onChange={(e) => setH({ ...h, expenses: e.target.value })} placeholder="0" /></div>
+      </div>
+      <div style={{ display: "flex", gap: 7, marginTop: 7, alignItems: "end" }}>
+        <div style={{ flex: 1 }}><span style={lbl2}>Note</span><input style={inp} value={h.notes} onChange={(e) => setH({ ...h, notes: e.target.value })} placeholder="optional" /></div>
+        <button className="btn sm" onClick={addHire} disabled={busy}>{busy ? <Loader2 className="spin" size={13} /> : <><Plus size={13} /> Log hire</>}</button>
+      </div>
+
+      {hires.length > 0 && (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 5 }}>
+          {hires.map((r) => {
+            const rn = Number(r.fee || 0) - Number(r.expenses || 0);
+            return (
+              <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: ".76rem", color: "rgba(255,255,255,.72)", borderBottom: "1px solid #191919", paddingBottom: 5 }}>
+                <span style={{ color: "#8a8878", width: 60, flexShrink: 0 }}>{new Date(r.hired_on).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
+                <span style={{ flex: 1, minWidth: 0, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.client || "—"}{r.notes ? <span style={{ color: "#8a8878" }}> · {r.notes}</span> : ""}</span>
+                <span style={{ flexShrink: 0 }}>{inr(r.fee)}{Number(r.expenses) > 0 ? <span style={{ color: "#e0574a" }}> −{inr(r.expenses)}</span> : ""}</span>
+                <strong style={{ color: "#7fe0a0", width: 72, textAlign: "right", flexShrink: 0 }}>{inr(rn)}</strong>
+                <span style={{ color: "#8a8878", width: 128, textAlign: "right", flexShrink: 0 }}>V {inr(Math.round(rn * vs))} · {pn.charAt(0)} {inr(Math.round(rn - rn * vs))}</span>
+                <button onClick={() => delHire(r.id)} title="Remove" style={{ background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0, flexShrink: 0 }}><Trash2 size={12} /></button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
