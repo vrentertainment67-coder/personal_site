@@ -17,7 +17,9 @@ const { data: ep } = episode;
 
 const hasVideo = !!ep.youtubeId;
 const ytThumb = hasVideo ? `https://img.youtube.com/vi/${ep.youtubeId}/maxresdefault.jpg` : '';
-const ogImage = ep.guestPhoto || ytThumb || 'https://djvicofficial.com/images/og-default.jpg';
+const ogImage = ep.guestPhoto
+  ? (ep.guestPhoto.startsWith('http') ? ep.guestPhoto : `https://djvicofficial.com${ep.guestPhoto}`)
+  : (ytThumb || 'https://djvicofficial.com/images/og-default.jpg');
 const bioParagraphs = ep.bio.split('\n\n').filter(p => p.trim());
 const premiereWhen = ep.premiereWhen || 'this Sunday';
 const premiereStrand = ep.sectionLabel || `S${ep.season}E${ep.episode}`;
@@ -156,16 +158,9 @@ const schemas = [
       </div>
     </section>
 
-    <!-- ── Guest Photo (only with a video; the placeholder already shows it otherwise) ── -->
-    {hasVideo && ep.guestPhoto && (
-      <section id="ep-photo">
-        <div class="ep-inner">
-          <div class="guest-photo-wrap">
-            <img src={ep.guestPhoto} alt={`${ep.guestName} — The VIC Fix guest`} loading="lazy" width="800" height="800" />
-          </div>
-        </div>
-      </section>
-    )}
+    <!-- Episode art (guestPhoto) is the 16:9 thumbnail — used for the listing card
+         and social/OG preview; the video embed already shows it, so it isn't
+         repeated here as a separate block. -->
 
     <!-- ── 1. VIDEO — watch first ─────────────────── -->
     <section id="ep-video">
