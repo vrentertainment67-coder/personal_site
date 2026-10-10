@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Line } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Line, AreaChart, Area, ReferenceLine } from "recharts";
 import {
   LayoutDashboard, CalendarDays, Image as ImageIcon, Images, Quote, TrendingUp, ClipboardList,
   CheckCircle2, XCircle, Clock, MapPin, Plus, Trash2, LogOut, Loader2, Upload,
@@ -4892,6 +4892,7 @@ function GearAdmin({ showToast }) {
   const [adding, setAdding] = useState(false);
   const [f, setF] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -4905,7 +4906,7 @@ function GearAdmin({ showToast }) {
   const setAllVic = () => setF((p) => ({ ...p, vic_share: String(Number(p.amount || 0)), dhanush_share: "0" }));
   const setAllDh = () => setF((p) => ({ ...p, vic_share: "0", dhanush_share: String(Number(p.amount || 0)) }));
 
-  const add = async () => {
+  const save = async () => {
     if (!f.description.trim()) return showToast("Add a description.");
     if (f.amount === "" || Number(f.amount) < 0) return showToast("Enter the amount.");
     const amt = Number(f.amount || 0);
@@ -4913,16 +4914,23 @@ function GearAdmin({ showToast }) {
     if (vic === "" && dh === "") { vic = String(+(amt / 2).toFixed(2)); dh = String(+(amt / 2).toFixed(2)); }
     else if (vic === "") vic = String(+(amt - Number(dh || 0)).toFixed(2));
     else if (dh === "") dh = String(+(amt - Number(vic || 0)).toFixed(2));
-    setSaving(true);
-    const { error } = await supabase.from("gear_ledger").insert({
+    const payload = {
       entry_date: f.entry_date || today, description: f.description.trim(), type: f.type, amount: amt,
       vic_share: Number(vic || 0), dhanush_share: Number(dh || 0), paid_by: f.paid_by.trim() || null, remarks: f.remarks.trim() || null,
-    });
+    };
+    setSaving(true);
+    const { error } = editId
+      ? await supabase.from("gear_ledger").update(payload).eq("id", editId)
+      : await supabase.from("gear_ledger").insert(payload);
     setSaving(false);
     if (error) return showToast(error.message);
-    setF({ ...blank, type: f.type }); setAdding(false); showToast("Entry added ✓"); load();
+    setF({ ...blank, type: f.type }); setEditId(null); setAdding(false); showToast(editId ? "Entry updated ✓" : "Entry added ✓"); load();
   };
-  const del = async (id) => { if (!window.confirm("Remove this entry?")) return; await supabase.from("gear_ledger").delete().eq("id", id); load(); };
+  const startEdit = (r) => {
+    setF({ entry_date: r.entry_date, description: r.description || "", type: r.type, amount: String(r.amount ?? ""), vic_share: String(r.vic_share ?? ""), dhanush_share: String(r.dhanush_share ?? ""), paid_by: r.paid_by || "", remarks: r.remarks || "" });
+    setEditId(r.id); setAdding(true);
+  };
+  const del = async (id) => { if (!window.confirm("Remove this entry?")) return; await supabase.from("gear_ledger").delete().eq("id", id); if (editId === id) { setEditId(null); setAdding(false); setF(blank); } load(); };
 
   let bal = 0;
   const chrono = rows.map((r) => { bal += (r.type === "income" ? 1 : -1) * Number(r.amount || 0); return { ...r, _bal: bal }; });
@@ -4933,8 +4941,31 @@ function GearAdmin({ showToast }) {
   const income = sum((r) => r.type === "income", "amount");
   const outlay = invested + expenses;
   const recPct = outlay > 0 ? Math.min(100, Math.round(income / outlay * 100)) : 0;
-  const vicNet = sum((r) => r.type === "income", "vic_share") - sum((r) => r.type !== "income", "vic_share");
-  const dhNet = sum((r) => r.type === "income", "dhanush_share") - sum((r) => r.type !== "income", "dhanush_share");
+  const vicIn = sum((r) => r.type === "income", "vic_share"), vicOut = sum((r) => r.type !== "income", "vic_share");
+  const dhIn = sum((r) => r.type === "income", "dhanush_share"), dhOut = sum((r) => r.type !== "income", "dhanush_share");
+  const vicNet = vicIn - vicOut, dhNet = dhIn - dhOut;
+  const vicPct = vicOut > 0 ? Math.min(100, Math.round(vicIn / vicOut * 100)) : (vicIn > 0 ? 100 : 0);
+  const dhPct = dhOut > 0 ? Math.min(100, Math.round(dhIn / dhOut * 100)) : (dhIn > 0 ? 100 : 0);
+  const profit = income - outlay;
+  const recStatus = outlay <= 0 ? "Add an investment to start tracking recovery"
+    : profit >= 0 ? `Fully recovered — in profit ${inr(profit)} 🎉`
+    : `${inr(income)} back of ${inr(outlay)} · ${inr(-profit)} to go`;
+  // Running-balance line, with a red→green split at the break-even line.
+  const chartData = chrono.map((r) => ({ label: new Date(r.entry_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), bal: Math.round(r._bal) }));
+  const balMax = Math.max(0, ...chartData.map((d) => d.bal)), balMin = Math.min(0, ...chartData.map((d) => d.bal));
+  const gradOff = (balMax - balMin) === 0 ? 1 : balMax / (balMax - balMin);
+  const tip = { background: "#111", border: "1px solid var(--line)", borderRadius: 8, fontSize: ".8rem", color: "var(--off)" };
+  const partnerBar = (name, inv, out, net, pct, color) => (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".74rem", marginBottom: 5 }}>
+        <strong style={{ color }}>{name}</strong>
+        <span style={{ color: net >= 0 ? "#7fe0a0" : "#9a9a92" }}>{net >= 0 ? `recovered · +${inr(net)}` : `${inr(inv)} / ${inr(out)}`}</span>
+      </div>
+      <div style={{ height: 8, background: "rgba(255,255,255,.06)", borderRadius: 6, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: pct + "%", background: color, opacity: .85, transition: "width .5s" }} />
+      </div>
+    </div>
+  );
 
   const copySheet = () => {
     const head = "Date\tDescription\tType\tTotal\tVicky Share\tDhanush Share\tPaid By\tRunning Balance\tRemarks";
@@ -4954,7 +4985,7 @@ function GearAdmin({ showToast }) {
         <h1 className="h1">Gear ledger</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn sm ghost" onClick={copySheet} disabled={!rows.length}><Copy size={14} /> Copy</button>
-          <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add entry</button>
+          <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => { setEditId(null); setF(blank); setAdding((v) => !v); }}><Plus size={15} /> Add entry</button>
         </div>
       </div>
       <p className="sub" style={{ margin: 0 }}>Shared ledger for the Bose L1 Pro16 &amp; co-owned gear — investments and hire income, split between Vicky &amp; Dhanush, with a running balance toward recovery.</p>
@@ -4965,13 +4996,56 @@ function GearAdmin({ showToast }) {
         <div style={glStat}><strong style={{ ...glNum, color: bal >= 0 ? "#7fe0a0" : "#e0574a" }}>{inr(bal)}</strong><span style={glLbl}>Running balance</span></div>
         <div style={glStat}><strong style={{ ...glNum, color: recPct >= 100 ? "#7fe0a0" : "#c9a84c" }}>{recPct}%</strong><span style={glLbl}>Recovered</span></div>
       </div>
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", fontSize: ".82rem", margin: "0 0 14px", color: "rgba(255,255,255,.8)" }}>
-        <span><strong style={{ color: "#ff6f61" }}>Vicky</strong> net {inr(vicNet)} {vicNet >= 0 ? <span style={{ color: "#7fe0a0" }}>(recovered)</span> : <span style={{ color: "#e0b13c" }}>(to recover {inr(-vicNet)})</span>}</span>
-        <span><strong style={{ color: "#22d3ee" }}>Dhanush</strong> net {inr(dhNet)} {dhNet >= 0 ? <span style={{ color: "#7fe0a0" }}>(recovered)</span> : <span style={{ color: "#e0b13c" }}>(to recover {inr(-dhNet)})</span>}</span>
+      {/* Road to recovery — progress bar */}
+      <div style={{ margin: "2px 0 14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: ".72rem", marginBottom: 6 }}>
+          <span style={{ textTransform: "uppercase", letterSpacing: ".1em", color: "#c9a84c", fontWeight: 600 }}>Road to recovery</span>
+          <span style={{ color: profit >= 0 ? "#7fe0a0" : "#b8b4a8" }}>{recStatus}</span>
+        </div>
+        <div style={{ position: "relative", height: 16, background: "rgba(255,255,255,.06)", borderRadius: 9, overflow: "hidden", border: "1px solid var(--line)" }}>
+          <div style={{ position: "absolute", inset: 0, width: Math.min(100, recPct) + "%", background: profit >= 0 ? "linear-gradient(90deg,#c9a84c,#7fe0a0)" : "linear-gradient(90deg,#e0574a,#e0b13c)", transition: "width .6s cubic-bezier(.2,.7,.2,1)" }} />
+          <span style={{ position: "absolute", right: 9, top: 0, fontSize: ".66rem", fontWeight: 700, color: "#fff", lineHeight: "16px", textShadow: "0 1px 2px rgba(0,0,0,.7)" }}>{recPct}%</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 12 }}>
+          {partnerBar("Vicky", vicIn, vicOut, vicNet, vicPct, "#ff6f61")}
+          {partnerBar("Dhanush", dhIn, dhOut, dhNet, dhPct, "#22d3ee")}
+        </div>
       </div>
 
+      {/* Climbing out of the red — running-balance chart */}
+      {chartData.length > 1 && (
+        <div className="card" style={{ marginBottom: 14 }}>
+          <h3 className="card-h" style={{ margin: "0 0 8px" }}>Climbing out of the red {bal >= 0 ? "🟢" : "🔴"}</h3>
+          <div style={{ height: 190 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 6, right: 10, left: -4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="balStroke" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset={gradOff} stopColor="#7fe0a0" /><stop offset={gradOff} stopColor="#e0574a" />
+                  </linearGradient>
+                  <linearGradient id="balFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset={0} stopColor="#7fe0a0" stopOpacity={0.35} />
+                    <stop offset={gradOff} stopColor="#7fe0a0" stopOpacity={0.06} />
+                    <stop offset={gradOff} stopColor="#e0574a" stopOpacity={0.06} />
+                    <stop offset={1} stopColor="#e0574a" stopOpacity={0.35} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(232,232,224,0.06)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "#9a9a92", fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={18} />
+                <YAxis tick={{ fill: "#9a9a92", fontSize: 10 }} axisLine={false} tickLine={false} width={52} tickFormatter={(v) => "₹" + Math.round(v / 1000) + "k"} />
+                <Tooltip contentStyle={tip} formatter={(v) => [inr(v), "Balance"]} />
+                <ReferenceLine y={0} stroke="#c9a84c" strokeDasharray="4 4" />
+                <Area type="monotone" dataKey="bal" stroke="url(#balStroke)" strokeWidth={2.5} fill="url(#balFill)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <p style={{ fontSize: ".7rem", color: "#8a8878", margin: "4px 0 0", textAlign: "center" }}>Gold dashes = break-even. Red below, green above — watch it climb as hires land.</p>
+        </div>
+      )}
+
       {adding && (
-        <div className="card" style={{ margin: "0 0 14px" }}>
+        <div className="card" style={{ margin: "0 0 14px", borderColor: editId ? "rgba(201,168,76,.4)" : undefined }}>
+          {editId && <div style={{ fontSize: ".66rem", color: "#c9a84c", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".1em", fontWeight: 600 }}>✎ Editing entry</div>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8 }}>
             <div><span style={lbl2}>Date</span><input type="date" style={inp} value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} /></div>
             <div><span style={lbl2}>Type</span><select style={inp} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}><option value="income">Income (hire)</option><option value="investment">Investment</option><option value="expense">Expense</option></select></div>
@@ -4988,8 +5062,8 @@ function GearAdmin({ showToast }) {
           </div>
           <div style={{ marginTop: 8 }}><span style={lbl2}>Remarks</span><input style={inp} value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} placeholder="optional" /></div>
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button className="btn sm" disabled={saving} onClick={add}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Add to ledger</button>
-            <button className="btn sm ghost" onClick={() => { setAdding(false); setF(blank); }}>Cancel</button>
+            <button className="btn sm" disabled={saving} onClick={save}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} {editId ? "Save changes" : "Add to ledger"}</button>
+            <button className="btn sm ghost" onClick={() => { setAdding(false); setEditId(null); setF(blank); }}>Cancel</button>
           </div>
         </div>
       )}
@@ -5016,7 +5090,10 @@ function GearAdmin({ showToast }) {
                   <td style={{ ...td, color: "#8a8878" }}>{r.paid_by || "—"}</td>
                   <td style={{ ...td, textAlign: "right", fontWeight: 700, color: r._bal >= 0 ? "#7fe0a0" : "#e0574a" }}>{inr(r._bal)}</td>
                   <td style={{ ...td, color: "#8a8878", whiteSpace: "normal", minWidth: 120 }}>{r.remarks || ""}</td>
-                  <td style={td}><button onClick={() => del(r.id)} title="Remove" style={{ background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0 }}><Trash2 size={13} /></button></td>
+                  <td style={td}><div style={{ display: "flex", gap: 9 }}>
+                    <button onClick={() => startEdit(r)} title="Edit" style={{ background: "none", border: "none", color: editId === r.id ? "#c9a84c" : "#8a8878", cursor: "pointer", padding: 0 }}><Pencil size={13} /></button>
+                    <button onClick={() => del(r.id)} title="Remove" style={{ background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0 }}><Trash2 size={13} /></button>
+                  </div></td>
                 </tr>
               ); })}
             </tbody>
