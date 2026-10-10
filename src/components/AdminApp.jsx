@@ -4881,146 +4881,149 @@ function StudioPayments({ project, payments, bal, onChange, showToast, inp, inr,
   );
 }
 
-// ── Gear hire: shared-asset rental ledger with owner split + recovery ──
+// ── Gear ledger: a shared running ledger (investments + income) for co-owned gear ──
 function GearAdmin({ showToast }) {
-  const [assets, setAssets] = useState([]);
-  const [hires, setHires] = useState({});
+  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const today = new Date().toLocaleDateString("en-CA");
+  const blank = { entry_date: today, description: "", type: "income", amount: "", vic_share: "", dhanush_share: "", paid_by: "Cash", remarks: "" };
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [f, setF] = useState(blank);
+  const [saving, setSaving] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: a, error } = await supabase.from("gear_assets").select("*").order("created_at", { ascending: true });
-    if (error) { setErr(true); setLoading(false); showToast("Run gear_hire.sql in Supabase, then refresh."); return; }
-    const { data: h } = await supabase.from("gear_hires").select("*").order("hired_on", { ascending: false });
-    const map = {}; (h || []).forEach((x) => { (map[x.asset_id] = map[x.asset_id] || []).push(x); });
-    setAssets(a || []); setHires(map); setErr(false); setLoading(false);
+    const { data, error } = await supabase.from("gear_ledger").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true });
+    if (error) { setErr(true); setLoading(false); showToast("Run gear_ledger.sql in Supabase, then refresh."); return; }
+    setRows(data || []); setErr(false); setLoading(false);
   }, [showToast]);
   useEffect(() => { load(); }, [load]);
-  const addAsset = async () => {
-    const name = (window.prompt("New gear item name:", "") || "").trim(); if (!name) return;
-    const { error } = await supabase.from("gear_assets").insert({ name }); if (error) return showToast(error.message); load();
+
+  const setHalf = () => setF((p) => ({ ...p, vic_share: String(+(Number(p.amount || 0) / 2).toFixed(2)), dhanush_share: String(+(Number(p.amount || 0) / 2).toFixed(2)) }));
+  const setAllVic = () => setF((p) => ({ ...p, vic_share: String(Number(p.amount || 0)), dhanush_share: "0" }));
+  const setAllDh = () => setF((p) => ({ ...p, vic_share: "0", dhanush_share: String(Number(p.amount || 0)) }));
+
+  const add = async () => {
+    if (!f.description.trim()) return showToast("Add a description.");
+    if (f.amount === "" || Number(f.amount) < 0) return showToast("Enter the amount.");
+    const amt = Number(f.amount || 0);
+    let vic = f.vic_share, dh = f.dhanush_share;
+    if (vic === "" && dh === "") { vic = String(+(amt / 2).toFixed(2)); dh = String(+(amt / 2).toFixed(2)); }
+    else if (vic === "") vic = String(+(amt - Number(dh || 0)).toFixed(2));
+    else if (dh === "") dh = String(+(amt - Number(vic || 0)).toFixed(2));
+    setSaving(true);
+    const { error } = await supabase.from("gear_ledger").insert({
+      entry_date: f.entry_date || today, description: f.description.trim(), type: f.type, amount: amt,
+      vic_share: Number(vic || 0), dhanush_share: Number(dh || 0), paid_by: f.paid_by.trim() || null, remarks: f.remarks.trim() || null,
+    });
+    setSaving(false);
+    if (error) return showToast(error.message);
+    setF({ ...blank, type: f.type }); setAdding(false); showToast("Entry added ✓"); load();
   };
+  const del = async (id) => { if (!window.confirm("Remove this entry?")) return; await supabase.from("gear_ledger").delete().eq("id", id); load(); };
+
+  let bal = 0;
+  const chrono = rows.map((r) => { bal += (r.type === "income" ? 1 : -1) * Number(r.amount || 0); return { ...r, _bal: bal }; });
+  const view = [...chrono].reverse();
+  const sum = (pred, field) => rows.filter(pred).reduce((s, r) => s + Number(r[field] || 0), 0);
+  const invested = sum((r) => r.type === "investment", "amount");
+  const expenses = sum((r) => r.type === "expense", "amount");
+  const income = sum((r) => r.type === "income", "amount");
+  const outlay = invested + expenses;
+  const recPct = outlay > 0 ? Math.min(100, Math.round(income / outlay * 100)) : 0;
+  const vicNet = sum((r) => r.type === "income", "vic_share") - sum((r) => r.type !== "income", "vic_share");
+  const dhNet = sum((r) => r.type === "income", "dhanush_share") - sum((r) => r.type !== "income", "dhanush_share");
+
+  const copySheet = () => {
+    const head = "Date\tDescription\tType\tTotal\tVicky Share\tDhanush Share\tPaid By\tRunning Balance\tRemarks";
+    const body = chrono.map((r) => [r.entry_date, r.description, r.type, r.amount, r.vic_share, r.dhanush_share, r.paid_by || "", r._bal, r.remarks || ""].join("\t")).join("\n");
+    navigator.clipboard?.writeText(head + "\n" + body).then(() => showToast("Copied — paste into Sheets ✓"), () => showToast("Couldn't copy."));
+  };
+
+  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter", width: "100%" };
+  const lbl2 = { fontSize: ".6rem", textTransform: "uppercase", letterSpacing: ".08em", color: "rgba(255,255,255,.45)", marginBottom: 3, display: "block" };
+  const th = { textAlign: "left", padding: "7px 9px", fontSize: ".6rem", textTransform: "uppercase", letterSpacing: ".06em", color: "#8a8878", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)" };
+  const td = { padding: "8px 9px", fontSize: ".78rem", borderBottom: "1px solid #191919", whiteSpace: "nowrap" };
+  const typePill = (t) => t === "income" ? { bg: "rgba(127,224,160,.14)", c: "#7fe0a0", l: "Income" } : t === "expense" ? { bg: "rgba(224,177,60,.16)", c: "#e0b13c", l: "Expense" } : { bg: "rgba(255,111,97,.14)", c: "#ff8a7a", l: "Investment" };
+
   return (
     <>
       <div className="row-between">
-        <h1 className="h1">Gear hire</h1>
-        <button className="btn sm ghost" onClick={addAsset}><Plus size={15} /> Add item</button>
+        <h1 className="h1">Gear ledger</h1>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn sm ghost" onClick={copySheet} disabled={!rows.length}><Copy size={14} /> Copy</button>
+          <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add entry</button>
+        </div>
       </div>
-      <p className="sub" style={{ margin: 0 }}>Every time the gear goes out, log the hire — the net is split and tracked against what each owner put in.</p>
-      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (err || assets.length === 0) ? (
-        <p className="empty" style={{ marginTop: 16 }}>{err ? "Run gear_hire.sql in Supabase, then refresh." : "No gear yet — add an item above."}</p>
-      ) : assets.map((a) => <GearAsset key={a.id} asset={a} hires={hires[a.id] || []} onChange={load} showToast={showToast} />)}
-    </>
-  );
-}
+      <p className="sub" style={{ margin: 0 }}>Shared ledger for the Bose L1 Pro16 &amp; co-owned gear — investments and hire income, split between Vicky &amp; Dhanush, with a running balance toward recovery.</p>
 
-function GearAsset({ asset, hires, onChange, showToast }) {
-  const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
-  const today = new Date().toLocaleDateString("en-CA");
-  const [s, setS] = useState({ name: asset.name, vic_invested: asset.vic_invested, partner_name: asset.partner_name, partner_invested: asset.partner_invested, vic_split: asset.vic_split });
-  useEffect(() => { setS({ name: asset.name, vic_invested: asset.vic_invested, partner_name: asset.partner_name, partner_invested: asset.partner_invested, vic_split: asset.vic_split }); }, [asset.id]);
-  const [savingS, setSavingS] = useState(false);
-  const [h, setH] = useState({ hired_on: today, client: "", fee: "", expenses: "", notes: "" });
-  const [busy, setBusy] = useState(false);
-
-  const dirty = ["name", "vic_invested", "partner_name", "partner_invested", "vic_split"].some((k) => String(s[k]) !== String(asset[k]));
-  const saveSettings = async () => {
-    setSavingS(true);
-    const { error } = await supabase.from("gear_assets").update({
-      name: s.name.trim() || "Gear", vic_invested: Number(s.vic_invested || 0), partner_name: s.partner_name.trim() || "Partner",
-      partner_invested: Number(s.partner_invested || 0), vic_split: Number(s.vic_split || 0),
-    }).eq("id", asset.id);
-    setSavingS(false); if (error) return showToast(error.message); showToast("Saved ✓"); onChange();
-  };
-  const addHire = async () => {
-    if (h.fee === "" || Number(h.fee) < 0) return showToast("Enter the hire fee.");
-    setBusy(true);
-    const { error } = await supabase.from("gear_hires").insert({ asset_id: asset.id, hired_on: h.hired_on || today, client: h.client.trim() || null, fee: Number(h.fee || 0), expenses: Number(h.expenses || 0), notes: h.notes.trim() || null });
-    setBusy(false); if (error) return showToast(error.message);
-    setH({ hired_on: today, client: "", fee: "", expenses: "", notes: "" }); showToast("Hire logged ✓"); onChange();
-  };
-  const delHire = async (id) => { if (!window.confirm("Remove this hire?")) return; await supabase.from("gear_hires").delete().eq("id", id); onChange(); };
-
-  const gross = hires.reduce((x, r) => x + Number(r.fee || 0), 0);
-  const exp = hires.reduce((x, r) => x + Number(r.expenses || 0), 0);
-  const net = gross - exp;
-  const vs = Number(asset.vic_split || 0) / 100;
-  const vicShare = net * vs, partShare = net - vicShare;
-  const vicInv = Number(asset.vic_invested || 0), partInv = Number(asset.partner_invested || 0);
-  const totalInv = vicInv + partInv;
-  const recPct = totalInv > 0 ? Math.min(100, Math.round((Math.min(vicShare, vicInv) + Math.min(partShare, partInv)) / totalInv * 100)) : 0;
-  const pn = asset.partner_name || "Partner";
-
-  const inp = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 10px", color: "var(--off)", fontSize: ".85rem", fontFamily: "Inter", width: "100%" };
-  const card = { border: "1px solid var(--line)", borderRadius: 12, padding: 14, margin: "14px 0", background: "rgba(255,255,255,.015)" };
-  const lbl2 = { fontSize: ".6rem", textTransform: "uppercase", letterSpacing: ".08em", color: "rgba(255,255,255,.45)", marginBottom: 3, display: "block" };
-  const ownerLine = (name, share, invested, color) => {
-    const rem = Math.max(0, invested - share), surplus = Math.max(0, share - invested);
-    return (
-      <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap", fontSize: ".82rem" }}>
-        <strong style={{ color, minWidth: 70 }}>{name}</strong>
-        <span>share <strong style={{ color: "#e8e8e0" }}>{inr(share)}</strong></span>
-        {invested > 0 && <span style={{ color: "#8a8878" }}>invested {inr(invested)}</span>}
-        {invested > 0 && (rem > 0
-          ? <span style={{ color: "#e0b13c" }}>to recover {inr(rem)}</span>
-          : <span style={{ color: "#7fe0a0" }}>recovered ✓{surplus > 0 ? ` · profit ${inr(surplus)}` : ""}</span>)}
+      <div style={{ display: "flex", gap: 10, margin: "12px 0 6px", flexWrap: "wrap" }}>
+        <div style={glStat}><strong style={glNum}>{inr(outlay)}</strong><span style={glLbl}>Invested{expenses ? " + exp" : ""}</span></div>
+        <div style={glStat}><strong style={glNum}>{inr(income)}</strong><span style={glLbl}>Income</span></div>
+        <div style={glStat}><strong style={{ ...glNum, color: bal >= 0 ? "#7fe0a0" : "#e0574a" }}>{inr(bal)}</strong><span style={glLbl}>Running balance</span></div>
+        <div style={glStat}><strong style={{ ...glNum, color: recPct >= 100 ? "#7fe0a0" : "#c9a84c" }}>{recPct}%</strong><span style={glLbl}>Recovered</span></div>
       </div>
-    );
-  };
-
-  return (
-    <div style={card}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        <input style={{ ...inp, flex: "1 1 160px", fontWeight: 700 }} value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} />
-        <button className="btn sm" onClick={saveSettings} disabled={savingS || !dirty}>{savingS ? <Loader2 className="spin" size={13} /> : "Save"}</button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 8, marginBottom: 12 }}>
-        <div><span style={lbl2}>VIC invested ₹</span><input type="number" style={inp} value={s.vic_invested} onChange={(e) => setS({ ...s, vic_invested: e.target.value })} /></div>
-        <div><span style={lbl2}>Partner name</span><input style={inp} value={s.partner_name} onChange={(e) => setS({ ...s, partner_name: e.target.value })} /></div>
-        <div><span style={lbl2}>{(s.partner_name || "Partner")} invested ₹</span><input type="number" style={inp} value={s.partner_invested} onChange={(e) => setS({ ...s, partner_invested: e.target.value })} /></div>
-        <div><span style={lbl2}>VIC split %</span><input type="number" style={inp} value={s.vic_split} onChange={(e) => setS({ ...s, vic_split: e.target.value })} /></div>
+      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", fontSize: ".82rem", margin: "0 0 14px", color: "rgba(255,255,255,.8)" }}>
+        <span><strong style={{ color: "#ff6f61" }}>Vicky</strong> net {inr(vicNet)} {vicNet >= 0 ? <span style={{ color: "#7fe0a0" }}>(recovered)</span> : <span style={{ color: "#e0b13c" }}>(to recover {inr(-vicNet)})</span>}</span>
+        <span><strong style={{ color: "#22d3ee" }}>Dhanush</strong> net {inr(dhNet)} {dhNet >= 0 ? <span style={{ color: "#7fe0a0" }}>(recovered)</span> : <span style={{ color: "#e0b13c" }}>(to recover {inr(-dhNet)})</span>}</span>
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-        <div style={glStat}><strong style={glNum}>{inr(gross)}</strong><span style={glLbl}>Gross hired</span></div>
-        <div style={glStat}><strong style={glNum}>{inr(net)}</strong><span style={glLbl}>Net · {hires.length} hire{hires.length === 1 ? "" : "s"}</span></div>
-        <div style={glStat}><strong style={{ ...glNum, color: recPct >= 100 ? "#7fe0a0" : "#c9a84c" }}>{recPct}%</strong><span style={glLbl}>Capital recovered</span></div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, margin: "0 0 12px", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 8 }}>
-        {ownerLine("VIC", vicShare, vicInv, "#ff6f61")}
-        {ownerLine(pn, partShare, partInv, "#22d3ee")}
-        {exp > 0 && <div style={{ fontSize: ".74rem", color: "#8a8878" }}>Gross {inr(gross)} − expenses {inr(exp)} = net {inr(net)}, split {asset.vic_split}% / {100 - Number(asset.vic_split || 0)}%</div>}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(104px,1fr))", gap: 7, alignItems: "end" }}>
-        <div><span style={lbl2}>Date</span><input type="date" style={inp} value={h.hired_on} onChange={(e) => setH({ ...h, hired_on: e.target.value })} /></div>
-        <div style={{ gridColumn: "span 2" }}><span style={lbl2}>Client / event</span><input style={inp} value={h.client} onChange={(e) => setH({ ...h, client: e.target.value })} placeholder="who / where" /></div>
-        <div><span style={lbl2}>Hire fee ₹</span><input type="number" style={inp} value={h.fee} onChange={(e) => setH({ ...h, fee: e.target.value })} /></div>
-        <div><span style={lbl2}>Expenses ₹</span><input type="number" style={inp} value={h.expenses} onChange={(e) => setH({ ...h, expenses: e.target.value })} placeholder="0" /></div>
-      </div>
-      <div style={{ display: "flex", gap: 7, marginTop: 7, alignItems: "end" }}>
-        <div style={{ flex: 1 }}><span style={lbl2}>Note</span><input style={inp} value={h.notes} onChange={(e) => setH({ ...h, notes: e.target.value })} placeholder="optional" /></div>
-        <button className="btn sm" onClick={addHire} disabled={busy}>{busy ? <Loader2 className="spin" size={13} /> : <><Plus size={13} /> Log hire</>}</button>
-      </div>
-
-      {hires.length > 0 && (
-        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 5 }}>
-          {hires.map((r) => {
-            const rn = Number(r.fee || 0) - Number(r.expenses || 0);
-            return (
-              <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: ".76rem", color: "rgba(255,255,255,.72)", borderBottom: "1px solid #191919", paddingBottom: 5 }}>
-                <span style={{ color: "#8a8878", width: 60, flexShrink: 0 }}>{new Date(r.hired_on).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
-                <span style={{ flex: 1, minWidth: 0, color: "#e8e8e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.client || "—"}{r.notes ? <span style={{ color: "#8a8878" }}> · {r.notes}</span> : ""}</span>
-                <span style={{ flexShrink: 0 }}>{inr(r.fee)}{Number(r.expenses) > 0 ? <span style={{ color: "#e0574a" }}> −{inr(r.expenses)}</span> : ""}</span>
-                <strong style={{ color: "#7fe0a0", width: 72, textAlign: "right", flexShrink: 0 }}>{inr(rn)}</strong>
-                <span style={{ color: "#8a8878", width: 128, textAlign: "right", flexShrink: 0 }}>V {inr(Math.round(rn * vs))} · {pn.charAt(0)} {inr(Math.round(rn - rn * vs))}</span>
-                <button onClick={() => delHire(r.id)} title="Remove" style={{ background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0, flexShrink: 0 }}><Trash2 size={12} /></button>
-              </div>
-            );
-          })}
+      {adding && (
+        <div className="card" style={{ margin: "0 0 14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8 }}>
+            <div><span style={lbl2}>Date</span><input type="date" style={inp} value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} /></div>
+            <div><span style={lbl2}>Type</span><select style={inp} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}><option value="income">Income (hire)</option><option value="investment">Investment</option><option value="expense">Expense</option></select></div>
+            <div style={{ gridColumn: "span 2" }}><span style={lbl2}>Description</span><input style={inp} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="e.g. Private gig — Home / Bose L1 Pro 16" /></div>
+            <div><span style={lbl2}>Total ₹</span><input type="number" style={inp} value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></div>
+            <div><span style={lbl2}>Paid by</span><input style={inp} list="gear-paidby" value={f.paid_by} onChange={(e) => setF({ ...f, paid_by: e.target.value })} placeholder="Both / Vicky / Dhanush / Cash" /><datalist id="gear-paidby"><option>Both</option><option>Vicky</option><option>Dhanush</option><option>Cash</option><option>Client</option></datalist></div>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "end", marginTop: 8, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 120px" }}><span style={lbl2}>Vicky share ₹</span><input type="number" style={inp} value={f.vic_share} onChange={(e) => setF({ ...f, vic_share: e.target.value })} placeholder="auto 50%" /></div>
+            <div style={{ flex: "1 1 120px" }}><span style={lbl2}>Dhanush share ₹</span><input type="number" style={inp} value={f.dhanush_share} onChange={(e) => setF({ ...f, dhanush_share: e.target.value })} placeholder="auto 50%" /></div>
+            <button className="btn sm ghost" onClick={setHalf}>50 / 50</button>
+            <button className="btn sm ghost" onClick={setAllVic}>All Vicky</button>
+            <button className="btn sm ghost" onClick={setAllDh}>All Dhanush</button>
+          </div>
+          <div style={{ marginTop: 8 }}><span style={lbl2}>Remarks</span><input style={inp} value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} placeholder="optional" /></div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button className="btn sm" disabled={saving} onClick={add}>{saving ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Add to ledger</button>
+            <button className="btn sm ghost" onClick={() => { setAdding(false); setF(blank); }}>Cancel</button>
+          </div>
         </div>
       )}
-    </div>
+
+      {loading ? <Center><Loader2 className="spin" size={18} /></Center> : (err || rows.length === 0) ? (
+        <p className="empty" style={{ marginTop: 16 }}>{err ? "Run gear_ledger.sql in Supabase, then refresh." : "No entries yet — add your first investment or hire above."}</p>
+      ) : (
+        <div style={{ overflowX: "auto", border: "1px solid var(--line)", borderRadius: 10 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 720 }}>
+            <thead><tr>
+              <th style={th}>Date</th><th style={th}>Description</th><th style={th}>Type</th><th style={{ ...th, textAlign: "right" }}>Total</th>
+              <th style={{ ...th, textAlign: "right" }}>Vicky</th><th style={{ ...th, textAlign: "right" }}>Dhanush</th><th style={th}>Paid by</th>
+              <th style={{ ...th, textAlign: "right" }}>Balance</th><th style={th}>Remarks</th><th style={th}></th>
+            </tr></thead>
+            <tbody>
+              {view.map((r) => { const tp = typePill(r.type); return (
+                <tr key={r.id}>
+                  <td style={{ ...td, color: "#b8b4a8" }}>{new Date(r.entry_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" })}</td>
+                  <td style={{ ...td, color: "#e8e8e0", whiteSpace: "normal", minWidth: 150 }}>{r.description}</td>
+                  <td style={td}><span style={{ background: tp.bg, color: tp.c, padding: "2px 7px", borderRadius: 5, fontSize: ".62rem", fontWeight: 700 }}>{tp.l}</span></td>
+                  <td style={{ ...td, textAlign: "right", color: r.type === "income" ? "#7fe0a0" : "#ff8a7a" }}>{r.type === "income" ? "" : "−"}{inr(r.amount)}</td>
+                  <td style={{ ...td, textAlign: "right", color: "#cfcabf" }}>{inr(r.vic_share)}</td>
+                  <td style={{ ...td, textAlign: "right", color: "#cfcabf" }}>{inr(r.dhanush_share)}</td>
+                  <td style={{ ...td, color: "#8a8878" }}>{r.paid_by || "—"}</td>
+                  <td style={{ ...td, textAlign: "right", fontWeight: 700, color: r._bal >= 0 ? "#7fe0a0" : "#e0574a" }}>{inr(r._bal)}</td>
+                  <td style={{ ...td, color: "#8a8878", whiteSpace: "normal", minWidth: 120 }}>{r.remarks || ""}</td>
+                  <td style={td}><button onClick={() => del(r.id)} title="Remove" style={{ background: "none", border: "none", color: "#e0574a", cursor: "pointer", padding: 0 }}><Trash2 size={13} /></button></td>
+                </tr>
+              ); })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   );
 }
 
