@@ -5869,7 +5869,7 @@ function Testimonials({ showToast }) {
   const setCategory = async (t, category) => {
     const { error } = await supabase.from("testimonials").update({ category }).eq("id", t.id);
     if (error) return showToast(error.message);
-    showToast(category === "wedding" ? "Moved to Weddings page." : "Moved to Homepage."); load();
+    showToast(category === "wedding" ? "Moved to Weddings page." : category === "google" ? "Shows in ticker only." : "Moved to Homepage."); load();
   };
   const save = async () => {
     if (!edit.author || !edit.quote) return showToast("Author and quote required.");
@@ -5894,8 +5894,9 @@ function Testimonials({ showToast }) {
         </div>
         <div className="field"><label>Shows on</label>
           <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
-            <option value="home">Homepage</option>
-            <option value="wedding">Weddings page</option>
+            <option value="home">Homepage grid + ticker</option>
+            <option value="wedding">Weddings page + ticker</option>
+            <option value="google">Ticker only (Google reviews)</option>
           </select>
         </div>
         <button className="btn" onClick={add} disabled={busy}>{busy ? <Loader2 className="spin" size={16} /> : <><Plus size={15} /> Add review</>}</button>
@@ -5926,8 +5927,9 @@ function Testimonials({ showToast }) {
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <select className="mini-sel" value={t.category || "home"} onChange={(e) => setCategory(t, e.target.value)} title="Shows on">
-                      <option value="home">Homepage</option>
-                      <option value="wedding">Weddings page</option>
+                      <option value="home">Homepage grid + ticker</option>
+                      <option value="wedding">Weddings page + ticker</option>
+                      <option value="google">Ticker only (Google)</option>
                     </select>
                     <span className={`status ${t.approved ? "accepted" : "pending"}`}>{t.approved ? "live" : "hidden"}</span>
                   </div>

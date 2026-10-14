@@ -28,9 +28,8 @@ export const siteConfig = {
   corporate: "300+",
 
   // Google reviews — the ticker's "Read all on Google" button points here.
-  // TODO(VIC): replace with your exact Google Business review link, e.g.
-  // the short "g.page/r/XXXX/review" write-a-review link or your Maps place URL.
-  googleReviewUrl: "https://www.google.com/maps/search/?api=1&query=DJ+VIC+Bangalore",
+  // DJ VIC's Google Business "write a review" short link.
+  googleReviewUrl: "https://g.page/r/CZKKtBcBFJH4EAI/review",
 
   // Public profiles — also used verbatim as the Person schema `sameAs` array.
   social: {
