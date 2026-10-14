@@ -4,6 +4,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import HeroVideo from '../components/HeroVideo.astro';
 import TestimonialsStrip from '../components/TestimonialsStrip.jsx';
+import ReviewTicker from '../components/ReviewTicker.jsx';
 import WeekendPopup from '../components/WeekendPopup.astro';
 import { getCollection } from 'astro:content';
 import { getEpisodes } from '../lib/vicfix.js';
@@ -237,6 +238,7 @@ const eventTypes = [
           <h2 class="hm-h2">Trusted by couples &amp; brands</h2>
         </div>
         <TestimonialsStrip client:visible category="home" />
+        <ReviewTicker client:visible googleUrl={cfg.googleReviewUrl} />
       </div>
     </section>
 
