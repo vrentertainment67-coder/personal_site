@@ -12,9 +12,14 @@ const eps = await getEpisodes();
 const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const isPub = (e) => !e.date || e.date <= todayISO;
 const published = eps.filter(isPub);
-const latest = published[0] || eps[0];
+const latestPub = published[0] || eps[0];
 const upcoming = eps.filter((e) => e.date && e.date > todayISO).sort((a, b) => a.date.localeCompare(b.date));
-const nextUp = upcoming[0] || null;
+// The hero teases the next episode to premiere (the current headline); it falls
+// back to the latest published episode when nothing is upcoming. "Next up" is
+// then the episode queued after whatever the hero is showing.
+const latest = upcoming[0] || latestPub;
+const heroUpcoming = !!upcoming[0] && latest === upcoming[0];
+const nextUp = heroUpcoming ? (upcoming[1] || null) : (upcoming[0] || null);
 
 const seasonsCount = new Set(eps.map((e) => e.s)).size;
 const epCode = (e) => `S${e.s} · E${e.n}`;
@@ -94,8 +99,8 @@ const curated = CURATED.map((c) => { const ep = eps.find((e) => e.slug === `/the
               </div>
               <p class="vf-latest-hook">{latest.hook}</p>
               <div class="vf-latest-foot">
-                <span class="vf-latest-read">Read the episode &rarr;</span>
-                <span class="vf-latest-date">{fmtDate(latest.date)}</span>
+                <span class="vf-latest-read">{heroUpcoming ? 'Watch the premiere →' : 'Read the episode →'}</span>
+                <span class="vf-latest-date">{heroUpcoming ? `Premieres ${latest.premiere || fmtDate(latest.date)}` : fmtDate(latest.date)}</span>
               </div>
             </a>
           )}
