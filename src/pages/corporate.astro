@@ -175,6 +175,44 @@ import { siteConfig as cfg } from '../config/siteConfig';
     </section>
 
     <!-- ══════════════════════════════════════════
+         4b. LIVE — FURLENCO 15TH ANNIVERSARY
+    ══════════════════════════════════════════ -->
+    <section id="corporate-live">
+      <div class="section-label">On Stage</div>
+      <h2>Live at Furlenco's 15th Anniversary</h2>
+      <p class="live-intro">
+        DJ VIC headlining Furlenco's 15-year celebration — a full corporate floor
+        carried from the first session to the last dance.
+      </p>
+      <a
+        href="https://youtu.be/66dk_bryNog"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="collab-video live-video"
+        aria-label="Watch DJ VIC live at Furlenco's 15th Anniversary"
+      >
+        <div class="collab-video-thumb">
+          <img
+            src="https://img.youtube.com/vi/66dk_bryNog/maxresdefault.jpg"
+            alt="DJ VIC performing live at Furlenco's 15th anniversary corporate event"
+            onerror="this.src='https://img.youtube.com/vi/66dk_bryNog/hqdefault.jpg'"
+            loading="lazy"
+            width="1280"
+            height="720"
+          />
+          <div class="collab-video-overlay">
+            <div class="collab-play-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+            <span class="collab-video-label">Watch the Set</span>
+          </div>
+        </div>
+      </a>
+    </section>
+
+    <!-- ══════════════════════════════════════════
          5. TRUSTED BY
     ══════════════════════════════════════════ -->
     <section id="corporate-clients" class="section-alt">
@@ -553,6 +591,19 @@ import { siteConfig as cfg } from '../config/siteConfig';
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.85);
+  }
+
+  /* ─── Live performance feature (Furlenco) ─────── */
+  #corporate-live .live-intro {
+    color: rgba(255,255,255,0.68);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+    max-width: 60ch;
+    margin-bottom: 2rem;
+  }
+
+  .live-video {
+    max-width: 900px;
   }
 
   /* ─── Logo grid ───────────────────────────────── */
