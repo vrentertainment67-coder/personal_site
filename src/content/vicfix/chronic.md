@@ -3,7 +3,7 @@ guestName: "Chronic"
 guestTitle: "Next on The VIC Fix"
 season: 2
 episode: 27
-youtubeId: ""
+youtubeId: "sb4tb-7SxTQ"
 category: "behind-the-decks"
 categoryLabel: "Behind the Decks"
 premiereWhen: "Saturday, 25 Oct"
