@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '12', slug: 'ep12', icon: '🤝', file: '/TheRider-Ep12-ProposalTemplate.pdf',
+    title: 'The DJ Who Makes It Easy',
+    kicker: 'The Proposal Template',
+    sub: 'Clients book the DJ who makes it easy. The one-page proposal you reply with that collapses seven back-and-forth emails into a single yes — fill in once, adapt to your region, save as your template.',
+    inside: [
+      'The one-page proposal — a fillable template that puts fee, deliverables, tech, logistics and terms on a single page',
+      'The field-by-field guide — what goes in each section, and the friction it removes from the client’s decision',
+      'The reply email — the four-line message that sends with the proposal and names the next step',
+      'Regional tax & payment notes — what shifts by country across India, the UK, US, EU, the Middle East and SE Asia',
+      'Variation notes by event type — what to adjust for weddings, corporate, club and private bookings',
+    ],
+  },
+  {
     no: '11', slug: 'ep11', icon: '🎬', file: '/TheRider-Ep11-OpeningManual.pdf',
     title: 'The First Three Tracks',
     kicker: 'The Opening Manual',
