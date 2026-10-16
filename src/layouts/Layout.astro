@@ -208,11 +208,17 @@ const pixelNoscript = metaPixelId
         var SB = "https://jftnhuutttmccmqnnybf.supabase.co";
         var KEY = "sb_publishable_ysWygc3QGKbfsUd0f7Evzw__98TEoo9";
         var map = null;
+        // Cloudinary delivery → serve an optimised WebP/AVIF at a sane width
+        // instead of the raw multi-MB PNG original (keeps mobile fast).
+        function cldOpt(u) {
+          return u.replace(/(res\.cloudinary\.com\/[^/]+\/image\/upload\/)(?!(?:[a-z]{1,3}_[^/]+\/)*f_auto)/, "$1f_auto,q_auto,w_1600/");
+        }
         function apply() {
           if (!map) return;
           document.querySelectorAll("[data-img-slot]").forEach(function (el) {
-            var u = map[el.getAttribute("data-img-slot")];
-            if (!u) return;
+            var raw = map[el.getAttribute("data-img-slot")];
+            if (!raw) return;
+            var u = cldOpt(raw);
             if (el.tagName === "IMG") { if (el.getAttribute("src") !== u) el.setAttribute("src", u); return; }
             var cs = getComputedStyle(el).backgroundImage;
             el.style.backgroundImage = (cs && cs.indexOf("url(") > -1)
