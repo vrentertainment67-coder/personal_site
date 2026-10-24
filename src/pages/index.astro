@@ -49,11 +49,12 @@ const latestRemixes = (await getCollection('remixes'))
   .slice(0, 3);
 const remixTypeLabel = { mashup: 'Mashup', remix: 'Remix', edit: 'Edit', rework: 'Rework' };
 
-// Podcast — derived, not hardcoded. Latest 2 published episodes + the next upcoming one.
+// Podcast — derived, not hardcoded. Leads with the next premiere (same as the
+// /thevicfix/ hero), then the latest published episode(s).
 const eps = await getEpisodes();
 const publishedEps = eps.filter((e) => !e.date || e.date <= _todayISO);
-const latestEps = publishedEps.slice(0, 2);
 const upcomingEp = eps.filter((e) => e.date && e.date > _todayISO).sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+const latestEps = [upcomingEp, ...publishedEps].filter(Boolean).slice(0, 2);
 const epCode = (e) => `S${e.s} · E${e.n}`;
 
 // Intent routing band.
@@ -276,13 +277,13 @@ const eventTypes = [
                   <span class="hm-srow-code">{epCode(e)}</span>
                 </div>
                 <div class="hm-srow-text">
-                  <span class="hm-srow-type">{e.catLabel}</span>
+                  <span class="hm-srow-type">{e === upcomingEp ? `Premieres ${e.premiere || 'soon'}` : e.catLabel}</span>
                   <span class="hm-srow-title">{e.name}</span>
                   <span class="hm-srow-sub">{e.role}</span>
                 </div>
               </a>
             ))}
-            <p class="hm-sound-note">{upcomingEp ? `Next episode: ${upcomingEp.name}, premiering soon.` : 'New episodes every other Sunday.'}</p>
+            <p class="hm-sound-note">New episodes every other Sunday.</p>
           </div>
         </div>
       </div>
