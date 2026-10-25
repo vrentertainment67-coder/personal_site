@@ -59,7 +59,8 @@ const popupEvent = {
   time_label: EVENT.timeLabel,
   lineup: EVENT.lineup,
   genre: EVENT.genre,
-  banner_url: EVENT.banner,
+  // No banner_url: the wide 2.5:1 banner gets cropped in the popup's 3:2 slot
+  // (cuts the logo + date). The popup shows the clean text header instead.
   rsvp_cutoff: EVENT.rsvpCutoff,
   expiry: EVENT.expiry,
 };
