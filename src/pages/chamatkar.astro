@@ -31,6 +31,9 @@ const EVENT = {
   heroBg: null,
   flyer: null,
   banner: '/images/chamatkar-vol6-wide.webp',   // widescreen header strip
+  // Instagram reel/post URLs to embed on the page, e.g.
+  // 'https://www.instagram.com/reel/ABC123/'. Empty → the section is hidden.
+  reels: [],
   logo: '/images/chamatkar-logo.webp',
   ics: '/chamatkar.ics',
   rsvpCutoff: '2026-10-31T21:00:00+05:30',
@@ -146,6 +149,22 @@ const chamatkarSchema = schemaEd ? [{
     {EVENT.banner && (
       <section class="ck-banner">
         <img src={EVENT.banner} alt={`Chamatkar ${EVENT.edition} — Halloween Special · DJ VIC · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}`} width="1600" height="640" loading="eager" />
+      </section>
+    )}
+
+    <!-- ── REELS (Instagram embeds) ── -->
+    {EVENT.reels && EVENT.reels.length > 0 && (
+      <section class="ck-reels">
+        <h2 class="ck-reels-h">Watch the reels</h2>
+        <div class="ck-reels-grid">
+          {EVENT.reels.map((url) => (
+            <blockquote class="instagram-media" data-instgrm-permalink={url} data-instgrm-version="14"></blockquote>
+          ))}
+        </div>
+        <script async src="https://www.instagram.com/embed.js" is:inline></script>
+        <script is:inline>
+          document.addEventListener('astro:page-load', () => { if (window.instgrm) window.instgrm.Embeds.process(); });
+        </script>
       </section>
     )}
 
@@ -331,6 +350,12 @@ const chamatkarSchema = schemaEd ? [{
   /* ── Banner strip (widescreen header creative) ── */
   .ck-banner { width: 100%; line-height: 0; border-block: 1px solid rgba(201,168,76,.28); }
   .ck-banner img { width: 100%; height: auto; display: block; }
+
+  /* ── Reels (Instagram embeds) ── */
+  .ck-reels { max-width: 1080px; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(16px, 4vw, 40px) 0; }
+  .ck-reels-h { font-family: 'Bebas Neue', sans-serif; text-align: center; font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: .06em; color: var(--gold, #c9a84c); margin: 0 0 1.4rem; }
+  .ck-reels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; justify-items: center; align-items: start; }
+  .ck-reels-grid .instagram-media { margin: 0 !important; min-width: 0 !important; width: 100% !important; max-width: 340px !important; }
 
   /* ── Flyer ── */
   .ck-flyer { max-width: 1080px; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(16px, 4vw, 40px) 0; display: flex; justify-content: center; }
