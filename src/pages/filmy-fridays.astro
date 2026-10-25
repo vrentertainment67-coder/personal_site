@@ -57,7 +57,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
   description={desc}
   ogTitle="Filmy Fridays — The Night Before Halloween"
   ogDescription={`${EVENT.headliner} · ${EVENT.venue}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood, mixed live to picture. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/events/filmy-fridays-halloween.webp"
+  ogImage="https://djvicofficial.com/images/events/filmy-fridays-halloween-wide.webp"
   canonical="https://djvicofficial.com/filmy-fridays/"
   schema={[
     {
@@ -66,7 +66,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
       "endDate": "2026-10-31T01:00:00+05:30",
       "eventStatus": "https://schema.org/EventScheduled",
       "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-      "image": ["https://djvicofficial.com/images/events/filmy-fridays-halloween.webp"],
+      "image": ["https://djvicofficial.com/images/events/filmy-fridays-halloween-wide.webp"],
       "location": { "@type": "Place", "name": EVENT.venue, "address": EVENT.area },
       "performer": { "@type": "Person", "name": "DJ VIC" },
       "offers": { "@type": "Offer", "url": "https://djvicofficial.com/filmy-fridays/", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "validFrom": "2026-08-20T00:00:00+05:30" },
@@ -100,7 +100,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
     <!-- ── FLYER ── -->
     {EVENT.flyer && (
       <section class="ff-flyer">
-        <img src={EVENT.flyer} alt={`Filmy Fridays — ${EVENT.editionName} · ${EVENT.headliner} · ${EVENT.dateLabel} at ${EVENT.venue}`} width="941" height="1672" loading="eager" />
+        <img src={EVENT.flyer} alt={`Filmy Fridays — ${EVENT.editionName} · ${EVENT.headliner} · ${EVENT.dateLabel} at ${EVENT.venue}`} width="1080" height="1080" loading="eager" />
       </section>
     )}
 
@@ -223,7 +223,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
 
   /* Flyer */
   .ff-flyer { padding: 0 1.5rem; display: flex; justify-content: center; }
-  .ff-flyer img { width: 100%; max-width: 420px; height: auto; border-radius: 10px; border: 1px solid rgba(245,135,42,0.3); box-shadow: 0 24px 70px rgba(0,0,0,0.6); }
+  .ff-flyer img { width: 100%; max-width: 560px; height: auto; border-radius: 10px; border: 1px solid rgba(245,135,42,0.3); box-shadow: 0 24px 70px rgba(0,0,0,0.6); }
 
   /* Last-edition reels */
   .ff-reels { padding: 2.5rem 1.5rem; text-align: center; }
