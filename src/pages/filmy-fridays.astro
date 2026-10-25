@@ -7,43 +7,66 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
+import EventPopup from '../components/EventPopup.jsx';
 
 const EVENT = {
-  slug: 'filmy-fridays-sep-2026',
+  slug: 'filmy-fridays-oct-2026',
   title: 'Filmy Fridays',
-  edition: 'Edition 01',
+  edition: 'Edition 02',
+  editionName: 'The Night Before Halloween',
   venue: 'No Limmits Lounge & Club',
   area: 'Opposite Garuda Mall, Bengaluru',
-  dateLabel: 'Friday, 4 September 2026',
+  dateLabel: 'Friday, 30 October 2026',
   timeLabel: '8:00 PM onwards',
-  doorsAt: '2026-09-04T20:00:00+05:30',
-  rsvpCutoff: '2026-09-04T20:00:00+05:30',
-  expiry: '2026-09-05T02:00:00+05:30',
+  doorsAt: '2026-10-30T20:00:00+05:30',
+  rsvpCutoff: '2026-10-30T20:00:00+05:30',
+  expiry: '2026-10-31T02:00:00+05:30',
   headliner: 'DJ VIC',
   support: 'DJ Harsh',
+  flyer: '/images/events/filmy-fridays-halloween.webp',
   logo: '/images/filmy-fridays-logo.webp',
   ics: '/filmy-fridays.ics',
   mapsQuery: 'No Limmits Lounge and Club, Garuda Mall, Bangalore',
+};
+
+// Past editions — newest first. Each can carry Instagram reels.
+const PAST_EDITIONS = [
+  { edition: 'Edition 01', dateLabel: 'Friday, 4 September 2026', venue: 'No Limmits Lounge & Club', blurb: 'The first Filmy Fridays — Bollywood anthems, remixes and throwbacks, cut live to the screen. A full room.', reels: ['https://www.instagram.com/reel/DdY2XVRvzAy/'] },
+];
+const anyReels = PAST_EDITIONS.some((e) => e.reels && e.reels.length > 0);
+
+// Guest-list popup — driven straight from this page's EVENT config (no admin row).
+const popupEvent = {
+  slug: EVENT.slug,
+  title: `Filmy Fridays · ${EVENT.editionName}`,
+  venue: EVENT.venue,
+  area: EVENT.area,
+  date_label: EVENT.dateLabel,
+  time_label: EVENT.timeLabel,
+  lineup: `${EVENT.headliner} · Support: ${EVENT.support}`,
+  genre: 'Bollywood · Audio-Visual',
+  rsvp_cutoff: EVENT.rsvpCutoff,
+  expiry: EVENT.expiry,
 };
 
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
 const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. A full Bollywood audio-visual night, every Friday. Get on the guest list.`;
 ---
 <Layout
-  title="Filmy Fridays — Bollywood Night at No Limmits | DJ VIC"
+  title="Filmy Fridays — The Night Before Halloween at No Limmits | DJ VIC"
   description={desc}
-  ogTitle="Filmy Fridays — You're Invited"
-  ogDescription={`${EVENT.headliner} · ${EVENT.venue}. ${EVENT.dateLabel}. Bollywood, mixed live to picture. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/events/filmy-fridays-nolimmits-sep2026.jpg"
+  ogTitle="Filmy Fridays — The Night Before Halloween"
+  ogDescription={`${EVENT.headliner} · ${EVENT.venue}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood, mixed live to picture. Tap to get on the guest list.`}
+  ogImage="https://djvicofficial.com/images/events/filmy-fridays-halloween.webp"
   canonical="https://djvicofficial.com/filmy-fridays/"
   schema={[
     {
-      "@context": "https://schema.org", "@type": "Event", "name": "Filmy Fridays — Edition 01",
-      "startDate": "2026-09-04T20:00:00+05:30",
-      "endDate": "2026-09-05T01:00:00+05:30",
+      "@context": "https://schema.org", "@type": "Event", "name": "Filmy Fridays — The Night Before Halloween",
+      "startDate": "2026-10-30T20:00:00+05:30",
+      "endDate": "2026-10-31T01:00:00+05:30",
       "eventStatus": "https://schema.org/EventScheduled",
       "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-      "image": ["https://djvicofficial.com/images/events/filmy-fridays-nolimmits-sep2026.jpg"],
+      "image": ["https://djvicofficial.com/images/events/filmy-fridays-halloween.webp"],
       "location": { "@type": "Place", "name": EVENT.venue, "address": EVENT.area },
       "performer": { "@type": "Person", "name": "DJ VIC" },
       "offers": { "@type": "Offer", "url": "https://djvicofficial.com/filmy-fridays/", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "validFrom": "2026-08-20T00:00:00+05:30" },
@@ -59,6 +82,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
       <div class="ff-hero-inner">
         <span class="ff-eyebrow">Guest List · {EVENT.edition}</span>
         <img class="ff-logo" src={EVENT.logo} alt="Filmy Fridays" width="900" height="507" loading="eager" />
+        {EVENT.editionName && <span class="ff-edname">🎃 {EVENT.editionName}</span>}
         <p class="ff-tagline">Bollywood — mixed live to picture. Every Friday.</p>
         <p class="ff-lineup"><span class="ff-feat">Featuring</span> {EVENT.headliner}<span class="ff-sup"> · Support: {EVENT.support}</span></p>
         <div class="ff-meta">
@@ -73,6 +97,13 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
       </div>
     </section>
 
+    <!-- ── FLYER ── -->
+    {EVENT.flyer && (
+      <section class="ff-flyer">
+        <img src={EVENT.flyer} alt={`Filmy Fridays — ${EVENT.editionName} · ${EVENT.headliner} · ${EVENT.dateLabel} at ${EVENT.venue}`} width="941" height="1672" loading="eager" />
+      </section>
+    )}
+
     <!-- ── LADIES ── -->
     <section class="ff-ladies">
       <span class="ff-ladies-label">Celebrating the ladies</span>
@@ -85,7 +116,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
         <span class="ff-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ff-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ff-fomo"><span class="ff-dot"></span><strong>Edition 01</strong> · limited guest-list spots · <span id="ff-countdown" data-doors={EVENT.doorsAt}>counting…</span></p>
+        <p class="ff-fomo"><span class="ff-dot"></span><strong>{EVENT.edition} · {EVENT.editionName}</strong> · limited guest-list spots · <span id="ff-countdown" data-doors={EVENT.doorsAt}>counting…</span></p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -114,8 +145,31 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
     <section class="ff-recurring">
       <span class="ff-kicker">The residency</span>
       <h2>A new Friday, every Friday</h2>
-      <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 01 is the first of many. Get on the list once, and we'll tell you when the next one drops.</p>
+      <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 02 lands the night before Halloween. Get on the list once, and we'll tell you when the next one drops.</p>
     </section>
+
+    <!-- ── LAST EDITION (Instagram reels) ── -->
+    {anyReels && (
+      <section class="ff-reels">
+        <div class="ff-sec-head"><span class="ff-kicker">Last edition</span><h2>Filmy Fridays on reels</h2></div>
+        <div class="ff-reels-grid">
+          {PAST_EDITIONS.flatMap((ed) => (ed.reels || []).map((url) => (
+            <blockquote class="instagram-media" data-instgrm-permalink={url} data-instgrm-version="14"></blockquote>
+          )))}
+        </div>
+      </section>
+    )}
+
+    <EventPopup client:idle event={popupEvent} />
+
+    {anyReels && (
+      <Fragment>
+        <script async src="https://www.instagram.com/embed.js" is:inline></script>
+        <script is:inline>
+          document.addEventListener('astro:page-load', () => { if (window.instgrm) window.instgrm.Embeds.process(); });
+        </script>
+      </Fragment>
+    )}
   </main>
 
   <Footer />
@@ -164,7 +218,17 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
   .ff-hero-inner { max-width: 720px; margin-inline: auto; }
   .ff-eyebrow { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ff-gold); margin-bottom: 1.2rem; }
   .ff-logo { width: min(100%, 460px); height: auto; display: block; margin: 0 auto 1.2rem; filter: drop-shadow(0 8px 40px rgba(224,64,42,0.35)); }
+  .ff-edname { display: block; font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 4.5vw, 2.2rem); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ff-orange); margin: 0 0 0.8rem; text-shadow: 0 2px 20px rgba(245,135,42,0.4); }
   .ff-tagline { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1rem, 3vw, 1.25rem); color: var(--ff-off); margin: 0 0 1rem; }
+
+  /* Flyer */
+  .ff-flyer { padding: 0 1.5rem; display: flex; justify-content: center; }
+  .ff-flyer img { width: 100%; max-width: 420px; height: auto; border-radius: 10px; border: 1px solid rgba(245,135,42,0.3); box-shadow: 0 24px 70px rgba(0,0,0,0.6); }
+
+  /* Last-edition reels */
+  .ff-reels { padding: 2.5rem 1.5rem; text-align: center; }
+  .ff-reels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; justify-items: center; align-items: start; margin-top: 1.4rem; }
+  .ff-reels-grid .instagram-media { margin: 0 !important; min-width: 0 !important; width: 100% !important; max-width: 340px !important; }
   .ff-lineup { font-size: 1rem; color: var(--ff-off); margin: 0 0 1.4rem; }
   .ff-feat { color: var(--ff-mut); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; }
   .ff-sup { color: var(--ff-mut); }
