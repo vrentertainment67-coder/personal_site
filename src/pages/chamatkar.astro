@@ -71,12 +71,15 @@ const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.ven
 // `poster` (landscape cover) is optional — the block just shows text + gallery
 // until one is set. Vol. 2's cover is being redone, so it's null for now.
 const PAST_EDITIONS = [
-  { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', startISO: '2026-09-12', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-banner.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Photos & clips landing soon.' },
+  { slug: 'chamatkar-vol5', edition: 'Vol. 5', dateLabel: 'Saturday, 12 September 2026', startISO: '2026-09-12', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol5-banner.webp', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live. Packed floor, scan-to-enter draws called out all night. Catch the reels below.', reels: ['https://www.instagram.com/reel/Deb0lfRuiCr/', 'https://www.instagram.com/reel/DeTk4mjvIOj/', 'https://www.instagram.com/reel/DeMQPu8vula/', 'https://www.instagram.com/reel/DeBN5iLRQid/', 'https://www.instagram.com/reel/Ddd6hkaPl6p/'] },
   { slug: 'chamatkar-2026-08-22', edition: 'Vol. 4', dateLabel: 'Saturday, 22 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol4-banner.jpg', blurb: 'The 90s / 2000s Edition — the Bollywood you grew up on, mixed live against global records. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-08-01', edition: 'Vol. 3', dateLabel: 'Saturday, 1 August 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol3-banner.jpg', blurb: 'The Mashup Edition — Bollywood through a global lens, mixed live for one long peak. Photos & clips landing soon.' },
   { slug: 'chamatkar-2026-07-11', edition: 'Vol. 2', dateLabel: 'Saturday, 11 July 2026', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol2-banner.jpg', youtubeIds: ['K_QZsi3C6uU', 'h_X8RcVqe1w'], blurb: '90s & 2000s Bollywood through a global lens, visuals locked to every drop. A room that never sat down.' },
   { slug: 'chamatkar-2026-06-13', edition: 'Vol. 1', dateLabel: 'Saturday, 13 June 2026', startISO: '2026-06-13', venue: 'Happy Brew', area: 'Koramangala', poster: '/images/chamatkar-vol1-banner.jpg', blurb: 'The one that started it — Bollywood mixed live against global records, audio-visual all night. Packed out.' },
 ];
+
+// Load Instagram's embed script only if any edition (current or past) has reels.
+const anyReels = (EVENT.reels && EVENT.reels.length > 0) || PAST_EDITIONS.some((e) => e.reels && e.reels.length > 0);
 
 // ── Event rich-result schema ──────────────────────────────────────────────
 // Represents the current edition once it has a date (set EVENT.startISO);
@@ -161,10 +164,6 @@ const chamatkarSchema = schemaEd ? [{
             <blockquote class="instagram-media" data-instgrm-permalink={url} data-instgrm-version="14"></blockquote>
           ))}
         </div>
-        <script async src="https://www.instagram.com/embed.js" is:inline></script>
-        <script is:inline>
-          document.addEventListener('astro:page-load', () => { if (window.instgrm) window.instgrm.Embeds.process(); });
-        </script>
       </section>
     )}
 
@@ -261,6 +260,13 @@ const chamatkarSchema = schemaEd ? [{
               <iframe src={`https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1&playsinline=1`} title={`Chamatkar ${ed.edition} — recap`} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
           ))}
+          {ed.reels && ed.reels.length > 0 && (
+            <div class="ck-reels-grid ck-past-reels">
+              {ed.reels.map((url) => (
+                <blockquote class="instagram-media" data-instgrm-permalink={url} data-instgrm-version="14"></blockquote>
+              ))}
+            </div>
+          )}
           <EventMedia client:load slug={ed.slug} />
         </div>
       ))}
@@ -280,6 +286,15 @@ const chamatkarSchema = schemaEd ? [{
     </section>
 
     {!EVENT.dateTBA && <EventPopup client:idle event={popupEvent} />}
+
+    {anyReels && (
+      <Fragment>
+        <script async src="https://www.instagram.com/embed.js" is:inline></script>
+        <script is:inline>
+          document.addEventListener('astro:page-load', () => { if (window.instgrm) window.instgrm.Embeds.process(); });
+        </script>
+      </Fragment>
+    )}
   </main>
 
   <Footer />
