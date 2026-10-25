@@ -50,7 +50,7 @@ const popupEvent = {
 };
 
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
-const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. A full Bollywood audio-visual night, every Friday. Get on the guest list.`;
+const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. A full Bollywood audio-visual night, one Friday every month. Get on the guest list.`;
 ---
 <Layout
   title="Filmy Fridays — The Night Before Halloween at No Limmits | DJ VIC"
@@ -83,7 +83,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
         <span class="ff-eyebrow">Guest List · {EVENT.edition}</span>
         <img class="ff-logo" src={EVENT.logo} alt="Filmy Fridays" width="900" height="507" loading="eager" />
         {EVENT.editionName && <span class="ff-edname">🎃 {EVENT.editionName}</span>}
-        <p class="ff-tagline">Bollywood — mixed live to picture. Every Friday.</p>
+        <p class="ff-tagline">Bollywood — mixed live to picture. One Friday every month.</p>
         <p class="ff-lineup"><span class="ff-feat">Featuring</span> {EVENT.headliner}<span class="ff-sup"> · Support: {EVENT.support}</span></p>
         <div class="ff-meta">
           <span>🗓 {EVENT.dateLabel}</span>
@@ -144,7 +144,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
     <!-- ── RECURRING ── -->
     <section class="ff-recurring">
       <span class="ff-kicker">The residency</span>
-      <h2>A new Friday, every Friday</h2>
+      <h2>One Friday, every month</h2>
       <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 02 lands the night before Halloween. Get on the list once, and we'll tell you when the next one drops.</p>
     </section>
 
