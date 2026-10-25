@@ -27,8 +27,9 @@ const EVENT = {
   theme: 'Bollywood × Global',
   themeLine: 'Live Audio-Visual Set',
   intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
-  heroBg: '/images/chamatkar-vol6-banner.webp',
-  flyer: '/images/chamatkar-vol6-square.webp',
+  heroBg: null,
+  flyer: null,
+  banner: '/images/chamatkar-vol6-wide.webp',   // widescreen header strip
   logo: '/images/chamatkar-logo.webp',
   ics: '/chamatkar.ics',
   rsvpCutoff: '2026-10-31T21:00:00+05:30',
@@ -122,6 +123,13 @@ const chamatkarSchema = schemaEd ? [{
         {!EVENT.dateTBA && <a class="ck-cal" href={EVENT.ics} download>＋ Add to calendar</a>}
       </div>
     </section>
+
+    <!-- ── BANNER (widescreen header strip) ── -->
+    {EVENT.banner && (
+      <section class="ck-banner">
+        <img src={EVENT.banner} alt={`Chamatkar ${EVENT.edition} — Halloween Special · DJ VIC · ${EVENT.venue}, ${EVENT.area} · ${EVENT.dateLabel}`} width="1600" height="640" loading="eager" />
+      </section>
+    )}
 
     <!-- ── FLYER (only when the edition has a creative) ── -->
     {EVENT.flyer && (
@@ -299,6 +307,10 @@ const chamatkarSchema = schemaEd ? [{
   .ck-proof { margin: 1.4rem 0 0; font-size: .92rem; font-weight: 600; letter-spacing: .01em; color: #f0b45a; }
   .ck-cal { display: inline-block; margin-top: 1.1rem; font-size: .82rem; letter-spacing: .02em; color: rgba(255,255,255,.72); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,.4); padding-bottom: 1px; }
   .ck-cal:hover { color: var(--gold, #c9a84c); }
+
+  /* ── Banner strip (widescreen header creative) ── */
+  .ck-banner { width: 100%; line-height: 0; border-block: 1px solid rgba(201,168,76,.28); }
+  .ck-banner img { width: 100%; height: auto; display: block; }
 
   /* ── Flyer ── */
   .ck-flyer { max-width: 1080px; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(16px, 4vw, 40px) 0; display: flex; justify-content: center; }
