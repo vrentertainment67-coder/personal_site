@@ -7,7 +7,7 @@ import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
-// Next edition (Vol. 6) — date TBA at Happy Brew, Koramangala.
+// Current edition (Vol. 6) — Saturday 31 Oct 2026 at Happy Brew, Koramangala.
 // RSVPs tagged to `slug`; door self-check-in + feedback live at
 // /chamatkar/checkin and /chamatkar/feedback (same slug).
 const EVENT = {
@@ -17,24 +17,22 @@ const EVENT = {
   tagline: 'The Mashup Edition',
   venue: 'Happy Brew Cocktail Club',
   area: 'Koramangala, Bangalore',
-  // Vol. 5 (12 Sep) is done — next date not decided yet, so dateTBA hides the
-  // countdown, RSVP cutoff and calendar links and shows "date announced soon".
-  dateTBA: true,
-  startISO: '',        // set to the next edition's date (e.g. '2026-11-15') → drives the Event rich-result schema
-  dateLabel: '',
+  dateTBA: false,
+  startISO: '2026-10-31',   // drives the Event rich-result schema
+  dateLabel: 'Saturday, 31 October 2026',
   timeLabel: '9:00 PM onwards',
-  doorsAt: '',
+  doorsAt: '2026-10-31T21:00:00+05:30',
   lineup: 'DJ VIC',
   genre: 'Bollywood × Global — Audio-Visual Set',
   theme: 'Bollywood × Global',
   themeLine: 'Live Audio-Visual Set',
   intro: "Bollywood through a global lens, mixed live — one long peak, no filler.",
-  heroBg: null,
-  flyer: null,
+  heroBg: '/images/chamatkar-vol6-banner.webp',
+  flyer: '/images/chamatkar-vol6-square.webp',
   logo: '/images/chamatkar-logo.webp',
   ics: '/chamatkar.ics',
-  rsvpCutoff: '',
-  expiry: '',
+  rsvpCutoff: '2026-10-31T21:00:00+05:30',
+  expiry: '2026-11-01T04:00:00+05:30',
   mapsQuery: 'Happy Brew, Koramangala, Bangalore',
 };
 
@@ -74,7 +72,7 @@ const chamatkarSchema = schemaEd ? [{
   "endDate": `${schemaEd.startISO}T23:59:00+05:30`,
   "eventStatus": "https://schema.org/EventScheduled",
   "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-  "image": ["https://djvicofficial.com/images/chamatkar-vol5-banner.webp"],
+  "image": ["https://djvicofficial.com/images/chamatkar-vol6-square.webp"],
   "location": {
     "@type": "Place",
     "name": "Happy Brew Cocktail Club",
@@ -91,8 +89,8 @@ const chamatkarSchema = schemaEd ? [{
   title="Chamatkar — Guest List | DJ VIC"
   description={desc}
   ogTitle="Chamatkar — You're Invited"
-  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. Next edition announced soon. Bollywood × global, live audio-visual. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/chamatkar-vol5-banner.webp"
+  ogDescription={`${EVENT.lineup} · ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateTBA ? 'Next edition announced soon.' : `${EVENT.dateLabel}, ${EVENT.timeLabel}.`} Bollywood × global, live audio-visual. Tap to get on the guest list.`}
+  ogImage="https://djvicofficial.com/images/chamatkar-vol6-square.webp"
   canonical="https://djvicofficial.com/chamatkar/"
   schema={chamatkarSchema}
 >
@@ -116,7 +114,7 @@ const chamatkarSchema = schemaEd ? [{
           <span>🕘 {EVENT.timeLabel}</span>
           <span>📍 {EVENT.venue} · {EVENT.area}</span>
         </div>
-        <p class="ck-proof">🔥 Five editions in — every one packed the floor. Next date announced soon.</p>
+        <p class="ck-proof">🔥 Five editions in — every one packed the floor. {EVENT.dateTBA ? 'Next date announced soon.' : `Vol. 6 lands ${EVENT.dateLabel}.`}</p>
         <div class="ck-ctas">
           <a href="#rsvp" class="ck-cta">Get on the guest list ↓</a>
           <button type="button" id="ck-preview" class="ck-cta ck-cta--ghost">▶ Hear the sound</button>
