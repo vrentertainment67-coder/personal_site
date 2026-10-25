@@ -58,7 +58,7 @@ const vicfixEpisodes = defineCollection({
     season: z.number(),
     episode: z.number(),
     youtubeId: z.string().optional().default(''),
-    category: z.enum(['behind-the-decks', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture', 'lab']),
+    category: z.enum(['behind-the-decks', 'warm-up', 'room-makers', 'architects', 'other-side-of-the-bar', 'bigger-picture', 'lab']),
     categoryLabel: z.string(),
     // Optional overrides for special formats (e.g. The Lab): replace the
     // "S2 · E17 · {categoryLabel}" eyebrow and the "Season 2" breadcrumb.

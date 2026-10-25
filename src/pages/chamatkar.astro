@@ -5,6 +5,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import EventRSVP from '../components/EventRSVP.jsx';
+import EventPopup from '../components/EventPopup.jsx';
 import EventMedia from '../components/EventMedia.jsx';
 
 // Current edition (Vol. 6) — Saturday 31 Oct 2026 at Happy Brew, Koramangala.
@@ -42,6 +43,23 @@ const EVENT = {
 // them live for this event's slug.
 
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EVENT.mapsQuery)}`;
+
+// Guest-list popup (same component the homepage uses) — driven straight from
+// this page's EVENT config, so it needs no admin `events` row. Appears ~2s
+// after landing, once per visitor, and respects the RSVP cutoff / expiry.
+const popupEvent = {
+  slug: EVENT.slug,
+  title: `Chamatkar ${EVENT.edition}`,
+  venue: EVENT.venue,
+  area: EVENT.area,
+  date_label: EVENT.dateLabel,
+  time_label: EVENT.timeLabel,
+  lineup: EVENT.lineup,
+  genre: EVENT.genre,
+  banner_url: EVENT.banner,
+  rsvp_cutoff: EVENT.rsvpCutoff,
+  expiry: EVENT.expiry,
+};
 const desc = `Chamatkar ${EVENT.edition} — ${EVENT.lineup} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood × global, live audio-visual. Get on the guest list.`;
 
 // Past editions — newest first. Each pulls its own photos/clips from Supabase
@@ -241,6 +259,8 @@ const chamatkarSchema = schemaEd ? [{
         <a href="/book/" class="ck-cta">Check a date &amp; enquire ↓</a>
       </div>
     </section>
+
+    {!EVENT.dateTBA && <EventPopup client:idle event={popupEvent} />}
   </main>
 
   <Footer />

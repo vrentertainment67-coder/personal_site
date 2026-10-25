@@ -20,7 +20,7 @@ const SUPABASE_KEY =
 const NTFY_TOPIC = "djvic-bookings-7k9f3hQ2pX8mN5vR";
 const WHATSAPP = "919611711677";
 
-export default function EventPopup() {
+export default function EventPopup({ event: propEvent = null } = {}) {
   const [event, setEvent] = useState(null);       // the live event row
   const [phase, setPhase] = useState("hidden");   // hidden | form | closed | thanks
   const [open, setOpen] = useState(false);        // controls entrance animation
@@ -34,28 +34,31 @@ export default function EventPopup() {
   // ── Load the live event, then decide whether/what to show ──
   useEffect(() => {
     let cancelled = false;
-    fetch(`${SUPABASE_URL}/rest/v1/events?active=eq.true&guestlist_enabled=eq.true&select=*&limit=1`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-    })
-      .then((r) => r.json())
-      .then((rows) => {
-        if (cancelled) return;
-        const ev = Array.isArray(rows) ? rows[0] : null;
-        if (!ev) return;
-        const expiry = Date.parse(ev.expiry);
-        if (expiry && Date.now() >= expiry) return;          // event window over
-        let seen = null;
-        try { seen = localStorage.getItem(`vic_rsvp_${ev.slug}`); } catch {}
-        if (seen) return;                                    // already acted → don't nag
-        setEvent(ev);
-        const cutoff = Date.parse(ev.rsvp_cutoff);
-        const startPhase = cutoff && Date.now() >= cutoff ? "closed" : "form";
-        timerRef.current = setTimeout(() => {
-          setPhase(startPhase);
-          requestAnimationFrame(() => setOpen(true));
-        }, 2000);
+    const consider = (ev) => {
+      if (cancelled || !ev) return;
+      const expiry = Date.parse(ev.expiry);
+      if (expiry && Date.now() >= expiry) return;          // event window over
+      let seen = null;
+      try { seen = localStorage.getItem(`vic_rsvp_${ev.slug}`); } catch {}
+      if (seen) return;                                    // already acted → don't nag
+      setEvent(ev);
+      const cutoff = Date.parse(ev.rsvp_cutoff);
+      const startPhase = cutoff && Date.now() >= cutoff ? "closed" : "form";
+      timerRef.current = setTimeout(() => {
+        setPhase(startPhase);
+        requestAnimationFrame(() => setOpen(true));
+      }, 2000);
+    };
+    if (propEvent) {
+      consider(propEvent);                                 // page-driven event (e.g. Chamatkar)
+    } else {
+      fetch(`${SUPABASE_URL}/rest/v1/events?active=eq.true&guestlist_enabled=eq.true&select=*&limit=1`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
       })
-      .catch(() => {});
+        .then((r) => r.json())
+        .then((rows) => consider(Array.isArray(rows) ? rows[0] : null))
+        .catch(() => {});
+    }
     return () => { cancelled = true; if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 

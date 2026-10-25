@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 // ── Editorial strands (categories) ──────────────────────────────────────
 export const CATEGORIES = [
   { key: 'behind-the-decks',      label: 'Behind the Decks',      desc: 'The DJs.' },
+  { key: 'warm-up',               label: 'The Warm-Up',           desc: 'Young DJs on the rise.' },
   { key: 'room-makers',           label: 'The Room Makers',       desc: 'The venue owners.' },
   { key: 'architects',            label: 'The Architects',        desc: 'The founders & builders.' },
   { key: 'other-side-of-the-bar', label: 'Other Side of the Bar', desc: 'The bartenders.' },
@@ -12,7 +13,7 @@ export const CATEGORIES = [
 export const catLabel = (k) => (CATEGORIES.find((c) => c.key === k) || {}).label || k;
 
 // Until guest_type is backfilled, derive a rough person-type from the strand.
-export const TYPE_FROM_CAT = { 'behind-the-decks': 'dj', 'room-makers': 'venue', 'architects': 'founder', 'other-side-of-the-bar': 'bartender', 'bigger-picture': 'voice', 'lab': 'founder' };
+export const TYPE_FROM_CAT = { 'behind-the-decks': 'dj', 'warm-up': 'dj', 'room-makers': 'venue', 'architects': 'founder', 'other-side-of-the-bar': 'bartender', 'bigger-picture': 'voice', 'lab': 'founder' };
 export const PERSON = [
   { key: 'dj', label: 'DJs', sub: 'Selectors, residents & headliners.' },
   { key: 'founder', label: 'Founders', sub: 'The ones who started it.' },
