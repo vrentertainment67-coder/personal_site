@@ -109,7 +109,7 @@ const CAP = 3;
       <div class="tick">✓</div>
       <div class="big">Request received</div>
       <p id="thanks-sub">Thank you! We’ll weave your picks into the night.</p>
-      <div class="share" style="margin-top:22px;">
+      <div class="share" id="share-thanks" style="margin-top:22px;">
         <p>Help fill the floor — pass it on:</p>
         <div class="share-row">
           <button type="button" class="share-btn js-wa">WhatsApp</button>
@@ -194,6 +194,7 @@ const CAP = 3;
           $('name').placeholder = '';
           var _ef = $('fld-email'); if (_ef) _ef.style.display = 'none';
           var _sf = $('share-form'); if (_sf) _sf.style.display = 'none';
+          var _st = $('share-thanks'); if (_st) _st.style.display = 'none';
         }
         if (remaining() <= 0) { show('capped'); return; }
         buildSongRows();
