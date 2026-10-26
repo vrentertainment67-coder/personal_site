@@ -94,7 +94,7 @@ const CAP = 3;
     <!-- invalid / no couple -->
     <div id="invalid" class="state hidden">
       <div class="big">Nothing to see here yet</div>
-      <p>This request link isn’t active. Please use the exact link the couple shared with you.</p>
+      <p>This request link isn’t active. Please use the exact link you were sent.</p>
     </div>
 
     <!-- capped -->
@@ -123,10 +123,10 @@ const CAP = 3;
       <header>
         <div class="k">Song Requests</div>
         <div class="names" id="names">—</div>
-        <div class="occ">on their wedding day</div>
+        <div class="occ" id="occ">on their wedding day</div>
         <div class="ornament"><span>✦</span></div>
       </header>
-      <p class="intro">Help build the soundtrack. Drop up to <b id="cap-n">3</b> songs you’d love to hear — we’ll curate the track list from there.</p>
+      <p class="intro" id="intro">Help build the soundtrack. Drop up to <b>3</b> songs you’d love to hear — we’ll curate the track list from there.</p>
       <p id="proof" class="proof hidden"></p>
 
       <div id="msg" class="msg"></div>
@@ -141,7 +141,7 @@ const CAP = 3;
         <div class="songs-h"><span>Your requests</span><span id="left"></span></div>
         <div id="songs"></div>
 
-        <label class="fld" style="margin-top:14px;"><span>Note to the couple <span style="color:#5c554a">(optional)</span></span>
+        <label class="fld" style="margin-top:14px;"><span><span id="note-label">Note to the couple</span> <span style="color:#5c554a">(optional)</span></span>
           <textarea id="note" rows="2" placeholder="A dedication, or why this song…"></textarea></label>
 
         <button type="submit" id="go" class="go">Send my requests</button>
@@ -169,18 +169,26 @@ const CAP = 3;
       var slug = (params.get('c') || '').trim().toLowerCase();
       if (!slug) { show('invalid'); return; }
 
+      var cap = CAP;        // per-host, overridden from request_couples.song_cap
+      var party = false;    // non-wedding (party) wording
       var LSKEY = 'req_' + slug;           // songs already sent from this device
       function sent() { return parseInt(localStorage.getItem(LSKEY) || '0', 10) || 0; }
-      function remaining() { return Math.max(0, CAP - sent()); }
+      function remaining() { return Math.max(0, cap - sent()); }
 
-      // Load the couple name (public read).
-      fetch(SUPABASE_URL + '/rest/v1/request_couples?slug=eq.' + encodeURIComponent(slug) + '&select=couple_names,active', {
+      // Load the host name + settings (public read).
+      fetch(SUPABASE_URL + '/rest/v1/request_couples?slug=eq.' + encodeURIComponent(slug) + '&select=couple_names,active,song_cap,occasion,is_party', {
         headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
       }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
         var c = rows && rows[0];
         if (!c || c.active === false) { show('invalid'); return; }
+        cap = (c.song_cap && c.song_cap > 0) ? c.song_cap : CAP;
+        party = !!c.is_party;
         $('names').textContent = c.couple_names;
-        $('cap-n').textContent = CAP;
+        $('occ').textContent = c.occasion || (party ? '' : 'on their wedding day');
+        $('intro').innerHTML = party
+          ? 'Drop up to <b>' + cap + '</b> songs you want to dance to — we’ll build the party playlist from there.'
+          : 'Help build the soundtrack. Drop up to <b>' + cap + '</b> songs you’d love to hear — we’ll curate the track list from there.';
+        if (party && $('note-label')) $('note-label').textContent = 'Note to the host';
         if (remaining() <= 0) { show('capped'); return; }
         buildSongRows();
         show('app');
@@ -189,7 +197,7 @@ const CAP = 3;
 
       function buildSongRows() {
         var rem = remaining();
-        $('left').textContent = rem < CAP ? (rem + ' left') : ('up to ' + CAP);
+        $('left').textContent = rem < cap ? (rem + ' left') : ('up to ' + cap);
         var host = $('songs'); host.innerHTML = '';
         for (var i = 0; i < rem; i++) {
           var row = document.createElement('div'); row.className = 'songrow';
@@ -250,7 +258,7 @@ const CAP = 3;
       });
 
       // Share with other guests (spreads the request link).
-      function shareText() { return 'Add a song to ' + (($('names').textContent || 'the') + '') + ' wedding playlist 🎶 ' + location.href; }
+      function shareText() { var nm = $('names').textContent || 'the'; return (party ? 'Add a song to the party playlist 🎶 ' : 'Add a song to ' + nm + ' wedding playlist 🎶 ') + location.href; }
       [].slice.call(document.querySelectorAll('.js-wa')).forEach(function (b) {
         b.addEventListener('click', function () { window.open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank'); });
       });

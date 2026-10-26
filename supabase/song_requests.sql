@@ -22,6 +22,11 @@ drop policy if exists "admin writes couples" on public.request_couples;
 create policy "admin writes couples" on public.request_couples
   for all to authenticated using (true) with check (true);
 
+-- Occasion/party support: /requests?c=<slug> reads these to adapt per host.
+alter table public.request_couples add column if not exists song_cap int not null default 3;      -- songs per guest (weddings 3, parties e.g. 2)
+alter table public.request_couples add column if not exists occasion text;                          -- subtitle under the name (null → "on their wedding day")
+alter table public.request_couples add column if not exists is_party boolean not null default false; -- true → party wording (not "wedding"/"the couple")
+
 -- The requests themselves.
 create table if not exists public.song_requests (
   id           uuid primary key default gen_random_uuid(),
