@@ -135,7 +135,7 @@ const CAP = 3;
         <input class="hp" type="text" id="company" tabindex="-1" aria-hidden="true" />
         <label class="fld"><span>Your name</span>
           <input type="text" id="name" autocapitalize="words" placeholder="Who’s asking?" /></label>
-        <label class="fld"><span>Email <span style="color:#5c554a">(optional)</span></span>
+        <label class="fld" id="fld-email"><span>Email <span style="color:#5c554a">(optional)</span></span>
           <input type="email" id="email" inputmode="email" placeholder="you@email.com" /></label>
 
         <div class="songs-h"><span>Your requests</span><span id="left"></span></div>
@@ -147,7 +147,7 @@ const CAP = 3;
         <button type="submit" id="go" class="go">Send my requests</button>
       </form>
 
-      <div class="share">
+      <div class="share" id="share-form">
         <p>Know someone else who should add a song?</p>
         <div class="share-row">
           <button type="button" class="share-btn js-wa">WhatsApp</button>
@@ -188,7 +188,13 @@ const CAP = 3;
         $('intro').innerHTML = party
           ? 'Drop up to <b>' + cap + '</b> songs you want to dance to — we’ll build the party playlist from there.'
           : 'Help build the soundtrack. Drop up to <b>' + cap + '</b> songs you’d love to hear — we’ll curate the track list from there.';
-        if (party && $('note-label')) $('note-label').textContent = 'Note to the host';
+        if (party) {
+          if ($('note-label')) $('note-label').textContent = 'Note to the host';
+          $('note').placeholder = 'A dedication…';
+          $('name').placeholder = '';
+          var _ef = $('fld-email'); if (_ef) _ef.style.display = 'none';
+          var _sf = $('share-form'); if (_sf) _sf.style.display = 'none';
+        }
         if (remaining() <= 0) { show('capped'); return; }
         buildSongRows();
         show('app');
