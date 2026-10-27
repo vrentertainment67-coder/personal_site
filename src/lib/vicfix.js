@@ -30,7 +30,7 @@ export const dueto = (name) => { let h = 0; for (const c of name) h = (h * 31 + 
 // ── Single source of truth for the episode catalogue ─────────────────────
 export async function getEpisodes() {
   const all = (await getCollection('vicfixEpisodes')).sort((a, b) => (a.data.season !== b.data.season ? b.data.season - a.data.season : b.data.episode - a.data.episode));
-  return all.map((e) => ({
+  return all.filter((e) => !e.data.hidden).map((e) => ({
     n: e.data.episode, s: e.data.season,
     name: e.data.guestName, role: e.data.guestTitle,
     slug: `/thevicfix/${e.id}/`,

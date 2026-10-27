@@ -47,7 +47,7 @@ const quoteTweetText = ep.pullQuote
 
 const all = await getCollection('vicfixEpisodes');
 let related = all
-  .filter(e => e.id !== episode.id && e.data.category === ep.category)
+  .filter(e => e.id !== episode.id && !e.data.hidden && e.data.category === ep.category)
   .sort(() => Math.random() - 0.5)
   .slice(0, 3);
 // Thin/new strands (e.g. The Lab's first episode) have no siblings yet —
@@ -55,7 +55,7 @@ let related = all
 if (related.length < 3) {
   const have = new Set(related.map(e => e.id));
   const fill = all
-    .filter(e => e.id !== episode.id && !have.has(e.id))
+    .filter(e => e.id !== episode.id && !have.has(e.id) && !e.data.hidden)
     .sort((a, b) => (b.data.season - a.data.season) || (b.data.episode - a.data.episode))
     .slice(0, 3 - related.length);
   related = [...related, ...fill];

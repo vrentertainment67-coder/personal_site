@@ -82,6 +82,7 @@ const vicfixEpisodes = defineCollection({
     seoDescription: z.string().optional(),
     viewCount: z.string().default(''),
     featured: z.boolean().default(false),
+    hidden: z.boolean().optional().default(false),   // unlisted: page exists, never shown in hub/listing/collections
   }),
 });
 
