@@ -98,6 +98,11 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
           window.fbq("track", pixelEvent, { content_name: title, content_category: "rsvp", value: row.guests, currency: "INR" });
         }
       } catch {}
+      // Site analytics (GA4) lead — fires only on a saved RSVP; no-op if GA
+      // isn't loaded. window.trackLead(type, location); see Analytics.astro.
+      try {
+        if (typeof window.trackLead === "function") window.trackLead(slug || "event-rsvp", source);
+      } catch {}
       setPhase("thanks");
     } else {
       setErr("Couldn't submit — please try again, or WhatsApp us below.");

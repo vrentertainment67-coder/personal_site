@@ -124,6 +124,18 @@ export default function EventPopup({ event: propEvent = null } = {}) {
     setSubmitting(false);
 
     if (ok) {
+      // Meta Pixel Lead conversion — fires only on a saved RSVP; no-op on pages
+      // without a pixel (window.fbq undefined). Mirrors EventRSVP.jsx.
+      try {
+        if (typeof window.fbq === "function") {
+          window.fbq("track", "Lead", { content_name: event.title, content_category: "rsvp", value: row.guests, currency: "INR" });
+        }
+      } catch {}
+      // Site analytics (GA4) lead — see Analytics.astro / EventRSVP.jsx.
+      try {
+        if (typeof window.trackLead === "function") window.trackLead(event.slug || "event-rsvp", row.source);
+      } catch {}
+
       // 2) Only ping VIC's phone once the RSVP is actually saved (non-blocking)
       try {
         const body =
