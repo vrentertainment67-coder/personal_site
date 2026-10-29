@@ -387,7 +387,7 @@ function Marketing({ showToast }) {
   if (searchClicks != null) bits.push(`${searchClicks} search clicks`);
   const headline = bits.length ? `${bits.join(" · ")} · last 28 days` : "Traffic & Google search · last 28 days";
 
-  const SUBS = [["traffic", "Traffic", Activity], ["search", "Search (Google)", TrendingUp]];
+  const SUBS = [["traffic", "Traffic", Activity], ["ads", "Ads (Meta)", TrendingUp], ["search", "Search (Google)", TrendingUp]];
 
   return (
     <>
@@ -401,6 +401,7 @@ function Marketing({ showToast }) {
         ))}
       </div>
       {sub === "traffic" && <MarketingTraffic log={log} loading={logLoading} ga={ga} gaLoading={gaLoading} />}
+      {sub === "ads" && <MarketingAds />}
       {sub === "search" && <MarketingSearch data={seo} loading={seoLoading} />}
     </>
   );
@@ -469,6 +470,77 @@ function MarketingTraffic({ log, loading, ga, gaLoading }) {
             </p>
           </div>
         )}
+    </>
+  );
+}
+
+// Meta (Facebook/Instagram) ad insights — clicks, landing-page views & spend per
+// ad, pulled live from the Meta Marketing API via admin-api?action=meta-ads.
+// Needs a META_ADS_TOKEN secret on the function; until it's set this shows a hint.
+function MarketingAds() {
+  const [m, setM] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let r;
+      try {
+        r = await fetch(`${FN}/admin-api?action=meta-ads`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        }).then((res) => res.json());
+      } catch { r = { connected: false, reason: "request failed" }; }
+      if (!cancelled) { setM(r); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return <Center><Loader2 className="spin" size={18} /></Center>;
+  if (!m || !m.connected) {
+    return (
+      <div className="card">
+        <p className="empty" style={{ padding: 12 }}>
+          Meta Ads not connected{m && m.reason ? ` — ${String(m.reason).slice(0, 160)}` : ""}. Add a{" "}
+          <code>META_ADS_TOKEN</code> (an <code>ads_read</code> access token) to the admin-api secrets and redeploy —
+          see the admin-api header for the exact steps.
+        </p>
+      </div>
+    );
+  }
+  const t = m.totals || {};
+  const ads = m.ads || [];
+  const inr = (n) => `₹${Math.round(n || 0).toLocaleString("en-IN")}`;
+  const nf = (n) => (n || 0).toLocaleString("en-IN");
+  const rowS = { display: "grid", gridTemplateColumns: "1.7fr .7fr .7fr .9fr .6fr", gap: 8, padding: "9px 6px", alignItems: "center", fontSize: ".82rem", borderBottom: "1px solid rgba(255,255,255,.06)" };
+  const headS = { ...rowS, color: "rgba(255,255,255,.5)", fontSize: ".7rem", letterSpacing: ".05em", textTransform: "uppercase" };
+  const num = { textAlign: "right" };
+  const nameS = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+
+  return (
+    <>
+      <p className="sub" style={{ color: "#c9a84c", margin: "2px 0 8px" }}>Meta ads · {m.range} — clicks, landing-page views &amp; spend per ad</p>
+      <div className="cards">
+        <Stat label="Spend" value={inr(t.spend)} />
+        <Stat label="Link clicks" value={nf(t.linkClicks)} />
+        <Stat label="Landing-page views" value={nf(t.landingPageViews)} />
+        <Stat label="Reach" value={nf(t.reach)} />
+      </div>
+      <div className="card">
+        <h3 className="card-h">Per ad</h3>
+        {ads.length ? (
+          <div>
+            <div style={headS}><span>Ad</span><span style={num}>Clicks</span><span style={num}>LPV</span><span style={num}>Spend</span><span style={num}>CTR</span></div>
+            {ads.map((a, i) => (
+              <div style={rowS} key={i}>
+                <span style={nameS} title={a.campaign ? `${a.campaign} — ${a.ad}` : a.ad}>{a.ad}</span>
+                <span style={num}>{nf(a.linkClicks || a.clicks)}</span>
+                <span style={num}>{nf(a.landingPageViews)}</span>
+                <span style={num}>{inr(a.spend)}</span>
+                <span style={num}>{a.ctr ? a.ctr.toFixed(1) + "%" : "—"}</span>
+              </div>
+            ))}
+          </div>
+        ) : <p className="empty" style={{ padding: 12 }}>No ad delivery in the last 30 days yet — check back once the ads have run a bit.</p>}
+      </div>
     </>
   );
 }

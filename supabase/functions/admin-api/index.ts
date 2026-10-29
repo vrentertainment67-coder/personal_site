@@ -9,9 +9,19 @@
 //   action=seo-stats    -> returns top GSC queries/pages (last 28 days)
 //   action=ga-stats     -> returns GA4 traffic (users/sessions/channels/pages/
 //                          devices/cities, last 28 days) via the GA4 Data API
+//   action=meta-ads     -> returns Meta (Facebook/Instagram) ad insights per ad
+//                          (clicks/landing-page views/spend/reach, last 30 days)
+//                          via the Meta Marketing API
 //
 // SECRETS (supabase secrets set ...)
 //   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+//   META_ADS_TOKEN        a Meta access token with ads_read for the ad account.
+//                         Generate in Graph API Explorer (or a system-user token
+//                         in Business settings) — a long-lived / system token is
+//                         best so it doesn't expire. Without it, meta-ads just
+//                         reports { connected: false } and the card shows a hint.
+//   META_AD_ACCOUNT_ID    defaults to "act_21898209"
+//   META_GRAPH_VERSION    defaults to "v23.0" (bump if Meta reports a version error)
 //   GSC_SITE_URL                e.g. "sc-domain:djvicofficial.com"
 //   GA4_PROPERTY_ID             numeric GA4 property id (defaults to 422308749)
 //   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
@@ -36,6 +46,9 @@ const G_REFRESH = Deno.env.get("GOOGLE_REFRESH_TOKEN")!;
 const GA4_PROP = Deno.env.get("GA4_PROPERTY_ID") ?? "422308749";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const META_TOKEN = Deno.env.get("META_ADS_TOKEN") ?? "";
+const META_ACCT = Deno.env.get("META_AD_ACCOUNT_ID") ?? "act_21898209";
+const META_VER = Deno.env.get("META_GRAPH_VERSION") ?? "v23.0";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -167,6 +180,60 @@ async function gaStats() {
   });
 }
 
+// Meta Marketing API — ad-level insights for the account (last 30 days). Only
+// ads with delivery in the window come back, so old/off ads don't clutter it.
+// Needs META_ADS_TOKEN (ads_read). Parses the `actions` array for landing-page
+// views and link clicks (which aren't top-level insight fields).
+async function metaAds() {
+  if (!META_TOKEN) return json({ connected: false, reason: "META_ADS_TOKEN not set" });
+  const params = new URLSearchParams({
+    level: "ad",
+    fields: "ad_name,campaign_name,impressions,reach,clicks,spend,ctr,cpc,actions",
+    date_preset: "last_30d",
+    limit: "100",
+    access_token: META_TOKEN,
+  });
+  let d: any;
+  try {
+    const res = await fetch(`https://graph.facebook.com/${META_VER}/${META_ACCT}/insights?${params}`);
+    d = await res.json();
+  } catch (e) {
+    return json({ connected: false, reason: "request failed: " + String(e) });
+  }
+  if (d.error) return json({ connected: false, reason: d.error.message || "Meta API error" });
+
+  const pick = (actions: any[], type: string) => {
+    const a = (actions ?? []).find((x: any) => x.action_type === type);
+    return a ? Number(a.value) : 0;
+  };
+  const rows = (d.data ?? []).map((r: any) => ({
+    ad: r.ad_name ?? "(unnamed)",
+    campaign: r.campaign_name ?? "",
+    impressions: Number(r.impressions ?? 0),
+    reach: Number(r.reach ?? 0),
+    clicks: Number(r.clicks ?? 0),
+    linkClicks: pick(r.actions, "link_click"),
+    landingPageViews: pick(r.actions, "landing_page_view"),
+    leads: pick(r.actions, "lead") + pick(r.actions, "offsite_conversion.fb_pixel_lead"),
+    spend: Number(r.spend ?? 0),
+    ctr: Number(r.ctr ?? 0),
+    cpc: Number(r.cpc ?? 0),
+  })).sort((a: any, b: any) => b.spend - a.spend);
+
+  const sum = (k: string) => rows.reduce((s: number, r: any) => s + (r[k] || 0), 0);
+  return json({
+    connected: true,
+    range: "Last 30 days",
+    currency: "INR",
+    ads: rows,
+    totals: {
+      spend: sum("spend"), clicks: sum("clicks"), linkClicks: sum("linkClicks"),
+      landingPageViews: sum("landingPageViews"), leads: sum("leads"),
+      impressions: sum("impressions"), reach: sum("reach"),
+    },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
@@ -180,6 +247,7 @@ Deno.serve(async (req) => {
     }
     if (action === "seo-stats") return await seoStats();
     if (action === "ga-stats") return await gaStats();
+    if (action === "meta-ads") return await metaAds();
 
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
