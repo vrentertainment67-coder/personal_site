@@ -2767,11 +2767,17 @@ function Guests({ showToast }) {
       <p className="sub">Everyone who RSVP'd or checked in, grouped by event.</p>
       <input className="search" placeholder="Search name, phone, event…" value={query} onChange={(e) => setQuery(e.target.value)} />
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : events.length === 0 ? <p className="empty">No guests yet.</p> : (
-        events.map(({ slug, list }) => (
+        events.map(({ slug, list }) => {
+          // "In the club" = guests physically checked in (QR self-check-in or the door tool).
+          const checkedIn = list.filter((r) => r.source === "self-checkin" || r.source === "door").length;
+          return (
           <div key={slug} style={{ margin: "0 0 26px" }}>
             <div className="row-between" style={{ margin: "0 0 8px", alignItems: "baseline" }}>
               <h2 style={{ fontSize: 17, margin: 0, color: "#fff" }}>{prettyEvent(slug)}</h2>
-              <span className="gold" style={{ fontSize: 13, fontWeight: 600 }}>{list.length} {list.length === 1 ? "guest" : "guests"}</span>
+              <span style={{ display: "inline-flex", gap: 12, alignItems: "baseline" }}>
+                {checkedIn > 0 && <span style={{ fontSize: 13, fontWeight: 700, color: "#39b56a" }}>● {checkedIn} in the club</span>}
+                <span className="gold" style={{ fontSize: 13, fontWeight: 600 }}>{list.length} {list.length === 1 ? "guest" : "guests"}</span>
+              </span>
             </div>
             <div style={{ overflowX: "auto", border: "1px solid #1e1e1e", borderRadius: 8 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", background: "#0d0d0d" }}>
@@ -2823,7 +2829,7 @@ function Guests({ showToast }) {
               </table>
             </div>
           </div>
-        ))
+        ); })
       )}
     </>
   );
