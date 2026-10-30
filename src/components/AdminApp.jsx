@@ -2701,6 +2701,7 @@ const prettyEvent = (slug) => CHAMATKAR_EDITIONS[slug] || (slug || "—").replac
 function Guests({ showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [openSummary, setOpenSummary] = useState(null);   // which event's club summary is open
   const [editId, setEditId] = useState(null);
   const [editPhone, setEditPhone] = useState(""); const [editIg, setEditIg] = useState(""); const [saving, setSaving] = useState(false);
 
@@ -2772,13 +2773,15 @@ function Guests({ showToast }) {
           const checkedIn = list.filter((r) => r.source === "self-checkin" || r.source === "door").length;
           return (
           <div key={slug} style={{ margin: "0 0 26px" }}>
-            <div className="row-between" style={{ margin: "0 0 8px", alignItems: "baseline" }}>
+            <div className="row-between" style={{ margin: "0 0 8px", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <h2 style={{ fontSize: 17, margin: 0, color: "#fff" }}>{prettyEvent(slug)}</h2>
-              <span style={{ display: "inline-flex", gap: 12, alignItems: "baseline" }}>
+              <span style={{ display: "inline-flex", gap: 12, alignItems: "center" }}>
                 {checkedIn > 0 && <span style={{ fontSize: 13, fontWeight: 700, color: "#39b56a" }}>● {checkedIn} in the club</span>}
                 <span className="gold" style={{ fontSize: 13, fontWeight: 600 }}>{list.length} {list.length === 1 ? "guest" : "guests"}</span>
+                <button className={openSummary === slug ? "btn sm" : "btn sm ghost"} onClick={() => setOpenSummary((s) => (s === slug ? null : slug))}><MessageCircle size={14} /> Club summary</button>
               </span>
             </div>
+            {openSummary === slug && <ClubSummary event={{ title: prettyEvent(slug), venue: "", date_label: "" }} rows={list} showToast={showToast} onClose={() => setOpenSummary(null)} />}
             <div style={{ overflowX: "auto", border: "1px solid #1e1e1e", borderRadius: 8 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", background: "#0d0d0d" }}>
                 <thead><tr><th style={th}>Name</th><th style={th}>Instagram</th><th style={th}>Number</th><th style={th}>RSVP'd via</th><th style={{ ...th, textAlign: "right" }}></th></tr></thead>
