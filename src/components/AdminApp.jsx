@@ -2391,6 +2391,7 @@ function EventGuests({ event, showToast }) {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(""); const [deleting, setDeleting] = useState(null);
   const [adding, setAdding] = useState(false); const [saving, setSaving] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [f, setF] = useState({ name: "", phone: "", guests: "1", entry: "", instagram: "" });
 
   const load = useCallback(async () => {
@@ -2446,13 +2447,6 @@ function EventGuests({ event, showToast }) {
     a.download = `${event.slug}-guestlist-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
-  const sendListToWhatsApp = () => {
-    if (!filtered.length) return showToast("No RSVPs to send yet.");
-    const sorted = [...filtered].sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
-    const lines = sorted.map((r) => `${r.name} - ${parseInt(r.guests, 10) || 1}`);
-    const text = `*${event.title} Guest List*\n${event.date_label || ""} · ${filtered.length} RSVPs · ${heads} heads\n\n` + lines.join("\n");
-    window.open(`https://wa.me/919611711677?text=${encodeURIComponent(text)}`, "_blank");
-  };
 
   return (
     <>
@@ -2460,10 +2454,12 @@ function EventGuests({ event, showToast }) {
         <p className="sub" style={{ margin: 0 }}>RSVPs from the guest-list form + manual adds.</p>
         <div style={{ display: "flex", gap: 8 }}>
           <button className={adding ? "btn sm" : "btn sm ghost"} onClick={() => setAdding((v) => !v)}><Plus size={15} /> Add guest</button>
-          <button className="btn sm" onClick={sendListToWhatsApp}><MessageCircle size={15} /> WhatsApp list</button>
+          <button className={summaryOpen ? "btn sm" : "btn sm ghost"} onClick={() => setSummaryOpen((v) => !v)}><MessageCircle size={15} /> Club summary</button>
           <button className="btn sm" onClick={exportCsv}>Export CSV</button>
         </div>
       </div>
+
+      {summaryOpen && <ClubSummary event={event} rows={rows} showToast={showToast} onClose={() => setSummaryOpen(false)} />}
 
       {adding && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8, margin: "12px 0 0" }}>
@@ -2537,6 +2533,76 @@ function EventGuests({ event, showToast }) {
         </div>
       )}
     </>
+  );
+}
+
+// Guest-list summary for the club owner: every RSVP for the night with how many
+// they're bringing, as a WhatsApp-ready message. Preview is editable before
+// sending; the owner's number is remembered per venue on this device.
+const plusOnes = (r) => Math.max(0, (parseInt(r.guests, 10) || 1) - 1);
+function buildClubSummary(event, rows, { phones, entry }) {
+  const sorted = [...rows].sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
+  const heads = sorted.reduce((s, r) => s + 1 + plusOnes(r), 0);
+  const extra = heads - sorted.length;
+  const lines = sorted.map((r, i) => {
+    const p = plusOnes(r);
+    let line = `${i + 1}. ${(r.name || "Guest").trim()}${p ? ` +${p}` : ""}`;
+    if (entry && r.entry_type && r.entry_type !== "walk-in") line += ` (${r.entry_type})`;
+    if (phones && r.phone && r.phone !== "—") line += ` · ${r.phone}`;
+    return line;
+  });
+  return [
+    `*${event.title} — Guest List*`,
+    [event.date_label, event.venue].filter(Boolean).join(" · "),
+    "",
+    `👥 *${sorted.length}* registered · *${extra}* plus-ones · *${heads}* total guests`,
+    "",
+    ...lines,
+    "",
+    `*Total: ${heads} guests*`,
+    "— DJ VIC",
+  ].join("\n");
+}
+
+function ClubSummary({ event, rows, showToast, onClose }) {
+  const ownerKey = `djvic-club-owner:${slugify(event.venue || event.title)}`;
+  const [phones, setPhones] = useState(false);
+  const [entry, setEntry] = useState(true);
+  const [owner, setOwner] = useState(() => { try { return localStorage.getItem(ownerKey) || ""; } catch { return ""; } });
+  const generated = useMemo(() => buildClubSummary(event, rows, { phones, entry }), [event, rows, phones, entry]);
+  const [text, setText] = useState(generated);
+  useEffect(() => { setText(generated); }, [generated]);
+
+  const saveOwner = (v) => { setOwner(v); try { localStorage.setItem(ownerKey, v); } catch {} };
+  const copy = () => navigator.clipboard?.writeText(text).then(() => showToast("Summary copied ✓"), () => showToast("Couldn't copy."));
+  const send = () => {
+    if (!rows.length) return showToast("No RSVPs to send yet.");
+    const n = phoneKey(owner);
+    // No number → wa.me lets you pick the chat (owner, manager, group) in WhatsApp.
+    window.open(`https://wa.me/${n.length >= 11 ? n : ""}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+  const box = { background: "rgba(10,10,10,.6)", border: "1px solid var(--line)", borderRadius: 6, color: "var(--off)", fontFamily: "Inter", fontSize: ".8rem" };
+
+  return (
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, margin: "12px 0 0" }}>
+      <div className="row-between">
+        <strong style={{ fontSize: ".85rem" }}>Summary for the club</strong>
+        <button className="btn sm ghost" onClick={onClose}>Close</button>
+      </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: ".75rem", color: "rgba(255,255,255,.7)" }}>
+        <label style={{ display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={entry} onChange={(e) => setEntry(e.target.checked)} /> Couple / stag</label>
+        <label style={{ display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={phones} onChange={(e) => setPhones(e.target.checked)} /> Phone numbers</label>
+      </div>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={Math.min(18, text.split("\n").length + 1)}
+        style={{ ...box, padding: "10px 12px", lineHeight: 1.5, resize: "vertical", whiteSpace: "pre-wrap" }} />
+      <input className="search" style={{ margin: 0 }} placeholder="Club owner's WhatsApp (optional — blank lets you pick the chat)" value={owner}
+        onChange={(e) => saveOwner(e.target.value.replace(/[^\d+\s()-]/g, ""))} />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn sm" onClick={send}><MessageCircle size={15} /> Send on WhatsApp</button>
+        <button className="btn sm ghost" onClick={copy}><Copy size={15} /> Copy</button>
+        {text !== generated && <button className="btn sm ghost" onClick={() => setText(generated)}><Undo2 size={15} /> Reset</button>}
+      </div>
+    </div>
   );
 }
 
