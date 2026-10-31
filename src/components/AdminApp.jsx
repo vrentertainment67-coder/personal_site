@@ -2770,7 +2770,8 @@ function Guests({ showToast }) {
       {loading ? <Center><Loader2 className="spin" size={18} /></Center> : events.length === 0 ? <p className="empty">No guests yet.</p> : (
         events.map(({ slug, list }) => {
           // "In the club" = guests physically checked in (QR self-check-in or the door tool).
-          const checkedIn = list.filter((r) => r.source === "self-checkin" || r.source === "door").length;
+          // Dedupe by phone (double-scans / re-scans / online+door) so the head count is real.
+          const checkedIn = new Set(list.filter((r) => r.source === "self-checkin" || r.source === "door").map((r) => (r.phone || "").replace(/\D/g, "") || r.id)).size;
           return (
           <div key={slug} style={{ margin: "0 0 26px" }}>
             <div className="row-between" style={{ margin: "0 0 8px", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
