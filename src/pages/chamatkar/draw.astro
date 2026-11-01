@@ -16,8 +16,19 @@ import Layout from '../../layouts/Layout.astro';
         <span id="cd-upd" class="cd-sync"></span>
         <button id="cd-refresh" class="cd-mini" type="button">↻</button>
         <button id="cd-reset" class="cd-mini" type="button">Reset</button>
+        <button id="cd-winners-btn" class="cd-mini" type="button" hidden>★ List</button>
       </div>
     </header>
+
+    <section id="cd-winners" class="cd-panel" hidden>
+      <h2 class="cd-panel-h">Winners <span id="cd-win-count"></span></h2>
+      <p class="cd-panel-p">Everyone drawn on this device so far — copy the list for your follow-up.</p>
+      <textarea id="cd-win-list" class="cd-names" readonly placeholder="No winners drawn yet."></textarea>
+      <div class="cd-panel-foot">
+        <span class="cd-tally" id="cd-win-tally"></span>
+        <button id="cd-win-copy" class="cd-save" type="button">Copy</button>
+      </div>
+    </section>
 
     <section class="cd-stage">
       <div id="cd-display" class="cd-display">
@@ -54,6 +65,20 @@ import Layout from '../../layouts/Layout.astro';
     $('cd-pool').textContent = pool().length;
     $('cd-won').textContent = won.size;
     $('cd-won-wrap').hidden = won.size === 0;
+    $('cd-winners-btn').hidden = won.size === 0;
+    if (!$('cd-winners').hidden) renderWinners();
+  }
+  // Winners drawn on this device → a readable, copyable list (saved ids mapped
+  // back to names). The only place the winner record lives, so make it legible.
+  function renderWinners() {
+    const byId = new Map(entries.map((e) => [e.id, e]));
+    const names = [...won].map((id) => {
+      const e = byId.get(id);
+      return e ? (e.name + (e.instagram ? '  —  ' + e.instagram : '')) : '(unknown · ' + id.slice(0, 8) + ')';
+    });
+    $('cd-win-list').value = names.map((n, i) => (i + 1) + '. ' + n).join('\n');
+    $('cd-win-count').textContent = names.length ? '· ' + names.length : '';
+    $('cd-win-tally').textContent = names.length + (names.length === 1 ? ' winner' : ' winners');
   }
   function setDisplay(name, mode) {
     const idle = $('cd-idle'), nm = $('cd-name'), sb = $('cd-sub');
@@ -135,6 +160,18 @@ import Layout from '../../layouts/Layout.astro';
 
   $('cd-go').addEventListener('click', draw);
   $('cd-refresh').addEventListener('click', () => load(false));
+
+  $('cd-winners-btn').addEventListener('click', () => {
+    const p = $('cd-winners');
+    p.hidden = !p.hidden;
+    if (!p.hidden) renderWinners();
+  });
+  $('cd-win-copy').addEventListener('click', async () => {
+    const t = $('cd-win-list');
+    t.focus(); t.select();
+    try { await navigator.clipboard.writeText(t.value); } catch {}
+    const b = $('cd-win-copy'); b.textContent = 'Copied ✓'; setTimeout(() => (b.textContent = 'Copy'), 1500);
+  });
 
   $('cd-reset').addEventListener('click', () => {
     if (!confirm('Put everyone back in the draw (clear all winners)?')) return;
