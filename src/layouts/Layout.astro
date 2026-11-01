@@ -35,7 +35,7 @@ const pixelNoscript = metaPixelId
     <BaseHead {...Astro.props} />
     <ClientRouter />
 
-    <!-- Meta Pixel — only loads on pages that pass a pixel ID (see /andaaz). -->
+    <!-- Meta Pixel — only loads on pages that pass a pixel ID (see /filmy-fridays). -->
     {metaPixelId && (
       <Fragment>
         <script is:inline set:html={pixelJs}></script>

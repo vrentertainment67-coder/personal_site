@@ -22,7 +22,7 @@ const WaIcon = () => (
 );
 
 // collectEmail / source / pixelEvent are optional and default to Chamatkar's
-// existing behaviour, so adding a brand (Andaaz) never changes this page.
+// existing behaviour, so adding another brand/night never changes this page.
 export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLabel, rsvpCutoff, expiry,
   collectEmail = false, source = "chamatkar-page", pixelEvent = "Lead" }) {
   const startPhase = () => {
@@ -92,7 +92,7 @@ export default function EventRSVP({ slug, title, venue, area, dateLabel, timeLab
         navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
       } catch {}
       // Meta Pixel conversion — only fires where a pixel is actually loaded
-      // (currently /andaaz). No-op everywhere else.
+      // (currently /filmy-fridays). No-op everywhere else.
       try {
         if (typeof window.fbq === "function" && pixelEvent) {
           window.fbq("track", pixelEvent, { content_name: title, content_category: "rsvp", value: row.guests, currency: "INR" });
