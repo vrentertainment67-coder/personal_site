@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '14', slug: 'ep14', icon: '🕰️', file: '/TheRider-Ep14-NightMap.pdf',
+    title: 'You Set The Clock',
+    kicker: 'The DJ Is The Host',
+    sub: 'Studies of music in bars and restaurants keep finding that what’s playing changes how long people stay and how the room moves. In most venues, one person holds that dial all night: you. What the research found, and the Night Map to own that power in your next fee conversation.',
+    inside: [
+      'The case — what field studies found about music volume, tempo and time in the seat, with every caveat',
+      'The room is changing — how nights out are shifting in the US, Britain and India',
+      'The host — five ways you already run the night, and how to say it in the venue’s words',
+      'The host’s questions — five questions to ask before you quote',
+      'The Night Map + four fee-talk lines — by club, cocktail bar, wedding and corporate',
+    ],
+  },
+  {
     no: '13', slug: 'ep13', icon: '🌉', file: '/TheRider-Ep13-TasteGapWorksheet.pdf',
     title: 'Your Crowd Is On Autoplay',
     kicker: 'The Taste Gap Worksheet',
