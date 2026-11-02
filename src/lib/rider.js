@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '13', slug: 'ep13', icon: '🌉', file: '/TheRider-Ep13-TasteGapWorksheet.pdf',
+    title: 'Your Crowd Is On Autoplay',
+    kicker: 'The Taste Gap Worksheet',
+    sub: 'Streaming widened what people hear — but Spotify’s own researchers found the listening it programs is narrower than the listening people choose. In the room, you’re the programming. The worksheet that maps your crowd’s comfort zone and plans how far your set takes them.',
+    inside: [
+      'The case — what Spotify’s own research found about programmed vs self-directed listening, in plain English',
+      'The twist — why it isn’t human vs machine: a Deezer study, French radio, and the eclectic station that beat every listener',
+      'The Taste Gap Worksheet — map the room’s comfort zone and decide your stretch before you’re in the booth',
+      'The bridge-track planner — familiar → adjacent → new, plus ten crowd-read questions for the first 30 minutes',
+      'Stretch by context — club, wedding and sangeet, corporate and open-format bar, plus what the evidence doesn’t say',
+    ],
+  },
+  {
     no: '12', slug: 'ep12', icon: '🤝', file: '/TheRider-Ep12-ProposalTemplate.pdf',
     title: 'The DJ Who Makes It Easy',
     kicker: 'The Proposal Template',
