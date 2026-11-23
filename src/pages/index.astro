@@ -14,6 +14,7 @@ const _todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolka
 
 // This-weekend promo — nights shown in the load popup; a night auto-hides once its date passes.
 const weekend = [
+  { day: 'Friday',   dateLabel: '27 Nov', date: '2026-11-27', name: 'Filmy Fridays',    venue: 'No Limmits', tag: 'Bollywood · live AV',           href: '/filmy-fridays/', theme: 'ff', slug: 'filmy-fridays-nov-2026' },
   { day: 'Saturday', dateLabel: '28 Nov', date: '2026-11-28', name: 'Chamatkar Vol. 7', venue: 'Happy Brew', tag: 'Bollywood × global · live AV', href: '/chamatkar/',     theme: 'ck', slug: 'chamatkar-vol7' },
 ].filter(e => e.date >= _todayISO);
 

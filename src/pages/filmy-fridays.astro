@@ -10,20 +10,20 @@ import EventRSVP from '../components/EventRSVP.jsx';
 import EventPopup from '../components/EventPopup.jsx';
 
 const EVENT = {
-  slug: 'filmy-fridays-oct-2026',
+  slug: 'filmy-fridays-nov-2026',
   title: 'Filmy Fridays',
-  edition: 'Edition 02',
-  editionName: 'The Night Before Halloween',
+  edition: 'Edition 03',
+  editionName: '',
   venue: 'No Limmits Lounge & Club',
   area: 'Opposite Garuda Mall, Bengaluru',
-  dateLabel: 'Friday, 30 October 2026',
+  dateLabel: 'Friday, 27 November 2026',
   timeLabel: '8:00 PM onwards',
-  doorsAt: '2026-10-30T20:00:00+05:30',
-  rsvpCutoff: '2026-10-30T20:00:00+05:30',
-  expiry: '2026-10-31T02:00:00+05:30',
+  doorsAt: '2026-11-27T20:00:00+05:30',
+  rsvpCutoff: '2026-11-27T20:00:00+05:30',
+  expiry: '2026-11-28T02:00:00+05:30',
   headliner: 'DJ VIC',
   support: 'DJ Harsh',
-  flyer: '/images/events/filmy-fridays-halloween.webp',
+  flyer: '/images/events/filmy-fridays-nov-2026.webp',
   logo: '/images/filmy-fridays-logo.webp',
   ics: '/filmy-fridays.ics',
   mapsQuery: 'No Limmits Lounge and Club, Garuda Mall, Bangalore',
@@ -31,6 +31,7 @@ const EVENT = {
 
 // Past editions — newest first. Each can carry Instagram reels.
 const PAST_EDITIONS = [
+  { edition: 'Edition 02', dateLabel: 'Friday, 30 October 2026', venue: 'No Limmits Lounge & Club', blurb: 'The Night Before Halloween — Bollywood anthems cut live to the screen with a full horror-AV takeover. A packed Friday.' },
   { edition: 'Edition 01', dateLabel: 'Friday, 4 September 2026', venue: 'No Limmits Lounge & Club', blurb: 'The first Filmy Fridays — Bollywood anthems, remixes and throwbacks, cut live to the screen. A full room.', reels: ['https://www.instagram.com/reel/DdY2XVRvzAy/'] },
 ];
 const anyReels = PAST_EDITIONS.some((e) => e.reels && e.reels.length > 0);
@@ -38,7 +39,7 @@ const anyReels = PAST_EDITIONS.some((e) => e.reels && e.reels.length > 0);
 // Guest-list popup — driven straight from this page's EVENT config (no admin row).
 const popupEvent = {
   slug: EVENT.slug,
-  title: `Filmy Fridays · ${EVENT.editionName}`,
+  title: EVENT.editionName ? `Filmy Fridays · ${EVENT.editionName}` : 'Filmy Fridays',
   venue: EVENT.venue,
   area: EVENT.area,
   date_label: EVENT.dateLabel,
@@ -53,21 +54,21 @@ const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURICom
 const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVENT.area}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. A full Bollywood audio-visual night, one Friday every month. Get on the guest list.`;
 ---
 <Layout
-  title="Filmy Fridays — The Night Before Halloween at No Limmits | DJ VIC"
+  title="Filmy Fridays at No Limmits — Bollywood Audio-Visual Night | DJ VIC"
   description={desc}
-  ogTitle="Filmy Fridays — The Night Before Halloween"
+  ogTitle="Filmy Fridays — Live at No Limmits"
   ogDescription={`${EVENT.headliner} · ${EVENT.venue}. ${EVENT.dateLabel}, ${EVENT.timeLabel}. Bollywood, mixed live to picture. Tap to get on the guest list.`}
-  ogImage="https://djvicofficial.com/images/events/filmy-fridays-halloween-wide.webp"
+  ogImage="https://djvicofficial.com/images/events/filmy-fridays-nov-2026-wide.jpg"
   canonical="https://djvicofficial.com/filmy-fridays/"
   metaPixelId="28641655958838250"
   schema={[
     {
-      "@context": "https://schema.org", "@type": "Event", "name": "Filmy Fridays — The Night Before Halloween",
-      "startDate": "2026-10-30T20:00:00+05:30",
-      "endDate": "2026-10-31T01:00:00+05:30",
+      "@context": "https://schema.org", "@type": "Event", "name": "Filmy Fridays — Live at No Limmits",
+      "startDate": "2026-11-27T20:00:00+05:30",
+      "endDate": "2026-11-28T01:00:00+05:30",
       "eventStatus": "https://schema.org/EventScheduled",
       "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-      "image": ["https://djvicofficial.com/images/events/filmy-fridays-halloween-wide.webp"],
+      "image": ["https://djvicofficial.com/images/events/filmy-fridays-nov-2026-wide.jpg"],
       "location": { "@type": "Place", "name": EVENT.venue, "address": EVENT.area },
       "performer": { "@type": "Person", "name": "DJ VIC" },
       "offers": { "@type": "Offer", "url": "https://djvicofficial.com/filmy-fridays/", "price": "0", "priceCurrency": "INR", "availability": "https://schema.org/InStock", "validFrom": "2026-08-20T00:00:00+05:30" },
@@ -101,7 +102,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
     <!-- ── FLYER ── -->
     {EVENT.flyer && (
       <section class="ff-flyer">
-        <img src={EVENT.flyer} alt={`Filmy Fridays — ${EVENT.editionName} · ${EVENT.headliner} · ${EVENT.dateLabel} at ${EVENT.venue}`} width="1080" height="1080" loading="eager" />
+        <img src={EVENT.flyer} alt={`Filmy Fridays · ${EVENT.headliner} · ${EVENT.dateLabel} at ${EVENT.venue}`} width="1080" height="1920" loading="eager" />
       </section>
     )}
 
@@ -117,7 +118,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
         <span class="ff-kicker">RSVP</span>
         <h2>Get on the guest list</h2>
         <p class="ff-sub">Drop your name — we'll WhatsApp you the details before the night.</p>
-        <p class="ff-fomo"><span class="ff-dot"></span><strong>{EVENT.edition} · {EVENT.editionName}</strong> · limited guest-list spots · <span id="ff-countdown" data-doors={EVENT.doorsAt}>counting…</span></p>
+        <p class="ff-fomo"><span class="ff-dot"></span><strong>{EVENT.edition}{EVENT.editionName ? ` · ${EVENT.editionName}` : ''}</strong> · limited guest-list spots · <span id="ff-countdown" data-doors={EVENT.doorsAt}>counting…</span></p>
       </div>
       <EventRSVP client:load
         slug={EVENT.slug}
@@ -146,7 +147,7 @@ const desc = `Filmy Fridays — ${EVENT.headliner} live at ${EVENT.venue}, ${EVE
     <section class="ff-recurring">
       <span class="ff-kicker">The residency</span>
       <h2>One Friday, every month</h2>
-      <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 02 lands the night before Halloween. Get on the list once, and we'll tell you when the next one drops.</p>
+      <p>Filmy Fridays is No Limmits' home for Bollywood done properly — the biggest Hindi anthems, remixes and throwbacks, cut live to the screen. Edition 03 lands Friday 27 November. Get on the list once, and we'll tell you when the next one drops.</p>
     </section>
 
     <!-- ── LAST EDITION (Instagram reels) ── -->
