@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '15', slug: 'ep15', icon: '🗝️', file: '/TheRider-Ep15-OpportunityMap.pdf',
+    title: 'Best Time To Be A DJ',
+    kicker: 'Learn It. Play It. Share It. Know It.',
+    sub: 'Yes, there are more DJs than ever. That’s the point. The specialists teach online, your software streams and splits whole catalogues, your phone is a stage, and 106,000 new tracks arrive every day. When everyone has the same tools, what you know is the difference. Here are the doors it opens.',
+    inside: [
+      'What opened up — the “too many DJs” objection, answered, then learn, play, share and dig, with sources',
+      'The edge — five layers of music knowledge: eras, genres and scenes, roots, crowds, connections',
+      'The Opportunity Map — eight doors, the knowledge that opens each, and a first step this week',
+      'Your knowledge audit + the 30-day crate plan — find your strongest layer, open one new door',
+      'Two templates — a theme-night pitch and a “song behind the song” reel script',
+    ],
+  },
+  {
     no: '14', slug: 'ep14', icon: '🕰️', file: '/TheRider-Ep14-NightMap.pdf',
     title: 'You Set The Clock',
     kicker: 'The DJ Is The Host',
