@@ -4,6 +4,19 @@
 // Newest first.
 export const EDITIONS = [
   {
+    no: '16', slug: 'ep16', icon: '🧱', file: '/TheRider-Ep16-TheBase.pdf',
+    title: 'The Base',
+    kicker: 'The Basics Still Matter',
+    sub: 'Ask a DJ for their profile and you’ll often get an Instagram handle. Instagram is a stage, not a profile. Everything in a DJ career stacks on the basics: a profile you can send in a minute, clear replies, being on time, backups, paperwork. Here’s the base, and the template to build it.',
+    inside: [
+      'The stack — why craft, trust and reputation all stand on the basics',
+      'What club bookers say — and why Instagram is a stage, not a profile',
+      'Your one-page profile — a fill-in template you can send in 60 seconds',
+      'The bio formula + the send — 50 and 150 words, plus email and WhatsApp versions',
+      'The basics checklist — gig, Indian wedding, corporate client, library, ears',
+    ],
+  },
+  {
     no: '15', slug: 'ep15', icon: '🗝️', file: '/TheRider-Ep15-OpportunityMap.pdf',
     title: 'Best Time To Be A DJ',
     kicker: 'Learn It. Play It. Share It. Know It.',
